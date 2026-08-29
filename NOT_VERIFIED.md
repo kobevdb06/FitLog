@@ -5,7 +5,12 @@ De rest van de oplevering is groen. Dit staat er niet, en dit is waarom.
 ## De iOS-build is niet uitgevoerd
 
 `flutter build ios --release --no-codesign` vereist macOS en Xcode. Deze build
-is volledig op Windows gemaakt, dus dat commando is nooit gedraaid.
+is volledig op Windows gemaakt. Het subcommando bestaat daar niet eens:
+
+```
+$ flutter build ios
+Could not find a subcommand named "ios" for "flutter build".
+```
 
 Wat er wél in orde is gebracht:
 

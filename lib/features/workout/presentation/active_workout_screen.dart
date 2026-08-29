@@ -8,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/calc/set_numbering.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -491,6 +492,12 @@ class _ExerciseCard extends ConsumerWidget {
         ref.watch(workoutRecordSetIdsProvider(workout.workout.id)).value ??
         const <String>{};
 
+    // Numbering is derived from the current types, so switching one set to
+    // warm-up renumbers everything below it on this very build.
+    final labels = labelSets(
+      detail.sets.map((s) => SetType.fromWire(s.setType)),
+    );
+
     return AppCard(
       padding: EdgeInsets.zero,
       borderColor: groupColor,
@@ -539,8 +546,8 @@ class _ExerciseCard extends ConsumerWidget {
                           SetRow(
                             key: ValueKey(detail.sets[i].id),
                             row: detail.sets[i],
-                            index: i,
-                            previous: _previousFor(previous, detail.sets, i),
+                            label: labels[i],
+                            previous: _previousFor(previous, labels[i]),
                             formatters: formatters,
                             isRecord: recordSetIds.contains(detail.sets[i].id),
                             activeKind: activeTarget?.setId == detail.sets[i].id
@@ -577,13 +584,13 @@ class _ExerciseCard extends ConsumerWidget {
     );
   }
 
-  /// The same set index from the previous session, or null.
-  WorkoutSetRow? _previousFor(
-    List<WorkoutSetRow>? previous,
-    List<WorkoutSetRow> current,
-    int index,
-  ) {
-    if (previous == null || previous.isEmpty) return null;
+  /// The matching working set from the previous session, or null.
+  ///
+  /// Matched on the working index, so working set 1 lines up with working
+  /// set 1. A warm-up row has no counterpart and shows a dash.
+  WorkoutSetRow? _previousFor(List<WorkoutSetRow>? previous, SetLabel label) {
+    final index = label.workingIndex;
+    if (previous == null || index == null) return null;
     if (index >= previous.length) return null;
     return previous[index];
   }
@@ -925,7 +932,7 @@ class SetRow extends StatelessWidget {
   const SetRow({
     super.key,
     required this.row,
-    required this.index,
+    required this.label,
     required this.previous,
     required this.formatters,
     required this.isRecord,
@@ -937,7 +944,7 @@ class SetRow extends StatelessWidget {
   });
 
   final WorkoutSetRow row;
-  final int index;
+  final SetLabel label;
   final WorkoutSetRow? previous;
   final Formatters formatters;
   final bool isRecord;
@@ -946,6 +953,11 @@ class SetRow extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onDelete;
   final ValueChanged<SetType> onSetType;
+
+  Future<void> _chooseType(BuildContext context, SetType current) async {
+    final type = await pickSetType(context, current: current);
+    if (type != null && type != current) onSetType(type);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -976,50 +988,38 @@ class SetRow extends StatelessWidget {
         child: Row(
           children: [
             SizedBox(
-              width: 36,
-              child: InkWell(
-                onLongPress: () async {
-                  final type = await showAppSheet<SetType>(
-                    context: context,
-                    title: 'Type set',
-                    builder: (context) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (final t in SetType.values)
-                          ListTile(
-                            title: Text(t.label),
-                            selected: t == setType,
-                            onTap: () => Navigator.of(context).pop(t),
+              width: 40,
+              child: Semantics(
+                label: 'Set ${label.text}, type ${setType.label}',
+                button: true,
+                child: InkWell(
+                  // Tapping is the primary route to the set type; long press
+                  // still works for anyone who learned that first.
+                  onTap: () => _chooseType(context, setType),
+                  onLongPress: () => _chooseType(context, setType),
+                  child: SizedBox(
+                    height: AppSpacing.setCheckbox,
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            label.text,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: setTypeColor(context, setType),
+                            ),
                           ),
-                      ],
-                    ),
-                  );
-                  if (type != null) onSetType(type);
-                },
-                child: SizedBox(
-                  height: AppSpacing.setCheckbox,
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          setType.marker ?? '${index + 1}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: setType == SetType.warmup
-                                ? AppColors.record
-                                : theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        if (isRecord) ...[
-                          const SizedBox(width: 2),
-                          const Icon(
-                            Icons.emoji_events,
-                            size: 11,
-                            color: AppColors.record,
-                          ),
+                          if (isRecord) ...[
+                            const SizedBox(width: 2),
+                            const Icon(
+                              Icons.emoji_events,
+                              size: 11,
+                              color: AppColors.record,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),

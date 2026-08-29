@@ -63,8 +63,33 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
               'De melding gebruikt het systeemgeluid van je toestel.',
             ),
             value: settings.restSoundEnabled,
-            onChanged: (value) =>
-                update(AppSettingsTableCompanion(restSoundEnabled: Value(value))),
+            onChanged: (value) => update(
+              AppSettingsTableCompanion(restSoundEnabled: Value(value)),
+            ),
+          ),
+          ListTile(
+            title: const Text('Warming-up sets bij een nieuwe oefening'),
+            subtitle: Text(
+              settings.defaultWarmupSets == 0
+                  ? 'Geen; je voegt ze zelf toe'
+                  : '${settings.defaultWarmupSets} bovenaan elke nieuwe '
+                        'oefening',
+            ),
+            trailing: SegmentedButton<int>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: 0, label: Text('0')),
+                ButtonSegment(value: 1, label: Text('1')),
+                ButtonSegment(value: 2, label: Text('2')),
+                ButtonSegment(value: 3, label: Text('3')),
+                ButtonSegment(value: 4, label: Text('4')),
+                ButtonSegment(value: 5, label: Text('5')),
+              ],
+              selected: {settings.defaultWarmupSets},
+              onSelectionChanged: (s) => update(
+                AppSettingsTableCompanion(defaultWarmupSets: Value(s.first)),
+              ),
+            ),
           ),
           const SectionHeader('Feedback'),
           SwitchListTile(
@@ -162,13 +187,11 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
           const SectionHeader('Weergave'),
           ListTile(
             title: const Text('Thema'),
-            subtitle: Text(
-              switch (settings.themeMode) {
-                'light' => 'Licht',
-                'system' => 'Volgt het systeem',
-                _ => 'Donker',
-              },
-            ),
+            subtitle: Text(switch (settings.themeMode) {
+              'light' => 'Licht',
+              'system' => 'Volgt het systeem',
+              _ => 'Donker',
+            }),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final mode = await showAppSheet<String>(

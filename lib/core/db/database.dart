@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -72,6 +72,14 @@ class AppDatabase extends _$AppDatabase {
             'UPDATE personal_records SET workout_set_id = NULL '
             'WHERE workout_set_id IS NOT NULL AND workout_set_id NOT IN '
             '(SELECT id FROM workout_sets)',
+          );
+        }
+        if (from < 3) {
+          // Purely additive: existing rows keep the default of 0, which is
+          // the behaviour they had before the setting existed.
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.defaultWarmupSets,
           );
         }
       });

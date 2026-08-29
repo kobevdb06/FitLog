@@ -100,7 +100,7 @@ void main() {
     raw.close();
   });
 
-  test('opening a v1 database migrates it to v2', () async {
+  test('opening a v1 database migrates it to the current version', () async {
     final file = writeV1Database(dir);
     final db = AppDatabase(NativeDatabase(file));
 
@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 2);
+    expect(raw.select('PRAGMA user_version').first.values.first, 3);
     raw.close();
   });
 
@@ -141,6 +141,9 @@ void main() {
       isNull,
       reason: 'de verwijzing naar een verdwenen set moet leeggemaakt zijn',
     );
+
+    // v3 adds the warm-up preference; existing databases get the default.
+    expect((await db.settingsDao.getSettings()).defaultWarmupSets, 0);
 
     await db.close();
   });
@@ -177,10 +180,10 @@ void main() {
     await db.close();
   });
 
-  test('a fresh database is created at version 2 straight away', () async {
+  test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 2);
+    expect(db.schemaVersion, 3);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

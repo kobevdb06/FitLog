@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../db/enums.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
@@ -211,3 +212,57 @@ void showSnack(BuildContext context, String message, {bool isError = false}) {
       ),
     );
 }
+
+
+/// The set type picker.
+///
+/// Reached by tapping the set number, which is the primary route, and by
+/// long-pressing it, which keeps working for people who learned that first.
+Future<SetType?> pickSetType(
+  BuildContext context, {
+  required SetType current,
+}) {
+  return showAppSheet<SetType>(
+    context: context,
+    title: 'Type set',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final type in SetType.values)
+          ListTile(
+            leading: SizedBox(
+              width: 28,
+              child: Text(
+                type.marker ?? '1',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: setTypeColor(context, type),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            title: Text(type.label),
+            subtitle: Text(setTypeDescription(type)),
+            selected: type == current,
+            onTap: () => Navigator.of(context).pop(type),
+          ),
+      ],
+    ),
+  );
+}
+
+/// The colour the SET column uses per type.
+Color setTypeColor(BuildContext context, SetType type) => switch (type) {
+  // Muted: a warm-up is not the work, and should not draw the eye.
+  SetType.warmup => Theme.of(context).colorScheme.onSurfaceVariant,
+  SetType.normal => Theme.of(context).colorScheme.onSurface,
+  SetType.drop => AppColors.accent,
+  SetType.failure => AppColors.record,
+};
+
+String setTypeDescription(SetType type) => switch (type) {
+  SetType.warmup => 'Telt niet mee voor volume of records',
+  SetType.normal => 'Gewone werkset',
+  SetType.drop => 'Direct verder met minder gewicht',
+  SetType.failure => 'Doorgegaan tot je er geen meer kon',
+};

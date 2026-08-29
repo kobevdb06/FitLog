@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/set_numbering.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
@@ -123,10 +124,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     );
     if (picked == null || picked.isEmpty) return;
 
-    final rows = await ref
-        .read(databaseProvider)
-        .exercisesDao
-        .getByIds(picked);
+    final rows = await ref.read(databaseProvider).exercisesDao.getByIds(picked);
     final byId = {for (final r in rows) r.id: r};
     setState(() {
       for (final id in picked) {
@@ -143,10 +141,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
       title: 'Vervangen door',
     );
     if (picked == null || picked.isEmpty) return;
-    final rows = await ref
-        .read(databaseProvider)
-        .exercisesDao
-        .getByIds(picked);
+    final rows = await ref.read(databaseProvider).exercisesDao.getByIds(picked);
     if (rows.isEmpty) return;
     setState(() {
       final old = _exercises[index];
@@ -614,7 +609,7 @@ class _ExerciseEditorCard extends StatelessWidget {
                 ),
                 for (var i = 0; i < draft.sets.length; i++)
                   _SetRow(
-                    number: i + 1,
+                    label: labelSets(draft.sets.map((s) => s.setType))[i],
                     set: draft.sets[i],
                     formatters: formatters,
                     onWeight: () => onEditWeight(draft.sets[i]),
@@ -638,7 +633,7 @@ class _ExerciseEditorCard extends StatelessWidget {
 
 class _SetRow extends StatelessWidget {
   const _SetRow({
-    required this.number,
+    required this.label,
     required this.set,
     required this.formatters,
     required this.onWeight,
@@ -647,7 +642,7 @@ class _SetRow extends StatelessWidget {
     required this.onSetType,
   });
 
-  final int number;
+  final SetLabel label;
   final _DraftSet set;
   final Formatters formatters;
   final VoidCallback onWeight;
@@ -663,36 +658,30 @@ class _SetRow extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 36,
-            child: InkWell(
-              onTap: () async {
-                final type = await showAppSheet<SetType>(
-                  context: context,
-                  title: 'Type set',
-                  builder: (context) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final t in SetType.values)
-                        ListTile(
-                          title: Text(t.label),
-                          selected: t == set.setType,
-                          onTap: () => Navigator.of(context).pop(t),
-                        ),
-                    ],
-                  ),
-                );
-                if (type != null) onSetType(type);
-              },
-              child: SizedBox(
-                height: AppSpacing.minTouch,
-                child: Center(
-                  child: Text(
-                    set.setType.marker ?? '$number',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: set.setType == SetType.warmup
-                          ? AppColors.record
-                          : theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+            width: 40,
+            child: Semantics(
+              label: 'Set ${label.text}, type ${set.setType.label}',
+              button: true,
+              child: InkWell(
+                // Exactly the same gesture as in a running session, so a
+                // warm-up can be baked into the template.
+                onTap: () async {
+                  final type = await pickSetType(context, current: set.setType);
+                  if (type != null && type != set.setType) onSetType(type);
+                },
+                onLongPress: () async {
+                  final type = await pickSetType(context, current: set.setType);
+                  if (type != null && type != set.setType) onSetType(type);
+                },
+                child: SizedBox(
+                  height: AppSpacing.minTouch,
+                  child: Center(
+                    child: Text(
+                      label.text,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: setTypeColor(context, set.setType),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -708,10 +697,7 @@ class _SetRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: _ValueCell(
-              text: set.reps?.toString() ?? '-',
-              onTap: onReps,
-            ),
+            child: _ValueCell(text: set.reps?.toString() ?? '-', onTap: onReps),
           ),
           SizedBox(
             width: 40,
@@ -746,9 +732,7 @@ class _ValueCell extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
           child: SizedBox(
             height: 40,
-            child: Center(
-              child: Text(text, style: theme.textTheme.bodyLarge),
-            ),
+            child: Center(child: Text(text, style: theme.textTheme.bodyLarge)),
           ),
         ),
       ),

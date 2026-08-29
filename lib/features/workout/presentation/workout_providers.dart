@@ -149,10 +149,12 @@ class WorkoutController {
       _db.workoutsDao.renameWorkout(workoutId, name);
 
   Future<void> addExercises(String workoutId, List<String> exerciseIds) async {
+    final settings = await _db.settingsDao.getSettings();
     await _db.workoutsDao.addExercises(
       workoutId,
       exerciseIds,
-      defaultRestSeconds: await _defaultRest,
+      defaultRestSeconds: settings.defaultRestSeconds,
+      warmupSets: settings.defaultWarmupSets,
     );
   }
 
@@ -183,7 +185,8 @@ class WorkoutController {
         supersetGroup: Value(group),
       );
 
-  Future<void> addSet(String workoutExerciseId, {SetType? setType}) =>
+  /// Returns the id of the new set, so callers can act on it right away.
+  Future<String> addSet(String workoutExerciseId, {SetType? setType}) =>
       _db.workoutsDao.addSet(
         workoutExerciseId,
         setType: setType ?? SetType.normal,

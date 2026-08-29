@@ -74,6 +74,10 @@ class AppSettingsTable extends Table {
       .named('available_plates_kg')
       .withDefault(const Constant('[25,20,15,10,5,2.5,1.25]'))();
 
+  /// How many warm-up sets a newly added exercise starts with, 0 to 5.
+  IntColumn get defaultWarmupSets =>
+      integer().named('default_warmup_sets').withDefault(const Constant(0))();
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   IntColumn get autoLockSeconds =>

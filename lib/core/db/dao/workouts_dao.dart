@@ -209,10 +209,15 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
 
   // --- Editing the session --------------------------------------------------
 
+  /// Adds exercises to a session.
+  ///
+  /// [warmupSets] comes from the user's preference: the exercise then starts
+  /// with that many warm-up rows above its first working set.
   Future<List<String>> addExercises(
     String workoutId,
     List<String> exerciseIds, {
     required int defaultRestSeconds,
+    int warmupSets = 0,
   }) async {
     final created = <String>[];
     await transaction(() async {
@@ -236,15 +241,23 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
             restSeconds: Value(defaultRestSeconds),
           ),
         );
-        // A new exercise always starts with one empty set so there is
-        // something to tap.
-        await into(workoutSetsTable).insert(
+        // A new exercise always ends up with at least one working set so
+        // there is something to tap, preceded by the configured warm-ups.
+        final rows = <WorkoutSetsTableCompanion>[
+          for (var w = 0; w < warmupSets.clamp(0, 5); w++)
+            WorkoutSetsTableCompanion.insert(
+              id: _uuid.v4(),
+              workoutExerciseId: id,
+              sortOrder: w,
+              setType: Value(SetType.warmup.wire),
+            ),
           WorkoutSetsTableCompanion.insert(
             id: _uuid.v4(),
             workoutExerciseId: id,
-            sortOrder: 0,
+            sortOrder: warmupSets.clamp(0, 5),
           ),
-        );
+        ];
+        await batch((b) => b.insertAll(workoutSetsTable, rows));
       }
     });
     return created;
@@ -430,8 +443,11 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
 
   // --- Previous performance -------------------------------------------------
 
-  /// The sets of the most recent *finished* workout that contained
+  /// The **working** sets of the most recent finished workout that contained
   /// [exerciseId], in order. Used for the `VORIGE` column.
+  ///
+  /// Warm-ups are left out on purpose: last week's 40 kg warm-up must never
+  /// show up as the thing to beat next to working set 1.
   Future<List<WorkoutSetRow>> previousSetsFor(
     String exerciseId, {
     String? excludingWorkoutId,
@@ -453,7 +469,11 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
 
     final weId = rows.first.read<String>('we_id');
     return (select(workoutSetsTable)
-          ..where((t) => t.workoutExerciseId.equals(weId))
+          ..where(
+            (t) =>
+                t.workoutExerciseId.equals(weId) &
+                t.setType.equals(SetType.warmup.wire).not(),
+          )
           ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .get();
   }

@@ -658,6 +658,18 @@ class $AppSettingsTableTable extends AppSettingsTable
         requiredDuringInsert: false,
         defaultValue: const Constant('[25,20,15,10,5,2.5,1.25]'),
       );
+  static const VerificationMeta _defaultWarmupSetsMeta = const VerificationMeta(
+    'defaultWarmupSets',
+  );
+  @override
+  late final GeneratedColumn<int> defaultWarmupSets = GeneratedColumn<int>(
+    'default_warmup_sets',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _autoLockSecondsMeta = const VerificationMeta(
     'autoLockSeconds',
   );
@@ -697,6 +709,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     exercisesSeeded,
     barWeightKg,
     availablePlatesKg,
+    defaultWarmupSets,
     autoLockSeconds,
     updatedAt,
   ];
@@ -822,6 +835,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('default_warmup_sets')) {
+      context.handle(
+        _defaultWarmupSetsMeta,
+        defaultWarmupSets.isAcceptableOrUnknown(
+          data['default_warmup_sets']!,
+          _defaultWarmupSetsMeta,
+        ),
+      );
+    }
     if (data.containsKey('auto_lock_seconds')) {
       context.handle(
         _autoLockSecondsMeta,
@@ -904,6 +926,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}available_plates_kg'],
       )!,
+      defaultWarmupSets: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}default_warmup_sets'],
+      )!,
       autoLockSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}auto_lock_seconds'],
@@ -951,6 +977,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// JSON array of available plate weights in kg, per side.
   final String availablePlatesKg;
 
+  /// How many warm-up sets a newly added exercise starts with, 0 to 5.
+  final int defaultWarmupSets;
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   final int autoLockSeconds;
@@ -970,6 +999,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.exercisesSeeded,
     required this.barWeightKg,
     required this.availablePlatesKg,
+    required this.defaultWarmupSets,
     required this.autoLockSeconds,
     required this.updatedAt,
   });
@@ -990,6 +1020,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['exercises_seeded'] = Variable<bool>(exercisesSeeded);
     map['bar_weight_kg'] = Variable<double>(barWeightKg);
     map['available_plates_kg'] = Variable<String>(availablePlatesKg);
+    map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['auto_lock_seconds'] = Variable<int>(autoLockSeconds);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
@@ -1011,6 +1042,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       exercisesSeeded: Value(exercisesSeeded),
       barWeightKg: Value(barWeightKg),
       availablePlatesKg: Value(availablePlatesKg),
+      defaultWarmupSets: Value(defaultWarmupSets),
       autoLockSeconds: Value(autoLockSeconds),
       updatedAt: Value(updatedAt),
     );
@@ -1038,6 +1070,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       exercisesSeeded: serializer.fromJson<bool>(json['exercisesSeeded']),
       barWeightKg: serializer.fromJson<double>(json['barWeightKg']),
       availablePlatesKg: serializer.fromJson<String>(json['availablePlatesKg']),
+      defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -1060,6 +1093,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'exercisesSeeded': serializer.toJson<bool>(exercisesSeeded),
       'barWeightKg': serializer.toJson<double>(barWeightKg),
       'availablePlatesKg': serializer.toJson<String>(availablePlatesKg),
+      'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -1080,6 +1114,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? exercisesSeeded,
     double? barWeightKg,
     String? availablePlatesKg,
+    int? defaultWarmupSets,
     int? autoLockSeconds,
     int? updatedAt,
   }) => AppSettingsRow(
@@ -1097,6 +1132,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     exercisesSeeded: exercisesSeeded ?? this.exercisesSeeded,
     barWeightKg: barWeightKg ?? this.barWeightKg,
     availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
+    defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
     autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1138,6 +1174,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       availablePlatesKg: data.availablePlatesKg.present
           ? data.availablePlatesKg.value
           : this.availablePlatesKg,
+      defaultWarmupSets: data.defaultWarmupSets.present
+          ? data.defaultWarmupSets.value
+          : this.defaultWarmupSets,
       autoLockSeconds: data.autoLockSeconds.present
           ? data.autoLockSeconds.value
           : this.autoLockSeconds,
@@ -1162,6 +1201,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('exercisesSeeded: $exercisesSeeded, ')
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
+          ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1184,6 +1224,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     exercisesSeeded,
     barWeightKg,
     availablePlatesKg,
+    defaultWarmupSets,
     autoLockSeconds,
     updatedAt,
   );
@@ -1205,6 +1246,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.exercisesSeeded == this.exercisesSeeded &&
           other.barWeightKg == this.barWeightKg &&
           other.availablePlatesKg == this.availablePlatesKg &&
+          other.defaultWarmupSets == this.defaultWarmupSets &&
           other.autoLockSeconds == this.autoLockSeconds &&
           other.updatedAt == this.updatedAt);
 }
@@ -1224,6 +1266,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> exercisesSeeded;
   final Value<double> barWeightKg;
   final Value<String> availablePlatesKg;
+  final Value<int> defaultWarmupSets;
   final Value<int> autoLockSeconds;
   final Value<int> updatedAt;
   final Value<int> rowid;
@@ -1242,6 +1285,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.exercisesSeeded = const Value.absent(),
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
+    this.defaultWarmupSets = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1261,6 +1305,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.exercisesSeeded = const Value.absent(),
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
+    this.defaultWarmupSets = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     required int updatedAt,
     this.rowid = const Value.absent(),
@@ -1281,6 +1326,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? exercisesSeeded,
     Expression<double>? barWeightKg,
     Expression<String>? availablePlatesKg,
+    Expression<int>? defaultWarmupSets,
     Expression<int>? autoLockSeconds,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
@@ -1302,6 +1348,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (exercisesSeeded != null) 'exercises_seeded': exercisesSeeded,
       if (barWeightKg != null) 'bar_weight_kg': barWeightKg,
       if (availablePlatesKg != null) 'available_plates_kg': availablePlatesKg,
+      if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1323,6 +1370,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? exercisesSeeded,
     Value<double>? barWeightKg,
     Value<String>? availablePlatesKg,
+    Value<int>? defaultWarmupSets,
     Value<int>? autoLockSeconds,
     Value<int>? updatedAt,
     Value<int>? rowid,
@@ -1342,6 +1390,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       exercisesSeeded: exercisesSeeded ?? this.exercisesSeeded,
       barWeightKg: barWeightKg ?? this.barWeightKg,
       availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
+      defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1395,6 +1444,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (availablePlatesKg.present) {
       map['available_plates_kg'] = Variable<String>(availablePlatesKg.value);
     }
+    if (defaultWarmupSets.present) {
+      map['default_warmup_sets'] = Variable<int>(defaultWarmupSets.value);
+    }
     if (autoLockSeconds.present) {
       map['auto_lock_seconds'] = Variable<int>(autoLockSeconds.value);
     }
@@ -1424,6 +1476,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('exercisesSeeded: $exercisesSeeded, ')
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
+          ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -7182,6 +7235,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> exercisesSeeded,
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
+      Value<int> defaultWarmupSets,
       Value<int> autoLockSeconds,
       required int updatedAt,
       Value<int> rowid,
@@ -7202,6 +7256,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> exercisesSeeded,
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
+      Value<int> defaultWarmupSets,
       Value<int> autoLockSeconds,
       Value<int> updatedAt,
       Value<int> rowid,
@@ -7283,6 +7338,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get availablePlatesKg => $composableBuilder(
     column: $table.availablePlatesKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get defaultWarmupSets => $composableBuilder(
+    column: $table.defaultWarmupSets,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7376,6 +7436,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get defaultWarmupSets => $composableBuilder(
+    column: $table.defaultWarmupSets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -7460,6 +7525,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get defaultWarmupSets => $composableBuilder(
+    column: $table.defaultWarmupSets,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => column,
@@ -7520,6 +7590,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> exercisesSeeded = const Value.absent(),
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
+                Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7538,6 +7609,7 @@ class $$AppSettingsTableTableTableManager
                 exercisesSeeded: exercisesSeeded,
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
+                defaultWarmupSets: defaultWarmupSets,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -7558,6 +7630,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> exercisesSeeded = const Value.absent(),
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
+                Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -7576,6 +7649,7 @@ class $$AppSettingsTableTableTableManager
                 exercisesSeeded: exercisesSeeded,
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
+                defaultWarmupSets: defaultWarmupSets,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,

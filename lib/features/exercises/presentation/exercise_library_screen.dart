@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/db/database.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/exercise_image.dart';
 import '../../../core/widgets/common.dart';
 import '../../../routing/routes.dart';
 import 'custom_exercise_screen.dart';
@@ -93,6 +95,7 @@ class _ExerciseLibraryScreenState
     final filter = ref.watch(exerciseFilterControllerProvider);
     final exercises = ref.watch(filteredExercisesProvider);
     final recent = ref.watch(recentExercisesProvider).value ?? const [];
+    final images = ref.watch(exerciseImagesProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -201,6 +204,7 @@ class _ExerciseLibraryScreenState
                 ))
                   _ExerciseTile(
                     exercise: exercise,
+                    manifest: images,
                     selected: _selected.contains(exercise.id),
                     selectable: widget.selectionMode,
                     onTap: () => _onTapExercise(exercise),
@@ -210,6 +214,7 @@ class _ExerciseLibraryScreenState
               for (final exercise in visible)
                 _ExerciseTile(
                   exercise: exercise,
+                  manifest: images,
                   selected: _selected.contains(exercise.id),
                   selectable: widget.selectionMode,
                   onTap: () => _onTapExercise(exercise),
@@ -301,12 +306,14 @@ class _FilterChips extends ConsumerWidget {
 class _ExerciseTile extends StatelessWidget {
   const _ExerciseTile({
     required this.exercise,
+    required this.manifest,
     required this.selected,
     required this.selectable,
     required this.onTap,
   });
 
   final ExerciseRow exercise;
+  final ExerciseImageManifest? manifest;
   final bool selected;
   final bool selectable;
   final VoidCallback onTap;
@@ -316,7 +323,7 @@ class _ExerciseTile extends StatelessWidget {
     final category = ExerciseCategory.fromWire(exercise.category);
     return ListTile(
       onTap: onTap,
-      leading: MuscleAvatar(muscle: exercise.primaryMuscle),
+      leading: ExerciseThumb(exercise: exercise, manifest: manifest),
       title: Text(exercise.name),
       subtitle: Text(
         [

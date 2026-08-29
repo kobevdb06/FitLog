@@ -65,8 +65,15 @@ class AboutScreen extends StatelessWidget {
             '(github.com/yuhonas/free-exercise-db), vrijgegeven onder de '
             'Unlicense en dus publiek domein. De oefeningsnamen zijn in het '
             'Engels gelaten omdat die in de zaal ingeburgerd zijn; de '
-            'spiergroepen en materiaalnamen zijn vertaald. De afbeeldingen '
-            'zijn bewust niet meegenomen om de app licht te houden.',
+            'spiergroepen en materiaalnamen zijn vertaald.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Ook de illustraties komen uit die dataset: per oefening de start- '
+            'en eindpositie, hier verkleind en samengevoegd tot een animatie '
+            'van twee beelden. Ze zitten in de app zelf, dus er wordt niets '
+            'opgehaald terwijl je traint.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.xl),

@@ -93,4 +93,5 @@ flutter:
 
   assets:
     - assets/data/exercises.json
+    - assets/exercises/
 

@@ -182,3 +182,58 @@ final class BarbellSetupProvider
 }
 
 String _$barbellSetupHash() => r'ce449fbca26d0c0170f79c5b0c7defefd5beabc8';
+
+/// The bundled exercise illustrations, loaded once.
+///
+/// Absent when the assets were never generated; the UI then falls back to the
+/// coloured muscle icon everywhere.
+
+@ProviderFor(exerciseImages)
+final exerciseImagesProvider = ExerciseImagesProvider._();
+
+/// The bundled exercise illustrations, loaded once.
+///
+/// Absent when the assets were never generated; the UI then falls back to the
+/// coloured muscle icon everywhere.
+
+final class ExerciseImagesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<ExerciseImageManifest>,
+          ExerciseImageManifest,
+          FutureOr<ExerciseImageManifest>
+        >
+    with
+        $FutureModifier<ExerciseImageManifest>,
+        $FutureProvider<ExerciseImageManifest> {
+  /// The bundled exercise illustrations, loaded once.
+  ///
+  /// Absent when the assets were never generated; the UI then falls back to the
+  /// coloured muscle icon everywhere.
+  ExerciseImagesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'exerciseImagesProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$exerciseImagesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<ExerciseImageManifest> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<ExerciseImageManifest> create(Ref ref) {
+    return exerciseImages(ref);
+  }
+}
+
+String _$exerciseImagesHash() => r'8ced17dd6450e43e1c790e13893f4f37baa939f2';

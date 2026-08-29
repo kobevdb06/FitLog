@@ -49,3 +49,8 @@ app.*.map.json
 
 # FitLog
 *.drift.dart.bak
+
+# Downloaded source frames and the libwebp binaries used by
+# tool/build_exercise_images.dart. Regenerate with that tool; the generated
+# assets under assets/exercises/ are committed, the inputs are not.
+.build_cache/

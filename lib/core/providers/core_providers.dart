@@ -6,6 +6,7 @@ import '../app/app_controller.dart';
 import '../calc/plates.dart';
 import '../db/database.dart';
 import '../formatting/formatters.dart';
+import '../widgets/exercise_image.dart';
 
 part 'core_providers.g.dart';
 
@@ -65,3 +66,11 @@ List<double> decodePlates(String raw) {
 
 String encodePlates(List<double> plates) =>
     jsonEncode((plates.toList()..sort((a, b) => b.compareTo(a))));
+
+/// The bundled exercise illustrations, loaded once.
+///
+/// Absent when the assets were never generated; the UI then falls back to the
+/// coloured muscle icon everywhere.
+@Riverpod(keepAlive: true)
+Future<ExerciseImageManifest> exerciseImages(Ref ref) =>
+    ExerciseImageManifest.load();

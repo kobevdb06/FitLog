@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/exercise_image.dart';
 import 'custom_exercise_screen.dart';
 import 'exercise_providers.dart';
 
@@ -77,23 +78,26 @@ class ExerciseDetailScreen extends ConsumerWidget {
   }
 }
 
-class _InfoTab extends StatelessWidget {
+class _InfoTab extends ConsumerWidget {
   const _InfoTab({required this.exercise});
 
   final ExerciseRow exercise;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final category = ExerciseCategory.fromWire(exercise.category);
     final secondary = decodeSecondaryMuscles(exercise.secondaryMuscles);
+    final images = ref.watch(exerciseImagesProvider).value;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
+        ExerciseAnimation(exercise: exercise, manifest: images),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
-            MuscleAvatar(muscle: exercise.primaryMuscle, size: 56),
+            ExerciseThumb(exercise: exercise, manifest: images, size: 56),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(

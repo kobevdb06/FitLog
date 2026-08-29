@@ -158,6 +158,10 @@ Future<void> main(List<String> args) async {
       'instructions': (instructions == null || instructions.isEmpty)
           ? null
           : instructions,
+      // Kept verbatim from the source so tool/build_exercise_images.dart can
+      // fetch exactly these frames instead of guessing file names from the
+      // exercise title. The app itself ignores this field.
+      'images': (item['images'] as List?)?.cast<String>() ?? const <String>[],
     });
   }
 

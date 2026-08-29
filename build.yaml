@@ -1,0 +1,22 @@
+# drift and riverpod both ship SharedPartBuilders, which run in the same phase
+# and therefore cannot see each other's output. Because several providers
+# expose drift row types (AppSettingsRow, WorkoutRow, ...) in their signatures,
+# riverpod_generator would resolve those to InvalidType and fail.
+#
+# The fix drift documents for exactly this case: use its `not_shared` builder,
+# which writes a real `.drift.dart` part file in an earlier phase, so the
+# generated row classes are resolvable by the time riverpod_generator runs.
+targets:
+  $default:
+    builders:
+      drift_dev:
+        enabled: false
+      drift_dev:analyzer:
+        enabled: true
+      drift_dev:not_shared:
+        enabled: true
+
+global_options:
+  drift_dev:not_shared:
+    runs_before:
+      - riverpod_generator:riverpod_generator

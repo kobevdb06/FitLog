@@ -53,7 +53,7 @@ void main() {
       () => plain.select('SELECT count(*) FROM sqlite_master'),
       throwsA(isA<SqliteException>()),
     );
-    plain.dispose();
+    plain.close();
   });
 
   test('the wrong key is refused, the right key works', () async {
@@ -125,7 +125,7 @@ void main() {
       () => applyKeyAndVerify(raw, toHex(generateDek())),
       throwsA(isA<WrongDatabaseKeyException>()),
     );
-    raw.dispose();
+    raw.close();
   });
 
   test('the schema is created at version 1', () async {

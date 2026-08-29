@@ -6,12 +6,16 @@ plugins {
 
 android {
     namespace = "be.fitlog.app"
-    compileSdk = 36
+    // flutter_secure_storage 11 compiles against API 37 and AGP refuses a
+    // lower compileSdk for its consumers.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // flutter_local_notifications uses java.time on API 23 devices.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -19,8 +23,8 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // 23 is the floor for flutter_secure_storage / sqlcipher / biometrics.
-        minSdk = 23
-        targetSdk = 36
+        minSdk = flutter.minSdkVersion
+        targetSdk = 37
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
@@ -56,4 +60,8 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }

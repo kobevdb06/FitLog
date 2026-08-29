@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'photos_screen.dart';
+part of 'photo_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -49,6 +49,52 @@ final class ProgressPhotosProvider
 }
 
 String _$progressPhotosHash() => r'ee0f36c89f877a617083fb8b40008775b83c1cf9';
+
+/// Null while the documents directory is still being resolved.
+
+@ProviderFor(photoStore)
+final photoStoreProvider = PhotoStoreProvider._();
+
+/// Null while the documents directory is still being resolved.
+
+final class PhotoStoreProvider
+    extends $FunctionalProvider<PhotoStore?, PhotoStore?, PhotoStore?>
+    with $Provider<PhotoStore?> {
+  /// Null while the documents directory is still being resolved.
+  PhotoStoreProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'photoStoreProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$photoStoreHash();
+
+  @$internal
+  @override
+  $ProviderElement<PhotoStore?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  PhotoStore? create(Ref ref) {
+    return photoStore(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PhotoStore? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PhotoStore?>(value),
+    );
+  }
+}
+
+String _$photoStoreHash() => r'9ef9cc57671d73c08c5803c33d8fe265ee15b192';
 
 @ProviderFor(photoActions)
 final photoActionsProvider = PhotoActionsProvider._();

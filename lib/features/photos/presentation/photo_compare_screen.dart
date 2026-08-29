@@ -8,7 +8,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
-import 'photos_screen.dart';
+import 'photo_providers.dart';
 
 /// Two photos side by side with their dates and the weight difference.
 class PhotoCompareScreen extends ConsumerStatefulWidget {
@@ -110,10 +110,8 @@ class _Side extends StatelessWidget {
             paths.photoFile(photo.fileName),
             fit: BoxFit.cover,
             width: double.infinity,
-            errorBuilder: (context, error, stack) => Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: const Icon(Icons.broken_image_outlined),
-            ),
+            errorBuilder: (context, error, stack) =>
+                const MissingPhotoPlaceholder(),
           ),
         ),
         Padding(

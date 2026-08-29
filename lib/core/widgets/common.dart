@@ -387,3 +387,43 @@ class FitLogLogo extends StatelessWidget {
     );
   }
 }
+
+/// Shown where a progress photo used to be.
+///
+/// A row can outlive its file - a restore that dropped a file, a manual
+/// cleanup - and the grid has to stay usable instead of throwing.
+class MissingPhotoPlaceholder extends StatelessWidget {
+  const MissingPhotoPlaceholder({super.key, this.compact = false});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.surfaceContainerHighest,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            color: theme.colorScheme.onSurfaceVariant,
+            size: compact ? 18 : 24,
+          ),
+          if (!compact) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Bestand weg',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

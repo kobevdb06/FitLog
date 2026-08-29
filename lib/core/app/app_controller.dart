@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show Uint8List;
+import 'package:flutter/foundation.dart' show Uint8List, debugPrint;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../db/connection.dart';
@@ -10,6 +10,8 @@ import '../security/biometric_service.dart';
 import '../security/key_manager.dart';
 import '../security/key_material.dart';
 import '../security/secret_store.dart';
+import '../../features/photos/data/photo_library.dart';
+import '../../features/photos/data/photo_store.dart';
 import '../util/paths.dart';
 import 'app_state.dart';
 
@@ -157,6 +159,20 @@ class AppController extends _$AppController {
       final settings = await db.settingsDao.ensureInitialized();
       _autoLockSeconds = settings.autoLockSeconds;
       await ExerciseSeeder(db).seedIfNeeded();
+
+      // Files and rows can drift apart across a restore or a crash mid-import.
+      // Reconciling here keeps the photo grid honest and stops dead files from
+      // being carried along in every backup.
+      final cleanup = await PhotoLibrary(
+        db: db,
+        store: PhotoStore(paths),
+      ).cleanup();
+      if (!cleanup.isClean) {
+        debugPrint(
+          'FitLog: foto-opruiming verwijderde ${cleanup.deletedFiles.length} '
+          'bestand(en) en ${cleanup.missingFiles.length} rij(en)',
+        );
+      }
 
       _db = db;
       _dek = dek;

@@ -1,11 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
@@ -15,68 +11,8 @@ import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
-
-part 'photos_screen.g.dart';
-
-@riverpod
-Stream<List<ProgressPhotoRow>> progressPhotos(Ref ref) =>
-    ref.watch(databaseProvider).recordsDao.watchPhotos();
-
-@riverpod
-PhotoActions photoActions(Ref ref) => PhotoActions(ref);
-
-/// Adding and removing progress photos.
-///
-/// The image file is copied into the app's own documents directory; nothing is
-/// written to the camera roll and nothing leaves the device.
-class PhotoActions {
-  const PhotoActions(this.ref);
-
-  final Ref ref;
-
-  static const _uuid = Uuid();
-
-  Future<String?> add({
-    required ImageSource source,
-    required PhotoPose pose,
-    DateTime? takenAt,
-    String? note,
-  }) async {
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      maxWidth: 1600,
-      imageQuality: 85,
-    );
-    if (picked == null) return null;
-
-    final paths = await ref.read(appPathsProvider.future);
-    final dir = await paths.ensurePhotosDirectory();
-    final extension = picked.path.split('.').last.toLowerCase();
-    final fileName =
-        '${_uuid.v4()}.${extension.length <= 4 ? extension : 'jpg'}';
-
-    await File(picked.path).copy('${dir.path}/$fileName');
-
-    return ref
-        .read(databaseProvider)
-        .recordsDao
-        .addPhoto(
-          fileName: fileName,
-          pose: pose,
-          takenAt: takenAt ?? DateTime.now(),
-          note: note,
-        );
-  }
-
-  Future<void> delete(ProgressPhotoRow photo) async {
-    final paths = await ref.read(appPathsProvider.future);
-    final file = paths.photoFile(photo.fileName);
-    if (await file.exists()) await file.delete();
-    await ref.read(databaseProvider).recordsDao.deletePhoto(photo.id);
-  }
-
-  Future<AppPaths> paths() => ref.read(appPathsProvider.future);
-}
+import '../data/photo_store.dart';
+import 'photo_providers.dart';
 
 /// Progress photos, grouped per month.
 class PhotosScreen extends ConsumerWidget {
@@ -102,7 +38,12 @@ class PhotosScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('$error')),
         data: (list) {
-          if (list.isEmpty || paths == null) {
+          // The documents directory is still being resolved; showing the
+          // empty state here would claim there are no photos when there are.
+          if (paths == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (list.isEmpty) {
             return EmptyState(
               icon: Icons.photo_camera_outlined,
               title: 'Nog geen foto\'s',
@@ -199,7 +140,21 @@ class PhotosScreen extends ConsumerWidget {
     );
     if (source == null) return;
 
-    await ref.read(photoActionsProvider).add(source: source, pose: pose);
+    try {
+      await ref.read(photoActionsProvider).add(source: source, pose: pose);
+    } on UnreadableImageException {
+      if (context.mounted) {
+        showSnack(
+          context,
+          'Dat bestand kon niet als foto gelezen worden.',
+          isError: true,
+        );
+      }
+    } on Object catch (error) {
+      if (context.mounted) {
+        showSnack(context, 'Foto opslaan mislukte: $error', isError: true);
+      }
+    }
   }
 }
 
@@ -232,10 +187,9 @@ class _PhotoTile extends ConsumerWidget {
             Image.file(
               file,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stack) => Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: const Icon(Icons.broken_image_outlined),
-              ),
+              cacheWidth: 320,
+              errorBuilder: (context, error, stack) =>
+                  const MissingPhotoPlaceholder(),
             ),
             Positioned(
               left: 0,

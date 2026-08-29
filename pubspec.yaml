@@ -68,6 +68,7 @@ dependencies:
   intl: ^0.20.3
   collection: ^1.19.1
   sqlite3: ^3.5.2
+  image: ^4.9.2
 
 dev_dependencies:
   flutter_test:

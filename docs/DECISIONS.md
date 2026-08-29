@@ -228,3 +228,102 @@ laatste; de boom compileert vanaf dat punt. Elke fase is tijdens het bouwen wel
 apart afgerond en gecontroleerd - alleen niet als los build-baar commit
 vastgelegd. Wie de historiek gebruikt om te lezen wat er per fase bijkwam, heeft
 er niets aan verloren; wie hem gebruikt om te bisecten, wel.
+
+
+---
+
+# Ronde 2
+
+## 24. libwebp wordt als build-tool opgehaald in plaats van terug te vallen op GIF
+
+De opdracht zegt: gebruik `img2webp` als het beschikbaar is, val anders terug op
+GIF. Op deze machine stond libwebp er niet, en `package:image` kan wel WebP
+lezen maar niet schrijven.
+
+Terugvallen op GIF haalt het budget niet. Een GIF is palletgebaseerd met
+maximaal 256 kleuren, wat op foto's van mensen in een zaal zichtbaar slecht
+oogt, en de bestanden zijn een veelvoud groter: een ruwe schatting op basis van
+de eerste tientallen oefeningen kwam op 60 MB en meer voor de animaties alleen,
+tegen een budget van 35 MB. De opdracht noemt "WebP in plaats van GIF" zelf als
+de eerste knop om onder dat budget te blijven.
+
+De officiële libwebp-binaries van Google (1.6.0) worden daarom in
+`.build_cache/tools/` gezet en van daaruit gebruikt. Dat is een
+build-tijd-afhankelijkheid in dezelfde categorie als de Flutter SDK of de NDK,
+en de tool zoekt eerst op PATH, zodat `brew install webp` of
+`apt install webp` net zo goed werkt. Zonder libwebp doet de tool nog steeds
+wat de opdracht voorschrijft: 2-frame GIF's, met een waarschuwing.
+
+**Uiteindelijk resultaat: WebP, 873 van de 876 oefeningen geanimeerd, 15,0 MB
+totaal.** Geen van de andere knoppen (280 px, 64 kleuren, alleen de top 300)
+was nodig.
+
+## 25. De ladderpercentages voor twee opwarmsets zijn een expliciete uitzondering
+
+De opdracht beschrijft de percentages als "lineair verdeeld tussen 40% en 90%",
+maar geeft voor twee sets expliciet 50% en 80%. Dat is geen lineaire verdeling
+tussen dezelfde uiteinden. Voor acht sets zegt de opdracht juist wel "dezelfde
+uiteinden".
+
+`buildPrRamp` volgt daarom de lineaire regel van 40% tot 90% voor drie sets en
+meer, en gebruikt 50% tot 80% als er maar twee zijn. Dat is ook inhoudelijk het
+juiste gedrag: met maar twee opwarmers is 40% naar 90% een sprong waar je niets
+aan hebt.
+
+## 26. De rusttijden volgen de reps, niet het percentage
+
+De opdracht zegt "rusttijden lopen op van 90 s naar 240 s, lineair verdeeld", en
+geeft voor vier sets de tabel 90 / 120 / 180 / 240. Lineair verdelen over vier
+sets geeft 90 / 140 / 190 / 240, dus de regel en de tabel spreken elkaar tegen.
+
+`restForReps` leidt de rust af uit de reps: 5 of 4 reps → 90 s, 3 → 120 s,
+2 → 180 s, 1 → 240 s. Dat reproduceert de tabel van de opdracht exact, loopt
+netjes op van 90 naar 240 voor elke ladderlengte, en sluit aan bij hoe rust in
+de praktijk gekozen wordt: naar de zwaarte van de set, niet naar een lineaire
+interpolatie.
+
+## 27. De ladder wordt niet apart opgeslagen
+
+De opwarmrungen zijn gewone `workout_sets` van het type `warmup` en de poging is
+de enige werkset. Daardoor gelden alle regels uit feature A automatisch: de
+opwarmers tellen niet mee voor volume, niet voor records en niet voor de kolom
+VORIGE. De rusttijden worden bij het afvinken opnieuw uit de reps afgeleid met
+dezelfde functie die de ladder gebruikte, zodat er geen rust-per-set-kolom nodig
+is.
+
+Eén afwijking van het normale gedrag: opwarmsets binnen een PR-poging starten
+wél een rusttimer. Een gewone warming-up doet dat niet, maar een ladder zonder
+rust tussen 90% en de poging is nutteloos.
+
+## 28. Schemaversies: de bugfix nam versie 2, dus PR-pogingen staan op 4
+
+De opdracht schrijft voor feature B `schemaVersion = 2` voor. Die versie was op
+dat moment al vergeven: bug 3 had een migratie nodig om de ontbrekende
+`ON DELETE SET NULL` op `personal_records.workout_set_id` toe te voegen, en
+feature A had er een nodig voor `default_warmup_sets`.
+
+De volgorde uit de opdracht is leidend, dus: v2 voor de bugfix, v3 voor feature
+A, v4 voor feature B. Een al vrijgegeven migratiestap achteraf uitbreiden zou
+een database die v2 al gedraaid heeft stilzwijgend overslaan.
+
+## 29. Nummering: drop- en failure-sets houden hun plaats in de reeks
+
+De opdracht zegt dat werksets 1, 2, 3 genummerd worden met de warming-ups
+overgeslagen, en dat dropsets `D` tonen en failure-sets `F`. Wat er niet staat,
+is of een `D` een nummer opgebruikt.
+
+`labelSets` laat ze hun plaats houden: `[normaal, normaal, drop, normaal]` wordt
+`1, 2, D, 4`. Ze zijn werksets, ze tellen mee voor volume en records, dus ze
+horen in de reeks; alleen de weergave is een letter. Alleen warming-ups worden
+echt overgeslagen.
+
+## 30. Een niet-leesbaar beeldbestand wordt omgezet, niet doorgeslikt
+
+`package:image` probeert formaten af en laat op onzin-invoer een `RangeError`
+ontsnappen uit het PSD-pad, nog voor `decodeImage` null kan teruggeven. Dat is
+geen fout waar een aanroeper iets mee kan.
+
+`PhotoStore.processBytes` vangt hem en gooit één getypeerde
+`UnreadableImageException`. Dat is geen wegslikken: de import faalt nog steeds,
+alleen met een fout die het scherm kan uitleggen. De originele fout blijft als
+`cause` behouden.

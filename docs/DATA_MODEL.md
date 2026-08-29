@@ -14,10 +14,19 @@ metadata staat in de database.
 | Enums staan als Engelse `TEXT` in de database | De labels zijn Nederlands en staan in `lib/core/db/enums.dart`; hernoemen van een label raakt de data nooit. |
 | `PRAGMA foreign_keys = ON` bij elke verbinding | Wordt gezet in `applyKeyAndVerify` én in `beforeOpen`. |
 
-`schemaVersion` is 1. De `MigrationStrategy` staat er al met een lege
-`onUpgrade`; latere stappen mogen alleen optellen (nieuwe tabellen, nieuwe
-nullable kolommen, nieuwe indexen). Een kolom met gebruikersdata verwijderen of
-herschrijven mag niet.
+`schemaVersion` is **4**. Migratiestappen mogen alleen optellen; een kolom met
+gebruikersdata verwijderen of herschrijven mag niet.
+
+| Versie | Wat er bijkwam |
+|---|---|
+| 1 | Eerste release. |
+| 2 | `personal_records.workout_set_id` kreeg de ontbrekende `ON DELETE SET NULL`. Dat vereist een tabelherbouw, dus de migratie zet `foreign_keys` uit, doet de herbouw in een transactie, controleert met `PRAGMA foreign_key_check` en zet ze weer aan. Verwijzingen die al dood waren, worden eenmalig leeggemaakt. |
+| 3 | `app_settings.default_warmup_sets`. |
+| 4 | `workout_exercises.is_pr_attempt`, `pr_target_weight_kg`, `pr_result` en `app_settings.pr_default_warmup_sets` / `pr_default_extra_attempts`. |
+
+`test/db/migration_test.dart` bouwt een echte v1-database uit
+`test/db/fixtures/schema_v1.sql`, vult ze met gebruikersdata en controleert dat
+openen met de huidige code migreert zonder iets te verliezen.
 
 ## Tabellen
 
@@ -43,6 +52,9 @@ herschrijven mag niet.
 | `rest_sound_enabled` | BOOL | true |
 | `set_check_sound_enabled` | BOOL | true |
 | `pr_alert_enabled` | BOOL | true |
+| `default_warmup_sets` | INT | 0 (0-5, warming-ups bovenaan een nieuw toegevoegde oefening) |
+| `pr_default_warmup_sets` | INT | 4 (2-8, lengte van de PR-ladder) |
+| `pr_default_extra_attempts` | INT | 1 (0-3, aanbod na een geslaagde poging) |
 | `theme_mode` | TEXT | `dark` |
 | `locale` | TEXT | `nl` |
 | `onboarding_done` | BOOL | false |
@@ -66,7 +78,7 @@ precies één keer geïmporteerd wordt.
 | `equipment` | TEXT? | Nederlands |
 | `category` | TEXT | `barbell` \| `dumbbell` \| `machine` \| `cable` \| `bodyweight` \| `assisted_bodyweight` \| `duration` \| `cardio` |
 | `instructions` | TEXT? | |
-| `image_asset` | TEXT? | ongebruikt in de MVP; afbeeldingen zitten niet in de bundel |
+| `image_asset` | TEXT? | ongebruikt; de illustraties worden opgezocht op `id` via `assets/exercises/manifest.json` |
 | `is_custom` | BOOL | door de gebruiker gemaakt |
 | `is_archived` | BOOL | verborgen, maar blijft bestaan voor de geschiedenis |
 | `created_at` | INT | |
@@ -114,6 +126,19 @@ verdwijnt.
 `id`, `workout_id` → `workouts.id` **CASCADE**, `exercise_id` → `exercises.id`,
 `sort_order`, `rest_seconds`, `superset_group?`, `notes?`.
 
+Daarnaast voor PR-pogingen (schemaversie 4):
+
+| Kolom | Type | Opmerking |
+|---|---|---|
+| `is_pr_attempt` | BOOL | de oefening is een één-rep-max-poging met een eigen opwarmladder |
+| `pr_target_weight_kg` | REAL? | het doelgewicht van die poging |
+| `pr_result` | TEXT? | `success` \| `failed` \| `abandoned`, of leeg zolang ze loopt |
+
+De ladder zelf staat niet apart opgeslagen: de opwarmrungen zijn gewone
+`workout_sets` van het type `warmup` en de poging is de enige werkset. Daardoor
+tellen opwarmers automatisch niet mee voor volume of records, en zijn de
+rusttijden af te leiden uit de reps.
+
 ### `workout_sets`
 
 | Kolom | Type | Opmerking |
@@ -134,11 +159,13 @@ verdwijnt.
 
 `id`, `exercise_id` → `exercises.id` **CASCADE**, `record_type`
 (`max_weight` \| `est_1rm` \| `max_set_volume` \| `max_reps`), `value`,
-`workout_set_id?`, `achieved_at`.
+`workout_set_id?` → `workout_sets.id` **ON DELETE SET NULL**, `achieved_at`.
 
 Er staat hoogstens één rij per (oefening, type): een nieuw record vervangt het
-oude. `RecordsDao.rebuildAllRecords()` speelt de hele geschiedenis opnieuw af
-wanneer een sessie bewerkt of verwijderd wordt.
+oude. Bij het bewerken van een sessie speelt `RecordsDao.rebuildAllRecords()`
+de hele geschiedenis opnieuw af; bij het verwijderen van een workout doet
+`rebuildRecordsFor()` dat alleen voor de oefeningen die erin zaten, binnen
+dezelfde transactie als de verwijdering.
 
 ### `body_measurements`
 

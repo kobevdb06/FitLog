@@ -670,6 +670,28 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _prDefaultWarmupSetsMeta =
+      const VerificationMeta('prDefaultWarmupSets');
+  @override
+  late final GeneratedColumn<int> prDefaultWarmupSets = GeneratedColumn<int>(
+    'pr_default_warmup_sets',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(4),
+  );
+  static const VerificationMeta _prDefaultExtraAttemptsMeta =
+      const VerificationMeta('prDefaultExtraAttempts');
+  @override
+  late final GeneratedColumn<int> prDefaultExtraAttempts = GeneratedColumn<int>(
+    'pr_default_extra_attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _autoLockSecondsMeta = const VerificationMeta(
     'autoLockSeconds',
   );
@@ -710,6 +732,8 @@ class $AppSettingsTableTable extends AppSettingsTable
     barWeightKg,
     availablePlatesKg,
     defaultWarmupSets,
+    prDefaultWarmupSets,
+    prDefaultExtraAttempts,
     autoLockSeconds,
     updatedAt,
   ];
@@ -844,6 +868,24 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('pr_default_warmup_sets')) {
+      context.handle(
+        _prDefaultWarmupSetsMeta,
+        prDefaultWarmupSets.isAcceptableOrUnknown(
+          data['pr_default_warmup_sets']!,
+          _prDefaultWarmupSetsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pr_default_extra_attempts')) {
+      context.handle(
+        _prDefaultExtraAttemptsMeta,
+        prDefaultExtraAttempts.isAcceptableOrUnknown(
+          data['pr_default_extra_attempts']!,
+          _prDefaultExtraAttemptsMeta,
+        ),
+      );
+    }
     if (data.containsKey('auto_lock_seconds')) {
       context.handle(
         _autoLockSecondsMeta,
@@ -930,6 +972,14 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}default_warmup_sets'],
       )!,
+      prDefaultWarmupSets: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pr_default_warmup_sets'],
+      )!,
+      prDefaultExtraAttempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pr_default_extra_attempts'],
+      )!,
       autoLockSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}auto_lock_seconds'],
@@ -980,6 +1030,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   final int defaultWarmupSets;
 
+  /// How many warm-up rungs a PR attempt is pre-filled with, 2 to 8.
+  final int prDefaultWarmupSets;
+
+  /// How many further attempts to offer after a successful one, 0 to 3.
+  final int prDefaultExtraAttempts;
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   final int autoLockSeconds;
@@ -1000,6 +1056,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.barWeightKg,
     required this.availablePlatesKg,
     required this.defaultWarmupSets,
+    required this.prDefaultWarmupSets,
+    required this.prDefaultExtraAttempts,
     required this.autoLockSeconds,
     required this.updatedAt,
   });
@@ -1021,6 +1079,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['bar_weight_kg'] = Variable<double>(barWeightKg);
     map['available_plates_kg'] = Variable<String>(availablePlatesKg);
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
+    map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
+    map['pr_default_extra_attempts'] = Variable<int>(prDefaultExtraAttempts);
     map['auto_lock_seconds'] = Variable<int>(autoLockSeconds);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
@@ -1043,6 +1103,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       barWeightKg: Value(barWeightKg),
       availablePlatesKg: Value(availablePlatesKg),
       defaultWarmupSets: Value(defaultWarmupSets),
+      prDefaultWarmupSets: Value(prDefaultWarmupSets),
+      prDefaultExtraAttempts: Value(prDefaultExtraAttempts),
       autoLockSeconds: Value(autoLockSeconds),
       updatedAt: Value(updatedAt),
     );
@@ -1071,6 +1133,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       barWeightKg: serializer.fromJson<double>(json['barWeightKg']),
       availablePlatesKg: serializer.fromJson<String>(json['availablePlatesKg']),
       defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
+      prDefaultWarmupSets: serializer.fromJson<int>(
+        json['prDefaultWarmupSets'],
+      ),
+      prDefaultExtraAttempts: serializer.fromJson<int>(
+        json['prDefaultExtraAttempts'],
+      ),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -1094,6 +1162,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'barWeightKg': serializer.toJson<double>(barWeightKg),
       'availablePlatesKg': serializer.toJson<String>(availablePlatesKg),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
+      'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
+      'prDefaultExtraAttempts': serializer.toJson<int>(prDefaultExtraAttempts),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -1115,6 +1185,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     double? barWeightKg,
     String? availablePlatesKg,
     int? defaultWarmupSets,
+    int? prDefaultWarmupSets,
+    int? prDefaultExtraAttempts,
     int? autoLockSeconds,
     int? updatedAt,
   }) => AppSettingsRow(
@@ -1133,6 +1205,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     barWeightKg: barWeightKg ?? this.barWeightKg,
     availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
+    prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
+    prDefaultExtraAttempts:
+        prDefaultExtraAttempts ?? this.prDefaultExtraAttempts,
     autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1177,6 +1252,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       defaultWarmupSets: data.defaultWarmupSets.present
           ? data.defaultWarmupSets.value
           : this.defaultWarmupSets,
+      prDefaultWarmupSets: data.prDefaultWarmupSets.present
+          ? data.prDefaultWarmupSets.value
+          : this.prDefaultWarmupSets,
+      prDefaultExtraAttempts: data.prDefaultExtraAttempts.present
+          ? data.prDefaultExtraAttempts.value
+          : this.prDefaultExtraAttempts,
       autoLockSeconds: data.autoLockSeconds.present
           ? data.autoLockSeconds.value
           : this.autoLockSeconds,
@@ -1202,6 +1283,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
+          ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
+          ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1225,6 +1308,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     barWeightKg,
     availablePlatesKg,
     defaultWarmupSets,
+    prDefaultWarmupSets,
+    prDefaultExtraAttempts,
     autoLockSeconds,
     updatedAt,
   );
@@ -1247,6 +1332,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.barWeightKg == this.barWeightKg &&
           other.availablePlatesKg == this.availablePlatesKg &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
+          other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
+          other.prDefaultExtraAttempts == this.prDefaultExtraAttempts &&
           other.autoLockSeconds == this.autoLockSeconds &&
           other.updatedAt == this.updatedAt);
 }
@@ -1267,6 +1354,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<double> barWeightKg;
   final Value<String> availablePlatesKg;
   final Value<int> defaultWarmupSets;
+  final Value<int> prDefaultWarmupSets;
+  final Value<int> prDefaultExtraAttempts;
   final Value<int> autoLockSeconds;
   final Value<int> updatedAt;
   final Value<int> rowid;
@@ -1286,6 +1375,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
+    this.prDefaultWarmupSets = const Value.absent(),
+    this.prDefaultExtraAttempts = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1306,6 +1397,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
+    this.prDefaultWarmupSets = const Value.absent(),
+    this.prDefaultExtraAttempts = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     required int updatedAt,
     this.rowid = const Value.absent(),
@@ -1327,6 +1420,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<double>? barWeightKg,
     Expression<String>? availablePlatesKg,
     Expression<int>? defaultWarmupSets,
+    Expression<int>? prDefaultWarmupSets,
+    Expression<int>? prDefaultExtraAttempts,
     Expression<int>? autoLockSeconds,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
@@ -1349,6 +1444,10 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (barWeightKg != null) 'bar_weight_kg': barWeightKg,
       if (availablePlatesKg != null) 'available_plates_kg': availablePlatesKg,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
+      if (prDefaultWarmupSets != null)
+        'pr_default_warmup_sets': prDefaultWarmupSets,
+      if (prDefaultExtraAttempts != null)
+        'pr_default_extra_attempts': prDefaultExtraAttempts,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1371,6 +1470,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<double>? barWeightKg,
     Value<String>? availablePlatesKg,
     Value<int>? defaultWarmupSets,
+    Value<int>? prDefaultWarmupSets,
+    Value<int>? prDefaultExtraAttempts,
     Value<int>? autoLockSeconds,
     Value<int>? updatedAt,
     Value<int>? rowid,
@@ -1391,6 +1492,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       barWeightKg: barWeightKg ?? this.barWeightKg,
       availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
+      prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
+      prDefaultExtraAttempts:
+          prDefaultExtraAttempts ?? this.prDefaultExtraAttempts,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1447,6 +1551,14 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (defaultWarmupSets.present) {
       map['default_warmup_sets'] = Variable<int>(defaultWarmupSets.value);
     }
+    if (prDefaultWarmupSets.present) {
+      map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets.value);
+    }
+    if (prDefaultExtraAttempts.present) {
+      map['pr_default_extra_attempts'] = Variable<int>(
+        prDefaultExtraAttempts.value,
+      );
+    }
     if (autoLockSeconds.present) {
       map['auto_lock_seconds'] = Variable<int>(autoLockSeconds.value);
     }
@@ -1477,6 +1589,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
+          ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
+          ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4584,6 +4698,43 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isPrAttemptMeta = const VerificationMeta(
+    'isPrAttempt',
+  );
+  @override
+  late final GeneratedColumn<bool> isPrAttempt = GeneratedColumn<bool>(
+    'is_pr_attempt',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pr_attempt" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _prTargetWeightKgMeta = const VerificationMeta(
+    'prTargetWeightKg',
+  );
+  @override
+  late final GeneratedColumn<double> prTargetWeightKg = GeneratedColumn<double>(
+    'pr_target_weight_kg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _prResultMeta = const VerificationMeta(
+    'prResult',
+  );
+  @override
+  late final GeneratedColumn<String> prResult = GeneratedColumn<String>(
+    'pr_result',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4593,6 +4744,9 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
     restSeconds,
     supersetGroup,
     notes,
+    isPrAttempt,
+    prTargetWeightKg,
+    prResult,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4659,6 +4813,30 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('is_pr_attempt')) {
+      context.handle(
+        _isPrAttemptMeta,
+        isPrAttempt.isAcceptableOrUnknown(
+          data['is_pr_attempt']!,
+          _isPrAttemptMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pr_target_weight_kg')) {
+      context.handle(
+        _prTargetWeightKgMeta,
+        prTargetWeightKg.isAcceptableOrUnknown(
+          data['pr_target_weight_kg']!,
+          _prTargetWeightKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pr_result')) {
+      context.handle(
+        _prResultMeta,
+        prResult.isAcceptableOrUnknown(data['pr_result']!, _prResultMeta),
+      );
+    }
     return context;
   }
 
@@ -4696,6 +4874,18 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      isPrAttempt: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pr_attempt'],
+      )!,
+      prTargetWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pr_target_weight_kg'],
+      ),
+      prResult: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pr_result'],
+      ),
     );
   }
 
@@ -4714,6 +4904,15 @@ class WorkoutExerciseRow extends DataClass
   final int restSeconds;
   final int? supersetGroup;
   final String? notes;
+
+  /// Marks this exercise as a one-rep-max attempt with its own warm-up ladder.
+  final bool isPrAttempt;
+
+  /// The weight the attempt was aiming for.
+  final double? prTargetWeightKg;
+
+  /// `success` | `failed` | `abandoned`, or null while it is still running.
+  final String? prResult;
   const WorkoutExerciseRow({
     required this.id,
     required this.workoutId,
@@ -4722,6 +4921,9 @@ class WorkoutExerciseRow extends DataClass
     required this.restSeconds,
     this.supersetGroup,
     this.notes,
+    required this.isPrAttempt,
+    this.prTargetWeightKg,
+    this.prResult,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4736,6 +4938,13 @@ class WorkoutExerciseRow extends DataClass
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    map['is_pr_attempt'] = Variable<bool>(isPrAttempt);
+    if (!nullToAbsent || prTargetWeightKg != null) {
+      map['pr_target_weight_kg'] = Variable<double>(prTargetWeightKg);
+    }
+    if (!nullToAbsent || prResult != null) {
+      map['pr_result'] = Variable<String>(prResult);
     }
     return map;
   }
@@ -4753,6 +4962,13 @@ class WorkoutExerciseRow extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      isPrAttempt: Value(isPrAttempt),
+      prTargetWeightKg: prTargetWeightKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prTargetWeightKg),
+      prResult: prResult == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prResult),
     );
   }
 
@@ -4769,6 +4985,9 @@ class WorkoutExerciseRow extends DataClass
       restSeconds: serializer.fromJson<int>(json['restSeconds']),
       supersetGroup: serializer.fromJson<int?>(json['supersetGroup']),
       notes: serializer.fromJson<String?>(json['notes']),
+      isPrAttempt: serializer.fromJson<bool>(json['isPrAttempt']),
+      prTargetWeightKg: serializer.fromJson<double?>(json['prTargetWeightKg']),
+      prResult: serializer.fromJson<String?>(json['prResult']),
     );
   }
   @override
@@ -4782,6 +5001,9 @@ class WorkoutExerciseRow extends DataClass
       'restSeconds': serializer.toJson<int>(restSeconds),
       'supersetGroup': serializer.toJson<int?>(supersetGroup),
       'notes': serializer.toJson<String?>(notes),
+      'isPrAttempt': serializer.toJson<bool>(isPrAttempt),
+      'prTargetWeightKg': serializer.toJson<double?>(prTargetWeightKg),
+      'prResult': serializer.toJson<String?>(prResult),
     };
   }
 
@@ -4793,6 +5015,9 @@ class WorkoutExerciseRow extends DataClass
     int? restSeconds,
     Value<int?> supersetGroup = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    bool? isPrAttempt,
+    Value<double?> prTargetWeightKg = const Value.absent(),
+    Value<String?> prResult = const Value.absent(),
   }) => WorkoutExerciseRow(
     id: id ?? this.id,
     workoutId: workoutId ?? this.workoutId,
@@ -4803,6 +5028,11 @@ class WorkoutExerciseRow extends DataClass
         ? supersetGroup.value
         : this.supersetGroup,
     notes: notes.present ? notes.value : this.notes,
+    isPrAttempt: isPrAttempt ?? this.isPrAttempt,
+    prTargetWeightKg: prTargetWeightKg.present
+        ? prTargetWeightKg.value
+        : this.prTargetWeightKg,
+    prResult: prResult.present ? prResult.value : this.prResult,
   );
   WorkoutExerciseRow copyWithCompanion(WorkoutExercisesTableCompanion data) {
     return WorkoutExerciseRow(
@@ -4819,6 +5049,13 @@ class WorkoutExerciseRow extends DataClass
           ? data.supersetGroup.value
           : this.supersetGroup,
       notes: data.notes.present ? data.notes.value : this.notes,
+      isPrAttempt: data.isPrAttempt.present
+          ? data.isPrAttempt.value
+          : this.isPrAttempt,
+      prTargetWeightKg: data.prTargetWeightKg.present
+          ? data.prTargetWeightKg.value
+          : this.prTargetWeightKg,
+      prResult: data.prResult.present ? data.prResult.value : this.prResult,
     );
   }
 
@@ -4831,7 +5068,10 @@ class WorkoutExerciseRow extends DataClass
           ..write('sortOrder: $sortOrder, ')
           ..write('restSeconds: $restSeconds, ')
           ..write('supersetGroup: $supersetGroup, ')
-          ..write('notes: $notes')
+          ..write('notes: $notes, ')
+          ..write('isPrAttempt: $isPrAttempt, ')
+          ..write('prTargetWeightKg: $prTargetWeightKg, ')
+          ..write('prResult: $prResult')
           ..write(')'))
         .toString();
   }
@@ -4845,6 +5085,9 @@ class WorkoutExerciseRow extends DataClass
     restSeconds,
     supersetGroup,
     notes,
+    isPrAttempt,
+    prTargetWeightKg,
+    prResult,
   );
   @override
   bool operator ==(Object other) =>
@@ -4856,7 +5099,10 @@ class WorkoutExerciseRow extends DataClass
           other.sortOrder == this.sortOrder &&
           other.restSeconds == this.restSeconds &&
           other.supersetGroup == this.supersetGroup &&
-          other.notes == this.notes);
+          other.notes == this.notes &&
+          other.isPrAttempt == this.isPrAttempt &&
+          other.prTargetWeightKg == this.prTargetWeightKg &&
+          other.prResult == this.prResult);
 }
 
 class WorkoutExercisesTableCompanion
@@ -4868,6 +5114,9 @@ class WorkoutExercisesTableCompanion
   final Value<int> restSeconds;
   final Value<int?> supersetGroup;
   final Value<String?> notes;
+  final Value<bool> isPrAttempt;
+  final Value<double?> prTargetWeightKg;
+  final Value<String?> prResult;
   final Value<int> rowid;
   const WorkoutExercisesTableCompanion({
     this.id = const Value.absent(),
@@ -4877,6 +5126,9 @@ class WorkoutExercisesTableCompanion
     this.restSeconds = const Value.absent(),
     this.supersetGroup = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isPrAttempt = const Value.absent(),
+    this.prTargetWeightKg = const Value.absent(),
+    this.prResult = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkoutExercisesTableCompanion.insert({
@@ -4887,6 +5139,9 @@ class WorkoutExercisesTableCompanion
     this.restSeconds = const Value.absent(),
     this.supersetGroup = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isPrAttempt = const Value.absent(),
+    this.prTargetWeightKg = const Value.absent(),
+    this.prResult = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        workoutId = Value(workoutId),
@@ -4900,6 +5155,9 @@ class WorkoutExercisesTableCompanion
     Expression<int>? restSeconds,
     Expression<int>? supersetGroup,
     Expression<String>? notes,
+    Expression<bool>? isPrAttempt,
+    Expression<double>? prTargetWeightKg,
+    Expression<String>? prResult,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4910,6 +5168,9 @@ class WorkoutExercisesTableCompanion
       if (restSeconds != null) 'rest_seconds': restSeconds,
       if (supersetGroup != null) 'superset_group': supersetGroup,
       if (notes != null) 'notes': notes,
+      if (isPrAttempt != null) 'is_pr_attempt': isPrAttempt,
+      if (prTargetWeightKg != null) 'pr_target_weight_kg': prTargetWeightKg,
+      if (prResult != null) 'pr_result': prResult,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4922,6 +5183,9 @@ class WorkoutExercisesTableCompanion
     Value<int>? restSeconds,
     Value<int?>? supersetGroup,
     Value<String?>? notes,
+    Value<bool>? isPrAttempt,
+    Value<double?>? prTargetWeightKg,
+    Value<String?>? prResult,
     Value<int>? rowid,
   }) {
     return WorkoutExercisesTableCompanion(
@@ -4932,6 +5196,9 @@ class WorkoutExercisesTableCompanion
       restSeconds: restSeconds ?? this.restSeconds,
       supersetGroup: supersetGroup ?? this.supersetGroup,
       notes: notes ?? this.notes,
+      isPrAttempt: isPrAttempt ?? this.isPrAttempt,
+      prTargetWeightKg: prTargetWeightKg ?? this.prTargetWeightKg,
+      prResult: prResult ?? this.prResult,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4960,6 +5227,15 @@ class WorkoutExercisesTableCompanion
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (isPrAttempt.present) {
+      map['is_pr_attempt'] = Variable<bool>(isPrAttempt.value);
+    }
+    if (prTargetWeightKg.present) {
+      map['pr_target_weight_kg'] = Variable<double>(prTargetWeightKg.value);
+    }
+    if (prResult.present) {
+      map['pr_result'] = Variable<String>(prResult.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4976,6 +5252,9 @@ class WorkoutExercisesTableCompanion
           ..write('restSeconds: $restSeconds, ')
           ..write('supersetGroup: $supersetGroup, ')
           ..write('notes: $notes, ')
+          ..write('isPrAttempt: $isPrAttempt, ')
+          ..write('prTargetWeightKg: $prTargetWeightKg, ')
+          ..write('prResult: $prResult, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7236,6 +7515,8 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
       Value<int> defaultWarmupSets,
+      Value<int> prDefaultWarmupSets,
+      Value<int> prDefaultExtraAttempts,
       Value<int> autoLockSeconds,
       required int updatedAt,
       Value<int> rowid,
@@ -7257,6 +7538,8 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
       Value<int> defaultWarmupSets,
+      Value<int> prDefaultWarmupSets,
+      Value<int> prDefaultExtraAttempts,
       Value<int> autoLockSeconds,
       Value<int> updatedAt,
       Value<int> rowid,
@@ -7343,6 +7626,16 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prDefaultWarmupSets => $composableBuilder(
+    column: $table.prDefaultWarmupSets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prDefaultExtraAttempts => $composableBuilder(
+    column: $table.prDefaultExtraAttempts,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7441,6 +7734,16 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get prDefaultWarmupSets => $composableBuilder(
+    column: $table.prDefaultWarmupSets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prDefaultExtraAttempts => $composableBuilder(
+    column: $table.prDefaultExtraAttempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -7530,6 +7833,16 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get prDefaultWarmupSets => $composableBuilder(
+    column: $table.prDefaultWarmupSets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get prDefaultExtraAttempts => $composableBuilder(
+    column: $table.prDefaultExtraAttempts,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => column,
@@ -7591,6 +7904,8 @@ class $$AppSettingsTableTableTableManager
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
+                Value<int> prDefaultWarmupSets = const Value.absent(),
+                Value<int> prDefaultExtraAttempts = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7610,6 +7925,8 @@ class $$AppSettingsTableTableTableManager
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
                 defaultWarmupSets: defaultWarmupSets,
+                prDefaultWarmupSets: prDefaultWarmupSets,
+                prDefaultExtraAttempts: prDefaultExtraAttempts,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -7631,6 +7948,8 @@ class $$AppSettingsTableTableTableManager
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
+                Value<int> prDefaultWarmupSets = const Value.absent(),
+                Value<int> prDefaultExtraAttempts = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -7650,6 +7969,8 @@ class $$AppSettingsTableTableTableManager
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
                 defaultWarmupSets: defaultWarmupSets,
+                prDefaultWarmupSets: prDefaultWarmupSets,
+                prDefaultExtraAttempts: prDefaultExtraAttempts,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -10660,6 +10981,9 @@ typedef $$WorkoutExercisesTableTableCreateCompanionBuilder =
       Value<int> restSeconds,
       Value<int?> supersetGroup,
       Value<String?> notes,
+      Value<bool> isPrAttempt,
+      Value<double?> prTargetWeightKg,
+      Value<String?> prResult,
       Value<int> rowid,
     });
 typedef $$WorkoutExercisesTableTableUpdateCompanionBuilder =
@@ -10671,6 +10995,9 @@ typedef $$WorkoutExercisesTableTableUpdateCompanionBuilder =
       Value<int> restSeconds,
       Value<int?> supersetGroup,
       Value<String?> notes,
+      Value<bool> isPrAttempt,
+      Value<double?> prTargetWeightKg,
+      Value<String?> prResult,
       Value<int> rowid,
     });
 
@@ -10775,6 +11102,21 @@ class $$WorkoutExercisesTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPrAttempt => $composableBuilder(
+    column: $table.isPrAttempt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get prTargetWeightKg => $composableBuilder(
+    column: $table.prTargetWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prResult => $composableBuilder(
+    column: $table.prResult,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10884,6 +11226,21 @@ class $$WorkoutExercisesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isPrAttempt => $composableBuilder(
+    column: $table.isPrAttempt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get prTargetWeightKg => $composableBuilder(
+    column: $table.prTargetWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prResult => $composableBuilder(
+    column: $table.prResult,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkoutsTableTableOrderingComposer get workoutId {
     final $$WorkoutsTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10958,6 +11315,19 @@ class $$WorkoutExercisesTableTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPrAttempt => $composableBuilder(
+    column: $table.isPrAttempt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get prTargetWeightKg => $composableBuilder(
+    column: $table.prTargetWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get prResult =>
+      $composableBuilder(column: $table.prResult, builder: (column) => column);
 
   $$WorkoutsTableTableAnnotationComposer get workoutId {
     final $$WorkoutsTableTableAnnotationComposer composer = $composerBuilder(
@@ -11081,6 +11451,9 @@ class $$WorkoutExercisesTableTableTableManager
                 Value<int> restSeconds = const Value.absent(),
                 Value<int?> supersetGroup = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isPrAttempt = const Value.absent(),
+                Value<double?> prTargetWeightKg = const Value.absent(),
+                Value<String?> prResult = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutExercisesTableCompanion(
                 id: id,
@@ -11090,6 +11463,9 @@ class $$WorkoutExercisesTableTableTableManager
                 restSeconds: restSeconds,
                 supersetGroup: supersetGroup,
                 notes: notes,
+                isPrAttempt: isPrAttempt,
+                prTargetWeightKg: prTargetWeightKg,
+                prResult: prResult,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11101,6 +11477,9 @@ class $$WorkoutExercisesTableTableTableManager
                 Value<int> restSeconds = const Value.absent(),
                 Value<int?> supersetGroup = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isPrAttempt = const Value.absent(),
+                Value<double?> prTargetWeightKg = const Value.absent(),
+                Value<String?> prResult = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutExercisesTableCompanion.insert(
                 id: id,
@@ -11110,6 +11489,9 @@ class $$WorkoutExercisesTableTableTableManager
                 restSeconds: restSeconds,
                 supersetGroup: supersetGroup,
                 notes: notes,
+                isPrAttempt: isPrAttempt,
+                prTargetWeightKg: prTargetWeightKg,
+                prResult: prResult,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

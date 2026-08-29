@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 3);
+    expect(raw.select('PRAGMA user_version').first.values.first, 4);
     raw.close();
   });
 
@@ -142,8 +142,19 @@ void main() {
       reason: 'de verwijzing naar een verdwenen set moet leeggemaakt zijn',
     );
 
-    // v3 adds the warm-up preference; existing databases get the default.
-    expect((await db.settingsDao.getSettings()).defaultWarmupSets, 0);
+    // v3 and v4 add preferences; existing databases get the defaults.
+    final settings = await db.settingsDao.getSettings();
+    expect(settings.defaultWarmupSets, 0);
+    expect(settings.prDefaultWarmupSets, 4);
+    expect(settings.prDefaultExtraAttempts, 1);
+
+    // v4 also adds the PR columns; the existing exercise is an ordinary one.
+    final migrated = await db.workoutsDao.getWorkoutDetail('w-1');
+    expect(migrated!.exercises.single.workoutExercise.isPrAttempt, isFalse);
+    expect(
+      migrated.exercises.single.workoutExercise.prTargetWeightKg,
+      isNull,
+    );
 
     await db.close();
   });
@@ -183,7 +194,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 3);
+    expect(db.schemaVersion, 4);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

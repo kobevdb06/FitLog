@@ -309,6 +309,139 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
         );
   }
 
+  // --- PR attempts ----------------------------------------------------------
+
+  /// Turns a workout exercise into a one-rep-max attempt.
+  ///
+  /// The existing sets are replaced by the ladder: every rung is a warm-up
+  /// except the attempt itself, so only the attempt can set a record or count
+  /// towards the volume.
+  Future<void> applyPrRamp({
+    required String workoutExerciseId,
+    required double targetKg,
+    required List<({double weightKg, int reps, int restSeconds})> ladder,
+  }) async {
+    await transaction(() async {
+      await (delete(workoutSetsTable)
+            ..where((t) => t.workoutExerciseId.equals(workoutExerciseId)))
+          .go();
+
+      await batch((b) {
+        for (var i = 0; i < ladder.length; i++) {
+          final isAttempt = i == ladder.length - 1;
+          b.insert(
+            workoutSetsTable,
+            WorkoutSetsTableCompanion.insert(
+              id: _uuid.v4(),
+              workoutExerciseId: workoutExerciseId,
+              sortOrder: i,
+              setType: Value(
+                isAttempt ? SetType.normal.wire : SetType.warmup.wire,
+              ),
+              weightKg: Value(ladder[i].weightKg),
+              reps: Value(ladder[i].reps),
+            ),
+          );
+        }
+      });
+
+      await (update(workoutExercisesTable)
+            ..where((t) => t.id.equals(workoutExerciseId)))
+          .write(
+            WorkoutExercisesTableCompanion(
+              isPrAttempt: const Value(true),
+              prTargetWeightKg: Value(targetKg),
+              prResult: const Value(null),
+              // The ladder carries its own rests; this is the fallback the
+              // rest bar uses for the attempt.
+              restSeconds: Value(ladder.last.restSeconds),
+            ),
+          );
+    });
+  }
+
+  /// Records how an attempt ended.
+  Future<void> setPrResult(
+    String workoutExerciseId,
+    PrAttemptResult? result,
+  ) async {
+    await (update(workoutExercisesTable)
+          ..where((t) => t.id.equals(workoutExerciseId)))
+        .write(
+          WorkoutExercisesTableCompanion(prResult: Value(result?.wire)),
+        );
+  }
+
+  /// Drops the attempt back to an ordinary exercise, keeping its sets.
+  Future<void> clearPrAttempt(String workoutExerciseId) async {
+    await (update(workoutExercisesTable)
+          ..where((t) => t.id.equals(workoutExerciseId)))
+        .write(
+          const WorkoutExercisesTableCompanion(
+            isPrAttempt: Value(false),
+            prTargetWeightKg: Value(null),
+            prResult: Value(null),
+          ),
+        );
+  }
+
+  /// The heaviest single that has ever been completed for this exercise,
+  /// together with when it happened. Used to prefill an attempt.
+  Future<({double weightKg, int reps, DateTime at})?> bestOneRmSet(
+    String exerciseId,
+  ) async {
+    final rows = await customSelect(
+      'SELECT ws.weight_kg AS weight_kg, ws.reps AS reps, '
+      'COALESCE(ws.completed_at, w.started_at) AS at, '
+      'ws.weight_kg * (1 + ws.reps / 30.0) AS estimate '
+      'FROM workout_sets ws '
+      'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+      'JOIN workouts w ON w.id = we.workout_id '
+      'WHERE we.exercise_id = ? AND ws.is_completed = 1 '
+      "AND ws.set_type != 'warmup' "
+      'AND ws.weight_kg IS NOT NULL AND ws.reps IS NOT NULL '
+      'AND ws.weight_kg > 0 AND ws.reps > 0 AND w.ended_at IS NOT NULL '
+      'ORDER BY estimate DESC LIMIT 1',
+      variables: [Variable.withString(exerciseId)],
+      readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},
+    ).get();
+    if (rows.isEmpty) return null;
+
+    final row = rows.first;
+    return (
+      weightKg: row.read<double>('weight_kg'),
+      reps: row.read<int>('reps'),
+      at: DateTime.fromMillisecondsSinceEpoch(row.read<int>('at')),
+    );
+  }
+
+  /// Total working volume for one exercise inside [window], used for the
+  /// neutral fatigue remark before an attempt.
+  Future<double> recentVolumeFor(
+    String exerciseId, {
+    required Duration window,
+    String? excludingWorkoutId,
+  }) async {
+    final since = DateTime.now().subtract(window).millisecondsSinceEpoch;
+    final rows = await customSelect(
+      'SELECT COALESCE(SUM(ws.weight_kg * ws.reps), 0) AS volume '
+      'FROM workout_sets ws '
+      'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+      'JOIN workouts w ON w.id = we.workout_id '
+      'WHERE we.exercise_id = ? AND ws.is_completed = 1 '
+      "AND ws.set_type != 'warmup' AND w.started_at >= ? "
+      'AND (? IS NULL OR w.id != ?)',
+      variables: [
+        Variable.withString(exerciseId),
+        Variable.withInt(since),
+        Variable<String>(excludingWorkoutId),
+        Variable<String>(excludingWorkoutId),
+      ],
+      readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},
+    ).get();
+    return rows.first.read<double>('volume');
+  }
+
   Future<void> renameWorkout(String workoutId, String name) async {
     await (update(workoutsTable)..where((t) => t.id.equals(workoutId)))
         .write(WorkoutsTableCompanion(name: Value(name)));

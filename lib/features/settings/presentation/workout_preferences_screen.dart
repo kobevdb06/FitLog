@@ -105,6 +105,52 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
             onChanged: (value) =>
                 update(AppSettingsTableCompanion(prAlertEnabled: Value(value))),
           ),
+          const SectionHeader('PR-pogingen'),
+          ListTile(
+            title: const Text('Opwarmsets in de ladder'),
+            subtitle: Text(
+              '${settings.prDefaultWarmupSets} sets tussen 40% en 90% van je '
+              'doel',
+            ),
+            trailing: SegmentedButton<int>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: 2, label: Text('2')),
+                ButtonSegment(value: 4, label: Text('4')),
+                ButtonSegment(value: 6, label: Text('6')),
+                ButtonSegment(value: 8, label: Text('8')),
+              ],
+              selected: {
+                const [2, 4, 6, 8].contains(settings.prDefaultWarmupSets)
+                    ? settings.prDefaultWarmupSets
+                    : 4,
+              },
+              onSelectionChanged: (s) => update(
+                AppSettingsTableCompanion(
+                  prDefaultWarmupSets: Value(s.first),
+                ),
+              ),
+            ),
+          ),
+          ListTile(
+            title: const Text('Extra pogingen bij succes'),
+            subtitle: const Text('Aanbod na een geslaagde poging'),
+            trailing: SegmentedButton<int>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: 0, label: Text('0')),
+                ButtonSegment(value: 1, label: Text('1')),
+                ButtonSegment(value: 2, label: Text('2')),
+                ButtonSegment(value: 3, label: Text('3')),
+              ],
+              selected: {settings.prDefaultExtraAttempts.clamp(0, 3)},
+              onSelectionChanged: (s) => update(
+                AppSettingsTableCompanion(
+                  prDefaultExtraAttempts: Value(s.first),
+                ),
+              ),
+            ),
+          ),
           const SectionHeader('Eenheden'),
           ListTile(
             title: const Text('Gewicht'),

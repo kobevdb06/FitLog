@@ -7,6 +7,7 @@ import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/util/notification_service.dart';
+import '../domain/pr_ramp.dart';
 import '../domain/rest_timer.dart';
 
 part 'workout_providers.g.dart';
@@ -103,6 +104,7 @@ class SetCompletionResult {
     required this.records,
     required this.restSeconds,
     required this.exerciseName,
+    this.isPrAttemptSet = false,
   });
 
   final List<PrCandidate> records;
@@ -110,6 +112,10 @@ class SetCompletionResult {
   /// 0 when no rest should start (a warm-up set, or mid-superset).
   final int restSeconds;
   final String exerciseName;
+
+  /// True when the set just ticked was the attempt of a PR ladder, so the
+  /// screen knows to ask how it went.
+  final bool isPrAttemptSet;
 
   bool get hasRecord => records.isNotEmpty;
 }
@@ -283,8 +289,10 @@ class WorkoutController {
 
     return SetCompletionResult(
       records: records,
-      restSeconds: _restFor(workout, owner, setType),
+      restSeconds: _restFor(workout, owner, row, setType),
       exerciseName: _nextExerciseName(workout, owner),
+      isPrAttemptSet:
+          owner.workoutExercise.isPrAttempt && setType != SetType.warmup,
     );
   }
 
@@ -304,8 +312,18 @@ class WorkoutController {
   int _restFor(
     WorkoutDetail workout,
     WorkoutExerciseDetail exercise,
+    WorkoutSetRow row,
     SetType setType,
   ) {
+    // A PR ladder rests between its warm-ups too, and longer as the bar gets
+    // heavier. Recomputing from the reps reproduces exactly what the ladder
+    // proposed, without storing a rest per set.
+    if (exercise.workoutExercise.isPrAttempt) {
+      return setType == SetType.warmup
+          ? restForReps(row.reps ?? 1)
+          : kAttemptRestSeconds;
+    }
+
     if (setType == SetType.warmup) return 0;
 
     final group = exercise.workoutExercise.supersetGroup;

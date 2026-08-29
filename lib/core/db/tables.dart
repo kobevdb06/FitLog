@@ -78,6 +78,16 @@ class AppSettingsTable extends Table {
   IntColumn get defaultWarmupSets =>
       integer().named('default_warmup_sets').withDefault(const Constant(0))();
 
+  /// How many warm-up rungs a PR attempt is pre-filled with, 2 to 8.
+  IntColumn get prDefaultWarmupSets => integer()
+      .named('pr_default_warmup_sets')
+      .withDefault(const Constant(4))();
+
+  /// How many further attempts to offer after a successful one, 0 to 3.
+  IntColumn get prDefaultExtraAttempts => integer()
+      .named('pr_default_extra_attempts')
+      .withDefault(const Constant(1))();
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   IntColumn get autoLockSeconds =>
@@ -247,6 +257,17 @@ class WorkoutExercisesTable extends Table {
   IntColumn get supersetGroup =>
       integer().named('superset_group').nullable()();
   TextColumn get notes => text().nullable()();
+
+  /// Marks this exercise as a one-rep-max attempt with its own warm-up ladder.
+  BoolColumn get isPrAttempt =>
+      boolean().named('is_pr_attempt').withDefault(const Constant(false))();
+
+  /// The weight the attempt was aiming for.
+  RealColumn get prTargetWeightKg =>
+      real().named('pr_target_weight_kg').nullable()();
+
+  /// `success` | `failed` | `abandoned`, or null while it is still running.
+  TextColumn get prResult => text().named('pr_result').nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

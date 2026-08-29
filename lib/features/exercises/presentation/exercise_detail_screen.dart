@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
@@ -9,6 +10,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/exercise_image.dart';
+import '../../../routing/routes.dart';
+import '../../workout/presentation/pr_attempt_screen.dart';
 import 'custom_exercise_screen.dart';
 import 'exercise_providers.dart';
 
@@ -41,6 +44,19 @@ class ExerciseDetailScreen extends ConsumerWidget {
         return DefaultTabController(
           length: 4,
           child: Scaffold(
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: () async {
+                final started = await PrAttemptScreen.open(
+                  context,
+                  exercise: row,
+                );
+                if (started && context.mounted) {
+                  context.push(Routes.workout);
+                }
+              },
+              icon: const Icon(Icons.emoji_events_outlined),
+              label: const Text('PR-poging'),
+            ),
             appBar: AppBar(
               title: Text(row.name),
               actions: [

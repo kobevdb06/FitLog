@@ -181,3 +181,24 @@ enum DistanceUnit {
   static DistanceUnit fromWire(String value) =>
       values.firstWhere((e) => e.wire == value, orElse: () => DistanceUnit.km);
 }
+
+
+/// How a one-rep-max attempt ended.
+enum PrAttemptResult {
+  success('success', 'Gelukt'),
+  failed('failed', 'Niet gelukt'),
+  abandoned('abandoned', 'Afgebroken');
+
+  const PrAttemptResult(this.wire, this.label);
+
+  final String wire;
+  final String label;
+
+  static PrAttemptResult? fromWire(String? value) {
+    if (value == null) return null;
+    for (final r in values) {
+      if (r.wire == value) return r;
+    }
+    return null;
+  }
+}

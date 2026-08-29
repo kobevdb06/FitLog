@@ -7,7 +7,8 @@ loggen, voortgang zien.
 analytics, geen crash reporting, geen advertenties. De Android-release heeft
 bewust geen `INTERNET`-permissie in het manifest, dus de app kán niet eens iets
 versturen. De enige keer dat er netwerk aan te pas komt, is tijdens het bouwen:
-pakketten ophalen en de oefeningencatalogus genereren.
+pakketten ophalen, de oefeningencatalogus genereren en de illustraties ophalen.
+Alle drie zijn build-tijd; in de app zelf zit geen enkele netwerkaanroep.
 
 - **Bundle id:** `be.fitlog.app`
 - **UI-taal:** Nederlands. Code, identifiers, commits en commentaar: Engels.
@@ -42,12 +43,48 @@ Release-APK:
 flutter build apk --release
 ```
 
-De oefeningencatalogus opnieuw genereren (het enige script dat het internet
-raakt, en het draait nooit in de app):
+De oefeningencatalogus opnieuw genereren (samen met de tool hieronder het enige
+dat het internet raakt; geen van beide draait ooit in de app):
 
 ```bash
 dart run tool/build_exercise_seed.dart
 ```
+
+De illustraties opnieuw genereren. Dit haalt per oefening de start- en
+eindpositie op, schaalt ze en schrijft een geanimeerde WebP plus een statische
+thumbnail:
+
+```bash
+dart run tool/build_exercise_images.dart
+```
+
+Daarvoor is **libwebp** nodig (`img2webp` en `cwebp`). De tool zoekt ze op PATH
+en daarna in `.build_cache/tools/`. Installeren:
+
+```bash
+brew install webp
+```
+
+Op Linux is dat `apt install webp`; op Windows pak je de officiële
+`libwebp-*-windows-x64.zip` van de WebM-releases uit in `.build_cache/tools/`.
+Zonder libwebp valt de tool terug op 2-frame GIF's, die fors groter zijn.
+
+De downloads komen in `.build_cache/` terecht, dus een tweede run haalt niets
+opnieuw op. Nuttige vlaggen: `--limit 20` om er een paar te doen,
+`--width`, `--thumb-width`, `--quality` en `--frame-ms`.
+
+## Bundelgrootte
+
+| Onderdeel | Grootte |
+|---|---|
+| `assets/exercises/` (873 animaties + 876 thumbnails) | **15,0 MB** (budget 35 MB) |
+| `assets/data/exercises.json` | 1,0 MB |
+| Release-APK, arm64-v8a | ~31 MB |
+| Release-APK, universeel (alle ABI's) | ~81 MB |
+
+De animaties zijn 320 px breed, twee frames van 700 ms, oneindig herhalend; de
+thumbnails 160 px en statisch. Drie van de 876 oefeningen hebben geen beeld in
+de bron en vallen terug op het spiergroep-icoon.
 
 ## Toolchain
 
@@ -193,9 +230,12 @@ eerste start in één transactie geïmporteerd.
 `tool/build_exercise_seed.dart` haalt de bron op, houdt alleen de velden over
 die FitLog opslaat, en vertaalt de spiergroepen en materiaalnamen naar het
 Nederlands. De oefeningsnamen blijven Engels: "Barbell Bench Press" is in elke
-Nederlandse zaal gangbaarder dan een vertaling. De afbeeldingen uit de bron zijn
-bewust niet meegenomen; ze zouden de bundel tientallen megabytes zwaarder maken
-voor weinig winst. In plaats daarvan krijgt elke spiergroep een eigen kleur.
+Nederlandse zaal gangbaarder dan een vertaling. De twee foto's die de bron per oefening heeft - startpositie en eindpositie -
+worden door `tool/build_exercise_images.dart` verkleind en samengevoegd tot een
+geanimeerde WebP van twee beelden, plus een statische thumbnail. Lijsten tonen
+alleen de thumbnail; het oefeningdetail toont de animatie, met tik-om-te-
+pauzeren. Oefeningen zonder beeld en zelfgemaakte oefeningen vallen terug op het
+gekleurde spiergroep-icoon.
 
 Bron en licentie staan ook in de app, op het scherm "Over".
 
@@ -203,15 +243,18 @@ Bron en licentie staan ook in de app, op het scherm "Over".
 
 ```
 test/calc/          1RM, volume, PR-detectie, schijven, warming-up, streak,
-                    eenheden, keypad-invoer, rusttimer
+                    eenheden, keypad-invoer, rusttimer, setnummering,
+                    PR-ladder
 test/security/      sleutelwrapping, herstelzin, sleutelbeheer, lockout
 test/db/            SQLCipher werkt echt, verkeerde sleutel faalt, schema,
-                    indexen, seeding
+                    indexen, seeding, migratie v1 -> nu, assets tegen de seed
+test/photos/        import, EXIF, compressie, opruimen, back-up-rondrit
 test/widget/        keypad, setrij afvinken, rusttimer na afvinken, onboarding
-test/integration/   routine -> workout -> geschiedenis -> records
+test/integration/   routine -> workout -> geschiedenis -> records,
+                    workout verwijderen, warming-ups, PR-pogingen
 ```
 
-182 tests, allemaal groen.
+283 tests, allemaal groen.
 
 ## Verder lezen
 

@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +80,30 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(
             appSettingsTable,
             appSettingsTable.defaultWarmupSets,
+          );
+        }
+        if (from < 4) {
+          // PR attempts. Additive again: existing workout_exercises rows are
+          // ordinary exercises, which is exactly what the defaults say.
+          await m.addColumn(
+            workoutExercisesTable,
+            workoutExercisesTable.isPrAttempt,
+          );
+          await m.addColumn(
+            workoutExercisesTable,
+            workoutExercisesTable.prTargetWeightKg,
+          );
+          await m.addColumn(
+            workoutExercisesTable,
+            workoutExercisesTable.prResult,
+          );
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.prDefaultWarmupSets,
+          );
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.prDefaultExtraAttempts,
           );
         }
       });

@@ -22,6 +22,9 @@ import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
 import 'plate_calculator_sheet.dart';
+import 'pr_attempt_card.dart';
+import 'pr_attempt_providers.dart';
+import 'pr_attempt_screen.dart';
 import 'rest_timer_bar.dart';
 import 'warmup_sheet.dart';
 import 'workout_providers.dart';
@@ -216,6 +219,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     if (!mounted) return;
     setState(() => _target = null);
 
+    if (result.isPrAttemptSet) {
+      await _closePrAttempt(row, PrAttemptResult.success, settings);
+      return;
+    }
+
     if (result.hasRecord && (settings?.prAlertEnabled ?? true)) {
       showSnack(
         context,
@@ -223,6 +231,32 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         '${result.records.map((r) => r.type.label).join(', ')}',
       );
     }
+  }
+
+  /// Ticking the attempt set means it went up, so that is recorded as a
+  /// success; the card menu is where a miss is reported.
+  Future<void> _closePrAttempt(
+    WorkoutSetRow row,
+    PrAttemptResult result,
+    AppSettingsRow? settings,
+  ) async {
+    final workout = await ref.read(activeWorkoutProvider.future);
+    if (workout == null || !mounted) return;
+
+    WorkoutExerciseDetail? owner;
+    for (final exercise in workout.exercises) {
+      if (exercise.sets.any((s) => s.id == row.id)) owner = exercise;
+    }
+    if (owner == null) return;
+
+    await showPrOutcomeSheet(
+      context,
+      ref,
+      detail: owner,
+      result: result,
+      achievedKg: row.weightKg ?? owner.workoutExercise.prTargetWeightKg ?? 0,
+      extraAttemptsLeft: settings?.prDefaultExtraAttempts ?? 0,
+    );
   }
 
   // --- Finishing ------------------------------------------------------------
@@ -521,6 +555,8 @@ class _ExerciseCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (detail.workoutExercise.isPrAttempt)
+                    PrAttemptHeader(detail: detail, formatters: formatters),
                   _CardHeader(
                     detail: detail,
                     groupColor: groupColor,
@@ -650,6 +686,35 @@ class _ExerciseCard extends ConsumerWidget {
       case 'superset':
         await _toggleSuperset(ref);
 
+      case 'pr_start':
+        if (!context.mounted) return;
+        await PrAttemptScreen.open(
+          context,
+          exercise: detail.exercise,
+          workoutExerciseId: detail.workoutExercise.id,
+        );
+
+      case 'pr_failed':
+        if (!context.mounted) return;
+        await showPrOutcomeSheet(
+          context,
+          ref,
+          detail: detail,
+          result: PrAttemptResult.failed,
+          achievedKg: detail.workoutExercise.prTargetWeightKg ?? 0,
+          extraAttemptsLeft: 0,
+        );
+
+      case 'pr_abandon':
+        await ref
+            .read(prAttemptActionsProvider)
+            .finish(detail.workoutExercise.id, PrAttemptResult.abandoned);
+
+      case 'pr_clear':
+        await ref
+            .read(prAttemptActionsProvider)
+            .revertToNormalExercise(detail.workoutExercise.id);
+
       case 'plates':
         final heaviest = detail.sets
             .map((s) => s.weightKg ?? 0)
@@ -731,6 +796,8 @@ class _CardHeader extends StatelessWidget {
   final int? group;
   final ValueChanged<String> onMenu;
 
+  bool get isPrAttempt => detail.workoutExercise.isPrAttempt;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -811,6 +878,24 @@ class _CardHeader extends StatelessWidget {
                   group == null ? 'Superset maken' : 'Superset opheffen',
                 ),
               ),
+              if (isPrAttempt) ...[
+                const PopupMenuItem(
+                  value: 'pr_failed',
+                  child: Text('Poging niet gelukt'),
+                ),
+                const PopupMenuItem(
+                  value: 'pr_abandon',
+                  child: Text('Poging afbreken'),
+                ),
+                const PopupMenuItem(
+                  value: 'pr_clear',
+                  child: Text('Terug naar gewone oefening'),
+                ),
+              ] else
+                const PopupMenuItem(
+                  value: 'pr_start',
+                  child: Text('Omzetten naar PR-poging'),
+                ),
               const PopupMenuItem(value: 'remove', child: Text('Verwijderen')),
             ],
           ),

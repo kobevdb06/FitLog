@@ -79,8 +79,8 @@ opnieuw op. Nuttige vlaggen: `--limit 20` om er een paar te doen,
 |---|---|
 | `assets/exercises/` (873 animaties + 876 thumbnails) | **15,0 MB** (budget 35 MB) |
 | `assets/data/exercises.json` | 1,0 MB |
-| Release-APK, arm64-v8a | ~31 MB |
-| Release-APK, universeel (alle ABI's) | ~81 MB |
+| Release-APK, arm64-v8a | 47,2 MB |
+| Release-APK, armeabi-v7a | 44,5 MB |
 
 De animaties zijn 320 px breed, twee frames van 700 ms, oneindig herhalend; de
 thumbnails 160 px en statisch. Drie van de 876 oefeningen hebben geen beeld in

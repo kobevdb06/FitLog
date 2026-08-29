@@ -54,6 +54,9 @@ class KeyManager {
   static const _kPinWrap = 'fitlog.dek.pin';
   static const _kRecoveryWrap = 'fitlog.dek.recovery';
 
+  /// The phrase itself, encrypted under the DEK.
+  static const _kRecoveryCopy = 'fitlog.recovery.copy';
+
   /// The DEK in hex, stored directly. Present when there is no PIN, or when
   /// biometric unlock is switched on.
   static const _kDirectKey = 'fitlog.dek.direct';
@@ -106,12 +109,27 @@ class KeyManager {
   }
 
   /// Stores the DEK wrapped under the recovery phrase.
+  ///
+  /// A copy of the phrase itself is kept encrypted under the DEK so Settings
+  /// can show the twelve words again, and so the backup flow can use them as
+  /// the archive key without asking the user to type them.
   Future<void> setRecoveryPhrase({
     required Uint8List dek,
     required String phrase,
   }) async {
     final wrapped = await wrapDek(dek: dek, secret: phrase);
     await _store.write(_kRecoveryWrap, wrapped.encode());
+    await _store.write(
+      _kRecoveryCopy,
+      await encryptUnderDek(dek: dek, plaintext: phrase),
+    );
+  }
+
+  /// The twelve words, readable only while the app is unlocked.
+  Future<String?> readRecoveryPhrase(Uint8List dek) async {
+    final blob = await _store.read(_kRecoveryCopy);
+    if (blob == null) return null;
+    return decryptUnderDek(dek: dek, blob: blob);
   }
 
   /// Keeps the DEK in the platform key store without a PIN in front of it.
@@ -221,6 +239,7 @@ class KeyManager {
   Future<void> wipe() async {
     await _store.delete(_kPinWrap);
     await _store.delete(_kRecoveryWrap);
+    await _store.delete(_kRecoveryCopy);
     await _store.delete(_kDirectKey);
     await _store.delete(_kBiometric);
     await _clearFailures();

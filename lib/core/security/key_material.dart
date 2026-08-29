@@ -197,6 +197,52 @@ Future<WrappedKey> wrapDek({
   );
 }
 
+/// Encrypts [plaintext] directly under the DEK.
+///
+/// Used for the copy of the recovery phrase that Settings can show again: it
+/// is only readable when the database key is already in memory, which means
+/// the app is unlocked.
+Future<String> encryptUnderDek({
+  required Uint8List dek,
+  required String plaintext,
+}) async {
+  final nonce = randomBytes(_nonceLength);
+  final box = await AesGcm.with256bits().encrypt(
+    utf8.encode(plaintext),
+    secretKey: SecretKey(dek),
+    nonce: nonce,
+  );
+  return jsonEncode({
+    'nonce': base64Encode(nonce),
+    'ct': base64Encode(box.cipherText),
+    'mac': base64Encode(box.mac.bytes),
+  });
+}
+
+/// The inverse of [encryptUnderDek]. Returns null when the blob does not
+/// belong to this key.
+Future<String?> decryptUnderDek({
+  required Uint8List dek,
+  required String blob,
+}) async {
+  try {
+    final json = jsonDecode(blob) as Map<String, dynamic>;
+    final clear = await AesGcm.with256bits().decrypt(
+      SecretBox(
+        base64Decode(json['ct'] as String),
+        nonce: base64Decode(json['nonce'] as String),
+        mac: Mac(base64Decode(json['mac'] as String)),
+      ),
+      secretKey: SecretKey(dek),
+    );
+    return utf8.decode(clear);
+  } on SecretBoxAuthenticationError {
+    return null;
+  } on FormatException {
+    return null;
+  }
+}
+
 /// Recovers the DEK from [wrapped].
 ///
 /// Throws [InvalidSecretException] when [secret] is wrong; AES-GCM's

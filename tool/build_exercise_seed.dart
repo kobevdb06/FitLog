@@ -98,7 +98,7 @@ Future<String> _download(String url) async {
     if (response.statusCode != 200) {
       throw HttpException('HTTP ${response.statusCode} voor $url');
     }
-    return response.transform(utf8.decoder).join();
+    return await response.transform(utf8.decoder).join();
   } finally {
     client.close();
   }

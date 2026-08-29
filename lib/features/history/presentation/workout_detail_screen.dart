@@ -16,6 +16,7 @@ import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'history_providers.dart';
+import 'history_screen.dart';
 
 /// A finished session, with the sets still editable.
 class WorkoutDetailScreen extends ConsumerWidget {
@@ -136,18 +137,14 @@ class WorkoutDetailScreen extends ConsumerWidget {
           await actions.rename(workoutId, name.trim());
         }
       case 'delete':
-        final ok = await confirm(
-          context,
-          title: 'Workout verwijderen?',
-          message:
-              'De sessie verdwijnt uit je geschiedenis en je records worden '
-              'opnieuw berekend.',
-          confirmLabel: 'Verwijderen',
-          destructive: true,
-        );
-        if (!ok) return;
-        await actions.deleteWorkout(workoutId);
-        if (context.mounted) context.pop();
+        final workout = ref.read(workoutDetailProvider(workoutId)).value;
+        if (workout == null) return;
+        if (!await confirmWorkoutDeletion(context)) return;
+        if (!context.mounted) return;
+        // Leave first, then schedule: the snackbar lives at app level, so the
+        // undo stays reachable from the list we land on.
+        context.pop();
+        deleteWorkoutWithUndo(context, ref, workout.workout);
     }
   }
 }

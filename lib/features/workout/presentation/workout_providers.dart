@@ -357,9 +357,10 @@ class WorkoutController {
   }
 
   Future<void> cancel(String workoutId) async {
-    await _db.workoutsDao.deleteWorkout(workoutId);
+    // Same single transaction as deleting from the history: children, records
+    // and the routine stamp all go together.
+    await _db.workoutsDao.deleteWorkoutCompletely(workoutId);
     await ref.read(restTimerProvider.notifier).skip();
-    await _db.recordsDao.rebuildAllRecords();
   }
 
   /// Saves a finished session as a new routine.

@@ -9,6 +9,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import 'history_providers.dart';
 
@@ -26,6 +27,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final history = ref.watch(workoutHistoryProvider());
+    final pending = ref.watch(pendingWorkoutDeletionsProvider);
     final monthWorkouts = ref
         .watch(workoutsInMonthProvider(_month.year, _month.month))
         .value ?? const [];
@@ -36,7 +38,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       body: history.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('$error')),
-        data: (workouts) {
+        data: (all) {
+          // A workout inside its undo window is hidden, not gone.
+          final workouts = all
+              .where((w) => !pending.contains(w.workout.id))
+              .toList();
+
           if (workouts.isEmpty) {
             return EmptyState(
               icon: Icons.history,
@@ -62,7 +69,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               ),
               const SectionHeader('Sessies'),
               for (final summary in workouts)
-                _WorkoutTile(summary: summary, formatters: formatters),
+                _WorkoutTile(
+                  key: ValueKey(summary.workout.id),
+                  summary: summary,
+                  formatters: formatters,
+                ),
             ],
           );
         },
@@ -202,14 +213,35 @@ class _MonthCalendar extends StatelessWidget {
   }
 }
 
-class _WorkoutTile extends StatelessWidget {
-  const _WorkoutTile({required this.summary, required this.formatters});
+class _WorkoutTile extends ConsumerWidget {
+  const _WorkoutTile({
+    super.key,
+    required this.summary,
+    required this.formatters,
+  });
 
   final WorkoutSummary summary;
   final Formatters formatters;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Dismissible(
+      key: ValueKey('dismiss-${summary.workout.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        color: AppColors.danger.withValues(alpha: 0.20),
+        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+      ),
+      confirmDismiss: (_) => confirmWorkoutDeletion(context),
+      onDismissed: (_) =>
+          deleteWorkoutWithUndo(context, ref, summary.workout),
+      child: _tile(context, ref),
+    );
+  }
+
+  Widget _tile(BuildContext context, WidgetRef ref) {
     final workout = summary.workout;
     return ListTile(
       onTap: () => context.push(Routes.workoutDetail(workout.id)),
@@ -230,7 +262,53 @@ class _WorkoutTile extends StatelessWidget {
           '${workout.totalSets} sets',
         ].join(' · '),
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert),
+        onSelected: (value) async {
+          if (value != 'delete') return;
+          if (!await confirmWorkoutDeletion(context)) return;
+          if (context.mounted) {
+            deleteWorkoutWithUndo(context, ref, workout);
+          }
+        },
+        itemBuilder: (context) => const [
+          PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
+        ],
+      ),
     );
   }
+}
+
+Future<bool> confirmWorkoutDeletion(BuildContext context) => confirm(
+  context,
+  title: 'Workout verwijderen?',
+  message:
+      'De sessie verdwijnt uit je geschiedenis en je records worden opnieuw '
+      'berekend. Je kunt dit nog vijf seconden ongedaan maken.',
+  confirmLabel: 'Verwijderen',
+  destructive: true,
+);
+
+/// Hides the workout, tells the user, and only really deletes it once the undo
+/// window has passed.
+void deleteWorkoutWithUndo(
+  BuildContext context,
+  WidgetRef ref,
+  WorkoutRow workout,
+) {
+  final notifier = ref.read(pendingWorkoutDeletionsProvider.notifier);
+  notifier.schedule(workout.id);
+
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text('"${workout.name}" verwijderd'),
+        duration: PendingWorkoutDeletions.grace,
+        action: SnackBarAction(
+          label: 'Ongedaan maken',
+          onPressed: () => notifier.undo(workout.id),
+        ),
+      ),
+    );
 }

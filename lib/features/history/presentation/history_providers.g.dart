@@ -330,3 +330,78 @@ final class HistoryActionsProvider
 }
 
 String _$historyActionsHash() => r'84937d22d0d27492f963f9f6fa49689b40a6833a';
+
+/// Workouts that are on their way out but can still be brought back.
+///
+/// Undo is implemented by delaying the delete, not by restoring a copy
+/// afterwards: for five seconds the row is only hidden from the list, and
+/// nothing has happened in the database yet.
+
+@ProviderFor(PendingWorkoutDeletions)
+final pendingWorkoutDeletionsProvider = PendingWorkoutDeletionsProvider._();
+
+/// Workouts that are on their way out but can still be brought back.
+///
+/// Undo is implemented by delaying the delete, not by restoring a copy
+/// afterwards: for five seconds the row is only hidden from the list, and
+/// nothing has happened in the database yet.
+final class PendingWorkoutDeletionsProvider
+    extends $NotifierProvider<PendingWorkoutDeletions, Set<String>> {
+  /// Workouts that are on their way out but can still be brought back.
+  ///
+  /// Undo is implemented by delaying the delete, not by restoring a copy
+  /// afterwards: for five seconds the row is only hidden from the list, and
+  /// nothing has happened in the database yet.
+  PendingWorkoutDeletionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'pendingWorkoutDeletionsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$pendingWorkoutDeletionsHash();
+
+  @$internal
+  @override
+  PendingWorkoutDeletions create() => PendingWorkoutDeletions();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Set<String> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Set<String>>(value),
+    );
+  }
+}
+
+String _$pendingWorkoutDeletionsHash() =>
+    r'dac1d4f6f3103eb4e72292d03a735b77560e2457';
+
+/// Workouts that are on their way out but can still be brought back.
+///
+/// Undo is implemented by delaying the delete, not by restoring a copy
+/// afterwards: for five seconds the row is only hidden from the list, and
+/// nothing has happened in the database yet.
+
+abstract class _$PendingWorkoutDeletions extends $Notifier<Set<String>> {
+  Set<String> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<Set<String>, Set<String>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Set<String>, Set<String>>,
+              Set<String>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

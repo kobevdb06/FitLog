@@ -55,7 +55,12 @@ class AppController extends _$AppController {
   }
 
   /// Decides between onboarding, the lock screen and opening the database.
+  ///
+  /// Started from [build] and therefore able to outlive the provider when the
+  /// container goes away mid-flight, so every write to [state] after an await
+  /// checks that this notifier is still mounted.
   Future<void> initialise() async {
+    if (!ref.mounted) return;
     state = const AppLoading();
     try {
       final cipher = detectCipherVersion();
@@ -71,6 +76,7 @@ class AppController extends _$AppController {
 
       final manager = ref.read(keyManagerProvider);
       final security = await manager.status();
+      if (!ref.mounted) return;
 
       if (!security.initialised) {
         state = const AppNeedsOnboarding();
@@ -79,6 +85,7 @@ class AppController extends _$AppController {
 
       if (security.mode == LockMode.none) {
         final dek = await manager.readDirectKey();
+        if (!ref.mounted) return;
         if (dek == null) {
           state = const AppNeedsOnboarding();
           return;
@@ -89,7 +96,7 @@ class AppController extends _$AppController {
 
       state = AppLocked(security);
     } on Object catch (error) {
-      state = AppFailed('$error');
+      if (ref.mounted) state = AppFailed('$error');
     }
   }
 
@@ -176,16 +183,18 @@ class AppController extends _$AppController {
 
       _db = db;
       _dek = dek;
+      if (!ref.mounted) return;
       state = AppReady(db: db, security: security);
     } on EncryptionUnavailableException catch (e) {
-      state = AppFailed(e.message, canRetry: false);
+      if (ref.mounted) state = AppFailed(e.message, canRetry: false);
     } on WrongDatabaseKeyException {
+      if (!ref.mounted) return;
       state = const AppFailed(
         'De sleutel past niet op de database op dit toestel. Herstel een '
         'back-up of wis de gegevens om opnieuw te beginnen.',
       );
     } on Object catch (error) {
-      state = AppFailed('$error');
+      if (ref.mounted) state = AppFailed('$error');
     }
   }
 

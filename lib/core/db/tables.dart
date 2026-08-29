@@ -291,7 +291,15 @@ class PersonalRecordsTable extends Table {
   /// One of [PrType]: `max_weight` | `est_1rm` | `max_set_volume` | `max_reps`.
   TextColumn get recordType => text().named('record_type')();
   RealColumn get value => real()();
-  TextColumn get workoutSetId => text().named('workout_set_id').nullable()();
+  /// The set that produced this record.
+  ///
+  /// `ON DELETE SET NULL`: deleting a workout takes its sets with it, and a
+  /// record that outlives its set must lose the reference rather than keep a
+  /// dangling id. Without this constraint the row simply pointed at nothing.
+  TextColumn get workoutSetId => text()
+      .named('workout_set_id')
+      .nullable()
+      .references(WorkoutSetsTable, #id, onDelete: KeyAction.setNull)();
   IntColumn get achievedAt => integer().named('achieved_at')();
 
   @override

@@ -5669,6 +5669,9 @@ class $PersonalRecordsTableTable extends PersonalRecordsTable
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workout_sets (id) ON DELETE SET NULL',
+    ),
   );
   static const VerificationMeta _achievedAtMeta = const VerificationMeta(
     'achievedAt',
@@ -5798,6 +5801,12 @@ class PersonalRecordRow extends DataClass
   /// One of [PrType]: `max_weight` | `est_1rm` | `max_set_volume` | `max_reps`.
   final String recordType;
   final double value;
+
+  /// The set that produced this record.
+  ///
+  /// `ON DELETE SET NULL`: deleting a workout takes its sets with it, and a
+  /// record that outlives its set must lose the reference rather than keep a
+  /// dangling id. Without this constraint the row simply pointed at nothing.
   final String? workoutSetId;
   final int achievedAt;
   const PersonalRecordRow({
@@ -6900,6 +6909,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('personal_records', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workout_sets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('personal_records', kind: UpdateKind.update)],
     ),
   ]);
 }
@@ -11195,6 +11211,31 @@ final class $$WorkoutSetsTableTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $PersonalRecordsTableTable,
+    List<PersonalRecordRow>
+  >
+  _personalRecordsTableRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.personalRecordsTable,
+        aliasName: 'workout_sets__id__personal_records__workout_set_id',
+      );
+
+  $$PersonalRecordsTableTableProcessedTableManager
+  get personalRecordsTableRefs {
+    final manager = $$PersonalRecordsTableTableTableManager(
+      $_db,
+      $_db.personalRecordsTable,
+    ).filter((f) => f.workoutSetId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _personalRecordsTableRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$WorkoutSetsTableTableFilterComposer
@@ -11278,6 +11319,31 @@ class $$WorkoutSetsTableTableFilterComposer
               ),
         );
     return composer;
+  }
+
+  Expression<bool> personalRecordsTableRefs(
+    Expression<bool> Function($$PersonalRecordsTableTableFilterComposer f) f,
+  ) {
+    final $$PersonalRecordsTableTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.personalRecordsTable,
+      getReferencedColumn: (t) => t.workoutSetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonalRecordsTableTableFilterComposer(
+            $db: $db,
+            $table: $db.personalRecordsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -11433,6 +11499,32 @@ class $$WorkoutSetsTableTableAnnotationComposer
         );
     return composer;
   }
+
+  Expression<T> personalRecordsTableRefs<T extends Object>(
+    Expression<T> Function($$PersonalRecordsTableTableAnnotationComposer a) f,
+  ) {
+    final $$PersonalRecordsTableTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.personalRecordsTable,
+          getReferencedColumn: (t) => t.workoutSetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PersonalRecordsTableTableAnnotationComposer(
+                $db: $db,
+                $table: $db.personalRecordsTable,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkoutSetsTableTableTableManager
@@ -11448,7 +11540,10 @@ class $$WorkoutSetsTableTableTableManager
           $$WorkoutSetsTableTableUpdateCompanionBuilder,
           (WorkoutSetRow, $$WorkoutSetsTableTableReferences),
           WorkoutSetRow,
-          PrefetchHooks Function({bool workoutExerciseId})
+          PrefetchHooks Function({
+            bool workoutExerciseId,
+            bool personalRecordsTableRefs,
+          })
         > {
   $$WorkoutSetsTableTableTableManager(
     _$AppDatabase db,
@@ -11527,45 +11622,70 @@ class $$WorkoutSetsTableTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({workoutExerciseId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (workoutExerciseId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.workoutExerciseId,
-                        referencedTable: $$WorkoutSetsTableTableReferences
-                            ._workoutExerciseIdTable(db),
-                        referencedColumn: $$WorkoutSetsTableTableReferences
-                            ._workoutExerciseIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({workoutExerciseId = false, personalRecordsTableRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (personalRecordsTableRefs) db.personalRecordsTable,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workoutExerciseId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workoutExerciseId,
+                            referencedTable: $$WorkoutSetsTableTableReferences
+                                ._workoutExerciseIdTable(db),
+                            referencedColumn: $$WorkoutSetsTableTableReferences
+                                ._workoutExerciseIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (personalRecordsTableRefs)
+                        await $_getPrefetchedData<
+                          WorkoutSetRow,
+                          $WorkoutSetsTableTable,
+                          PersonalRecordRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkoutSetsTableTableReferences
+                              ._personalRecordsTableRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkoutSetsTableTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).personalRecordsTableRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workoutSetId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -11582,7 +11702,10 @@ typedef $$WorkoutSetsTableTableProcessedTableManager =
       $$WorkoutSetsTableTableUpdateCompanionBuilder,
       (WorkoutSetRow, $$WorkoutSetsTableTableReferences),
       WorkoutSetRow,
-      PrefetchHooks Function({bool workoutExerciseId})
+      PrefetchHooks Function({
+        bool workoutExerciseId,
+        bool personalRecordsTableRefs,
+      })
     >;
 typedef $$PersonalRecordsTableTableCreateCompanionBuilder =
     PersonalRecordsTableCompanion Function({
@@ -11635,6 +11758,24 @@ final class $$PersonalRecordsTableTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static $WorkoutSetsTableTable _workoutSetIdTable(_$AppDatabase db) => db
+      .workoutSetsTable
+      .createAlias('personal_records__workout_set_id__workout_sets__id');
+
+  $$WorkoutSetsTableTableProcessedTableManager? get workoutSetId {
+    final $_column = $_itemColumn<String>('workout_set_id');
+    if ($_column == null) return null;
+    final manager = $$WorkoutSetsTableTableTableManager(
+      $_db,
+      $_db.workoutSetsTable,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workoutSetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 }
 
 class $$PersonalRecordsTableTableFilterComposer
@@ -11661,11 +11802,6 @@ class $$PersonalRecordsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get workoutSetId => $composableBuilder(
-    column: $table.workoutSetId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<int> get achievedAt => $composableBuilder(
     column: $table.achievedAt,
     builder: (column) => ColumnFilters(column),
@@ -11685,6 +11821,29 @@ class $$PersonalRecordsTableTableFilterComposer
           }) => $$ExercisesTableTableFilterComposer(
             $db: $db,
             $table: $db.exercisesTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkoutSetsTableTableFilterComposer get workoutSetId {
+    final $$WorkoutSetsTableTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutSetId,
+      referencedTable: $db.workoutSetsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutSetsTableTableFilterComposer(
+            $db: $db,
+            $table: $db.workoutSetsTable,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11719,11 +11878,6 @@ class $$PersonalRecordsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get workoutSetId => $composableBuilder(
-    column: $table.workoutSetId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<int> get achievedAt => $composableBuilder(
     column: $table.achievedAt,
     builder: (column) => ColumnOrderings(column),
@@ -11743,6 +11897,29 @@ class $$PersonalRecordsTableTableOrderingComposer
           }) => $$ExercisesTableTableOrderingComposer(
             $db: $db,
             $table: $db.exercisesTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkoutSetsTableTableOrderingComposer get workoutSetId {
+    final $$WorkoutSetsTableTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutSetId,
+      referencedTable: $db.workoutSetsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutSetsTableTableOrderingComposer(
+            $db: $db,
+            $table: $db.workoutSetsTable,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11773,11 +11950,6 @@ class $$PersonalRecordsTableTableAnnotationComposer
   GeneratedColumn<double> get value =>
       $composableBuilder(column: $table.value, builder: (column) => column);
 
-  GeneratedColumn<String> get workoutSetId => $composableBuilder(
-    column: $table.workoutSetId,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<int> get achievedAt => $composableBuilder(
     column: $table.achievedAt,
     builder: (column) => column,
@@ -11805,6 +11977,29 @@ class $$PersonalRecordsTableTableAnnotationComposer
     );
     return composer;
   }
+
+  $$WorkoutSetsTableTableAnnotationComposer get workoutSetId {
+    final $$WorkoutSetsTableTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutSetId,
+      referencedTable: $db.workoutSetsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutSetsTableTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workoutSetsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$PersonalRecordsTableTableTableManager
@@ -11820,7 +12015,7 @@ class $$PersonalRecordsTableTableTableManager
           $$PersonalRecordsTableTableUpdateCompanionBuilder,
           (PersonalRecordRow, $$PersonalRecordsTableTableReferences),
           PersonalRecordRow,
-          PrefetchHooks Function({bool exerciseId})
+          PrefetchHooks Function({bool exerciseId, bool workoutSetId})
         > {
   $$PersonalRecordsTableTableTableManager(
     _$AppDatabase db,
@@ -11885,7 +12080,7 @@ class $$PersonalRecordsTableTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({exerciseId = false}) {
+          prefetchHooksCallback: ({exerciseId = false, workoutSetId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -11916,6 +12111,17 @@ class $$PersonalRecordsTableTableTableManager
                             .id,
                       ) as T;
                     }
+                    if (workoutSetId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workoutSetId,
+                        referencedTable: $$PersonalRecordsTableTableReferences
+                            ._workoutSetIdTable(db),
+                        referencedColumn: $$PersonalRecordsTableTableReferences
+                            ._workoutSetIdTable(db)
+                            .id,
+                      ) as T;
+                    }
 
                     return state;
                   },
@@ -11940,7 +12146,7 @@ typedef $$PersonalRecordsTableTableProcessedTableManager =
       $$PersonalRecordsTableTableUpdateCompanionBuilder,
       (PersonalRecordRow, $$PersonalRecordsTableTableReferences),
       PersonalRecordRow,
-      PrefetchHooks Function({bool exerciseId})
+      PrefetchHooks Function({bool exerciseId, bool workoutSetId})
     >;
 typedef $$BodyMeasurementsTableTableCreateCompanionBuilder =
     BodyMeasurementsTableCompanion Function({

@@ -7,6 +7,23 @@ import '../models.dart';
 
 part 'workouts_dao.drift.dart';
 
+/// What [WorkoutsDao.deleteWorkoutCompletely] removed.
+class DeletedWorkout {
+  const DeletedWorkout({
+    required this.existed,
+    required this.wasRunning,
+    required this.exerciseIds,
+  });
+
+  final bool existed;
+
+  /// True when the deleted session was the one with `ended_at IS NULL`, so the
+  /// caller knows to tear down the timer and the in-progress flag as well.
+  final bool wasRunning;
+
+  final Set<String> exerciseIds;
+}
+
 const _uuid = Uuid();
 
 @DriftAccessor(
@@ -541,6 +558,67 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
     });
   }
 
+  /// Removes a workout and everything that hangs off it, in one transaction.
+  ///
+  /// Four things have to happen together, or the app is left inconsistent:
+  /// the rows go (children follow by cascade), the records of the exercises
+  /// that were in it are recomputed from what remains, the routine's
+  /// `last_performed_at` falls back to the newest session that is left, and
+  /// the caller learns whether it just deleted the running session.
+  ///
+  /// Returns what was removed so the UI can react.
+  Future<DeletedWorkout> deleteWorkoutCompletely(String workoutId) async {
+    return transaction(() async {
+      final workout = await (select(
+        workoutsTable,
+      )..where((t) => t.id.equals(workoutId))).getSingleOrNull();
+      if (workout == null) {
+        return const DeletedWorkout(
+          existed: false,
+          wasRunning: false,
+          exerciseIds: {},
+        );
+      }
+
+      final exerciseRows = await (selectOnly(workoutExercisesTable)
+            ..addColumns([workoutExercisesTable.exerciseId])
+            ..where(workoutExercisesTable.workoutId.equals(workoutId)))
+          .get();
+      final exerciseIds = exerciseRows
+          .map((row) => row.read(workoutExercisesTable.exerciseId)!)
+          .toSet();
+
+      await (delete(workoutsTable)..where((t) => t.id.equals(workoutId))).go();
+
+      await db.recordsDao.rebuildRecordsFor(exerciseIds);
+
+      if (workout.routineId != null) {
+        await refreshLastPerformed(workout.routineId!);
+      }
+
+      return DeletedWorkout(
+        existed: true,
+        wasRunning: workout.endedAt == null,
+        exerciseIds: exerciseIds,
+      );
+    });
+  }
+
+  /// Points a routine at the newest finished session it still has, or clears
+  /// the stamp when none are left.
+  Future<void> refreshLastPerformed(String routineId) async {
+    await customStatement(
+      'UPDATE routines SET last_performed_at = '
+      '(SELECT MAX(started_at) FROM workouts '
+      ' WHERE routine_id = ? AND ended_at IS NOT NULL) '
+      'WHERE id = ?',
+      [routineId, routineId],
+    );
+  }
+
+  /// The plain row delete, without any of the bookkeeping.
+  ///
+  /// Only for callers that do their own cleanup afterwards.
   Future<void> deleteWorkout(String workoutId) async {
     await (delete(workoutsTable)..where((t) => t.id.equals(workoutId))).go();
   }

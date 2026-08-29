@@ -79,6 +79,36 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
     return records;
   }
 
+  /// Recomputes the records of just [exerciseIds] from the sets that are left.
+  ///
+  /// Used when a workout is deleted: a record set during that session has to
+  /// disappear and the previous best has to come back, without touching the
+  /// records of every other exercise.
+  Future<void> rebuildRecordsFor(Iterable<String> exerciseIds) async {
+    final ids = exerciseIds.toSet();
+    if (ids.isEmpty) return;
+
+    await (delete(personalRecordsTable)
+          ..where((t) => t.exerciseId.isIn(ids)))
+        .go();
+
+    final rows = await customSelect(
+      'SELECT ws.id AS set_id, ws.weight_kg AS weight_kg, ws.reps AS reps, '
+      'ws.set_type AS set_type, we.exercise_id AS exercise_id, '
+      'COALESCE(ws.completed_at, w.started_at) AS achieved_at '
+      'FROM workout_sets ws '
+      'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+      'JOIN workouts w ON w.id = we.workout_id '
+      'WHERE ws.is_completed = 1 AND w.ended_at IS NOT NULL '
+      'AND we.exercise_id IN (${List.filled(ids.length, '?').join(', ')}) '
+      'ORDER BY achieved_at ASC',
+      variables: [for (final id in ids) Variable.withString(id)],
+      readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},
+    ).get();
+
+    await _writeBestOf(rows);
+  }
+
   /// Rebuilds every personal record from the stored sets.
   ///
   /// Editing or deleting a past workout can invalidate a record, and there is
@@ -98,6 +128,16 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
       readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},
     ).get();
 
+    await transaction(() async {
+      await delete(personalRecordsTable).go();
+      await _writeBestOf(rows);
+    });
+  }
+
+  /// Picks the best value per exercise and record type out of [rows] and
+  /// writes one row per winner. Callers have already cleared what they are
+  /// replacing.
+  Future<void> _writeBestOf(List<QueryRow> rows) async {
     // exercise -> type -> (value, setId, achievedAt)
     final best = <String, Map<PrType, ({double v, String setId, int at})>>{};
 
@@ -124,25 +164,22 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
       }
     }
 
-    await transaction(() async {
-      await delete(personalRecordsTable).go();
-      await batch((b) {
-        for (final entry in best.entries) {
-          for (final rec in entry.value.entries) {
-            b.insert(
-              personalRecordsTable,
-              PersonalRecordsTableCompanion.insert(
-                id: _uuid.v4(),
-                exerciseId: entry.key,
-                recordType: rec.key.wire,
-                value: rec.value.v,
-                workoutSetId: Value(rec.value.setId),
-                achievedAt: rec.value.at,
-              ),
-            );
-          }
+    await batch((b) {
+      for (final entry in best.entries) {
+        for (final rec in entry.value.entries) {
+          b.insert(
+            personalRecordsTable,
+            PersonalRecordsTableCompanion.insert(
+              id: _uuid.v4(),
+              exerciseId: entry.key,
+              recordType: rec.key.wire,
+              value: rec.value.v,
+              workoutSetId: Value(rec.value.setId),
+              achievedAt: rec.value.at,
+            ),
+          );
         }
-      });
+      }
     });
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'fitlog_mark.dart';
 
 /// The one empty state used everywhere: a title, one sentence, one button.
 class EmptyState extends StatelessWidget {
@@ -360,19 +361,7 @@ class FitLogLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: AppColors.accent,
-            borderRadius: BorderRadius.circular(size * 0.28),
-          ),
-          child: Icon(
-            Icons.fitness_center,
-            color: Colors.white,
-            size: size * 0.55,
-          ),
-        ),
+        FitLogMark(size: size),
         SizedBox(height: size * 0.22),
         Text(
           'FitLog',

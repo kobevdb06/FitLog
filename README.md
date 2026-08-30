@@ -69,6 +69,20 @@ Op Linux is dat `apt install webp`; op Windows pak je de officiële
 `libwebp-*-windows-x64.zip` van de WebM-releases uit in `.build_cache/tools/`.
 Zonder libwebp valt de tool terug op 2-frame GIF's, die fors groter zijn.
 
+De app-iconen opnieuw tekenen na een wijziging aan het merkteken in
+`lib/core/widgets/fitlog_mark.dart`:
+
+```bash
+flutter test tool/render_app_icon.dart
+```
+
+Dat schrijft de Android-mipmaps (klassiek plus de twee lagen van het adaptive
+icon) en de iOS-appiconset uit dezelfde painter die de app zelf gebruikt, zodat
+het icoon op het beginscherm en het logo in de app niet uit elkaar kunnen
+lopen. De gegenereerde PNG's horen mee in de commit. Het is een testbestand
+omdat er een Flutter-engine nodig is om te rasteren; het raakt niets anders dan
+de icoonbestanden.
+
 De downloads komen in `.build_cache/` terecht, dus een tweede run haalt niets
 opnieuw op. Nuttige vlaggen: `--limit 20` om er een paar te doen,
 `--width`, `--thumb-width`, `--quality` en `--frame-ms`.

@@ -327,3 +327,40 @@ geen fout waar een aanroeper iets mee kan.
 `UnreadableImageException`. Dat is geen wegslikken: de import faalt nog steeds,
 alleen met een fout die het scherm kan uitleggen. De originele fout blijft als
 `cause` behouden.
+
+## 31. Het app-icoon wordt getekend, niet als bitmap bijgehouden
+
+Het icoon op het beginscherm was tot nu toe het standaard Flutter-logo uit
+`flutter create`: het handelsmerk van een ander project, en niet dat van deze
+app. In de app stond daarnaast een materiaal-halter in een gekleurd vierkant.
+Twee verschillende tekens, geen van beide van FitLog.
+
+Er is nu één `FitLogMarkPainter`. `FitLogLogo` tekent hem live, en
+`tool/render_app_icon.dart` tekent hem in de platformbestanden. Een bitmap als
+bron zou betekenen dat het logo in de app en het icoon op het beginscherm los
+van elkaar bijgewerkt kunnen worden; nu komt het uit dezelfde meetkunde en
+bewaakt `test/widget/branding_test.dart` dat de uitgerenderde bestanden er nog
+mee overeenkomen.
+
+Het merkteken is een kale F. Een eerdere versie zette gewichtsschijven op de
+armen; op 48 px werd dat een vlek en op 512 px las het als `F!`. Het
+ontwerpuitgangspunt van deze app - één accentkleur, geen verlopen - laat zich
+beter vertalen naar één vorm die op elk formaat leesbaar blijft.
+
+Het adaptive-icoon schaalt de F tot zijn hoeken binnen de 72dp-cirkel vallen die
+een ronde launcher overhoudt, niet binnen de striktere 66dp-veilige zone. Die
+laatste zou het icoon zichtbaar kleiner maken dan alle andere op het
+beginscherm, terwijl alleen de lege hoeken van het omhullende vierkant
+erbuiten vallen.
+
+## 32. De illustratie hoort bij de oefening, niet bij de catalogus
+
+`ExerciseThumb` krijgt het manifest aangereikt. Dat is juist voor de catalogus,
+die honderden rijen lang wordt en er beter één keer bovenaan naar kijkt, maar
+het betekende ook dat elk ander scherm het manifest door drie widgets heen moest
+doorgeven om bij de afbeelding te komen. Geen van die schermen deed dat: de
+routine-editor, het routinedetail, de afgewerkte workout, de recordlijst en het
+dashboard toonden allemaal de terugvalbadge met de beginletters.
+
+`ExerciseAvatar` leest het manifest zelf, zodat een aanroepplek alleen de
+oefening nodig heeft. De catalogus blijft het manifest expliciet doorgeven.

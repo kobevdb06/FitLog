@@ -151,6 +151,15 @@ class WorkoutController {
     );
   }
 
+  /// Starts the same session again: same exercises, same sets, nothing
+  /// filled in. Throws if a workout is already running.
+  Future<String> repeat(String workoutId) async {
+    return _db.workoutsDao.startFromWorkout(
+      workoutId,
+      defaultRestSeconds: await _defaultRest,
+    );
+  }
+
   Future<void> rename(String workoutId, String name) =>
       _db.workoutsDao.renameWorkout(workoutId, name);
 

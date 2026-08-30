@@ -40,6 +40,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
           PopupMenuButton<String>(
             onSelected: (value) => _onMenu(context, ref, value),
             itemBuilder: (context) => const [
+              PopupMenuItem(value: 'repeat', child: Text('Opnieuw doen')),
               PopupMenuItem(value: 'rename', child: Text('Naam wijzigen')),
               PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
             ],
@@ -126,6 +127,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
   ) async {
     final actions = ref.read(historyActionsProvider);
     switch (value) {
+      case 'repeat':
+        await repeatWorkout(context, ref, workoutId);
       case 'rename':
         final name = await promptForText(
           context,

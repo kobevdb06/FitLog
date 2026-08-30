@@ -145,6 +145,62 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
     return id;
   }
 
+  /// Starts a new session with the same shape as [sourceWorkoutId].
+  ///
+  /// The exercises, their order, their supersets, their rests and their notes
+  /// come over, and so does the number of sets and what type each one was. The
+  /// weights and reps do not: they are what the previous column is for, and
+  /// carrying them over would present last week's numbers as if they were
+  /// already logged today.
+  Future<String> startFromWorkout(
+    String sourceWorkoutId, {
+    required int defaultRestSeconds,
+  }) async {
+    final source = await getWorkoutDetail(sourceWorkoutId);
+    if (source == null) {
+      throw StateError('Workout $sourceWorkoutId bestaat niet');
+    }
+
+    final id = await startWorkout(
+      name: source.workout.name,
+      defaultRestSeconds: defaultRestSeconds,
+    );
+
+    await transaction(() async {
+      for (var i = 0; i < source.exercises.length; i++) {
+        final from = source.exercises[i];
+        final weId = _uuid.v4();
+        await into(workoutExercisesTable).insert(
+          WorkoutExercisesTableCompanion.insert(
+            id: weId,
+            workoutId: id,
+            exerciseId: from.exercise.id,
+            sortOrder: i,
+            restSeconds: Value(from.workoutExercise.restSeconds),
+            supersetGroup: Value(from.workoutExercise.supersetGroup),
+            notes: Value(from.workoutExercise.notes),
+          ),
+        );
+
+        await batch((b) {
+          for (var j = 0; j < from.sets.length; j++) {
+            b.insert(
+              workoutSetsTable,
+              WorkoutSetsTableCompanion.insert(
+                id: _uuid.v4(),
+                workoutExerciseId: weId,
+                sortOrder: j,
+                setType: Value(from.sets[j].setType),
+              ),
+            );
+          }
+        });
+      }
+    });
+
+    return id;
+  }
+
   // --- Reading --------------------------------------------------------------
 
   Future<WorkoutDetail?> getWorkoutDetail(String workoutId) async {

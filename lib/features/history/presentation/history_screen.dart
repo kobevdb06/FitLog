@@ -11,6 +11,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../workout/presentation/workout_providers.dart';
 import 'history_providers.dart';
 
 /// Everything you have logged: a month calendar on top, the sessions below.
@@ -265,6 +266,10 @@ class _WorkoutTile extends ConsumerWidget {
       trailing: PopupMenuButton<String>(
         icon: const Icon(Icons.more_vert),
         onSelected: (value) async {
+          if (value == 'repeat') {
+            await repeatWorkout(context, ref, workout.id);
+            return;
+          }
           if (value != 'delete') return;
           if (!await confirmWorkoutDeletion(context)) return;
           if (context.mounted) {
@@ -272,9 +277,33 @@ class _WorkoutTile extends ConsumerWidget {
           }
         },
         itemBuilder: (context) => const [
+          PopupMenuItem(value: 'repeat', child: Text('Opnieuw doen')),
           PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
         ],
       ),
+    );
+  }
+}
+
+/// Starts the same session again and opens it.
+///
+/// Refuses while another workout is running rather than quietly starting a
+/// second one: the app has exactly one running session by design.
+Future<void> repeatWorkout(
+  BuildContext context,
+  WidgetRef ref,
+  String workoutId,
+) async {
+  try {
+    await ref.read(workoutControllerProvider).repeat(workoutId);
+    if (!context.mounted) return;
+    context.push(Routes.workout);
+  } on StateError {
+    if (!context.mounted) return;
+    showSnack(
+      context,
+      'Er loopt al een workout. Rond die eerst af.',
+      isError: true,
     );
   }
 }

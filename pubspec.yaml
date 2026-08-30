@@ -69,6 +69,8 @@ dependencies:
   collection: ^1.19.1
   sqlite3: ^3.5.2
   image: ^4.9.2
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.0
 
 dev_dependencies:
   flutter_test:

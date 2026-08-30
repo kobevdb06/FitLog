@@ -62,8 +62,20 @@ zich voor FitLog uitgeeft - en daarmee bij de versleutelde database.
 Maak er één keer een echte:
 
 ```bash
-keytool -genkey -v -keystore fitlog-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias fitlog
+keytool -genkeypair -v -keystore fitlog-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias fitlog
 ```
+
+`keytool` hoort bij de JDK en staat zelden op PATH. Op Windows zit hij bij
+Android Studio; in PowerShell:
+
+```powershell
+& "$env:JAVA_HOMEin\keytool.exe" -genkeypair -v -keystore fitlog-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias fitlog -dname "CN=Jouw Naam, O=FitLog, C=BE"
+```
+
+Met `-dname` erbij slaat hij de zes vragen over de organisatie over en vraagt
+hij alleen nog een wachtwoord, twee keer. Bij *key password* mag je Enter
+drukken: dan is die gelijk aan het keystore-wachtwoord, en dat is wat
+`key.properties` verwacht.
 
 Kopieer `android/key.properties.example` naar `android/key.properties` en vul de
 vier regels in. Beide bestanden worden door git genegeerd.

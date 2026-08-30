@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/pr.dart';
+import '../../../core/calc/set_numbering.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
@@ -270,9 +271,22 @@ class WorkoutController {
     if (owner == null || row == null) return null;
 
     final now = DateTime.now();
-    final finalWeight = weightKg ?? row.weightKg;
-    final finalReps = reps ?? row.reps;
-    final finalDuration = durationSeconds ?? row.durationSeconds;
+    var finalWeight = weightKg ?? row.weightKg;
+    var finalReps = reps ?? row.reps;
+    var finalDuration = durationSeconds ?? row.durationSeconds;
+
+    // What the empty cells show in grey is the matching set from last time.
+    // Ticking the set off used to store nothing at all, which made that grey
+    // number a lie: it looked like a value the app would use and it was not.
+    // Anything still empty now takes what the row is showing.
+    if (finalWeight == null || finalReps == null || finalDuration == null) {
+      final last = await _previousSetFor(owner, row, workout.workout.id);
+      if (last != null) {
+        finalWeight ??= last.weightKg;
+        finalReps ??= last.reps;
+        finalDuration ??= last.durationSeconds;
+      }
+    }
 
     await _db.workoutsDao.updateSet(
       setId,
@@ -303,6 +317,33 @@ class WorkoutController {
       isPrAttemptSet:
           owner.workoutExercise.isPrAttempt && setType != SetType.warmup,
     );
+  }
+
+  /// The set from the previous session that sits in this row's place.
+  ///
+  /// Matched by working-set number, the same way the previous column on screen
+  /// matches them, so warm-ups line up with nothing and a third working set
+  /// looks at the third working set of last time.
+  Future<WorkoutSetRow?> _previousSetFor(
+    WorkoutExerciseDetail owner,
+    WorkoutSetRow row,
+    String runningWorkoutId,
+  ) async {
+    final position = owner.sets.indexWhere((s) => s.id == row.id);
+    if (position < 0) return null;
+
+    final labels = labelSets(
+      owner.sets.map((s) => SetType.fromWire(s.setType)),
+    );
+    final workingIndex = labels[position].workingIndex;
+    if (workingIndex == null) return null;
+
+    final previous = await _db.workoutsDao.previousSetsFor(
+      owner.exercise.id,
+      excludingWorkoutId: runningWorkoutId,
+    );
+    if (workingIndex >= previous.length) return null;
+    return previous[workingIndex];
   }
 
   Future<void> uncompleteSet(String setId) async {

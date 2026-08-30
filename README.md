@@ -37,11 +37,49 @@ flutter analyze
 flutter test
 ```
 
-Release-APK:
+## Een release maken
+
+De APK die je weggeeft heeft één bestand voor alle telefoons, en een echte
+handtekening.
 
 ```bash
-flutter build apk --release
+flutter build apk --release --target-platform android-arm,android-arm64
 ```
+
+Dat levert `build/app/outputs/flutter-apk/app-release.apk`, zo'n 88 MB: arm64
+en 32-bits arm samen, dus hij werkt op elk toestel dat er in het wild is. De
+emulator-architectuur `x86_64` zit er niet in; die zou er 30 MB bij doen voor
+niemand. Wie per se kleiner wil, bouwt met `--split-per-abi` en deelt de
+arm64-versie van 55 MB, met de andere ernaast voor oude toestellen.
+
+### De sleutel
+
+Zonder `android/key.properties` wordt een release-build met de **debugsleutel**
+ondertekend. De build zegt dat er ook bij. Zo'n APK mag je nooit weggeven: die
+sleutel is publiek bekend, dus iedereen kan er een app overheen installeren die
+zich voor FitLog uitgeeft - en daarmee bij de versleutelde database.
+
+Maak er één keer een echte:
+
+```bash
+keytool -genkey -v -keystore fitlog-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias fitlog
+```
+
+Kopieer `android/key.properties.example` naar `android/key.properties` en vul de
+vier regels in. Beide bestanden worden door git genegeerd.
+
+**Bewaar de keystore en het wachtwoord alsof het je herstelzin is.** Android
+weigert een APK waarvan de handtekening veranderd is, dus wie de sleutel
+kwijtraakt kan niemand meer bijwerken - en opnieuw installeren kost iedereen
+elke workout op hun toestel, want er is geen server die het teruggeeft.
+
+Controleren wie er ondertekend heeft:
+
+```bash
+apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
+```
+
+Staat daar `CN=Android Debug`, dan ontbrak de sleutel.
 
 De oefeningencatalogus opnieuw genereren (samen met de tool hieronder het enige
 dat het internet raakt; geen van beide draait ooit in de app):

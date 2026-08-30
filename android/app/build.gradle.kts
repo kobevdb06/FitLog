@@ -1,3 +1,13 @@
+import java.util.Properties
+
+// The release keystore is never committed. Point at it from android/key.properties,
+// which git ignores; see key.properties.example for the four lines it needs.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -33,12 +43,33 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // No upload keystore is committed to this repository. Release builds are
-            // signed with the debug key so `flutter build apk --release` is runnable;
-            // replace this with a real signing config before publishing.
-            signingConfig = signingConfigs.getByName("debug")
+            // Falls back to the debug key so a fresh checkout still builds, but says
+            // so: an APK signed with it must never be handed to anyone. That key is
+            // public knowledge, and Android lets anything signed with it replace the
+            // app - which here means replacing the encrypted database.
+            if (hasReleaseKey) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+                println("")
+                println("  !! FitLog: no android/key.properties. This release APK is signed")
+                println("     with the debug key: fine to run, never to hand out.")
+                println("     See android/key.properties.example.")
+                println("")
+            }
             isMinifyEnabled = false
             isShrinkResources = false
         }

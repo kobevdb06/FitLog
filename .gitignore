@@ -54,3 +54,10 @@ app.*.map.json
 # tool/build_exercise_images.dart. Regenerate with that tool; the generated
 # assets under assets/exercises/ are committed, the inputs are not.
 .build_cache/
+
+# Signing. The keystore and its password never belong in the repository, and
+# an APK signed with anything else cannot update the one people installed.
+*.jks
+*.keystore
+**/android/key.properties
+!**/android/key.properties.example

@@ -606,3 +606,35 @@ Het release-manifest haalt `INTERNET` er wél weg met `tools:node="remove"`,
 zodat een volgende afhankelijkheid die hem meebrengt de belofte niet stil kan
 breken. `test/security/offline_test.dart` bewaakt beide manifesten en zoekt in
 `lib/` naar netwerkcode.
+
+## 46. De release-sleutel staat niet in de repository, en de debugsleutel telt niet
+
+Tot nu toe werd een release-build ondertekend met de debugsleutel, met een
+opmerking erbij dat dat vóór publicatie vervangen moest worden. Voor bouwen op
+één machine werkt dat; weggeven mag het niet. De Android-debugsleutel is
+publiek bekend met een vast wachtwoord, dus iedereen kan een APK bouwen die
+zich `be.fitlog.app` noemt, en Android laat die er overheen installeren - bij
+de versleutelde database.
+
+De sleutel wordt nu gelezen uit `android/key.properties`, dat git negeert,
+net als elke `.jks` en `.keystore`. Ontbreekt dat bestand, dan valt de build
+terug op de debugsleutel zodat een verse checkout gewoon bouwt, maar hij zegt
+er tijdens het bouwen bij dat de uitkomst niet weggegeven mag worden. Een
+waarschuwing die je alleen in een logbestand ziet, is geen waarschuwing.
+
+Die sleutel is onvervangbaar op een manier die de meeste projecten niet kennen:
+Android weigert een APK waarvan de handtekening veranderde, en opnieuw
+installeren kost hier álle gegevens, want er staat niets op een server. De
+sleutel is daarmee even kostbaar als de herstelzin van een gebruiker.
+
+## 47. Eén APK voor iedereen, zonder de emulator-architectuur
+
+Voor de downloadknop wordt niet met `--split-per-abi` gebouwd maar met
+`--target-platform android-arm,android-arm64`. Drie bestanden waarvan de
+bezoeker de juiste moet raden is een keuze die je aan niemand hoort te vragen;
+de verkeerde keuze eindigt in een installatie die weigert zonder uit te leggen
+waarom.
+
+`x86_64` blijft eruit. Dat is de architectuur van emulators, en hij doet 30 MB
+bij een bestand dat toch al groot is. Wat overblijft, 88 MB, draait op elk
+Android-toestel dat er in het wild is.

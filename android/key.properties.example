@@ -1,0 +1,17 @@
+# Copy to android/key.properties and fill in. That file is ignored by git and
+# must stay that way: it holds the password to the signing key.
+#
+# Make the key once, and keep both the file and the password somewhere you will
+# still have them in five years:
+#
+#   keytool -genkey -v -keystore fitlog-release.jks \
+#           -keyalg RSA -keysize 4096 -validity 10000 -alias fitlog
+#
+# Lose it and nobody can ever update the app again: Android refuses an APK whose
+# signature changed, and reinstalling means losing every workout on the device,
+# because there is no server holding a copy.
+
+storeFile=../fitlog-release.jks
+storePassword=
+keyAlias=fitlog
+keyPassword=

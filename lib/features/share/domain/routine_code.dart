@@ -30,6 +30,28 @@ const int kMaxSharedNameLength = 120;
 const int kMaxSharedTextLength = 4000;
 const int kMaxInflatedBytes = 256 * 1024;
 
+/// What one QR code holds at medium error correction.
+const int kQrCapacityBytes = 2331;
+
+/// The payload goes into the code as base64, which costs a third, so this is
+/// what the compressed bytes may weigh.
+const int kQrPayloadBudget = kQrCapacityBytes * 3 ~/ 4;
+
+/// The most instruction text one exercise contributes. Beyond this it is not a
+/// description any more, it is an essay, and it is squeezing out the routine.
+const int kSharedInstructionLimit = 600;
+
+/// Thrown when a routine will not fit however much is left out of it.
+class RoutineTooLargeException implements Exception {
+  const RoutineTooLargeException(this.exerciseCount);
+
+  final int exerciseCount;
+
+  @override
+  String toString() =>
+      'RoutineTooLargeException: $exerciseCount oefeningen passen niet';
+}
+
 /// Thrown for anything that is not a routine code we can read.
 class InvalidRoutineCodeException implements Exception {
   const InvalidRoutineCodeException(this.message);
@@ -148,6 +170,47 @@ Uint8List encodeRoutine(SharedRoutine routine) {
     ...body,
   ]);
 }
+
+/// The bytes for the QR code, with the optional parts dropped one by one
+/// until they fit.
+///
+/// The instructions are what overflow: a catalogue exercise carries several
+/// hundred characters of them, and eight of those are more than a QR code
+/// holds all by themselves. They are also the least missed, which is why they
+/// go first.
+({Uint8List bytes, bool droppedText}) encodeRoutineForQr(
+  SharedRoutine routine,
+) {
+  final full = encodeRoutine(routine);
+  if (full.length <= kQrPayloadBudget) {
+    return (bytes: full, droppedText: false);
+  }
+
+  final lean = encodeRoutine(_withoutText(routine));
+  if (lean.length <= kQrPayloadBudget) {
+    return (bytes: lean, droppedText: true);
+  }
+
+  throw RoutineTooLargeException(routine.exercises.length);
+}
+
+SharedRoutine _withoutText(SharedRoutine routine) => SharedRoutine(
+  name: routine.name,
+  exercises: [
+    for (final exercise in routine.exercises)
+      SharedExercise(
+        id: exercise.id,
+        name: exercise.name,
+        primaryMuscle: exercise.primaryMuscle,
+        secondaryMuscles: exercise.secondaryMuscles,
+        equipment: exercise.equipment,
+        category: exercise.category,
+        restSeconds: exercise.restSeconds,
+        supersetGroup: exercise.supersetGroup,
+        sets: exercise.sets,
+      ),
+  ],
+);
 
 // --- Reading -----------------------------------------------------------------
 

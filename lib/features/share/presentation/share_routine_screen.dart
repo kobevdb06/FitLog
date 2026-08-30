@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,7 +58,19 @@ class ShareRoutineScreen extends ConsumerWidget {
             );
           }
 
-          final payload = base64Url.encode(encodeRoutine(routine));
+          final ({Uint8List bytes, bool droppedText}) encoded;
+          try {
+            encoded = encodeRoutineForQr(routine);
+          } on RoutineTooLargeException {
+            return const EmptyState(
+              icon: Icons.qr_code_2,
+              title: 'Te groot voor één code',
+              message:
+                  'Deze routine past niet in een QR-code. Deel hem in tweeën '
+                  'en stuur ze los.',
+            );
+          }
+          final payload = base64Url.encode(encoded.bytes);
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -94,6 +107,16 @@ class ShareRoutineScreen extends ConsumerWidget {
                     'rusttijden. Er gaat niets over het internet, en jouw '
                     'gewichten blijven van jou.',
               ),
+              if (encoded.droppedText) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'De uitvoeringsnotities pasten er niet bij. De oefeningen, '
+                  'sets en rusttijden wel.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               Text(
                 'Laat je vriend in FitLog op Scannen tikken en deze code '

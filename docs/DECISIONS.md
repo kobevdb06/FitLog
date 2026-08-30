@@ -541,6 +541,17 @@ komen. Zekerheid weegt hier zwaarder dan dichtheid; blijkt de code in de
 praktijk te dicht om te scannen, dan is base45 met alfanumerieke modus de
 volgende stap.
 
+De uitleg van een catalogusoefening gaat niet mee. Die staat al in de
+catalogus van de ontvanger, en het is precies wat de code liet klappen: de
+mediane oefening uit de dataset draagt zo'n 600 tekens uitleg, en acht daarvan
+zijn in hun eentje groter dan een QR-code. Alleen bij een oefening die de
+ontvanger niet kan opzoeken reist de uitleg mee, en dan afgekapt.
+
+Past het dan nog niet, dan valt de tekst helemaal weg en gaat de code er zonder
+doorheen. Wat overblijft is waar het om gaat: oefeningen, sets en rusttijden.
+Een routine helemaal weigeren omdat er te veel over de uitvoering geschreven
+is, zou de verkeerde kant op falen.
+
 Gewichten gaan niet mee. De ontvanger tilt zijn eigen getallen, en de
 VORIGE-kolom vult zich vanzelf zodra hij de oefening een keer gedaan heeft -
 dezelfde redenering als bij *Opnieuw doen*.

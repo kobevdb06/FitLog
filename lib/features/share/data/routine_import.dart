@@ -146,7 +146,13 @@ Future<SharedRoutine> sharedRoutineFor(AppDatabase db, String routineId) async {
           ),
           equipment: item.exercise.equipment,
           category: ExerciseCategory.fromWire(item.exercise.category),
-          instructions: item.exercise.instructions,
+          // Only for an exercise the receiver cannot look up. A catalogue
+          // entry's instructions are already in their own seed, and they run
+          // to several hundred characters each - eight of them are larger than
+          // a QR code, which is how they came to be left out.
+          instructions: item.exercise.isCustom
+              ? _shortened(item.exercise.instructions)
+              : null,
           restSeconds: item.routineExercise.restSeconds,
           supersetGroup: item.routineExercise.supersetGroup,
           notes: item.routineExercise.notes,
@@ -161,6 +167,15 @@ Future<SharedRoutine> sharedRoutineFor(AppDatabase db, String routineId) async {
         ),
     ],
   );
+}
+
+String? _shortened(String? text) {
+  if (text == null) return null;
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return null;
+  return trimmed.length <= kSharedInstructionLimit
+      ? trimmed
+      : '${trimmed.substring(0, kSharedInstructionLimit)}…';
 }
 
 /// The JSON array of muscles as stored on the row.

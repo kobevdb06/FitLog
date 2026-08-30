@@ -22,7 +22,11 @@ PhotoStore? photoStore(Ref ref) {
   return paths == null ? null : PhotoStore(paths);
 }
 
-@riverpod
+// Kept alive on purpose. These objects hold a `Ref` and every one of their
+// callers uses them across an async gap: a confirmation dialog, the photo
+// picker, the PR configuration screen. An auto-disposing provider is torn down
+// while that gap is open, and the next call throws on a dead `Ref`.
+@Riverpod(keepAlive: true)
 PhotoActions photoActions(Ref ref) => PhotoActions(ref);
 
 /// The screen-facing wrapper: picking is the only part that needs a plugin,

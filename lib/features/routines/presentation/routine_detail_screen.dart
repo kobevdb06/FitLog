@@ -112,6 +112,23 @@ class RoutineDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String value,
   ) async {
+    try {
+      await _runMenu(context, ref, value);
+    } on Object catch (error) {
+      // Without this the failure went nowhere: the button appeared to do
+      // nothing at all. Surfaced, not swallowed - the action still failed.
+      if (context.mounted) {
+        showSnack(context, 'Dat lukte niet: $error', isError: true);
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _runMenu(
+    BuildContext context,
+    WidgetRef ref,
+    String value,
+  ) async {
     final actions = ref.read(routineActionsProvider);
     switch (value) {
       case 'edit':

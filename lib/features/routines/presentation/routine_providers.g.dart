@@ -222,7 +222,7 @@ final class RoutineActionsProvider
         argument: null,
         retry: null,
         name: r'routineActionsProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -249,4 +249,4 @@ final class RoutineActionsProvider
   }
 }
 
-String _$routineActionsHash() => r'0a40a51718d058d90be7ac69d0af0e471332668a';
+String _$routineActionsHash() => r'b7925e1a1782a5bd373ce5e07e8d37e3f409a85f';

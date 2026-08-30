@@ -536,23 +536,35 @@ final class ExerciseUsageCountFamily extends $Family
 }
 
 /// Creating and editing exercises the user made themselves.
+// Kept alive on purpose. These objects hold a `Ref` and every one of their
+// callers uses them across an async gap: a confirmation dialog, the photo
+// picker, the PR configuration screen. An auto-disposing provider is torn down
+// while that gap is open, and the next call throws on a dead `Ref`.
 
 @ProviderFor(exerciseEditor)
 final exerciseEditorProvider = ExerciseEditorProvider._();
 
 /// Creating and editing exercises the user made themselves.
+// Kept alive on purpose. These objects hold a `Ref` and every one of their
+// callers uses them across an async gap: a confirmation dialog, the photo
+// picker, the PR configuration screen. An auto-disposing provider is torn down
+// while that gap is open, and the next call throws on a dead `Ref`.
 
 final class ExerciseEditorProvider
     extends $FunctionalProvider<ExerciseEditor, ExerciseEditor, ExerciseEditor>
     with $Provider<ExerciseEditor> {
   /// Creating and editing exercises the user made themselves.
+  // Kept alive on purpose. These objects hold a `Ref` and every one of their
+  // callers uses them across an async gap: a confirmation dialog, the photo
+  // picker, the PR configuration screen. An auto-disposing provider is torn down
+  // while that gap is open, and the next call throws on a dead `Ref`.
   ExerciseEditorProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'exerciseEditorProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -579,4 +591,4 @@ final class ExerciseEditorProvider
   }
 }
 
-String _$exerciseEditorHash() => r'39ec59f10950e23e7805194435660737840bd943';
+String _$exerciseEditorHash() => r'0f53a7fb229a54aaabf2fcf75e9a4855e7da5a6d';

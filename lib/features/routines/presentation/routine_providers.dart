@@ -23,7 +23,11 @@ Stream<RoutineDetail?> routineDetail(Ref ref, String routineId) =>
 Future<RoutineRow?> suggestedRoutine(Ref ref) =>
     ref.watch(databaseProvider).routinesDao.suggestedRoutine();
 
-@riverpod
+// Kept alive on purpose. These objects hold a `Ref` and every one of their
+// callers uses them across an async gap: a confirmation dialog, the photo
+// picker, the PR configuration screen. An auto-disposing provider is torn down
+// while that gap is open, and the next call throws on a dead `Ref`.
+@Riverpod(keepAlive: true)
 RoutineActions routineActions(Ref ref) => RoutineActions(ref);
 
 /// Every write the routine screens perform.

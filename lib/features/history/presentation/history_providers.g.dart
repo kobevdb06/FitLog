@@ -302,7 +302,7 @@ final class HistoryActionsProvider
         argument: null,
         retry: null,
         name: r'historyActionsProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -329,7 +329,7 @@ final class HistoryActionsProvider
   }
 }
 
-String _$historyActionsHash() => r'84937d22d0d27492f963f9f6fa49689b40a6833a';
+String _$historyActionsHash() => r'dbbd99f62d79d7863c453676e6c26145151268f0';
 
 /// Workouts that are on their way out but can still be brought back.
 ///

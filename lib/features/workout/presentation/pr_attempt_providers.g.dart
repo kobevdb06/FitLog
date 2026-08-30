@@ -100,7 +100,7 @@ final class PrAttemptActionsProvider
         argument: null,
         retry: null,
         name: r'prAttemptActionsProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -127,4 +127,4 @@ final class PrAttemptActionsProvider
   }
 }
 
-String _$prAttemptActionsHash() => r'941a7e862c9db7e24a004552db14fdd19ef82456';
+String _$prAttemptActionsHash() => r'16c23d36f0d4cb155f879bf5f79075b3fcee646c';

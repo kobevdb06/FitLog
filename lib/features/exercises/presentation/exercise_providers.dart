@@ -174,7 +174,11 @@ List<ChartPoint> buildExerciseSeries({
 }
 
 /// Creating and editing exercises the user made themselves.
-@riverpod
+// Kept alive on purpose. These objects hold a `Ref` and every one of their
+// callers uses them across an async gap: a confirmation dialog, the photo
+// picker, the PR configuration screen. An auto-disposing provider is torn down
+// while that gap is open, and the next call throws on a dead `Ref`.
+@Riverpod(keepAlive: true)
 ExerciseEditor exerciseEditor(Ref ref) => ExerciseEditor(ref);
 
 class ExerciseEditor {

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/exercise_image.dart';
+import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/exercise_image.dart';
 import '../../../routing/routes.dart';
 import 'custom_exercise_screen.dart';
 import 'exercise_providers.dart';
@@ -96,6 +98,7 @@ class _ExerciseLibraryScreenState
     final exercises = ref.watch(filteredExercisesProvider);
     final recent = ref.watch(recentExercisesProvider).value ?? const [];
     final images = ref.watch(exerciseImagesProvider).value;
+    final paths = ref.watch(appPathsProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -205,6 +208,7 @@ class _ExerciseLibraryScreenState
                   _ExerciseTile(
                     exercise: exercise,
                     manifest: images,
+                    paths: paths,
                     selected: _selected.contains(exercise.id),
                     selectable: widget.selectionMode,
                     onTap: () => _onTapExercise(exercise),
@@ -215,6 +219,7 @@ class _ExerciseLibraryScreenState
                 _ExerciseTile(
                   exercise: exercise,
                   manifest: images,
+                  paths: paths,
                   selected: _selected.contains(exercise.id),
                   selectable: widget.selectionMode,
                   onTap: () => _onTapExercise(exercise),
@@ -307,6 +312,7 @@ class _ExerciseTile extends StatelessWidget {
   const _ExerciseTile({
     required this.exercise,
     required this.manifest,
+    required this.paths,
     required this.selected,
     required this.selectable,
     required this.onTap,
@@ -314,6 +320,7 @@ class _ExerciseTile extends StatelessWidget {
 
   final ExerciseRow exercise;
   final ExerciseImageManifest? manifest;
+  final AppPaths? paths;
   final bool selected;
   final bool selectable;
   final VoidCallback onTap;
@@ -323,7 +330,11 @@ class _ExerciseTile extends StatelessWidget {
     final category = ExerciseCategory.fromWire(exercise.category);
     return ListTile(
       onTap: onTap,
-      leading: ExerciseThumb(exercise: exercise, manifest: manifest),
+      leading: ExerciseThumb(
+        exercise: exercise,
+        manifest: manifest,
+        paths: paths,
+      ),
       title: Text(exercise.name),
       subtitle: Text(
         [

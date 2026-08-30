@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -105,15 +106,25 @@ class _InfoTab extends ConsumerWidget {
     final category = ExerciseCategory.fromWire(exercise.category);
     final secondary = decodeSecondaryMuscles(exercise.secondaryMuscles);
     final images = ref.watch(exerciseImagesProvider).value;
+    final paths = ref.watch(appPathsProvider).value;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        ExerciseAnimation(exercise: exercise, manifest: images),
+        ExerciseAnimation(
+          exercise: exercise,
+          manifest: images,
+          paths: paths,
+        ),
         const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
-            ExerciseThumb(exercise: exercise, manifest: images, size: 56),
+            ExerciseThumb(
+              exercise: exercise,
+              manifest: images,
+              paths: paths,
+              size: 56,
+            ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(

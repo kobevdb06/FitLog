@@ -55,9 +55,12 @@ class PhotoStore {
   /// Copies [source] into the photo directory, corrected and compressed.
   ///
   /// Returns the file name to store in `progress_photos.file_name`.
-  Future<String> import(File source) async {
+  ///
+  /// [maxLongEdge] defaults to the size a progress photo is kept at; an
+  /// exercise frame is never shown larger than a card and asks for less.
+  Future<String> import(File source, {int? maxLongEdge}) async {
     final bytes = await source.readAsBytes();
-    final processed = await _process(bytes);
+    final processed = await _process(bytes, maxLongEdge ?? PhotoStore.maxLongEdge);
 
     final dir = await paths.ensurePhotosDirectory();
     final fileName = '${_uuid.v4()}.jpg';
@@ -67,15 +70,16 @@ class PhotoStore {
 
   /// Decoding and re-encoding a camera photo is heavy enough to drop frames,
   /// so it happens on its own isolate.
-  static Future<Uint8List> _process(Uint8List bytes) =>
-      Isolate.run(() => processBytes(bytes));
+  static Future<Uint8List> _process(Uint8List bytes, int maxLongEdge) =>
+      Isolate.run(() => processBytes(bytes, maxLongEdge: maxLongEdge));
 
   /// Bakes the EXIF orientation into the pixels, scales the long edge down to
   /// [maxLongEdge] and re-encodes as JPEG.
   ///
   /// Camera photos carry their rotation in an EXIF tag that `Image.file` does
   /// not apply, so without baking they show up on their side.
-  static Uint8List processBytes(Uint8List bytes) {
+  static Uint8List processBytes(Uint8List bytes, {int? maxLongEdge}) {
+    final limit = maxLongEdge ?? PhotoStore.maxLongEdge;
     final img.Image? decoded;
     try {
       decoded = img.decodeImage(bytes);
@@ -89,12 +93,12 @@ class PhotoStore {
         ? upright.width
         : upright.height;
 
-    final sized = longEdge <= maxLongEdge
+    final sized = longEdge <= limit
         ? upright
         : img.copyResize(
             upright,
-            width: upright.width >= upright.height ? maxLongEdge : null,
-            height: upright.height > upright.width ? maxLongEdge : null,
+            width: upright.width >= upright.height ? limit : null,
+            height: upright.height > upright.width ? limit : null,
             interpolation: img.Interpolation.average,
           );
 

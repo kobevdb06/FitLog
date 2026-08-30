@@ -23,6 +23,7 @@ gebruikersdata verwijderen of herschrijven mag niet.
 | 2 | `personal_records.workout_set_id` kreeg de ontbrekende `ON DELETE SET NULL`. Dat vereist een tabelherbouw, dus de migratie zet `foreign_keys` uit, doet de herbouw in een transactie, controleert met `PRAGMA foreign_key_check` en zet ze weer aan. Verwijzingen die al dood waren, worden eenmalig leeggemaakt. |
 | 3 | `app_settings.default_warmup_sets`. |
 | 4 | `workout_exercises.is_pr_attempt`, `pr_target_weight_kg`, `pr_result` en `app_settings.pr_default_warmup_sets` / `pr_default_extra_attempts`. |
+| 5 | `exercises.start_image_file` en `end_image_file`: de twee beelden van een eigen oefening. |
 
 `test/db/migration_test.dart` bouwt een echte v1-database uit
 `test/db/fixtures/schema_v1.sql`, vult ze met gebruikersdata en controleert dat
@@ -79,9 +80,19 @@ precies één keer geïmporteerd wordt.
 | `category` | TEXT | `barbell` \| `dumbbell` \| `machine` \| `cable` \| `bodyweight` \| `assisted_bodyweight` \| `duration` \| `cardio` |
 | `instructions` | TEXT? | |
 | `image_asset` | TEXT? | ongebruikt; de illustraties worden opgezocht op `id` via `assets/exercises/manifest.json` |
+| `start_image_file` | TEXT? | bestandsnaam in de fotomap; startpositie van een eigen oefening |
+| `end_image_file` | TEXT? | bestandsnaam in de fotomap; eindpositie |
 | `is_custom` | BOOL | door de gebruiker gemaakt |
 | `is_archived` | BOOL | verborgen, maar blijft bestaan voor de geschiedenis |
 | `created_at` | INT | |
+
+De twee beeldkolommen bewaren alleen de **bestandsnaam**, om dezelfde reden
+als `progress_photos.file_name`: op iOS verandert de container-UUID bij een
+update, waardoor een opgeslagen absoluut pad dood zou zijn. De bestanden staan
+in dezelfde map als de voortgangsfoto's, zodat ze zonder extra code meegaan in
+de back-up en door dezelfde opstartcontrole worden opgeruimd. Die controle
+kijkt daarom naar beide tabellen: een bestand dat alleen vanuit `exercises`
+wordt aangewezen zou anders als wees verdwijnen.
 
 ### `routine_folders`
 

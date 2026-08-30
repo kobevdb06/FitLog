@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 4);
+    expect(raw.select('PRAGMA user_version').first.values.first, 5);
     raw.close();
   });
 
@@ -119,6 +119,12 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
 
     expect(await db.exercisesDao.countExercises(), 1);
+    // v5 added the two frames of a user-made exercise. An exercise that
+    // predates them has none, which is what null says.
+    final migratedExercise = await db.exercisesDao.getById('ex-1');
+    expect(migratedExercise!.startImageFile, isNull);
+    expect(migratedExercise.endImageFile, isNull);
+    expect(await db.exercisesDao.imageFileNames(), isEmpty);
     expect((await db.routinesDao.getRoutine('r-1'))!.name, 'Been');
 
     final workout = await db.workoutsDao.getWorkoutDetail('w-1');
@@ -194,7 +200,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 4);
+    expect(db.schemaVersion, 5);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

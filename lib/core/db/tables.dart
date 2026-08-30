@@ -118,6 +118,14 @@ class ExercisesTable extends Table {
   TextColumn get category => text()();
   TextColumn get instructions => text().nullable()();
   TextColumn get imageAsset => text().named('image_asset').nullable()();
+
+  /// The two frames of a user-made exercise, as file names in the photo
+  /// directory. Only the name is stored, for the same reason progress photos
+  /// do it that way: the container path changes underneath an absolute one.
+  TextColumn get startImageFile =>
+      text().named('start_image_file').nullable()();
+  TextColumn get endImageFile => text().named('end_image_file').nullable()();
+
   BoolColumn get isCustom =>
       boolean().named('is_custom').withDefault(const Constant(false))();
   BoolColumn get isArchived =>

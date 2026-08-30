@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -105,6 +105,12 @@ class AppDatabase extends _$AppDatabase {
             appSettingsTable,
             appSettingsTable.prDefaultExtraAttempts,
           );
+        }
+        if (from < 5) {
+          // The two frames of a user-made exercise. Additive: every existing
+          // exercise has no pictures of its own, which is what null says.
+          await m.addColumn(exercisesTable, exercisesTable.startImageFile);
+          await m.addColumn(exercisesTable, exercisesTable.endImageFile);
         }
       });
 

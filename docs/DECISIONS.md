@@ -379,3 +379,51 @@ dashboard toonden allemaal de terugvalbadge met de beginletters.
 
 `ExerciseAvatar` leest het manifest zelf, zodat een aanroepplek alleen de
 oefening nodig heeft. De catalogus blijft het manifest expliciet doorgeven.
+
+## 33. Een eigen oefening animeert in Dart, niet als bestand
+
+De gevraagde uitkomst is dat twee foto's van een eigen oefening net zo bewegen
+als de illustraties uit de catalogus. Die catalogusbeelden zijn geanimeerde
+WebP's, gebouwd door `tool/build_exercise_images.dart` met libwebp - een
+programma dat op de buildmachine draait en niet op de telefoon.
+
+Er wordt dus geen bestand gemaakt. De twee foto's blijven twee JPEG's en
+`ExerciseAnimation` wisselt ze af op dezelfde 700 ms als de gebouwde
+animaties, met dezelfde tik-om-te-pauzeren. Het alternatief was op het toestel
+een GIF encoderen; dat kan met `package:image`, maar een GIF is beperkt tot 256
+kleuren en dat is op een foto direct zichtbaar. Beide beelden blijven gebouwd
+in een `IndexedStack`, zodat het wisselen een hertekening is en geen decode -
+decoderen op de tel zou als een hapering te zien zijn.
+
+## 34. De beelden van een oefening staan bij de voortgangsfoto's
+
+Ze hadden een eigen map kunnen krijgen. Dan had ook de back-up een tweede map
+moeten inpakken en uitpakken, en had de opstartcontrole die wezen opruimt een
+tweede keer geschreven moeten worden. Beide zijn dingen die je één keer goed
+doet en daarna vergeet bij te werken.
+
+In dezelfde map reizen ze mee in de back-up zonder extra code. De prijs is dat
+`PhotoLibrary.cleanup` nu twee tabellen moet bevragen voor het antwoord op de
+vraag welk bestand nog ergens bij hoort; staat een van de twee er niet bij, dan
+verwijdert de opruiming het bestand van de ander. Dat is precies wat
+`test/photos/exercise_frames_test.dart` vastlegt.
+
+Verdwijnt het bestand toch, dan wordt alleen de verwijzing leeggemaakt. De
+oefening zelf blijft staan: er kunnen workouts aan hangen, en die zijn meer
+waard dan een plaatje.
+
+## 35. Een afgebroken bewerking laat een bestand achter, en dat mag
+
+De gekozen foto wordt meteen gekopieerd en verkleind, nog voor er iets in de
+database staat: wat het scherm toont is dan het bestand dat bewaard wordt, en
+niet het tijdelijke bestand van de kiezer, dat het systeem op elk moment mag
+weggooien.
+
+Sluit de gebruiker het scherm daarna zonder op te slaan, dan ligt dat bestand er
+zonder rij. Het opruimen ervan bij het verlaten van het scherm zou vragen dat
+het scherm overleeft dat Android het proces tijdens het kiezen afsluit, en dat
+is precies het geval dat je niet kunt afvangen. De opstartcontrole ruimt zulke
+wezen al op; dit is er een van.
+
+Andersom wordt een vervangen foto pas bij het opslaan verwijderd. Tot dat moment
+wijst de rij er nog naar, en kan de gebruiker de bewerking nog laten varen.

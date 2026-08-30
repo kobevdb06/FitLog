@@ -1690,6 +1690,28 @@ class $ExercisesTableTable extends ExercisesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _startImageFileMeta = const VerificationMeta(
+    'startImageFile',
+  );
+  @override
+  late final GeneratedColumn<String> startImageFile = GeneratedColumn<String>(
+    'start_image_file',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endImageFileMeta = const VerificationMeta(
+    'endImageFile',
+  );
+  @override
+  late final GeneratedColumn<String> endImageFile = GeneratedColumn<String>(
+    'end_image_file',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isCustomMeta = const VerificationMeta(
     'isCustom',
   );
@@ -1741,6 +1763,8 @@ class $ExercisesTableTable extends ExercisesTable
     category,
     instructions,
     imageAsset,
+    startImageFile,
+    endImageFile,
     isCustom,
     isArchived,
     createdAt,
@@ -1819,6 +1843,24 @@ class $ExercisesTableTable extends ExercisesTable
         imageAsset.isAcceptableOrUnknown(data['image_asset']!, _imageAssetMeta),
       );
     }
+    if (data.containsKey('start_image_file')) {
+      context.handle(
+        _startImageFileMeta,
+        startImageFile.isAcceptableOrUnknown(
+          data['start_image_file']!,
+          _startImageFileMeta,
+        ),
+      );
+    }
+    if (data.containsKey('end_image_file')) {
+      context.handle(
+        _endImageFileMeta,
+        endImageFile.isAcceptableOrUnknown(
+          data['end_image_file']!,
+          _endImageFileMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_custom')) {
       context.handle(
         _isCustomMeta,
@@ -1880,6 +1922,14 @@ class $ExercisesTableTable extends ExercisesTable
         DriftSqlType.string,
         data['${effectivePrefix}image_asset'],
       ),
+      startImageFile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_image_file'],
+      ),
+      endImageFile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_image_file'],
+      ),
       isCustom: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_custom'],
@@ -1914,6 +1964,12 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
   final String category;
   final String? instructions;
   final String? imageAsset;
+
+  /// The two frames of a user-made exercise, as file names in the photo
+  /// directory. Only the name is stored, for the same reason progress photos
+  /// do it that way: the container path changes underneath an absolute one.
+  final String? startImageFile;
+  final String? endImageFile;
   final bool isCustom;
   final bool isArchived;
   final int createdAt;
@@ -1926,6 +1982,8 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     required this.category,
     this.instructions,
     this.imageAsset,
+    this.startImageFile,
+    this.endImageFile,
     required this.isCustom,
     required this.isArchived,
     required this.createdAt,
@@ -1946,6 +2004,12 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     }
     if (!nullToAbsent || imageAsset != null) {
       map['image_asset'] = Variable<String>(imageAsset);
+    }
+    if (!nullToAbsent || startImageFile != null) {
+      map['start_image_file'] = Variable<String>(startImageFile);
+    }
+    if (!nullToAbsent || endImageFile != null) {
+      map['end_image_file'] = Variable<String>(endImageFile);
     }
     map['is_custom'] = Variable<bool>(isCustom);
     map['is_archived'] = Variable<bool>(isArchived);
@@ -1969,6 +2033,12 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       imageAsset: imageAsset == null && nullToAbsent
           ? const Value.absent()
           : Value(imageAsset),
+      startImageFile: startImageFile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startImageFile),
+      endImageFile: endImageFile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endImageFile),
       isCustom: Value(isCustom),
       isArchived: Value(isArchived),
       createdAt: Value(createdAt),
@@ -1989,6 +2059,8 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       category: serializer.fromJson<String>(json['category']),
       instructions: serializer.fromJson<String?>(json['instructions']),
       imageAsset: serializer.fromJson<String?>(json['imageAsset']),
+      startImageFile: serializer.fromJson<String?>(json['startImageFile']),
+      endImageFile: serializer.fromJson<String?>(json['endImageFile']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -2006,6 +2078,8 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       'category': serializer.toJson<String>(category),
       'instructions': serializer.toJson<String?>(instructions),
       'imageAsset': serializer.toJson<String?>(imageAsset),
+      'startImageFile': serializer.toJson<String?>(startImageFile),
+      'endImageFile': serializer.toJson<String?>(endImageFile),
       'isCustom': serializer.toJson<bool>(isCustom),
       'isArchived': serializer.toJson<bool>(isArchived),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -2021,6 +2095,8 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     String? category,
     Value<String?> instructions = const Value.absent(),
     Value<String?> imageAsset = const Value.absent(),
+    Value<String?> startImageFile = const Value.absent(),
+    Value<String?> endImageFile = const Value.absent(),
     bool? isCustom,
     bool? isArchived,
     int? createdAt,
@@ -2033,6 +2109,10 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     category: category ?? this.category,
     instructions: instructions.present ? instructions.value : this.instructions,
     imageAsset: imageAsset.present ? imageAsset.value : this.imageAsset,
+    startImageFile: startImageFile.present
+        ? startImageFile.value
+        : this.startImageFile,
+    endImageFile: endImageFile.present ? endImageFile.value : this.endImageFile,
     isCustom: isCustom ?? this.isCustom,
     isArchived: isArchived ?? this.isArchived,
     createdAt: createdAt ?? this.createdAt,
@@ -2055,6 +2135,12 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       imageAsset: data.imageAsset.present
           ? data.imageAsset.value
           : this.imageAsset,
+      startImageFile: data.startImageFile.present
+          ? data.startImageFile.value
+          : this.startImageFile,
+      endImageFile: data.endImageFile.present
+          ? data.endImageFile.value
+          : this.endImageFile,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
       isArchived: data.isArchived.present
           ? data.isArchived.value
@@ -2074,6 +2160,8 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ..write('category: $category, ')
           ..write('instructions: $instructions, ')
           ..write('imageAsset: $imageAsset, ')
+          ..write('startImageFile: $startImageFile, ')
+          ..write('endImageFile: $endImageFile, ')
           ..write('isCustom: $isCustom, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt')
@@ -2091,6 +2179,8 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     category,
     instructions,
     imageAsset,
+    startImageFile,
+    endImageFile,
     isCustom,
     isArchived,
     createdAt,
@@ -2107,6 +2197,8 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           other.category == this.category &&
           other.instructions == this.instructions &&
           other.imageAsset == this.imageAsset &&
+          other.startImageFile == this.startImageFile &&
+          other.endImageFile == this.endImageFile &&
           other.isCustom == this.isCustom &&
           other.isArchived == this.isArchived &&
           other.createdAt == this.createdAt);
@@ -2121,6 +2213,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
   final Value<String> category;
   final Value<String?> instructions;
   final Value<String?> imageAsset;
+  final Value<String?> startImageFile;
+  final Value<String?> endImageFile;
   final Value<bool> isCustom;
   final Value<bool> isArchived;
   final Value<int> createdAt;
@@ -2134,6 +2228,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.category = const Value.absent(),
     this.instructions = const Value.absent(),
     this.imageAsset = const Value.absent(),
+    this.startImageFile = const Value.absent(),
+    this.endImageFile = const Value.absent(),
     this.isCustom = const Value.absent(),
     this.isArchived = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -2148,6 +2244,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     required String category,
     this.instructions = const Value.absent(),
     this.imageAsset = const Value.absent(),
+    this.startImageFile = const Value.absent(),
+    this.endImageFile = const Value.absent(),
     this.isCustom = const Value.absent(),
     this.isArchived = const Value.absent(),
     required int createdAt,
@@ -2166,6 +2264,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Expression<String>? category,
     Expression<String>? instructions,
     Expression<String>? imageAsset,
+    Expression<String>? startImageFile,
+    Expression<String>? endImageFile,
     Expression<bool>? isCustom,
     Expression<bool>? isArchived,
     Expression<int>? createdAt,
@@ -2180,6 +2280,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       if (category != null) 'category': category,
       if (instructions != null) 'instructions': instructions,
       if (imageAsset != null) 'image_asset': imageAsset,
+      if (startImageFile != null) 'start_image_file': startImageFile,
+      if (endImageFile != null) 'end_image_file': endImageFile,
       if (isCustom != null) 'is_custom': isCustom,
       if (isArchived != null) 'is_archived': isArchived,
       if (createdAt != null) 'created_at': createdAt,
@@ -2196,6 +2298,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Value<String>? category,
     Value<String?>? instructions,
     Value<String?>? imageAsset,
+    Value<String?>? startImageFile,
+    Value<String?>? endImageFile,
     Value<bool>? isCustom,
     Value<bool>? isArchived,
     Value<int>? createdAt,
@@ -2210,6 +2314,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       category: category ?? this.category,
       instructions: instructions ?? this.instructions,
       imageAsset: imageAsset ?? this.imageAsset,
+      startImageFile: startImageFile ?? this.startImageFile,
+      endImageFile: endImageFile ?? this.endImageFile,
       isCustom: isCustom ?? this.isCustom,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
@@ -2244,6 +2350,12 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     if (imageAsset.present) {
       map['image_asset'] = Variable<String>(imageAsset.value);
     }
+    if (startImageFile.present) {
+      map['start_image_file'] = Variable<String>(startImageFile.value);
+    }
+    if (endImageFile.present) {
+      map['end_image_file'] = Variable<String>(endImageFile.value);
+    }
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
@@ -2270,6 +2382,8 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
           ..write('category: $category, ')
           ..write('instructions: $instructions, ')
           ..write('imageAsset: $imageAsset, ')
+          ..write('startImageFile: $startImageFile, ')
+          ..write('endImageFile: $endImageFile, ')
           ..write('isCustom: $isCustom, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt, ')
@@ -8010,6 +8124,8 @@ typedef $$ExercisesTableTableCreateCompanionBuilder =
       required String category,
       Value<String?> instructions,
       Value<String?> imageAsset,
+      Value<String?> startImageFile,
+      Value<String?> endImageFile,
       Value<bool> isCustom,
       Value<bool> isArchived,
       required int createdAt,
@@ -8025,6 +8141,8 @@ typedef $$ExercisesTableTableUpdateCompanionBuilder =
       Value<String> category,
       Value<String?> instructions,
       Value<String?> imageAsset,
+      Value<String?> startImageFile,
+      Value<String?> endImageFile,
       Value<bool> isCustom,
       Value<bool> isArchived,
       Value<int> createdAt,
@@ -8161,6 +8279,16 @@ class $$ExercisesTableTableFilterComposer
 
   ColumnFilters<String> get imageAsset => $composableBuilder(
     column: $table.imageAsset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startImageFile => $composableBuilder(
+    column: $table.startImageFile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endImageFile => $composableBuilder(
+    column: $table.endImageFile,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8306,6 +8434,16 @@ class $$ExercisesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get startImageFile => $composableBuilder(
+    column: $table.startImageFile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endImageFile => $composableBuilder(
+    column: $table.endImageFile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCustom => $composableBuilder(
     column: $table.isCustom,
     builder: (column) => ColumnOrderings(column),
@@ -8360,6 +8498,16 @@ class $$ExercisesTableTableAnnotationComposer
 
   GeneratedColumn<String> get imageAsset => $composableBuilder(
     column: $table.imageAsset,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get startImageFile => $composableBuilder(
+    column: $table.startImageFile,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get endImageFile => $composableBuilder(
+    column: $table.endImageFile,
     builder: (column) => column,
   );
 
@@ -8495,6 +8643,8 @@ class $$ExercisesTableTableTableManager
                 Value<String> category = const Value.absent(),
                 Value<String?> instructions = const Value.absent(),
                 Value<String?> imageAsset = const Value.absent(),
+                Value<String?> startImageFile = const Value.absent(),
+                Value<String?> endImageFile = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -8508,6 +8658,8 @@ class $$ExercisesTableTableTableManager
                 category: category,
                 instructions: instructions,
                 imageAsset: imageAsset,
+                startImageFile: startImageFile,
+                endImageFile: endImageFile,
                 isCustom: isCustom,
                 isArchived: isArchived,
                 createdAt: createdAt,
@@ -8523,6 +8675,8 @@ class $$ExercisesTableTableTableManager
                 required String category,
                 Value<String?> instructions = const Value.absent(),
                 Value<String?> imageAsset = const Value.absent(),
+                Value<String?> startImageFile = const Value.absent(),
+                Value<String?> endImageFile = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 required int createdAt,
@@ -8536,6 +8690,8 @@ class $$ExercisesTableTableTableManager
                 category: category,
                 instructions: instructions,
                 imageAsset: imageAsset,
+                startImageFile: startImageFile,
+                endImageFile: endImageFile,
                 isCustom: isCustom,
                 isArchived: isArchived,
                 createdAt: createdAt,

@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
+import 'package:image_picker/image_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -9,6 +11,8 @@ import '../../../core/calc/one_rm.dart';
 import '../../../core/calc/volume.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
+import '../../../core/util/paths.dart';
+import '../../photos/data/photo_store.dart';
 
 part 'exercise_providers.g.dart';
 
@@ -193,6 +197,8 @@ class ExerciseEditor {
     required ExerciseCategory category,
     String? equipment,
     String? instructions,
+    String? startImageFile,
+    String? endImageFile,
   }) async {
     final id = _uuid.v4();
     await ref
@@ -211,6 +217,8 @@ class ExerciseEditor {
                   ? null
                   : instructions.trim(),
             ),
+            startImageFile: Value(startImageFile),
+            endImageFile: Value(endImageFile),
             isCustom: const Value(true),
             createdAt: DateTime.now().millisecondsSinceEpoch,
           ),
@@ -226,6 +234,8 @@ class ExerciseEditor {
     required ExerciseCategory category,
     String? equipment,
     String? instructions,
+    String? startImageFile,
+    String? endImageFile,
   }) {
     return ref
         .read(databaseProvider)
@@ -243,9 +253,46 @@ class ExerciseEditor {
                   ? null
                   : instructions.trim(),
             ),
+            startImageFile: Value(startImageFile),
+            endImageFile: Value(endImageFile),
           ),
         );
   }
+
+  /// The long edge a frame is kept at.
+  ///
+  /// A frame is never shown larger than the card on the detail screen, so it
+  /// asks for a good deal less than a progress photo, which the user can open
+  /// full screen.
+  static const int frameLongEdge = 720;
+
+  /// Picks one frame and copies it into the photo directory.
+  ///
+  /// Returns the stored file name, or null when the user backed out. The file
+  /// exists from here on; if the editor is then abandoned without saving, the
+  /// startup reconcile removes it as an orphan. That is deliberate - deleting
+  /// on the way out would need the screen to survive being killed mid-pick,
+  /// and the reconcile already handles exactly this case.
+  Future<String?> pickFrame({required ImageSource source}) async {
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 2400,
+    );
+    if (picked == null) return null;
+
+    final paths = await ref.read(appPathsProvider.future);
+    return PhotoStore(paths).import(
+      File(picked.path),
+      maxLongEdge: frameLongEdge,
+    );
+  }
+
+  Future<void> discardFrame(String fileName) async {
+    final paths = await ref.read(appPathsProvider.future);
+    await PhotoStore(paths).deleteFile(fileName);
+  }
+
+  Future<AppPaths> paths() => ref.read(appPathsProvider.future);
 
   /// Removes a custom exercise, or archives it when it appears in history.
   ///
@@ -255,7 +302,11 @@ class ExerciseEditor {
     final dao = ref.read(databaseProvider).exercisesDao;
     final used = await dao.timesUsed(id);
     if (used == 0) {
+      final row = await dao.getById(id);
       await dao.deleteExercise(id);
+      for (final frame in [row?.startImageFile, row?.endImageFile]) {
+        if (frame != null) await discardFrame(frame);
+      }
       return true;
     }
     await dao.setArchived(id, archived: true);

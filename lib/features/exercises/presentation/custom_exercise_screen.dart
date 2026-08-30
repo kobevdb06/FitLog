@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../photos/data/photo_store.dart';
 import 'exercise_providers.dart';
 
 /// Creating or editing an exercise the user made themselves.
@@ -36,7 +40,17 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   final Set<String> _secondaryMuscles = {};
   ExerciseCategory _category = ExerciseCategory.barbell;
 
+  /// The two frames, as file names in the photo directory.
+  String? _startImage;
+  String? _endImage;
+
+  /// Frames the row still points at but that this edit has replaced. They are
+  /// deleted on save, never before: until then the row is unchanged and the
+  /// user can still walk away from the edit.
+  final List<String> _replaced = [];
+
   bool _loaded = false;
+  bool _busy = false;
   String? _error;
 
   @override
@@ -56,6 +70,69 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     _primaryMuscle = row.primaryMuscle;
     _secondaryMuscles.addAll(decodeSecondaryMuscles(row.secondaryMuscles));
     _category = ExerciseCategory.fromWire(row.category);
+    _startImage = row.startImageFile;
+    _endImage = row.endImageFile;
+  }
+
+  /// Picks one frame and puts it in [slot].
+  ///
+  /// The picked file is copied and processed straight away, so what the slot
+  /// shows from here on is the file that will be stored - not the temporary
+  /// one the picker handed over, which the system may delete at any moment.
+  Future<void> _pickFrame(_Slot slot) async {
+    final source = await showAppSheet<ImageSource>(
+      context: context,
+      title: 'Waar komt de foto vandaan?',
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined),
+            title: const Text('Nu een foto maken'),
+            onTap: () => Navigator.of(context).pop(ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Uit de galerij kiezen'),
+            onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+          ),
+        ],
+      ),
+    );
+    if (source == null) return;
+
+    setState(() => _busy = true);
+    try {
+      final fileName = await ref
+          .read(exerciseEditorProvider)
+          .pickFrame(source: source);
+      if (fileName == null || !mounted) return;
+      setState(() => _setFrame(slot, fileName));
+    } on UnreadableImageException {
+      if (mounted) {
+        showSnack(
+          context,
+          'Dat bestand kon niet als foto gelezen worden.',
+          isError: true,
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        showSnack(context, 'Foto opslaan mislukte: $error', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _setFrame(_Slot slot, String? fileName) {
+    final previous = slot == _Slot.start ? _startImage : _endImage;
+    if (previous != null) _replaced.add(previous);
+    if (slot == _Slot.start) {
+      _startImage = fileName;
+    } else {
+      _endImage = fileName;
+    }
   }
 
   Future<void> _save() async {
@@ -82,6 +159,8 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         category: _category,
         equipment: equipment.isEmpty ? null : equipment,
         instructions: _notesController.text,
+        startImageFile: _startImage,
+        endImageFile: _endImage,
       );
     } else {
       id = widget.exerciseId!;
@@ -93,7 +172,16 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         category: _category,
         equipment: equipment.isEmpty ? null : equipment,
         instructions: _notesController.text,
+        startImageFile: _startImage,
+        endImageFile: _endImage,
       );
+    }
+
+    // Only now, with the row pointing somewhere else, are the files it used to
+    // point at safe to remove.
+    for (final fileName in _replaced) {
+      if (fileName == _startImage || fileName == _endImage) continue;
+      await editor.discardFrame(fileName);
     }
 
     if (mounted) Navigator.of(context).pop(id);
@@ -102,6 +190,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     final muscles = ref.watch(muscleOptionsProvider).value ?? const [];
+    final paths = ref.watch(appPathsProvider).value;
 
     if (widget.exerciseId != null) {
       final existing = ref
@@ -191,6 +280,58 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
               labelText: 'Notitie of uitvoering',
             ),
           ),
+          const SectionHeader(
+            'Uitvoering in beeld',
+            padding: EdgeInsets.only(
+              top: AppSpacing.xl,
+              bottom: AppSpacing.xs,
+            ),
+          ),
+          Text(
+            'Twee foto\'s - de start- en de eindpositie - lopen af als een '
+            'animatie, net als bij de oefeningen uit de catalogus.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _FrameSlot(
+                    label: 'Startpositie',
+                    fileName: _startImage,
+                    paths: paths,
+                    enabled: !_busy,
+                    onPick: () => _pickFrame(_Slot.start),
+                    onClear: () => setState(() => _setFrame(_Slot.start, null)),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _FrameSlot(
+                    label: 'Eindpositie',
+                    fileName: _endImage,
+                    paths: paths,
+                    enabled: !_busy,
+                    onPick: () => _pickFrame(_Slot.end),
+                    onClear: () => setState(() => _setFrame(_Slot.end, null)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_startImage == null || _endImage == null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Met één foto blijft het een stilstaand beeld.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (_error != null) ...[
             const SizedBox(height: AppSpacing.lg),
             InfoBanner(
@@ -230,6 +371,91 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
           ],
         ],
       ),
+    );
+  }
+}
+
+enum _Slot { start, end }
+
+/// One of the two picture slots: a preview once filled, a prompt while empty.
+class _FrameSlot extends StatelessWidget {
+  const _FrameSlot({
+    required this.label,
+    required this.fileName,
+    required this.paths,
+    required this.enabled,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final String label;
+  final String? fileName;
+  final AppPaths? paths;
+  final bool enabled;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final name = fileName;
+    final file = name == null ? null : paths?.photoFile(name);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: theme.textTheme.labelMedium),
+        const SizedBox(height: AppSpacing.xs),
+        AspectRatio(
+          aspectRatio: 3 / 4,
+          child: InkWell(
+            onTap: enabled ? onPick : null,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: file == null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_a_photo_outlined,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Foto kiezen',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Image.file(
+                      file,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (context, error, stack) => Center(
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        ),
+        if (file != null)
+          TextButton.icon(
+            onPressed: enabled ? onClear : null,
+            icon: const Icon(Icons.close, size: 16),
+            label: const Text('Verwijderen'),
+          ),
+      ],
     );
   }
 }

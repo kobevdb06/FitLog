@@ -157,6 +157,36 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     return rows.map((r) => r.read<String>('id')).toList();
   }
 
+  /// Every frame file a user-made exercise points at.
+  ///
+  /// The startup reconcile needs these: the frames live in the same directory
+  /// as the progress photos, so without them they look like orphans and get
+  /// deleted.
+  Future<Set<String>> imageFileNames() async {
+    final query = selectOnly(exercisesTable)
+      ..addColumns([exercisesTable.startImageFile, exercisesTable.endImageFile])
+      ..where(
+        exercisesTable.startImageFile.isNotNull() |
+            exercisesTable.endImageFile.isNotNull(),
+      );
+    final rows = await query.get();
+    return {
+      for (final row in rows) ...[
+        row.read(exercisesTable.startImageFile),
+        row.read(exercisesTable.endImageFile),
+      ],
+    }.whereType<String>().toSet();
+  }
+
+  /// Clears one frame that no longer has a file behind it.
+  Future<void> clearImageFile(String fileName) async {
+    await (update(exercisesTable)
+          ..where((t) => t.startImageFile.equals(fileName)))
+        .write(const ExercisesTableCompanion(startImageFile: Value(null)));
+    await (update(exercisesTable)..where((t) => t.endImageFile.equals(fileName)))
+        .write(const ExercisesTableCompanion(endImageFile: Value(null)));
+  }
+
   Future<void> insertExercise(ExercisesTableCompanion exercise) =>
       into(exercisesTable).insert(exercise);
 

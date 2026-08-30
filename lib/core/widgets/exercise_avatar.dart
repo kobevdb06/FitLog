@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../app/app_controller.dart';
 import '../db/database.dart';
 import '../providers/core_providers.dart';
 import 'exercise_image.dart';
@@ -25,6 +26,9 @@ class ExerciseAvatar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => ExerciseThumb(
     exercise: exercise,
     manifest: ref.watch(exerciseImagesProvider).value,
+    // An exercise the user made carries its own frames, which live next to the
+    // progress photos rather than in the assets.
+    paths: ref.watch(appPathsProvider).value,
     size: size,
   );
 }

@@ -73,6 +73,11 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
             ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
           .watch();
 
+  Future<List<RoutineFolderRow>> getFolders() =>
+      (select(routineFoldersTable)
+            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .get();
+
   Future<String> createFolder(String name) async {
     final id = _uuid.v4();
     final max = routineFoldersTable.sortOrder.max();

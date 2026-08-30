@@ -33,6 +33,7 @@ class RoutineDetailScreen extends ConsumerWidget {
             onSelected: (value) => _onMenu(context, ref, value),
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'edit', child: Text('Bewerken')),
+              PopupMenuItem(value: 'move', child: Text('Verplaatsen naar map')),
               PopupMenuItem(value: 'duplicate', child: Text('Dupliceren')),
               PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
             ],
@@ -124,6 +125,86 @@ class RoutineDetailScreen extends ConsumerWidget {
     }
   }
 
+  /// Moving a routine used to mean opening the whole editor. This is the same
+  /// change in two taps.
+  Future<void> _moveToFolder(
+    BuildContext context,
+    WidgetRef ref,
+    RoutineActions actions,
+  ) async {
+    final current = await actions.routineFolderId(routineId);
+    var folders = await actions.folders();
+    if (!context.mounted) return;
+
+    // With no folders yet the sheet would only offer "no folder", which is
+    // useless, so making one is offered right there.
+    if (folders.isEmpty) {
+      final name = await promptForText(
+        context,
+        title: 'Eerste map maken',
+        hintText: 'bijvoorbeeld Push Pull Legs',
+      );
+      if (name == null || name.trim().isEmpty) return;
+      await actions.createFolder(name);
+      folders = await actions.folders();
+      if (!context.mounted) return;
+    }
+
+    final choice = await showAppSheet<_FolderChoice>(
+      context: context,
+      title: 'Verplaatsen naar map',
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.folder_off_outlined),
+            title: const Text('Geen map'),
+            selected: current == null,
+            onTap: () =>
+                Navigator.of(sheetContext).pop(const _FolderChoice(null)),
+          ),
+          for (final folder in folders)
+            ListTile(
+              leading: const Icon(Icons.folder_outlined),
+              title: Text(folder.name),
+              selected: current == folder.id,
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_FolderChoice(folder.id)),
+            ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.create_new_folder_outlined),
+            title: const Text('Nieuwe map...'),
+            onTap: () => Navigator.of(sheetContext).pop(
+              const _FolderChoice(null, createNew: true),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (choice == null || !context.mounted) return;
+
+    var target = choice.folderId;
+    if (choice.createNew) {
+      final name = await promptForText(
+        context,
+        title: 'Nieuwe map',
+        hintText: 'bijvoorbeeld Push Pull Legs',
+      );
+      if (name == null || name.trim().isEmpty) return;
+      target = await actions.createFolder(name);
+    }
+
+    await actions.moveToFolder(routineId, target);
+    if (!context.mounted) return;
+
+    final label = target == null
+        ? 'Verplaatst naar het hoofdniveau'
+        : 'Verplaatst naar '
+              '"${(await actions.folders()).firstWhere((f) => f.id == target).name}"';
+    if (context.mounted) showSnack(context, label);
+  }
+
   Future<void> _runMenu(
     BuildContext context,
     WidgetRef ref,
@@ -133,6 +214,9 @@ class RoutineDetailScreen extends ConsumerWidget {
     switch (value) {
       case 'edit':
         context.push(Routes.routineEdit(routineId));
+      case 'move':
+        await _moveToFolder(context, ref, actions);
+
       case 'duplicate':
         final id = await actions.duplicate(routineId);
         if (context.mounted) {
@@ -251,4 +335,14 @@ class _ExerciseBlock extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// What the folder sheet hands back. A null id means the top level; the
+/// create flag means the user wants a folder that does not exist yet.
+class _FolderChoice {
+  const _FolderChoice(this.folderId, {this.createNew = false});
+
+  final String? folderId;
+  final bool createNew;
 }

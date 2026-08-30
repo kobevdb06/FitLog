@@ -38,6 +38,12 @@ class RoutineActions {
 
   AppDatabase get _db => ref.read(databaseProvider);
 
+  Future<List<RoutineFolderRow>> folders() => _db.routinesDao.getFolders();
+
+  /// Which folder a routine currently sits in, or null for the top level.
+  Future<String?> routineFolderId(String routineId) async =>
+      (await _db.routinesDao.getRoutine(routineId))?.folderId;
+
   Future<String> createFolder(String name) =>
       _db.routinesDao.createFolder(name.trim());
 

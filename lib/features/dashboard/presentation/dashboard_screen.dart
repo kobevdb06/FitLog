@@ -12,6 +12,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/exercise_avatar.dart';
+import '../../progress/presentation/recovery_providers.dart';
+import '../../progress/presentation/recovery_view.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../routines/presentation/routine_providers.dart';
@@ -81,6 +83,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            const _RecoveryBlock(),
             if (records.isNotEmpty) ...[
               SectionHeader(
                 'Laatste records',
@@ -356,6 +359,78 @@ class _TodayCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Which muscle groups are still recovering, and how much longer.
+///
+/// Hidden entirely until there is something to say: an empty card on the first
+/// screen of the app is worse than no card.
+class _RecoveryBlock extends ConsumerWidget {
+  const _RecoveryBlock();
+
+  /// More than this and the list stops being a glance.
+  static const int maxRows = 6;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final estimates = ref.watch(recoveryEstimatesProvider).value ?? const [];
+    if (estimates.isEmpty) return const SizedBox.shrink();
+
+    final now = DateTime.now();
+    final recovering = [
+      for (final estimate in estimates)
+        if (!estimate.isReadyAt(now)) estimate,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader('Herstel'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: AppCard(
+            child: recovering.isEmpty
+                ? Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Alles hersteld volgens je logboek.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final estimate in recovering.take(maxRows))
+                        RecoveryRow(estimate: estimate, now: now),
+                      if (recovering.length > maxRows)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.xs),
+                          child: Text(
+                            'en nog ${recovering.length - maxRows} andere',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../calc/recovery.dart';
 import '../../calc/volume.dart';
 import '../database.dart';
 import '../models.dart';
@@ -440,6 +441,82 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
       readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},
     ).get();
     return rows.first.read<double>('volume');
+  }
+
+  /// Every completed working set of every finished workout since [since],
+  /// with the exercise and session facts the recovery estimate needs.
+  ///
+  /// The muscle attribution happens in `core/calc/recovery.dart` rather than
+  /// here: secondary muscles are a JSON array in a text column, which SQL
+  /// cannot split, and the arithmetic is worth testing without a database.
+  Future<List<RecoverySet>> recoverySets({required DateTime since}) async =>
+      _recoverySetsQuery(since).get().then(_toRecoverySets);
+
+  /// The same, re-emitted whenever anything it reads changes.
+  Stream<List<RecoverySet>> watchRecoverySets({required DateTime since}) =>
+      _recoverySetsQuery(since).watch().map(_toRecoverySets);
+
+  Selectable<QueryRow> _recoverySetsQuery(DateTime since) {
+    return customSelect(
+      'SELECT w.id AS workout_id, w.started_at AS started_at, '
+      'w.perceived_effort AS perceived_effort, '
+      'we.exercise_id AS exercise_id, we.is_pr_attempt AS is_pr_attempt, '
+      'e.primary_muscle AS primary_muscle, '
+      'e.secondary_muscles AS secondary_muscles, e.category AS category, '
+      'ws.weight_kg AS weight_kg, ws.reps AS reps, ws.set_type AS set_type '
+      'FROM workout_sets ws '
+      'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+      'JOIN workouts w ON w.id = we.workout_id '
+      'JOIN exercises e ON e.id = we.exercise_id '
+      'WHERE ws.is_completed = 1 AND ws.set_type != ? '
+      'AND w.ended_at IS NOT NULL AND w.started_at >= ? '
+      'ORDER BY w.started_at',
+      variables: [
+        Variable.withString(SetType.warmup.wire),
+        Variable.withInt(since.millisecondsSinceEpoch),
+      ],
+      readsFrom: {
+        workoutSetsTable,
+        workoutExercisesTable,
+        workoutsTable,
+        exercisesTable,
+      },
+    );
+  }
+
+  List<RecoverySet> _toRecoverySets(List<QueryRow> rows) {
+    return [
+      for (final row in rows)
+        RecoverySet(
+          workoutId: row.read<String>('workout_id'),
+          startedAt: DateTime.fromMillisecondsSinceEpoch(
+            row.read<int>('started_at'),
+          ),
+          exerciseId: row.read<String>('exercise_id'),
+          primaryMuscle: row.read<String>('primary_muscle'),
+          secondaryMuscles: decodeMuscleList(
+            row.read<String>('secondary_muscles'),
+          ),
+          category: ExerciseCategory.fromWire(row.read<String>('category')),
+          setType: SetType.fromWire(row.read<String>('set_type')),
+          isPrAttempt: row.read<int>('is_pr_attempt') == 1,
+          effort: PerceivedEffort.fromWire(
+            row.readNullable<String>('perceived_effort'),
+          ),
+          weightKg: row.readNullable<double>('weight_kg'),
+          reps: row.readNullable<int>('reps'),
+        ),
+    ];
+  }
+
+  /// Records how heavy the session felt. Null clears the rating again.
+  Future<void> setPerceivedEffort(
+    String workoutId,
+    PerceivedEffort? effort,
+  ) async {
+    await (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
+      WorkoutsTableCompanion(perceivedEffort: Value(effort?.wire)),
+    );
   }
 
   Future<void> renameWorkout(String workoutId, String name) async {

@@ -427,3 +427,65 @@ wezen al op; dit is er een van.
 
 Andersom wordt een vervangen foto pas bij het opslaan verwijderd. Tot dat moment
 wijst de rij er nog naar, en kan de gebruiker de bewerking nog laten varen.
+
+## 36. De herstelschatting vergelijkt je met jezelf, niet met een tabel
+
+Absolute kilo's zeggen niets over herstel. Een squatsessie is tien keer het
+volume van een sessie zijwaartse heffingen zonder dat schouders tien keer
+sneller herstellen, en wat voor de een een zware dag is, is voor de ander een
+warming-up.
+
+Daarom wordt de belasting van een sessie voor een spiergroep afgezet tegen de
+mediaan van wat diezelfde spiergroep bij deze gebruiker de laatste acht weken
+kreeg. Die verhouding, begrensd tussen 0,6 en 1,5, schaalt een basistijd per
+spiergroep. Eén uitschieter mag de schatting oprekken, niet verdrievoudigen.
+
+Zolang een spiergroep minder dan drie eerdere sessies heeft, is er niets om mee
+te vergelijken en is de schatting de basistijd. Dat wordt getoond als
+*voorlopig* in plaats van weggelaten: iets tonen met een voorbehoud is
+bruikbaarder dan een leeg vak.
+
+De basistijden zelf komen uit vuistregels en zijn geen fysiologische claim. Ze
+staan als één tabel bovenin `lib/core/calc/recovery.dart`, zodat ze te vinden en
+te veranderen zijn zonder de rest te lezen.
+
+## 37. De gebruiker beoordeelt de zwaarte, niet de kwaliteit
+
+Gevraagd was een manier om na de workout te zeggen hoe goed de training was.
+Wat de schatting kan gebruiken is hoe **zwaar** hij was; dat zijn twee
+verschillende dingen. Een technisch uitstekende sessie kan licht zijn, en een
+sessie waarin alles tegenzat kan slopend zijn. Alleen het tweede zegt iets over
+herstel.
+
+De vraag luidt daarom "Hoe zwaar was het?", met vijf antwoorden van *Heel
+licht* tot *Alles gegeven*, die de geschatte tijd met 0,75 tot 1,3
+vermenigvuldigen. Nog een keer op hetzelfde antwoord tikken maakt de sessie
+weer onbeoordeeld, en onbeoordeeld telt als neutraal - niet als licht.
+
+Dit is bewust het enige subjectieve dat meeweegt: het is ook het enige aan een
+sessie dat de app onmogelijk kan meten.
+
+## 38. Lichaamsgewicht telt mee, want anders telt een dip voor niets
+
+Bij een lichaamsgewichtoefening staat er geen gewicht in het logboek. Volume is
+dan nul, en een sessie van veertig dips zou net zoveel herstel vragen als geen
+sessie. Het laatst gelogde lichaamsgewicht vult dat gat; bij een geassisteerde
+machine wordt het gelogde gewicht er juist afgetrokken, want dat is wat de
+machine overneemt.
+
+Heeft de gebruiker nooit een gewicht gelogd, dan valt een vast getal in. Dat is
+minder juist dan meten, maar veel minder verkeerd dan nul.
+
+Sets zonder reps - cardio, een plank op tijd - leveren geen bruikbaar getal en
+worden overgeslagen in plaats van als nul geteld. Een spiergroep die niets
+meetbaars kreeg, hoort geen korte hersteltijd te krijgen maar helemaal geen.
+
+## 39. De schatting adviseert niets
+
+Ze staat op het samenvattingsscherm en op het dashboard, en verder nergens. Er
+wordt niet gewaarschuwd bij het starten van een routine en er wordt geen
+trainingsdag voorgesteld. Slaap, eten, stress, leeftijd en ziekte wegen
+zwaarder dan het volume dat de app ziet, en van geen daarvan weet ze iets.
+
+Onder elke schatting staat wat ze wel en niet meeweegt. Dat is geen sierlijke
+disclaimer maar de reden dat het getal er mag staan.

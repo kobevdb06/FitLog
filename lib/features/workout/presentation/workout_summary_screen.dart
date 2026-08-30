@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,8 +7,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/recovery.dart';
 import '../../../core/calc/volume.dart';
 import '../../../core/db/database.dart';
+import '../../../core/db/enums.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -16,6 +20,8 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/muscle_map.dart';
 import '../../../routing/routes.dart';
+import '../../progress/presentation/recovery_providers.dart';
+import '../../progress/presentation/recovery_view.dart';
 import 'workout_providers.dart';
 
 part 'workout_summary_screen.g.dart';
@@ -54,31 +60,18 @@ Map<String, double> muscleIntensity(WorkoutDetail detail) {
     );
     overall += weight;
 
-    for (final secondary in decodeMuscles(exercise.exercise.secondaryMuscles)) {
-      totals.update(
-        secondary,
-        (v) => v + weight * 0.4,
-        ifAbsent: () => weight * 0.4,
-      );
-      overall += weight * 0.4;
+    for (final secondary in decodeMuscleList(
+      exercise.exercise.secondaryMuscles,
+    )) {
+      final share = weight * kSecondaryMuscleShare;
+      totals.update(secondary, (v) => v + share, ifAbsent: () => share);
+      overall += share;
     }
   }
 
   if (overall <= 0) return const {};
   final max = totals.values.reduce((a, b) => a > b ? a : b);
   return {for (final e in totals.entries) e.key: e.value / max};
-}
-
-/// The JSON array of secondary muscles as stored on the exercise row.
-List<String> decodeMuscles(String raw) {
-  final trimmed = raw.trim();
-  if (trimmed.length < 2) return const [];
-  return trimmed
-      .substring(1, trimmed.length - 1)
-      .split(',')
-      .map((s) => s.trim().replaceAll('"', ''))
-      .where((s) => s.isNotEmpty)
-      .toList();
 }
 
 /// What the user sees the moment they hit "Klaar".
@@ -212,6 +205,35 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                 ),
               ),
               const SectionHeader(
+                'Hoe zwaar was het?',
+                padding: EdgeInsets.only(
+                  top: AppSpacing.xl,
+                  bottom: AppSpacing.xs,
+                ),
+              ),
+              Text(
+                'Het enige aan een sessie dat de app niet kan meten. Je '
+                'antwoord verschuift de hersteltijd hieronder.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _EffortPicker(
+                workoutId: workoutId,
+                initial: PerceivedEffort.fromWire(
+                  workout.workout.perceivedEffort,
+                ),
+              ),
+              const SectionHeader(
+                'Herstel',
+                padding: EdgeInsets.only(
+                  top: AppSpacing.xl,
+                  bottom: AppSpacing.sm,
+                ),
+              ),
+              _RecoveryCard(workoutId: workoutId),
+              const SectionHeader(
                 'Notitie',
                 padding: EdgeInsets.only(
                   top: AppSpacing.xl,
@@ -317,6 +339,87 @@ class _NotesFieldState extends ConsumerState<_NotesField> {
             widget.workoutId,
             value.trim().isEmpty ? null : value.trim(),
           ),
+    );
+  }
+}
+
+/// The five-step rating, written straight through on every tap.
+///
+/// It keeps its own copy of the choice so the chips answer immediately; the
+/// recovery card below re-reads the database on its own.
+class _EffortPicker extends ConsumerStatefulWidget {
+  const _EffortPicker({required this.workoutId, required this.initial});
+
+  final String workoutId;
+  final PerceivedEffort? initial;
+
+  @override
+  ConsumerState<_EffortPicker> createState() => _EffortPickerState();
+}
+
+class _EffortPickerState extends ConsumerState<_EffortPicker> {
+  late PerceivedEffort? _choice = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      children: [
+        for (final effort in PerceivedEffort.values)
+          ChoiceChip(
+            label: Text(effort.label),
+            selected: _choice == effort,
+            onSelected: (selected) {
+              // Tapping the chosen one again clears it, back to unrated.
+              final next = selected ? effort : null;
+              setState(() => _choice = next);
+              unawaited(
+                ref.read(recoveryActionsProvider).rate(widget.workoutId, next),
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+/// The estimate for the muscles this session left behind.
+class _RecoveryCard extends ConsumerWidget {
+  const _RecoveryCard({required this.workoutId});
+
+  final String workoutId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final estimates = ref.watch(workoutRecoveryProvider(workoutId));
+    if (estimates == null) {
+      return const AppCard(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (estimates.isEmpty) {
+      return const InfoBanner(
+        icon: Icons.info_outline,
+        message:
+            'Deze sessie leverde geen belasting op waar een schatting op te '
+            'baseren valt.',
+      );
+    }
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final estimate in estimates)
+            RecoveryRow(estimate: estimate),
+          const SizedBox(height: AppSpacing.sm),
+          const RecoveryDisclaimer(),
+        ],
+      ),
     );
   }
 }

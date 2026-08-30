@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -111,6 +111,12 @@ class AppDatabase extends _$AppDatabase {
           // exercise has no pictures of its own, which is what null says.
           await m.addColumn(exercisesTable, exercisesTable.startImageFile);
           await m.addColumn(exercisesTable, exercisesTable.endImageFile);
+        }
+        if (from < 6) {
+          // How heavy a session felt. Additive: a session from before the
+          // rating existed is simply unrated, which the estimate treats as
+          // neutral.
+          await m.addColumn(workoutsTable, workoutsTable.perceivedEffort);
         }
       });
 

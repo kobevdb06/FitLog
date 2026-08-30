@@ -66,6 +66,35 @@ enum SetType {
       values.firstWhere((e) => e.wire == value, orElse: () => SetType.normal);
 }
 
+/// How heavy a finished session felt, as the user rated it.
+///
+/// It is the one thing about a session the app cannot measure: the same tonnage
+/// on a bad night is not the same session. The factor multiplies the estimated
+/// recovery time.
+enum PerceivedEffort {
+  veryEasy('very_easy', 'Heel licht', 0.75),
+  easy('easy', 'Licht', 0.9),
+  normal('normal', 'Normaal', 1),
+  hard('hard', 'Zwaar', 1.15),
+  allOut('all_out', 'Alles gegeven', 1.3);
+
+  const PerceivedEffort(this.wire, this.label, this.recoveryFactor);
+
+  final String wire;
+  final String label;
+
+  /// What it does to the estimated recovery time.
+  final double recoveryFactor;
+
+  static PerceivedEffort? fromWire(String? value) {
+    if (value == null) return null;
+    for (final effort in values) {
+      if (effort.wire == value) return effort;
+    }
+    return null;
+  }
+}
+
 enum PrType {
   maxWeight('max_weight', 'Zwaarste gewicht'),
   est1rm('est_1rm', 'Geschatte 1RM'),

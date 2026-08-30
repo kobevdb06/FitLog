@@ -214,6 +214,16 @@ class Formatters {
 
   static DateTime _midnight(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  /// `nog 2 d 6 u`, counting down to the end of a recovery window.
+  static String remainingWords(Duration left) {
+    if (left <= Duration.zero) return 'klaar';
+    if (left.inHours < 1) return 'nog ${left.inMinutes} min';
+    if (left.inHours < 24) return 'nog ${left.inHours} u';
+    final days = left.inDays;
+    final hours = left.inHours.remainder(24);
+    return hours == 0 ? 'nog $days d' : 'nog $days d $hours u';
+  }
+
   /// `sinds 3 dagen`, used by the streak line.
   static String daysAgoWords(int days) {
     if (days <= 0) return 'vandaag';

@@ -4251,6 +4251,17 @@ class $WorkoutsTableTable extends WorkoutsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _perceivedEffortMeta = const VerificationMeta(
+    'perceivedEffort',
+  );
+  @override
+  late final GeneratedColumn<String> perceivedEffort = GeneratedColumn<String>(
+    'perceived_effort',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _durationSecondsMeta = const VerificationMeta(
     'durationSeconds',
   );
@@ -4273,6 +4284,7 @@ class $WorkoutsTableTable extends WorkoutsTable
     notes,
     totalVolumeKg,
     totalSets,
+    perceivedEffort,
     durationSeconds,
   ];
   @override
@@ -4341,6 +4353,15 @@ class $WorkoutsTableTable extends WorkoutsTable
         totalSets.isAcceptableOrUnknown(data['total_sets']!, _totalSetsMeta),
       );
     }
+    if (data.containsKey('perceived_effort')) {
+      context.handle(
+        _perceivedEffortMeta,
+        perceivedEffort.isAcceptableOrUnknown(
+          data['perceived_effort']!,
+          _perceivedEffortMeta,
+        ),
+      );
+    }
     if (data.containsKey('duration_seconds')) {
       context.handle(
         _durationSecondsMeta,
@@ -4391,6 +4412,10 @@ class $WorkoutsTableTable extends WorkoutsTable
         DriftSqlType.int,
         data['${effectivePrefix}total_sets'],
       )!,
+      perceivedEffort: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}perceived_effort'],
+      ),
       durationSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}duration_seconds'],
@@ -4415,6 +4440,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
   final String? notes;
   final double totalVolumeKg;
   final int totalSets;
+
+  /// One of [PerceivedEffort], or null while the session has not been rated.
+  final String? perceivedEffort;
   final int durationSeconds;
   const WorkoutRow({
     required this.id,
@@ -4425,6 +4453,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     this.notes,
     required this.totalVolumeKg,
     required this.totalSets,
+    this.perceivedEffort,
     required this.durationSeconds,
   });
   @override
@@ -4444,6 +4473,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     }
     map['total_volume_kg'] = Variable<double>(totalVolumeKg);
     map['total_sets'] = Variable<int>(totalSets);
+    if (!nullToAbsent || perceivedEffort != null) {
+      map['perceived_effort'] = Variable<String>(perceivedEffort);
+    }
     map['duration_seconds'] = Variable<int>(durationSeconds);
     return map;
   }
@@ -4464,6 +4496,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           : Value(notes),
       totalVolumeKg: Value(totalVolumeKg),
       totalSets: Value(totalSets),
+      perceivedEffort: perceivedEffort == null && nullToAbsent
+          ? const Value.absent()
+          : Value(perceivedEffort),
       durationSeconds: Value(durationSeconds),
     );
   }
@@ -4482,6 +4517,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       notes: serializer.fromJson<String?>(json['notes']),
       totalVolumeKg: serializer.fromJson<double>(json['totalVolumeKg']),
       totalSets: serializer.fromJson<int>(json['totalSets']),
+      perceivedEffort: serializer.fromJson<String?>(json['perceivedEffort']),
       durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
     );
   }
@@ -4497,6 +4533,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       'notes': serializer.toJson<String?>(notes),
       'totalVolumeKg': serializer.toJson<double>(totalVolumeKg),
       'totalSets': serializer.toJson<int>(totalSets),
+      'perceivedEffort': serializer.toJson<String?>(perceivedEffort),
       'durationSeconds': serializer.toJson<int>(durationSeconds),
     };
   }
@@ -4510,6 +4547,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     Value<String?> notes = const Value.absent(),
     double? totalVolumeKg,
     int? totalSets,
+    Value<String?> perceivedEffort = const Value.absent(),
     int? durationSeconds,
   }) => WorkoutRow(
     id: id ?? this.id,
@@ -4520,6 +4558,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     notes: notes.present ? notes.value : this.notes,
     totalVolumeKg: totalVolumeKg ?? this.totalVolumeKg,
     totalSets: totalSets ?? this.totalSets,
+    perceivedEffort: perceivedEffort.present
+        ? perceivedEffort.value
+        : this.perceivedEffort,
     durationSeconds: durationSeconds ?? this.durationSeconds,
   );
   WorkoutRow copyWithCompanion(WorkoutsTableCompanion data) {
@@ -4534,6 +4575,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ? data.totalVolumeKg.value
           : this.totalVolumeKg,
       totalSets: data.totalSets.present ? data.totalSets.value : this.totalSets,
+      perceivedEffort: data.perceivedEffort.present
+          ? data.perceivedEffort.value
+          : this.perceivedEffort,
       durationSeconds: data.durationSeconds.present
           ? data.durationSeconds.value
           : this.durationSeconds,
@@ -4551,6 +4595,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ..write('notes: $notes, ')
           ..write('totalVolumeKg: $totalVolumeKg, ')
           ..write('totalSets: $totalSets, ')
+          ..write('perceivedEffort: $perceivedEffort, ')
           ..write('durationSeconds: $durationSeconds')
           ..write(')'))
         .toString();
@@ -4566,6 +4611,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     notes,
     totalVolumeKg,
     totalSets,
+    perceivedEffort,
     durationSeconds,
   );
   @override
@@ -4580,6 +4626,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           other.notes == this.notes &&
           other.totalVolumeKg == this.totalVolumeKg &&
           other.totalSets == this.totalSets &&
+          other.perceivedEffort == this.perceivedEffort &&
           other.durationSeconds == this.durationSeconds);
 }
 
@@ -4592,6 +4639,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
   final Value<String?> notes;
   final Value<double> totalVolumeKg;
   final Value<int> totalSets;
+  final Value<String?> perceivedEffort;
   final Value<int> durationSeconds;
   final Value<int> rowid;
   const WorkoutsTableCompanion({
@@ -4603,6 +4651,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.notes = const Value.absent(),
     this.totalVolumeKg = const Value.absent(),
     this.totalSets = const Value.absent(),
+    this.perceivedEffort = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4615,6 +4664,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.notes = const Value.absent(),
     this.totalVolumeKg = const Value.absent(),
     this.totalSets = const Value.absent(),
+    this.perceivedEffort = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -4629,6 +4679,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Expression<String>? notes,
     Expression<double>? totalVolumeKg,
     Expression<int>? totalSets,
+    Expression<String>? perceivedEffort,
     Expression<int>? durationSeconds,
     Expression<int>? rowid,
   }) {
@@ -4641,6 +4692,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       if (notes != null) 'notes': notes,
       if (totalVolumeKg != null) 'total_volume_kg': totalVolumeKg,
       if (totalSets != null) 'total_sets': totalSets,
+      if (perceivedEffort != null) 'perceived_effort': perceivedEffort,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4655,6 +4707,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Value<String?>? notes,
     Value<double>? totalVolumeKg,
     Value<int>? totalSets,
+    Value<String?>? perceivedEffort,
     Value<int>? durationSeconds,
     Value<int>? rowid,
   }) {
@@ -4667,6 +4720,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       notes: notes ?? this.notes,
       totalVolumeKg: totalVolumeKg ?? this.totalVolumeKg,
       totalSets: totalSets ?? this.totalSets,
+      perceivedEffort: perceivedEffort ?? this.perceivedEffort,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       rowid: rowid ?? this.rowid,
     );
@@ -4699,6 +4753,9 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     if (totalSets.present) {
       map['total_sets'] = Variable<int>(totalSets.value);
     }
+    if (perceivedEffort.present) {
+      map['perceived_effort'] = Variable<String>(perceivedEffort.value);
+    }
     if (durationSeconds.present) {
       map['duration_seconds'] = Variable<int>(durationSeconds.value);
     }
@@ -4719,6 +4776,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
           ..write('notes: $notes, ')
           ..write('totalVolumeKg: $totalVolumeKg, ')
           ..write('totalSets: $totalSets, ')
+          ..write('perceivedEffort: $perceivedEffort, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -10634,6 +10692,7 @@ typedef $$WorkoutsTableTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<double> totalVolumeKg,
       Value<int> totalSets,
+      Value<String?> perceivedEffort,
       Value<int> durationSeconds,
       Value<int> rowid,
     });
@@ -10647,6 +10706,7 @@ typedef $$WorkoutsTableTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<double> totalVolumeKg,
       Value<int> totalSets,
+      Value<String?> perceivedEffort,
       Value<int> durationSeconds,
       Value<int> rowid,
     });
@@ -10743,6 +10803,11 @@ class $$WorkoutsTableTableFilterComposer
 
   ColumnFilters<int> get totalSets => $composableBuilder(
     column: $table.totalSets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get perceivedEffort => $composableBuilder(
+    column: $table.perceivedEffort,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10845,6 +10910,11 @@ class $$WorkoutsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get perceivedEffort => $composableBuilder(
+    column: $table.perceivedEffort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get durationSeconds => $composableBuilder(
     column: $table.durationSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -10905,6 +10975,11 @@ class $$WorkoutsTableTableAnnotationComposer
 
   GeneratedColumn<int> get totalSets =>
       $composableBuilder(column: $table.totalSets, builder: (column) => column);
+
+  GeneratedColumn<String> get perceivedEffort => $composableBuilder(
+    column: $table.perceivedEffort,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get durationSeconds => $composableBuilder(
     column: $table.durationSeconds,
@@ -11000,6 +11075,7 @@ class $$WorkoutsTableTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<double> totalVolumeKg = const Value.absent(),
                 Value<int> totalSets = const Value.absent(),
+                Value<String?> perceivedEffort = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion(
@@ -11011,6 +11087,7 @@ class $$WorkoutsTableTableTableManager
                 notes: notes,
                 totalVolumeKg: totalVolumeKg,
                 totalSets: totalSets,
+                perceivedEffort: perceivedEffort,
                 durationSeconds: durationSeconds,
                 rowid: rowid,
               ),
@@ -11024,6 +11101,7 @@ class $$WorkoutsTableTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<double> totalVolumeKg = const Value.absent(),
                 Value<int> totalSets = const Value.absent(),
+                Value<String?> perceivedEffort = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion.insert(
@@ -11035,6 +11113,7 @@ class $$WorkoutsTableTableTableManager
                 notes: notes,
                 totalVolumeKg: totalVolumeKg,
                 totalSets: totalSets,
+                perceivedEffort: perceivedEffort,
                 durationSeconds: durationSeconds,
                 rowid: rowid,
               ),

@@ -24,6 +24,7 @@ gebruikersdata verwijderen of herschrijven mag niet.
 | 3 | `app_settings.default_warmup_sets`. |
 | 4 | `workout_exercises.is_pr_attempt`, `pr_target_weight_kg`, `pr_result` en `app_settings.pr_default_warmup_sets` / `pr_default_extra_attempts`. |
 | 5 | `exercises.start_image_file` en `end_image_file`: de twee beelden van een eigen oefening. |
+| 6 | `workouts.perceived_effort`: hoe zwaar de sessie voelde. |
 
 `test/db/migration_test.dart` bouwt een echte v1-database uit
 `test/db/fixtures/schema_v1.sql`, vult ze met gebruikersdata en controleert dat

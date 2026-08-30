@@ -239,6 +239,10 @@ class WorkoutsTable extends Table {
       real().named('total_volume_kg').withDefault(const Constant(0))();
   IntColumn get totalSets =>
       integer().named('total_sets').withDefault(const Constant(0))();
+
+  /// One of [PerceivedEffort], or null while the session has not been rated.
+  TextColumn get perceivedEffort =>
+      text().named('perceived_effort').nullable()();
   IntColumn get durationSeconds =>
       integer().named('duration_seconds').withDefault(const Constant(0))();
 

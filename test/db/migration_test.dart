@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 5);
+    expect(raw.select('PRAGMA user_version').first.values.first, 6);
     raw.close();
   });
 
@@ -131,6 +131,9 @@ void main() {
     expect(workout!.workout.name, 'Been A');
     expect(workout.exercises, hasLength(1));
     expect(workout.exercises.single.sets.single.weightKg, 100.0);
+    // v6 added the session rating. A session from before it is unrated, which
+    // the recovery estimate reads as neutral.
+    expect(workout.workout.perceivedEffort, isNull);
 
     expect(await db.recordsDao.measurements(), hasLength(1));
     expect(await db.recordsDao.photos(), hasLength(1));
@@ -200,7 +203,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 5);
+    expect(db.schemaVersion, 6);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

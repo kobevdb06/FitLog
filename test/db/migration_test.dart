@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 7);
+    expect(raw.select('PRAGMA user_version').first.values.first, 8);
     raw.close();
   });
 
@@ -159,6 +159,10 @@ void main() {
     // v7 added the backup stamp. A database from before it has never been
     // backed up as far as the app knows, which is the safe reading.
     expect(settings.lastBackupAt, isNull);
+    // v8 added the interrupted-pick note. Nothing was being picked while the
+    // app was closed, so null is the only right answer here.
+    expect(settings.pendingPickKind, isNull);
+    expect(settings.pendingPickRef, isNull);
 
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
     final migrated = await db.workoutsDao.getWorkoutDetail('w-1');
@@ -206,7 +210,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 7);
+    expect(db.schemaVersion, 8);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

@@ -13,6 +13,7 @@ import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/util/paths.dart';
 import '../../photos/data/photo_store.dart';
+import '../../photos/data/pick_recovery.dart';
 
 part 'exercise_providers.g.dart';
 
@@ -273,18 +274,31 @@ class ExerciseEditor {
   /// startup reconcile removes it as an orphan. That is deliberate - deleting
   /// on the way out would need the screen to survive being killed mid-pick,
   /// and the reconcile already handles exactly this case.
-  Future<String?> pickFrame({required ImageSource source}) async {
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      maxWidth: 2400,
-    );
-    if (picked == null) return null;
-
+  Future<String?> pickFrame({
+    required ImageSource source,
+    required String? exerciseId,
+    required bool isStart,
+  }) async {
     final paths = await ref.read(appPathsProvider.future);
-    return PhotoStore(paths).import(
-      File(picked.path),
-      maxLongEdge: frameLongEdge,
+    final recovery = PickRecovery(db: ref.read(databaseProvider), paths: paths);
+    await recovery.remember(
+      PendingPick.exerciseFrame(exerciseId: exerciseId, isStart: isStart),
     );
+
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 2400,
+      );
+      if (picked == null) return null;
+
+      return await PhotoStore(paths).import(
+        File(picked.path),
+        maxLongEdge: frameLongEdge,
+      );
+    } finally {
+      await recovery.forget();
+    }
   }
 
   Future<void> discardFrame(String fileName) async {

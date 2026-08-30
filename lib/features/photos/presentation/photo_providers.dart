@@ -8,6 +8,7 @@ import '../../../core/db/database.dart';
 import '../../../core/util/paths.dart';
 import '../data/photo_library.dart';
 import '../data/photo_store.dart';
+import '../data/pick_recovery.dart';
 
 part 'photo_providers.g.dart';
 
@@ -51,22 +52,36 @@ class PhotoActions {
     DateTime? takenAt,
     String? note,
   }) async {
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      // A generous cap keeps the decode cheap; PhotoStore does the real
-      // resizing so the stored size is the same whatever the picker returns.
-      maxWidth: 2400,
-    );
-    if (picked == null) return null;
+    final recovery = await _recovery();
+    await recovery.remember(PendingPick.progressPhoto(pose));
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        // A generous cap keeps the decode cheap; PhotoStore does the real
+        // resizing so the stored size is the same whatever the picker returns.
+        maxWidth: 2400,
+      );
+      if (picked == null) return null;
 
-    final library = await _library();
-    return library.importPhoto(
-      source: File(picked.path),
-      pose: pose,
-      takenAt: takenAt,
-      note: note,
-    );
+      final library = await _library();
+      return await library.importPhoto(
+        source: File(picked.path),
+        pose: pose,
+        takenAt: takenAt,
+        note: note,
+      );
+    } finally {
+      // The note is only useful while the app is not running. Once the pick
+      // has come back - or been cancelled, or thrown - it has to go, or the
+      // next launch would try to place a file that is not lost.
+      await recovery.forget();
+    }
   }
+
+  Future<PickRecovery> _recovery() async => PickRecovery(
+    db: ref.read(databaseProvider),
+    paths: await ref.read(appPathsProvider.future),
+  );
 
   Future<void> delete(ProgressPhotoRow photo) async {
     final library = await _library();

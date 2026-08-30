@@ -12,6 +12,7 @@ import '../security/key_material.dart';
 import '../security/secret_store.dart';
 import '../../features/photos/data/photo_library.dart';
 import '../../features/photos/data/photo_store.dart';
+import '../../features/photos/data/pick_recovery.dart';
 import '../util/paths.dart';
 import 'app_state.dart';
 
@@ -179,6 +180,14 @@ class AppController extends _$AppController {
           'FitLog: foto-opruiming verwijderde ${cleanup.deletedFiles.length} '
           'bestand(en) en ${cleanup.missingFiles.length} rij(en)',
         );
+      }
+
+      // A photo taken while Android was killing the app comes back on this
+      // launch and nowhere else. It has to happen after the database is open,
+      // because the note saying where it belongs lives in it.
+      final recovered = await PickRecovery(db: db, paths: paths).recover();
+      if (recovered != PickRecoveryOutcome.nothing) {
+        debugPrint('FitLog: onderbroken foto: ${recovered.name}');
       }
 
       _db = db;

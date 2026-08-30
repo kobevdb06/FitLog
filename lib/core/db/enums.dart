@@ -95,6 +95,27 @@ enum PerceivedEffort {
   }
 }
 
+/// What the app was picking when it was pushed out of memory.
+///
+/// Written down before the camera opens, so a photo Android hands back on the
+/// next launch can be put where it was meant to go.
+enum PickKind {
+  progressPhoto('progress_photo'),
+  exerciseFrame('exercise_frame');
+
+  const PickKind(this.wire);
+
+  final String wire;
+
+  static PickKind? fromWire(String? value) {
+    if (value == null) return null;
+    for (final kind in values) {
+      if (kind.wire == value) return kind;
+    }
+    return null;
+  }
+}
+
 enum PrType {
   maxWeight('max_weight', 'Zwaarste gewicht'),
   est1rm('est_1rm', 'Geschatte 1RM'),

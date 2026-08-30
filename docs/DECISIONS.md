@@ -505,3 +505,24 @@ herinnering niet het zwijgen opleggen.
 De herinnering zwijgt op een lege installatie. Zonder gelogde workouts valt er
 niets te verliezen, en een app die zeurt voordat je iets gedaan hebt, leer je
 negeren.
+
+## 41. Een onderbroken fotokeuze laat eerst een briefje achter
+
+`retrieveLostData` geeft na een herstart het bestand terug dat Android kwijtraakte
+toen het de app uit het geheugen gooide. Wat het niet teruggeeft, is waar dat
+bestand heen moest: bij welke pose, of bij welke oefening en welk vakje.
+
+Daarom wordt dat vóór het openen van de camera in `app_settings` gezet en in een
+`finally` weer weggehaald - of de keuze nu lukt, geannuleerd wordt of gooit. Het
+alternatief was de gebruiker bij de volgende start vragen waar de foto hoorde,
+maar dat is een vraag over iets wat hij misschien dagen eerder deed.
+
+Het ophalen gebeurt nadat de database open is, want het briefje staat erin. Twee
+gevallen blijven onherstelbaar en zeggen dat ook: een bestand zonder briefje, en
+een beeld voor een oefening die nog niet opgeslagen was. Dat laatste is geen
+onmacht maar een feit - het half ingevulde formulier is met het proces
+meegegaan, dus er is geen rij om het beeld aan te hangen.
+
+`PickRecovery` krijgt de lezer van het verloren bestand als argument. Dat is wat
+het geheel testbaar maakt zonder platformkanaal; de echte lezer controleert
+eerst of hij op Android draait, want elders gooit `retrieveLostData`.

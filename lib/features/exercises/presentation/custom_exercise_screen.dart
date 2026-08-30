@@ -105,7 +105,11 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     try {
       final fileName = await ref
           .read(exerciseEditorProvider)
-          .pickFrame(source: source);
+          .pickFrame(
+            source: source,
+            exerciseId: widget.exerciseId,
+            isStart: slot == _Slot.start,
+          );
       if (fileName == null || !mounted) return;
       setState(() => _setFrame(slot, fileName));
     } on UnreadableImageException {

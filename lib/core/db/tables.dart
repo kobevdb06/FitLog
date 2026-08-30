@@ -62,6 +62,18 @@ class AppSettingsTable extends Table {
   IntColumn get lastBackupAt =>
       integer().named('last_backup_at').nullable()();
 
+  /// One of [PickKind] while a photo is being picked, null otherwise.
+  ///
+  /// Android may kill the app while the camera is in front of it. The note
+  /// survives that, and is what tells the next launch where the picture it
+  /// gets handed back belongs.
+  TextColumn get pendingPickKind =>
+      text().named('pending_pick_kind').nullable()();
+
+  /// What the pending pick was for: a pose, or an exercise and a slot.
+  TextColumn get pendingPickRef =>
+      text().named('pending_pick_ref').nullable()();
+
   /// `system` | `light` | `dark`. Defaults to dark: this app is dark first.
   TextColumn get themeMode =>
       text().named('theme_mode').withDefault(const Constant('dark'))();

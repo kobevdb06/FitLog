@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -122,6 +122,13 @@ class AppDatabase extends _$AppDatabase {
           // When the last backup was made. Null means never, which is exactly
           // what was true for every database before this column existed.
           await m.addColumn(appSettingsTable, appSettingsTable.lastBackupAt);
+        }
+        if (from < 8) {
+          // The note that survives Android killing the app mid-pick. Null on
+          // every existing row, which means nothing is pending - true, since
+          // the app was not picking anything while it was closed.
+          await m.addColumn(appSettingsTable, appSettingsTable.pendingPickKind);
+          await m.addColumn(appSettingsTable, appSettingsTable.pendingPickRef);
         }
       });
 

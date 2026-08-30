@@ -592,6 +592,28 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _pendingPickKindMeta = const VerificationMeta(
+    'pendingPickKind',
+  );
+  @override
+  late final GeneratedColumn<String> pendingPickKind = GeneratedColumn<String>(
+    'pending_pick_kind',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pendingPickRefMeta = const VerificationMeta(
+    'pendingPickRef',
+  );
+  @override
+  late final GeneratedColumn<String> pendingPickRef = GeneratedColumn<String>(
+    'pending_pick_ref',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _themeModeMeta = const VerificationMeta(
     'themeMode',
   );
@@ -737,6 +759,8 @@ class $AppSettingsTableTable extends AppSettingsTable
     setCheckSoundEnabled,
     prAlertEnabled,
     lastBackupAt,
+    pendingPickKind,
+    pendingPickRef,
     themeMode,
     locale,
     onboardingDone,
@@ -829,6 +853,24 @@ class $AppSettingsTableTable extends AppSettingsTable
         lastBackupAt.isAcceptableOrUnknown(
           data['last_backup_at']!,
           _lastBackupAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pending_pick_kind')) {
+      context.handle(
+        _pendingPickKindMeta,
+        pendingPickKind.isAcceptableOrUnknown(
+          data['pending_pick_kind']!,
+          _pendingPickKindMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pending_pick_ref')) {
+      context.handle(
+        _pendingPickRefMeta,
+        pendingPickRef.isAcceptableOrUnknown(
+          data['pending_pick_ref']!,
+          _pendingPickRefMeta,
         ),
       );
     }
@@ -969,6 +1011,14 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}last_backup_at'],
       ),
+      pendingPickKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_pick_kind'],
+      ),
+      pendingPickRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_pick_ref'],
+      ),
       themeMode: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}theme_mode'],
@@ -1045,6 +1095,16 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// right without any extra bookkeeping.
   final int? lastBackupAt;
 
+  /// One of [PickKind] while a photo is being picked, null otherwise.
+  ///
+  /// Android may kill the app while the camera is in front of it. The note
+  /// survives that, and is what tells the next launch where the picture it
+  /// gets handed back belongs.
+  final String? pendingPickKind;
+
+  /// What the pending pick was for: a pose, or an exercise and a slot.
+  final String? pendingPickRef;
+
   /// `system` | `light` | `dark`. Defaults to dark: this app is dark first.
   final String themeMode;
   final String locale;
@@ -1082,6 +1142,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.setCheckSoundEnabled,
     required this.prAlertEnabled,
     this.lastBackupAt,
+    this.pendingPickKind,
+    this.pendingPickRef,
     required this.themeMode,
     required this.locale,
     required this.onboardingDone,
@@ -1107,6 +1169,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['pr_alert_enabled'] = Variable<bool>(prAlertEnabled);
     if (!nullToAbsent || lastBackupAt != null) {
       map['last_backup_at'] = Variable<int>(lastBackupAt);
+    }
+    if (!nullToAbsent || pendingPickKind != null) {
+      map['pending_pick_kind'] = Variable<String>(pendingPickKind);
+    }
+    if (!nullToAbsent || pendingPickRef != null) {
+      map['pending_pick_ref'] = Variable<String>(pendingPickRef);
     }
     map['theme_mode'] = Variable<String>(themeMode);
     map['locale'] = Variable<String>(locale);
@@ -1135,6 +1203,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       lastBackupAt: lastBackupAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastBackupAt),
+      pendingPickKind: pendingPickKind == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pendingPickKind),
+      pendingPickRef: pendingPickRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pendingPickRef),
       themeMode: Value(themeMode),
       locale: Value(locale),
       onboardingDone: Value(onboardingDone),
@@ -1166,6 +1240,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       ),
       prAlertEnabled: serializer.fromJson<bool>(json['prAlertEnabled']),
       lastBackupAt: serializer.fromJson<int?>(json['lastBackupAt']),
+      pendingPickKind: serializer.fromJson<String?>(json['pendingPickKind']),
+      pendingPickRef: serializer.fromJson<String?>(json['pendingPickRef']),
       themeMode: serializer.fromJson<String>(json['themeMode']),
       locale: serializer.fromJson<String>(json['locale']),
       onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
@@ -1196,6 +1272,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'setCheckSoundEnabled': serializer.toJson<bool>(setCheckSoundEnabled),
       'prAlertEnabled': serializer.toJson<bool>(prAlertEnabled),
       'lastBackupAt': serializer.toJson<int?>(lastBackupAt),
+      'pendingPickKind': serializer.toJson<String?>(pendingPickKind),
+      'pendingPickRef': serializer.toJson<String?>(pendingPickRef),
       'themeMode': serializer.toJson<String>(themeMode),
       'locale': serializer.toJson<String>(locale),
       'onboardingDone': serializer.toJson<bool>(onboardingDone),
@@ -1220,6 +1298,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? setCheckSoundEnabled,
     bool? prAlertEnabled,
     Value<int?> lastBackupAt = const Value.absent(),
+    Value<String?> pendingPickKind = const Value.absent(),
+    Value<String?> pendingPickRef = const Value.absent(),
     String? themeMode,
     String? locale,
     bool? onboardingDone,
@@ -1241,6 +1321,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     setCheckSoundEnabled: setCheckSoundEnabled ?? this.setCheckSoundEnabled,
     prAlertEnabled: prAlertEnabled ?? this.prAlertEnabled,
     lastBackupAt: lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
+    pendingPickKind: pendingPickKind.present
+        ? pendingPickKind.value
+        : this.pendingPickKind,
+    pendingPickRef: pendingPickRef.present
+        ? pendingPickRef.value
+        : this.pendingPickRef,
     themeMode: themeMode ?? this.themeMode,
     locale: locale ?? this.locale,
     onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -1281,6 +1367,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       lastBackupAt: data.lastBackupAt.present
           ? data.lastBackupAt.value
           : this.lastBackupAt,
+      pendingPickKind: data.pendingPickKind.present
+          ? data.pendingPickKind.value
+          : this.pendingPickKind,
+      pendingPickRef: data.pendingPickRef.present
+          ? data.pendingPickRef.value
+          : this.pendingPickRef,
       themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
       locale: data.locale.present ? data.locale.value : this.locale,
       onboardingDone: data.onboardingDone.present
@@ -1323,6 +1415,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('setCheckSoundEnabled: $setCheckSoundEnabled, ')
           ..write('prAlertEnabled: $prAlertEnabled, ')
           ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('pendingPickKind: $pendingPickKind, ')
+          ..write('pendingPickRef: $pendingPickRef, ')
           ..write('themeMode: $themeMode, ')
           ..write('locale: $locale, ')
           ..write('onboardingDone: $onboardingDone, ')
@@ -1339,7 +1433,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     unitWeight,
     unitLength,
@@ -1349,6 +1443,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     setCheckSoundEnabled,
     prAlertEnabled,
     lastBackupAt,
+    pendingPickKind,
+    pendingPickRef,
     themeMode,
     locale,
     onboardingDone,
@@ -1360,7 +1456,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     prDefaultExtraAttempts,
     autoLockSeconds,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1374,6 +1470,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.setCheckSoundEnabled == this.setCheckSoundEnabled &&
           other.prAlertEnabled == this.prAlertEnabled &&
           other.lastBackupAt == this.lastBackupAt &&
+          other.pendingPickKind == this.pendingPickKind &&
+          other.pendingPickRef == this.pendingPickRef &&
           other.themeMode == this.themeMode &&
           other.locale == this.locale &&
           other.onboardingDone == this.onboardingDone &&
@@ -1397,6 +1495,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> setCheckSoundEnabled;
   final Value<bool> prAlertEnabled;
   final Value<int?> lastBackupAt;
+  final Value<String?> pendingPickKind;
+  final Value<String?> pendingPickRef;
   final Value<String> themeMode;
   final Value<String> locale;
   final Value<bool> onboardingDone;
@@ -1419,6 +1519,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.setCheckSoundEnabled = const Value.absent(),
     this.prAlertEnabled = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.pendingPickKind = const Value.absent(),
+    this.pendingPickRef = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.locale = const Value.absent(),
     this.onboardingDone = const Value.absent(),
@@ -1442,6 +1544,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.setCheckSoundEnabled = const Value.absent(),
     this.prAlertEnabled = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.pendingPickKind = const Value.absent(),
+    this.pendingPickRef = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.locale = const Value.absent(),
     this.onboardingDone = const Value.absent(),
@@ -1466,6 +1570,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? setCheckSoundEnabled,
     Expression<bool>? prAlertEnabled,
     Expression<int>? lastBackupAt,
+    Expression<String>? pendingPickKind,
+    Expression<String>? pendingPickRef,
     Expression<String>? themeMode,
     Expression<String>? locale,
     Expression<bool>? onboardingDone,
@@ -1491,6 +1597,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         'set_check_sound_enabled': setCheckSoundEnabled,
       if (prAlertEnabled != null) 'pr_alert_enabled': prAlertEnabled,
       if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
+      if (pendingPickKind != null) 'pending_pick_kind': pendingPickKind,
+      if (pendingPickRef != null) 'pending_pick_ref': pendingPickRef,
       if (themeMode != null) 'theme_mode': themeMode,
       if (locale != null) 'locale': locale,
       if (onboardingDone != null) 'onboarding_done': onboardingDone,
@@ -1518,6 +1626,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? setCheckSoundEnabled,
     Value<bool>? prAlertEnabled,
     Value<int?>? lastBackupAt,
+    Value<String?>? pendingPickKind,
+    Value<String?>? pendingPickRef,
     Value<String>? themeMode,
     Value<String>? locale,
     Value<bool>? onboardingDone,
@@ -1541,6 +1651,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       setCheckSoundEnabled: setCheckSoundEnabled ?? this.setCheckSoundEnabled,
       prAlertEnabled: prAlertEnabled ?? this.prAlertEnabled,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
+      pendingPickKind: pendingPickKind ?? this.pendingPickKind,
+      pendingPickRef: pendingPickRef ?? this.pendingPickRef,
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
       onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -1588,6 +1700,12 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     }
     if (lastBackupAt.present) {
       map['last_backup_at'] = Variable<int>(lastBackupAt.value);
+    }
+    if (pendingPickKind.present) {
+      map['pending_pick_kind'] = Variable<String>(pendingPickKind.value);
+    }
+    if (pendingPickRef.present) {
+      map['pending_pick_ref'] = Variable<String>(pendingPickRef.value);
     }
     if (themeMode.present) {
       map['theme_mode'] = Variable<String>(themeMode.value);
@@ -1642,6 +1760,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('setCheckSoundEnabled: $setCheckSoundEnabled, ')
           ..write('prAlertEnabled: $prAlertEnabled, ')
           ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('pendingPickKind: $pendingPickKind, ')
+          ..write('pendingPickRef: $pendingPickRef, ')
           ..write('themeMode: $themeMode, ')
           ..write('locale: $locale, ')
           ..write('onboardingDone: $onboardingDone, ')
@@ -7741,6 +7861,8 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> setCheckSoundEnabled,
       Value<bool> prAlertEnabled,
       Value<int?> lastBackupAt,
+      Value<String?> pendingPickKind,
+      Value<String?> pendingPickRef,
       Value<String> themeMode,
       Value<String> locale,
       Value<bool> onboardingDone,
@@ -7765,6 +7887,8 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> setCheckSoundEnabled,
       Value<bool> prAlertEnabled,
       Value<int?> lastBackupAt,
+      Value<String?> pendingPickKind,
+      Value<String?> pendingPickRef,
       Value<String> themeMode,
       Value<String> locale,
       Value<bool> onboardingDone,
@@ -7830,6 +7954,16 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<int> get lastBackupAt => $composableBuilder(
     column: $table.lastBackupAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingPickKind => $composableBuilder(
+    column: $table.pendingPickKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingPickRef => $composableBuilder(
+    column: $table.pendingPickRef,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7943,6 +8077,16 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get pendingPickKind => $composableBuilder(
+    column: $table.pendingPickKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pendingPickRef => $composableBuilder(
+    column: $table.pendingPickRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get themeMode => $composableBuilder(
     column: $table.themeMode,
     builder: (column) => ColumnOrderings(column),
@@ -8051,6 +8195,16 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get pendingPickKind => $composableBuilder(
+    column: $table.pendingPickKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pendingPickRef => $composableBuilder(
+    column: $table.pendingPickRef,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get themeMode =>
       $composableBuilder(column: $table.themeMode, builder: (column) => column);
 
@@ -8147,6 +8301,8 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> setCheckSoundEnabled = const Value.absent(),
                 Value<bool> prAlertEnabled = const Value.absent(),
                 Value<int?> lastBackupAt = const Value.absent(),
+                Value<String?> pendingPickKind = const Value.absent(),
+                Value<String?> pendingPickRef = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
                 Value<String> locale = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
@@ -8169,6 +8325,8 @@ class $$AppSettingsTableTableTableManager
                 setCheckSoundEnabled: setCheckSoundEnabled,
                 prAlertEnabled: prAlertEnabled,
                 lastBackupAt: lastBackupAt,
+                pendingPickKind: pendingPickKind,
+                pendingPickRef: pendingPickRef,
                 themeMode: themeMode,
                 locale: locale,
                 onboardingDone: onboardingDone,
@@ -8193,6 +8351,8 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> setCheckSoundEnabled = const Value.absent(),
                 Value<bool> prAlertEnabled = const Value.absent(),
                 Value<int?> lastBackupAt = const Value.absent(),
+                Value<String?> pendingPickKind = const Value.absent(),
+                Value<String?> pendingPickRef = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
                 Value<String> locale = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
@@ -8215,6 +8375,8 @@ class $$AppSettingsTableTableTableManager
                 setCheckSoundEnabled: setCheckSoundEnabled,
                 prAlertEnabled: prAlertEnabled,
                 lastBackupAt: lastBackupAt,
+                pendingPickKind: pendingPickKind,
+                pendingPickRef: pendingPickRef,
                 themeMode: themeMode,
                 locale: locale,
                 onboardingDone: onboardingDone,

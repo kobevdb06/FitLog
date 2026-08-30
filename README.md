@@ -69,7 +69,7 @@ keytool -genkeypair -v -keystore fitlog-release.jks -keyalg RSA -keysize 4096 -v
 Android Studio; in PowerShell:
 
 ```powershell
-& "$env:JAVA_HOMEin\keytool.exe" -genkeypair -v -keystore fitlog-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias fitlog -dname "CN=Jouw Naam, O=FitLog, C=BE"
+& "$env:JAVA_HOME\bin\keytool.exe" -genkeypair -v -keystore fitlog-release.jks -keyalg RSA -keysize 4096 -validity 10000 -alias fitlog -dname "CN=Jouw Naam, O=FitLog, C=BE"
 ```
 
 Met `-dname` erbij slaat hij de zes vragen over de organisatie over en vraagt

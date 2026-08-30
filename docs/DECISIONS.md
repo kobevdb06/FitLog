@@ -342,13 +342,28 @@ van elkaar bijgewerkt kunnen worden; nu komt het uit dezelfde meetkunde en
 bewaakt `test/widget/branding_test.dart` dat de uitgerenderde bestanden er nog
 mee overeenkomen.
 
-Het merkteken is een kale F. Een eerdere versie zette gewichtsschijven op de
-armen; op 48 px werd dat een vlek en op 512 px las het als `F!`. Het
-ontwerpuitgangspunt van deze app - één accentkleur, geen verlopen - laat zich
-beter vertalen naar één vorm die op elk formaat leesbaar blijft.
+Het merkteken is een F die uit één lint gevouwen is: platte vlakken, geen
+omlijning, alles op 45 graden, één kleur in drie tinten. Een eerdere versie
+zette gewichtsschijven op de armen; op 48 px werd dat een vlek en op 512 px las
+het als `F!`.
 
-Het adaptive-icoon schaalt de F tot zijn hoeken binnen de 72dp-cirkel vallen die
-een ronde launcher overhoudt, niet binnen de striktere 66dp-veilige zone. Die
+Elke schuine rand loopt dezelfde kant op - zowel de afgesneden uiteinden van de
+armen als de vouwen waar ze uit de stam komen. Toen de vouwen er haaks op
+stonden, stak de vouw van de korte arm zes eenheden voorbij de onderrand
+daarvan uit; met alle diagonalen evenwijdig past een vouw per definitie binnen
+zijn arm, ongeacht hoe lang die arm is.
+
+De L van FitLog erin verwerken is geprobeerd en losgelaten. Een voetje aan de
+stam maakt er onvermijdelijk een E van: drie evenwijdige armen op één stam
+lezen als een E, welke tint de onderste ook krijgt. Een monogram waarin de F in
+de hoek van een grote L zit werkt wel als vorm, maar leest LF in plaats van FL,
+en twee letters naast elkaar worden op 48 px te druk. Het icoon is de plek waar
+één herkenbare vorm meer waard is dan een volledige naam.
+
+De achtergrond is wit: de drie tinten van het merkteken dragen de kleur, dus
+een gekleurde laag erachter zou ze doodslaan. Het adaptive-icoon schaalt de F
+tot zijn hoeken binnen de 72dp-cirkel vallen die een ronde launcher overhoudt,
+niet binnen de striktere 66dp-veilige zone. Die
 laatste zou het icoon zichtbaar kleiner maken dan alle andere op het
 beginscherm, terwijl alleen de lege hoeken van het omhullende vierkant
 erbuiten vallen.

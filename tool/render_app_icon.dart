@@ -10,7 +10,6 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:fitlog/core/theme/app_colors.dart';
 import 'package:fitlog/core/widgets/fitlog_mark.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,23 +56,13 @@ void main() {
 
   test('render the launcher icons', () async {
     // Android, legacy: the rounded tile, for launchers before adaptive icons.
-    const legacy = FitLogMarkPainter(
-      glyph: Colors.white,
-      tile: AppColors.accent,
-    );
+    const legacy = FitLogMarkPainter(tile: Colors.white);
     // Android, adaptive foreground: the glyph alone, the launcher supplies the
     // shape and the background colour.
-    final foreground = FitLogMarkPainter(
-      glyph: Colors.white,
-      glyphScale: _adaptiveSafeScale,
-    );
+    final foreground = FitLogMarkPainter(glyphScale: _adaptiveSafeScale);
     // iOS masks the corners itself and rejects transparency, so it gets the
     // full-bleed square.
-    const ios = FitLogMarkPainter(
-      glyph: Colors.white,
-      tile: AppColors.accent,
-      cornerRadius: 0,
-    );
+    const ios = FitLogMarkPainter(tile: Colors.white, cornerRadius: 0);
 
     for (final entry in _androidBuckets.entries) {
       final dir = '$_androidRes/mipmap-${entry.key}';

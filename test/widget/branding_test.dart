@@ -45,17 +45,36 @@ void main() {
       img.Pixel px(double x, double y) =>
           icon.getPixel(at(x).round(), at(y).round());
 
-      bool isAccent(img.Pixel p) =>
-          p.r.round() == AppColors.accent.r * 255 &&
-          p.g.round() == AppColors.accent.g * 255 &&
-          p.b.round() == AppColors.accent.b * 255;
-      bool isWhite(img.Pixel p) => p.r == 255 && p.g == 255 && p.b == 255;
+      bool is_(img.Pixel p, Color c) =>
+          p.r.round() == (c.r * 255).round() &&
+          p.g.round() == (c.g * 255).round() &&
+          p.b.round() == (c.b * 255).round();
 
-      expect(isWhite(px(36, 50)), isTrue, reason: 'the stem of the F');
-      expect(isWhite(px(50, 24)), isTrue, reason: 'the top arm');
-      expect(isWhite(px(50, 50)), isTrue, reason: 'the middle arm');
-      expect(isAccent(px(50, 38)), isTrue, reason: 'between the two arms');
-      expect(isAccent(px(5, 50)), isTrue, reason: 'the tile beside the F');
+      expect(
+        is_(px(30, 50), AppColors.accent),
+        isTrue,
+        reason: 'the stem of the F',
+      );
+      expect(
+        is_(px(70, 18), FitLogMarkPainter.armTone),
+        isTrue,
+        reason: 'the top arm, past its crease',
+      );
+      expect(
+        is_(px(44, 15), AppColors.accentDim),
+        isTrue,
+        reason: 'the crease where the top arm leaves the stem',
+      );
+      expect(
+        is_(px(50, 37), Colors.white),
+        isTrue,
+        reason: 'the tile between the two arms',
+      );
+      expect(
+        is_(px(8, 50), Colors.white),
+        isTrue,
+        reason: 'the tile beside the F',
+      );
     });
 
     test('the adaptive foreground is transparent outside the glyph', () {
@@ -80,9 +99,9 @@ void main() {
       expect(
         File('$res/values/ic_launcher_background.xml')
             .readAsStringSync()
-            .contains('#FF3D7DFF'),
+            .contains('#FFFFFFFF'),
         isTrue,
-        reason: 'the adaptive background must be the accent colour',
+        reason: 'the mark carries the colour, the layer behind it is white',
       );
     });
   });

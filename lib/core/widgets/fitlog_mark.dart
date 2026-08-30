@@ -2,43 +2,88 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// The FitLog mark: a bold rounded F on the accent tile.
+/// The FitLog mark: an F folded out of one ribbon.
+///
+/// Every edge that is not vertical or horizontal runs down-left at 45 degrees -
+/// the cut ends of the arms and the creases where they leave the stem alike.
+/// That is what makes the short arm line up with its crease; when the creases
+/// ran the other way they overhung the arm and sat crooked against it.
 ///
 /// Drawn rather than bundled as a bitmap so the one geometry serves both the
-/// app and the launcher icon - `tool/render_app_icon.dart` paints this same
-/// class into the platform icon files, so the two can never drift apart.
+/// app and the launcher icon: `tool/render_app_icon.dart` paints this same
+/// class into the platform icon files, so the two cannot drift apart.
 ///
 /// Everything is laid out in a 100x100 box and scaled, which keeps the
 /// proportions identical from a 20pt notification badge to a 1024pt store
 /// icon.
 class FitLogMarkPainter extends CustomPainter {
   const FitLogMarkPainter({
-    required this.glyph,
+    this.stem = AppColors.accent,
+    this.arms = armTone,
+    this.crease = AppColors.accentDim,
     this.tile,
-    this.cornerRadius = 28,
+    this.cornerRadius = 22,
     this.glyphScale = 1,
   });
 
-  /// The colour of the F itself.
-  final Color glyph;
+  /// The upright of the F.
+  final Color stem;
 
-  /// The rounded square behind it, or null for the glyph on its own - which is
-  /// what an Android adaptive foreground needs.
+  /// The two arms, a tint above the accent so the fold reads as depth rather
+  /// than as a second colour.
+  final Color arms;
+
+  /// The inside of each fold.
+  final Color crease;
+
+  /// The rounded square behind the mark, or null for the glyph on its own -
+  /// which is what the app and an Android adaptive foreground both want.
   final Color? tile;
 
   /// Corner rounding of the tile, in the same 0-100 units. 0 gives the square
   /// full-bleed icon iOS expects, since iOS applies its own mask.
   final double cornerRadius;
 
-  /// Shrinks the glyph around the centre of the box, for the adaptive icon
-  /// foreground: only the middle of that canvas is guaranteed to survive the
-  /// launcher's mask.
+  /// Scales the glyph around the centre of the box, for the adaptive icon
+  /// foreground and for filling a widget that has no tile.
   final double glyphScale;
 
-  /// The glyph's own box inside the 100-unit canvas, so callers can scale it
-  /// to fit a given safe area instead of guessing.
-  static const double glyphWidth = 40;
-  static const double glyphHeight = 64;
+  /// The tint used for the arms. It is a lighter accent, not a second colour.
+  static const Color armTone = Color(0xFF7BA9FF);
+
+  /// The glyph's own box inside the 100-unit canvas, centred on (50, 50), so
+  /// callers can scale it to fit a given area instead of guessing.
+  static const double glyphWidth = 58;
+  static const double glyphHeight = 78;
+
+  static const List<Offset> _stem = [
+    Offset(21, 11),
+    Offset(39, 11),
+    Offset(39, 89),
+    Offset(21, 89),
+  ];
+  static const List<Offset> _topArm = [
+    Offset(39, 11),
+    Offset(79, 11),
+    Offset(61, 29),
+    Offset(39, 29),
+  ];
+  static const List<Offset> _midArm = [
+    Offset(39, 45),
+    Offset(69, 45),
+    Offset(51, 63),
+    Offset(39, 63),
+  ];
+  static const List<Offset> _topCrease = [
+    Offset(39, 11),
+    Offset(57, 11),
+    Offset(39, 29),
+  ];
+  static const List<Offset> _midCrease = [
+    Offset(39, 45),
+    Offset(57, 45),
+    Offset(39, 63),
+  ];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -63,36 +108,40 @@ class FitLogMarkPainter extends CustomPainter {
       canvas.translate(-50, -50);
     }
 
-    final paint = Paint()..color = glyph;
-    void bar(double l, double t, double r, double b, double radius) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTRB(l, t, r, b),
-          Radius.circular(radius),
-        ),
-        paint,
-      );
+    void shape(List<Offset> points, Color color) {
+      final path = Path()..moveTo(points.first.dx, points.first.dy);
+      for (final point in points.skip(1)) {
+        path.lineTo(point.dx, point.dy);
+      }
+      path.close();
+      canvas.drawPath(path, Paint()..color = color);
     }
 
-    // A stem and two arms, 13 units thick with a 6.5 radius so every terminal
-    // is an exact half-circle. Nothing else: the mark has to stay readable at
-    // the 16 units a notification badge gets.
-    bar(30, 18, 43, 82, 6.5);
-    bar(30, 18, 70, 31, 6.5);
-    bar(30, 44, 62, 57, 6.5);
+    // The arms first, then the stem over them: the stem is the near edge of
+    // the ribbon, so it is what the folds turn away from.
+    shape(_topArm, arms);
+    shape(_midArm, arms);
+    shape(_stem, stem);
+    shape(_topCrease, crease);
+    shape(_midCrease, crease);
 
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(FitLogMarkPainter old) =>
-      old.glyph != glyph ||
+      old.stem != stem ||
+      old.arms != arms ||
+      old.crease != crease ||
       old.tile != tile ||
       old.cornerRadius != cornerRadius ||
       old.glyphScale != glyphScale;
 }
 
-/// The mark on its accent tile, at [size] logical pixels.
+/// The mark on its own, filling a [size] by [size] box.
+///
+/// No tile: inside the app the mark sits on the surface it is given, the way
+/// the launcher composes it over its own background.
 class FitLogMark extends StatelessWidget {
   const FitLogMark({super.key, this.size = 56});
 
@@ -102,10 +151,9 @@ class FitLogMark extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox.square(
       dimension: size,
-      child: CustomPaint(
-        painter: const FitLogMarkPainter(
-          glyph: Colors.white,
-          tile: AppColors.accent,
+      child: const CustomPaint(
+        painter: FitLogMarkPainter(
+          glyphScale: 100 / FitLogMarkPainter.glyphHeight,
         ),
         isComplex: false,
       ),

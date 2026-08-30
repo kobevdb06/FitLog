@@ -232,6 +232,49 @@ class WorkoutController {
     await _recalculate();
   }
 
+  /// Copies the last completed set's numbers into the working sets after it.
+  ///
+  /// Fills, does not tick off: four sets of the same weight still means four
+  /// sets you have to do, and the app has no business deciding you did them.
+  /// Returns how many were filled, so the caller can say so.
+  Future<int> fillRemainingSets(String workoutExerciseId) async {
+    final running = await _db.workoutsDao.getActiveWorkoutRow();
+    if (running == null) return 0;
+    final workout = await _db.workoutsDao.getWorkoutDetail(running.id);
+    if (workout == null) return 0;
+
+    WorkoutExerciseDetail? owner;
+    for (final exercise in workout.exercises) {
+      if (exercise.workoutExercise.id == workoutExerciseId) owner = exercise;
+    }
+    if (owner == null) return 0;
+
+    bool isWorking(WorkoutSetRow s) =>
+        SetType.fromWire(s.setType) != SetType.warmup;
+
+    final sourceIndex = owner.sets.lastIndexWhere(
+      (s) => s.isCompleted && isWorking(s),
+    );
+    if (sourceIndex < 0) return 0;
+    final source = owner.sets[sourceIndex];
+
+    var filled = 0;
+    for (var i = sourceIndex + 1; i < owner.sets.length; i++) {
+      final target = owner.sets[i];
+      if (target.isCompleted || !isWorking(target)) continue;
+      await _db.workoutsDao.updateSet(
+        target.id,
+        weightKg: Value(source.weightKg),
+        reps: Value(source.reps),
+        durationSeconds: Value(source.durationSeconds),
+      );
+      filled++;
+    }
+
+    if (filled > 0) await _recalculate();
+    return filled;
+  }
+
   Future<void> setSetType(String setId, SetType type) async {
     await _db.workoutsDao.updateSet(setId, setType: Value(type.wire));
     await _recalculate();

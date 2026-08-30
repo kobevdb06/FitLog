@@ -659,6 +659,21 @@ class _ExerciseCard extends ConsumerWidget {
           await controller.setExerciseRest(detail.workoutExercise.id, seconds);
         }
 
+      case 'fill':
+        final filled = await controller.fillRemainingSets(
+          detail.workoutExercise.id,
+        );
+        if (!context.mounted) return;
+        showSnack(
+          context,
+          switch (filled) {
+            0 => 'Vink eerst één set af om over te nemen.',
+            1 => '1 set ingevuld',
+            _ => '$filled sets ingevuld',
+          },
+          isError: filled == 0,
+        );
+
       case 'note':
         final note = await promptForText(
           context,
@@ -858,6 +873,10 @@ class _CardHeader extends StatelessWidget {
               const PopupMenuItem(
                 value: 'rest',
                 child: Text('Rusttimer instellen'),
+              ),
+              const PopupMenuItem(
+                value: 'fill',
+                child: Text('Rest invullen als deze set'),
               ),
               const PopupMenuItem(value: 'note', child: Text('Notitie')),
               const PopupMenuItem(

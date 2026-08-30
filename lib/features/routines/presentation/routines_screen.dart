@@ -9,6 +9,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../share/presentation/import_routine_screen.dart';
+import '../../share/presentation/scan_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'routine_providers.dart';
 
@@ -37,6 +39,11 @@ class RoutinesScreen extends ConsumerWidget {
               await ref.read(routineActionsProvider).createFolder(name);
             },
             icon: const Icon(Icons.create_new_folder_outlined),
+          ),
+          IconButton(
+            tooltip: 'Routine scannen',
+            onPressed: () => scanAndImportRoutine(context, ref),
+            icon: const Icon(Icons.qr_code_scanner),
           ),
           IconButton(
             tooltip: 'Oefeningen',
@@ -259,4 +266,19 @@ class _RoutineTile extends StatelessWidget {
       trailing: const Icon(Icons.chevron_right),
     );
   }
+}
+
+/// Scans a friend's code and, if it is a routine, offers to add it.
+///
+/// Two screens rather than one: the camera closes the moment it has read
+/// something, and what happens next is a decision, not a scan.
+Future<void> scanAndImportRoutine(BuildContext context, WidgetRef ref) async {
+  final routine = await ScanRoutineScreen.open(context);
+  if (routine == null || !context.mounted) return;
+
+  final added = await ImportRoutineScreen.open(context, routine);
+  if (added == null || !context.mounted) return;
+
+  showSnack(context, 'Routine "${routine.name}" toegevoegd');
+  context.push(Routes.routineDetail(added));
 }

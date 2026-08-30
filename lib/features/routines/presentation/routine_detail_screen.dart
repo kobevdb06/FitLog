@@ -11,6 +11,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/exercise_avatar.dart';
 import '../../../routing/routes.dart';
+import '../../share/presentation/share_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'routine_providers.dart';
 
@@ -35,6 +36,7 @@ class RoutineDetailScreen extends ConsumerWidget {
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'edit', child: Text('Bewerken')),
               PopupMenuItem(value: 'move', child: Text('Verplaatsen naar map')),
+              PopupMenuItem(value: 'share', child: Text('Delen via QR')),
               PopupMenuItem(value: 'duplicate', child: Text('Dupliceren')),
               PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
             ],
@@ -217,6 +219,9 @@ class RoutineDetailScreen extends ConsumerWidget {
         context.push(Routes.routineEdit(routineId));
       case 'move':
         await _moveToFolder(context, ref, actions);
+
+      case 'share':
+        await ShareRoutineScreen.open(context, routineId);
 
       case 'duplicate':
         final id = await actions.duplicate(routineId);

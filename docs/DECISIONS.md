@@ -526,3 +526,72 @@ meegegaan, dus er is geen rij om het beeld aan te hangen.
 `PickRecovery` krijgt de lezer van het verloren bestand als argument. Dat is wat
 het geheel testbaar maakt zonder platformkanaal; de echte lezer controleert
 eerst of hij op Android draait, want elders gooit `retrieveLostData`.
+
+## 42. Een routine past in één QR-code, mits gecomprimeerd
+
+Een QR-code houdt 2.331 bytes bij middelmatige foutcorrectie. Rauwe JSON van een
+routine van twaalf oefeningen is ruim 2,8 kB en past dus niet. Diezelfde JSON
+met sleutels van één letter, door deflate gehaald, komt uit rond de 700 bytes -
+herhaalde sleutels en gedeelde woordstukken in namen comprimeren hard.
+
+De inhoud gaat als base64 de code in, wat een derde kost aan omvang. Rauwe
+bytes zouden compacter zijn, maar dan hangt het ervan af of de scanner de bytes
+teruggeeft in plaats van een string, en dat is niets om in de zaal achter te
+komen. Zekerheid weegt hier zwaarder dan dichtheid; blijkt de code in de
+praktijk te dicht om te scannen, dan is base45 met alfanumerieke modus de
+volgende stap.
+
+Gewichten gaan niet mee. De ontvanger tilt zijn eigen getallen, en de
+VORIGE-kolom vult zich vanzelf zodra hij de oefening een keer gedaan heeft -
+dezelfde redenering als bij *Opnieuw doen*.
+
+Catalogusoefeningen reizen als id, met hun naam ernaast. Die naam is geen
+verspilling: staat het id niet in de catalogus van de ontvanger, bijvoorbeeld
+omdat zijn versie een oudere seed heeft, dan is de naam het enige waarop nog te
+matchen valt, en anders de beschrijving waarmee de oefening alsnog aangemaakt
+kan worden.
+
+## 43. Een gescande code is invoer van buiten
+
+Alles wat uit een QR komt, wordt gecontroleerd in plaats van geloofd: een
+maximum aan oefeningen, sets en tekstlengte, getallen die begrensd worden,
+een terugval voor elk veld dat het verkeerde type heeft, en één getypeerde fout
+voor de rest. Een code van een andere versie wordt geweigerd met een zin die
+uitlegt waarom, niet met een ontleedfout.
+
+Dat is geen achterdocht jegens je vriend. Het is dat de app niet kan weten van
+wie de code komt.
+
+## 44. De app koppelt zelf, en laat zien wat ze koppelde
+
+Bij het importeren wordt per oefening in vier stappen bepaald of de ontvanger
+hem al heeft: hetzelfde id, dezelfde naam nadat hoofdletters, accenten en
+leestekens genegeerd zijn, voldoende gelijkend van naam mét dezelfde primaire
+spiergroep en categorie, of echt nieuw.
+
+De derde stap koppelt ook, in plaats van te vragen. Acht oefeningen zouden acht
+vragen worden voordat er iets mag gebeuren, en de kosten van een verkeerde
+koppeling zijn laag: het voorbeeldscherm toont per oefening wat er gaat
+gebeuren, en één tik draait het terug.
+
+Dezelfde naam telt zwaarder dan een afwijkende categorie: dat veld vullen twee
+mensen verschillend in. Een afwijkende categorie bij een *gelijkende* naam telt
+wel: een bench press met halters is een andere oefening dan een met een stang.
+
+## 45. De scanner brengt twee permissies mee, en geen internet
+
+De QR-scanner gebruikt de gebundelde barcode-bibliotheek van Google, niet de
+variant die haar model via Play Services ophaalt - die zou bij eerste gebruik
+downloaden en daarmee de belofte breken. De prijs is zo'n 8 MB APK.
+
+Er komen twee permissies bij. `CAMERA` spreekt voor zich. `ACCESS_NETWORK_STATE`
+komt uit die bibliotheek en laat alleen zien *of* er een verbinding is; zonder
+`INTERNET` kan er niets overheen. Die laatste weghalen zou kunnen, maar als de
+bibliotheek de status opvraagt zonder de permissie volgt een SecurityException
+in een pad dat hier niet te testen is. Hem laten staan en erover vertellen is
+eerlijker dan hem stiekem strippen en hopen.
+
+Het release-manifest haalt `INTERNET` er wél weg met `tools:node="remove"`,
+zodat een volgende afhankelijkheid die hem meebrengt de belofte niet stil kan
+breken. `test/security/offline_test.dart` bewaakt beide manifesten en zoekt in
+`lib/` naar netwerkcode.

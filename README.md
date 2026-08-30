@@ -69,6 +69,12 @@ Op Linux is dat `apt install webp`; op Windows pak je de officiële
 `libwebp-*-windows-x64.zip` van de WebM-releases uit in `.build_cache/tools/`.
 Zonder libwebp valt de tool terug op 2-frame GIF's, die fors groter zijn.
 
+Een routine delen gaat van scherm naar camera: de eigenaar opent ⋮ → *Delen via
+QR*, de ander tikt in het Trainen-tabblad op het scanicoon. De code bevat de
+routine zelf - oefeningen, sets, rusttijden en de volledige beschrijving van
+oefeningen die de ander niet kent. Er komt geen server, geen bestand en geen
+andere app aan te pas. Streefgewichten gaan niet mee.
+
 De app-iconen opnieuw tekenen na een wijziging aan het merkteken in
 `lib/core/widgets/fitlog_mark.dart`:
 

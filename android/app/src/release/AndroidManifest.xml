@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The release build has no internet access, and this makes that structural
+     rather than hopeful: a dependency that declares INTERNET in its own
+     manifest - as several Google libraries do - would otherwise have it merged
+     into ours without anyone noticing. The marker strips it again.
+
+     Debug and profile builds keep the permission; the Flutter tooling needs it
+     to talk to the running app. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
+</manifest>

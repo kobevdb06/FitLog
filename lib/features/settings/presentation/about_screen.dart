@@ -36,7 +36,18 @@ class AboutScreen extends StatelessWidget {
                 'FitLog verzendt geen gegevens. De app heeft geen account, '
                 'geen server, geen analytics en geen internettoegang: op '
                 'Android staat de INTERNET-permissie bewust niet in het '
-                'manifest.',
+                'manifest, en de release-build haalt hem weg als een '
+                'onderdeel er alsnog om vraagt.',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const InfoBanner(
+            icon: Icons.qr_code_scanner,
+            message:
+                'De QR-scanner werkt op het toestel zelf; het model zit in de '
+                'app en wordt niet opgehaald. Hij brengt wel twee permissies '
+                'mee: CAMERA om te scannen, en ACCESS_NETWORK_STATE, waarmee '
+                'alleen te zien is óf er een verbinding is. Zonder INTERNET '
+                'kan er niets over.',
           ),
           const SectionHeader(
             'Waar je gegevens staan',

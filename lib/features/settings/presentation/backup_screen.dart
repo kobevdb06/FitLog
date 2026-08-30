@@ -28,18 +28,37 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   bool _busy = false;
   String? _message;
 
+  /// What the app is doing right now, shown under the progress bar.
+  ///
+  /// Restoring closes the database, replaces it, rewrites the keys and opens
+  /// it again. Any of those can take a moment, and a bar that only spins tells
+  /// nobody - not the user and not whoever has to work out where it stopped.
+  String? _step;
+
   Future<void> _run(Future<void> Function() action) async {
     setState(() {
       _busy = true;
       _message = null;
+      _step = null;
     });
     try {
       await action();
     } on Object catch (error) {
       if (mounted) setState(() => _message = '$error');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _step = null;
+        });
+      }
     }
+  }
+
+  /// Names the phase, on screen and in the device log.
+  void _at(String step) {
+    debugPrint('FitLog restore: $step');
+    if (mounted) setState(() => _step = step);
   }
 
   // --- Backup ---------------------------------------------------------------
@@ -129,6 +148,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
 
     await _run(() async {
+      _at('Back-up openen');
       final backup = await BackupService.readBackup(
         file: file,
         recoveryPhrase: normalizeRecoveryPhrase(phrase),
@@ -158,19 +178,29 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       final paths = await ref.read(appPathsProvider.future);
       final manager = ref.read(keyManagerProvider);
 
+      _at('Database sluiten');
       await controller.closeForRestore();
+
+      _at('Gegevens terugzetten');
       await BackupService.applyRestore(backup: backup, paths: paths);
 
       // The restored database is encrypted with the key from the archive, so
       // every wrapped copy on this device is replaced.
+      _at('Sleutels wissen');
       await manager.wipe();
+
+      _at('Herstelzin koppelen');
       await manager.setRecoveryPhrase(
         dek: backup.dek,
         phrase: normalizeRecoveryPhrase(phrase),
       );
+
+      _at('Sleutel opbergen');
       await manager.setDirectKey(backup.dek);
 
+      _at('Database openen');
       await controller.completeSetupWith(backup.dek);
+      _at('Klaar');
       if (mounted) {
         setState(
           () => _message =
@@ -190,7 +220,24 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         child: ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
-            if (_busy) const LinearProgressIndicator(),
+            if (_busy) ...[
+              const LinearProgressIndicator(),
+              if (_step != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    0,
+                  ),
+                  child: Text(
+                    '${_step!}...',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
             const SectionHeader('Back-up'),
             const _LastBackupLine(),
             ListTile(

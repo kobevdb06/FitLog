@@ -12,6 +12,6 @@
 # because there is no server holding a copy.
 
 storeFile=../fitlog-release.jks
-storePassword=
+storePassword= 
 keyAlias=fitlog
 keyPassword=

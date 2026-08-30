@@ -30,6 +30,10 @@ BiometricService biometricService(Ref ref) => BiometricService();
 @Riverpod(keepAlive: true)
 Future<AppPaths> appPaths(Ref ref) => AppPaths.resolve();
 
+/// How long [AppController.closeForRestore] waits for the connection to shut
+/// down before carrying on without it.
+const Duration kCloseForRestoreTimeout = Duration(seconds: 15);
+
 /// Owns the database handle and decides what the app is allowed to show.
 @Riverpod(keepAlive: true)
 class AppController extends _$AppController {
@@ -265,11 +269,39 @@ class AppController extends _$AppController {
 
   /// Closes and forgets the current database so a restore can replace the
   /// file underneath it.
+  /// Lets go of the database so the restore can replace the file underneath.
+  ///
+  /// The state goes first, not last. Everything that watches the database -
+  /// the settings stream, the routines, the recovery estimate - hangs off
+  /// `databaseProvider`, which is only valid while the state is [AppReady].
+  /// Dropping the state tears those subscriptions down, and only then is the
+  /// connection asked to close. Closing first, with the app still watching,
+  /// is what left a restore sitting on "Database sluiten" forever.
+  ///
+  /// And it does not wait indefinitely either way. A close that never returns
+  /// must not take the restore with it: the database file is deleted and
+  /// written fresh straight after this, and on Android a handle to a deleted
+  /// file keeps the old inode and cannot touch the new one.
   Future<void> closeForRestore() async {
-    await _db?.close();
+    final db = _db;
     _db = null;
     _dek = null;
     state = const AppLoading();
+    if (db == null) return;
+
+    // One turn of the event loop, so the listeners are actually gone before
+    // the connection is closed rather than during.
+    await Future<void>.delayed(Duration.zero);
+
+    await db.close().timeout(
+      kCloseForRestoreTimeout,
+      onTimeout: () {
+        debugPrint(
+          'FitLog: de database sloot niet binnen '
+          '${kCloseForRestoreTimeout.inSeconds}s; het herstel gaat door.',
+        );
+      },
+    );
   }
 
   /// The open database, or null while locked. Onboarding needs this to write

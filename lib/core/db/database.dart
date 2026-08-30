@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -117,6 +117,11 @@ class AppDatabase extends _$AppDatabase {
           // rating existed is simply unrated, which the estimate treats as
           // neutral.
           await m.addColumn(workoutsTable, workoutsTable.perceivedEffort);
+        }
+        if (from < 7) {
+          // When the last backup was made. Null means never, which is exactly
+          // what was true for every database before this column existed.
+          await m.addColumn(appSettingsTable, appSettingsTable.lastBackupAt);
         }
       });
 

@@ -489,3 +489,19 @@ zwaarder dan het volume dat de app ziet, en van geen daarvan weet ze iets.
 
 Onder elke schatting staat wat ze wel en niet meeweegt. Dat is geen sierlijke
 disclaimer maar de reden dat het getal er mag staan.
+
+## 40. Het back-upmoment staat in de back-up zelf
+
+`last_backup_at` wordt weggeschreven voordat de databasesnapshot gemaakt wordt,
+niet erna. Daardoor draagt een archief zijn eigen moment: zet je het terug op
+een nieuw toestel, dan klopt de herinnering meteen, zonder dat de herstelcode
+er iets extra's voor hoeft te doen.
+
+De prijs is dat een mislukte back-up de tijd al aangepast zou hebben. Daarom
+wordt de vorige waarde teruggezet als er daarna iets misgaat, en gaat de fout
+gewoon door naar de aanroeper. Een back-up die niet gelukt is mag de
+herinnering niet het zwijgen opleggen.
+
+De herinnering zwijgt op een lege installatie. Zonder gelogde workouts valt er
+niets te verliezen, en een app die zeurt voordat je iets gedaan hebt, leer je
+negeren.

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/security/recovery_phrase.dart';
 import '../../../core/theme/app_colors.dart';
@@ -13,6 +14,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../backup/data/backup_service.dart';
+import '../../backup/presentation/backup_providers.dart';
 
 /// Making a backup, exporting CSV, and restoring from a `.fitlog` file.
 class BackupScreen extends ConsumerStatefulWidget {
@@ -190,6 +192,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
           children: [
             if (_busy) const LinearProgressIndicator(),
             const SectionHeader('Back-up'),
+            const _LastBackupLine(),
             ListTile(
               leading: const Icon(Icons.enhanced_encryption_outlined),
               title: const Text('Versleutelde back-up maken'),
@@ -238,6 +241,34 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// When the last backup was made, or that there has never been one.
+class _LastBackupLine extends ConsumerWidget {
+  const _LastBackupLine();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final at = ref.watch(lastBackupAtProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Text(
+        at == null
+            ? 'Nog geen back-up gemaakt.'
+            : 'Laatste back-up: ${Formatters.relativeDayTime(at).toLowerCase()}.',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );

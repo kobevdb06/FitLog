@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 6);
+    expect(raw.select('PRAGMA user_version').first.values.first, 7);
     raw.close();
   });
 
@@ -156,6 +156,9 @@ void main() {
     expect(settings.defaultWarmupSets, 0);
     expect(settings.prDefaultWarmupSets, 4);
     expect(settings.prDefaultExtraAttempts, 1);
+    // v7 added the backup stamp. A database from before it has never been
+    // backed up as far as the app knows, which is the safe reading.
+    expect(settings.lastBackupAt, isNull);
 
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
     final migrated = await db.workoutsDao.getWorkoutDetail('w-1');
@@ -203,7 +206,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 6);
+    expect(db.schemaVersion, 7);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

@@ -12,6 +12,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/exercise_avatar.dart';
+import '../../backup/domain/backup_reminder.dart';
+import '../../backup/presentation/backup_providers.dart';
 import '../../progress/presentation/recovery_providers.dart';
 import '../../progress/presentation/recovery_view.dart';
 import '../../../routing/routes.dart';
@@ -83,6 +85,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            const _BackupReminderBanner(),
             const _RecoveryBlock(),
             if (records.isNotEmpty) ...[
               SectionHeader(
@@ -431,6 +434,69 @@ class _RecoveryBlock extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// One line when the backup is old or missing, and nothing at all otherwise.
+///
+/// Everything the app knows sits in one file on this phone. It will not nag on
+/// an empty install - there is nothing to lose yet - but once there is history
+/// it says so rather than letting the user find out the hard way.
+class _BackupReminderBanner extends ConsumerWidget {
+  const _BackupReminderBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reminder = ref.watch(backupReminderProvider);
+    if (reminder == BackupReminder.none) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final last = ref.watch(lastBackupAtProvider);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        0,
+      ),
+      child: InkWell(
+        onTap: () => context.push(Routes.settingsBackup),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        child: AppCard(
+          child: Row(
+            children: [
+              Icon(
+                Icons.backup_outlined,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reminder == BackupReminder.never
+                          ? 'Nog geen back-up'
+                          : 'Je back-up is ${Formatters.daysAgoWords(DateTime.now().difference(last!).inDays)}',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    Text(
+                      'Alles staat alleen op dit toestel.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

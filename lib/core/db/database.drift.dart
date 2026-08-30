@@ -581,6 +581,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _lastBackupAtMeta = const VerificationMeta(
+    'lastBackupAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastBackupAt = GeneratedColumn<int>(
+    'last_backup_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _themeModeMeta = const VerificationMeta(
     'themeMode',
   );
@@ -725,6 +736,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     restSoundEnabled,
     setCheckSoundEnabled,
     prAlertEnabled,
+    lastBackupAt,
     themeMode,
     locale,
     onboardingDone,
@@ -808,6 +820,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         prAlertEnabled.isAcceptableOrUnknown(
           data['pr_alert_enabled']!,
           _prAlertEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_backup_at')) {
+      context.handle(
+        _lastBackupAtMeta,
+        lastBackupAt.isAcceptableOrUnknown(
+          data['last_backup_at']!,
+          _lastBackupAtMeta,
         ),
       );
     }
@@ -944,6 +965,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}pr_alert_enabled'],
       )!,
+      lastBackupAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_backup_at'],
+      ),
       themeMode: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}theme_mode'],
@@ -1013,6 +1038,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   final bool setCheckSoundEnabled;
   final bool prAlertEnabled;
 
+  /// When the last encrypted backup was written, in unix millis.
+  ///
+  /// It is written before the database snapshot is taken, so the value inside
+  /// a backup is that backup's own moment: after a restore the reminder is
+  /// right without any extra bookkeeping.
+  final int? lastBackupAt;
+
   /// `system` | `light` | `dark`. Defaults to dark: this app is dark first.
   final String themeMode;
   final String locale;
@@ -1049,6 +1081,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.restSoundEnabled,
     required this.setCheckSoundEnabled,
     required this.prAlertEnabled,
+    this.lastBackupAt,
     required this.themeMode,
     required this.locale,
     required this.onboardingDone,
@@ -1072,6 +1105,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['rest_sound_enabled'] = Variable<bool>(restSoundEnabled);
     map['set_check_sound_enabled'] = Variable<bool>(setCheckSoundEnabled);
     map['pr_alert_enabled'] = Variable<bool>(prAlertEnabled);
+    if (!nullToAbsent || lastBackupAt != null) {
+      map['last_backup_at'] = Variable<int>(lastBackupAt);
+    }
     map['theme_mode'] = Variable<String>(themeMode);
     map['locale'] = Variable<String>(locale);
     map['onboarding_done'] = Variable<bool>(onboardingDone);
@@ -1096,6 +1132,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       restSoundEnabled: Value(restSoundEnabled),
       setCheckSoundEnabled: Value(setCheckSoundEnabled),
       prAlertEnabled: Value(prAlertEnabled),
+      lastBackupAt: lastBackupAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastBackupAt),
       themeMode: Value(themeMode),
       locale: Value(locale),
       onboardingDone: Value(onboardingDone),
@@ -1126,6 +1165,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         json['setCheckSoundEnabled'],
       ),
       prAlertEnabled: serializer.fromJson<bool>(json['prAlertEnabled']),
+      lastBackupAt: serializer.fromJson<int?>(json['lastBackupAt']),
       themeMode: serializer.fromJson<String>(json['themeMode']),
       locale: serializer.fromJson<String>(json['locale']),
       onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
@@ -1155,6 +1195,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'restSoundEnabled': serializer.toJson<bool>(restSoundEnabled),
       'setCheckSoundEnabled': serializer.toJson<bool>(setCheckSoundEnabled),
       'prAlertEnabled': serializer.toJson<bool>(prAlertEnabled),
+      'lastBackupAt': serializer.toJson<int?>(lastBackupAt),
       'themeMode': serializer.toJson<String>(themeMode),
       'locale': serializer.toJson<String>(locale),
       'onboardingDone': serializer.toJson<bool>(onboardingDone),
@@ -1178,6 +1219,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? restSoundEnabled,
     bool? setCheckSoundEnabled,
     bool? prAlertEnabled,
+    Value<int?> lastBackupAt = const Value.absent(),
     String? themeMode,
     String? locale,
     bool? onboardingDone,
@@ -1198,6 +1240,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     restSoundEnabled: restSoundEnabled ?? this.restSoundEnabled,
     setCheckSoundEnabled: setCheckSoundEnabled ?? this.setCheckSoundEnabled,
     prAlertEnabled: prAlertEnabled ?? this.prAlertEnabled,
+    lastBackupAt: lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
     themeMode: themeMode ?? this.themeMode,
     locale: locale ?? this.locale,
     onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -1235,6 +1278,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       prAlertEnabled: data.prAlertEnabled.present
           ? data.prAlertEnabled.value
           : this.prAlertEnabled,
+      lastBackupAt: data.lastBackupAt.present
+          ? data.lastBackupAt.value
+          : this.lastBackupAt,
       themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
       locale: data.locale.present ? data.locale.value : this.locale,
       onboardingDone: data.onboardingDone.present
@@ -1276,6 +1322,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('restSoundEnabled: $restSoundEnabled, ')
           ..write('setCheckSoundEnabled: $setCheckSoundEnabled, ')
           ..write('prAlertEnabled: $prAlertEnabled, ')
+          ..write('lastBackupAt: $lastBackupAt, ')
           ..write('themeMode: $themeMode, ')
           ..write('locale: $locale, ')
           ..write('onboardingDone: $onboardingDone, ')
@@ -1301,6 +1348,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     restSoundEnabled,
     setCheckSoundEnabled,
     prAlertEnabled,
+    lastBackupAt,
     themeMode,
     locale,
     onboardingDone,
@@ -1325,6 +1373,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.restSoundEnabled == this.restSoundEnabled &&
           other.setCheckSoundEnabled == this.setCheckSoundEnabled &&
           other.prAlertEnabled == this.prAlertEnabled &&
+          other.lastBackupAt == this.lastBackupAt &&
           other.themeMode == this.themeMode &&
           other.locale == this.locale &&
           other.onboardingDone == this.onboardingDone &&
@@ -1347,6 +1396,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> restSoundEnabled;
   final Value<bool> setCheckSoundEnabled;
   final Value<bool> prAlertEnabled;
+  final Value<int?> lastBackupAt;
   final Value<String> themeMode;
   final Value<String> locale;
   final Value<bool> onboardingDone;
@@ -1368,6 +1418,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.restSoundEnabled = const Value.absent(),
     this.setCheckSoundEnabled = const Value.absent(),
     this.prAlertEnabled = const Value.absent(),
+    this.lastBackupAt = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.locale = const Value.absent(),
     this.onboardingDone = const Value.absent(),
@@ -1390,6 +1441,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.restSoundEnabled = const Value.absent(),
     this.setCheckSoundEnabled = const Value.absent(),
     this.prAlertEnabled = const Value.absent(),
+    this.lastBackupAt = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.locale = const Value.absent(),
     this.onboardingDone = const Value.absent(),
@@ -1413,6 +1465,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? restSoundEnabled,
     Expression<bool>? setCheckSoundEnabled,
     Expression<bool>? prAlertEnabled,
+    Expression<int>? lastBackupAt,
     Expression<String>? themeMode,
     Expression<String>? locale,
     Expression<bool>? onboardingDone,
@@ -1437,6 +1490,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (setCheckSoundEnabled != null)
         'set_check_sound_enabled': setCheckSoundEnabled,
       if (prAlertEnabled != null) 'pr_alert_enabled': prAlertEnabled,
+      if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
       if (themeMode != null) 'theme_mode': themeMode,
       if (locale != null) 'locale': locale,
       if (onboardingDone != null) 'onboarding_done': onboardingDone,
@@ -1463,6 +1517,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? restSoundEnabled,
     Value<bool>? setCheckSoundEnabled,
     Value<bool>? prAlertEnabled,
+    Value<int?>? lastBackupAt,
     Value<String>? themeMode,
     Value<String>? locale,
     Value<bool>? onboardingDone,
@@ -1485,6 +1540,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       restSoundEnabled: restSoundEnabled ?? this.restSoundEnabled,
       setCheckSoundEnabled: setCheckSoundEnabled ?? this.setCheckSoundEnabled,
       prAlertEnabled: prAlertEnabled ?? this.prAlertEnabled,
+      lastBackupAt: lastBackupAt ?? this.lastBackupAt,
       themeMode: themeMode ?? this.themeMode,
       locale: locale ?? this.locale,
       onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -1529,6 +1585,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     }
     if (prAlertEnabled.present) {
       map['pr_alert_enabled'] = Variable<bool>(prAlertEnabled.value);
+    }
+    if (lastBackupAt.present) {
+      map['last_backup_at'] = Variable<int>(lastBackupAt.value);
     }
     if (themeMode.present) {
       map['theme_mode'] = Variable<String>(themeMode.value);
@@ -1582,6 +1641,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('restSoundEnabled: $restSoundEnabled, ')
           ..write('setCheckSoundEnabled: $setCheckSoundEnabled, ')
           ..write('prAlertEnabled: $prAlertEnabled, ')
+          ..write('lastBackupAt: $lastBackupAt, ')
           ..write('themeMode: $themeMode, ')
           ..write('locale: $locale, ')
           ..write('onboardingDone: $onboardingDone, ')
@@ -7680,6 +7740,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> restSoundEnabled,
       Value<bool> setCheckSoundEnabled,
       Value<bool> prAlertEnabled,
+      Value<int?> lastBackupAt,
       Value<String> themeMode,
       Value<String> locale,
       Value<bool> onboardingDone,
@@ -7703,6 +7764,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> restSoundEnabled,
       Value<bool> setCheckSoundEnabled,
       Value<bool> prAlertEnabled,
+      Value<int?> lastBackupAt,
       Value<String> themeMode,
       Value<String> locale,
       Value<bool> onboardingDone,
@@ -7763,6 +7825,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get prAlertEnabled => $composableBuilder(
     column: $table.prAlertEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastBackupAt => $composableBuilder(
+    column: $table.lastBackupAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7871,6 +7938,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get lastBackupAt => $composableBuilder(
+    column: $table.lastBackupAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get themeMode => $composableBuilder(
     column: $table.themeMode,
     builder: (column) => ColumnOrderings(column),
@@ -7974,6 +8046,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get lastBackupAt => $composableBuilder(
+    column: $table.lastBackupAt,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get themeMode =>
       $composableBuilder(column: $table.themeMode, builder: (column) => column);
 
@@ -8069,6 +8146,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> restSoundEnabled = const Value.absent(),
                 Value<bool> setCheckSoundEnabled = const Value.absent(),
                 Value<bool> prAlertEnabled = const Value.absent(),
+                Value<int?> lastBackupAt = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
                 Value<String> locale = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
@@ -8090,6 +8168,7 @@ class $$AppSettingsTableTableTableManager
                 restSoundEnabled: restSoundEnabled,
                 setCheckSoundEnabled: setCheckSoundEnabled,
                 prAlertEnabled: prAlertEnabled,
+                lastBackupAt: lastBackupAt,
                 themeMode: themeMode,
                 locale: locale,
                 onboardingDone: onboardingDone,
@@ -8113,6 +8192,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> restSoundEnabled = const Value.absent(),
                 Value<bool> setCheckSoundEnabled = const Value.absent(),
                 Value<bool> prAlertEnabled = const Value.absent(),
+                Value<int?> lastBackupAt = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
                 Value<String> locale = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
@@ -8134,6 +8214,7 @@ class $$AppSettingsTableTableTableManager
                 restSoundEnabled: restSoundEnabled,
                 setCheckSoundEnabled: setCheckSoundEnabled,
                 prAlertEnabled: prAlertEnabled,
+                lastBackupAt: lastBackupAt,
                 themeMode: themeMode,
                 locale: locale,
                 onboardingDone: onboardingDone,

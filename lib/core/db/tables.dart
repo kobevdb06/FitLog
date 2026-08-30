@@ -54,6 +54,14 @@ class AppSettingsTable extends Table {
   BoolColumn get prAlertEnabled =>
       boolean().named('pr_alert_enabled').withDefault(const Constant(true))();
 
+  /// When the last encrypted backup was written, in unix millis.
+  ///
+  /// It is written before the database snapshot is taken, so the value inside
+  /// a backup is that backup's own moment: after a restore the reminder is
+  /// right without any extra bookkeeping.
+  IntColumn get lastBackupAt =>
+      integer().named('last_backup_at').nullable()();
+
   /// `system` | `light` | `dark`. Defaults to dark: this app is dark first.
   TextColumn get themeMode =>
       text().named('theme_mode').withDefault(const Constant('dark'))();

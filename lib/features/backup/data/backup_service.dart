@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:cryptography/cryptography.dart';
 
 import '../../../core/db/database.dart';
@@ -48,6 +49,38 @@ class BackupService {
     final exportDir = await paths.exportDirectory();
     final snapshot = File('${exportDir.path}/snapshot.db');
     if (await snapshot.exists()) await snapshot.delete();
+
+    // Stamped before the snapshot rather than after the file is written, so
+    // the archive carries its own moment: restore it and the reminder is
+    // immediately right. Put back if anything below fails, because a backup
+    // that did not happen must not silence the reminder.
+    final previousStamp = (await db.settingsDao.getSettings()).lastBackupAt;
+    await db.settingsDao.updateSettings(
+      AppSettingsTableCompanion(
+        lastBackupAt: Value(DateTime.now().millisecondsSinceEpoch),
+      ),
+    );
+    try {
+      return await _writeBackup(
+        exportDir: exportDir,
+        snapshot: snapshot,
+        recoveryPhrase: recoveryPhrase,
+        dek: dek,
+      );
+    } on Object {
+      await db.settingsDao.updateSettings(
+        AppSettingsTableCompanion(lastBackupAt: Value(previousStamp)),
+      );
+      rethrow;
+    }
+  }
+
+  Future<File> _writeBackup({
+    required Directory exportDir,
+    required File snapshot,
+    required String recoveryPhrase,
+    required Uint8List dek,
+  }) async {
 
     // VACUUM INTO writes a consistent copy that keeps the same encryption key,
     // which is safer than copying a file that may have a live WAL.

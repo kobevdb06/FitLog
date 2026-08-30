@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../data/routine_import.dart';
 import '../domain/routine_code.dart';
+import 'qr_view.dart';
 
 /// The code your friend points their camera at.
 ///
@@ -83,24 +83,7 @@ class ShareRoutineScreen extends ConsumerWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                   ),
-                  child: QrImageView(
-                    data: payload,
-                    size: 280,
-                    backgroundColor: Colors.white,
-                    // A screen is a forgiving surface but a hand is not.
-                    errorCorrectionLevel: QrErrorCorrectLevel.M,
-                    errorStateBuilder: (context, error) => SizedBox(
-                      width: 280,
-                      height: 280,
-                      child: Center(
-                        child: Text(
-                          'Deze routine is te groot voor één code.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: theme.colorScheme.error),
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: QrView(data: payload, size: 280),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),

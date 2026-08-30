@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog — je trainingslogboek, op je toestel</title>
+<meta name="description" content="Een logboek voor krachttraining dat volledig op je telefoon blijft. Geen account, geen server, geen internet.">
+<meta name="color-scheme" content="dark light">
+<style>
+  :root {
+    --bg: #101216;
+    --surface: #181b21;
+    --line: #262a32;
+    --text: #e8eaee;
+    --muted: #9aa1ad;
+    --accent: #3d7dff;
+    --accent-dim: #2a5cbf;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+  header { text-align: center; }
+  h1 { font-size: 2.25rem; margin: 1rem 0 .25rem; letter-spacing: -.02em; }
+  .tagline { color: var(--muted); margin: 0 0 2rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); }
+
+  .download {
+    display: block;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-align: center;
+    padding: 1rem 1.5rem;
+    border-radius: .9rem;
+    transition: background .15s;
+  }
+  .download:hover, .download:focus { background: var(--accent-dim); }
+  .download small { display: block; font-weight: 400; opacity: .85; font-size: .85rem; margin-top: .15rem; }
+
+  .note { color: var(--muted); font-size: .875rem; text-align: center; margin-top: .75rem; }
+
+  ol { padding-left: 1.25rem; }
+  li { margin-bottom: .5rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: .9rem;
+    padding: 1.25rem 1.25rem .25rem;
+  }
+  .card p:last-child { margin-bottom: 1rem; }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .875rem;
+    text-align: center;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #ffffff; --surface: #f5f6f8; --line: #e2e5ea;
+      --text: #14161a; --muted: #5c6470;
+    }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <svg width="88" height="88" viewBox="0 0 100 100" role="img" aria-label="FitLog">
+      <polygon points="39,11 79,11 61,29 39,29" fill="#7BA9FF"/>
+      <polygon points="39,45 69,45 51,63 39,63" fill="#7BA9FF"/>
+      <polygon points="21,11 39,11 39,89 21,89" fill="#3D7DFF"/>
+      <polygon points="39,11 57,11 39,29" fill="#2A5CBF"/>
+      <polygon points="39,45 57,45 39,63" fill="#2A5CBF"/>
+    </svg>
+    <h1>FitLog</h1>
+    <p class="tagline">Je trainingslogboek. Op je toestel, en nergens anders.</p>
+
+    <a class="download" id="download" href="#" rel="noopener">
+      Download voor Android
+      <small id="meta">APK · ongeveer 88 MB</small>
+    </a>
+    <p class="note">Gratis. Geen account, geen advertenties, geen internet.</p>
+  </header>
+
+  <h2>Wat het is</h2>
+  <p>
+    Een logboek voor krachttraining: routines, sets, gewichten, records,
+    voortgangsfoto's en een schatting van hoe lang elke spiergroep nodig heeft.
+    873 oefeningen zitten er al in, met een animatie van de uitvoering, en je
+    kunt er zelf oefeningen bij maken met je eigen foto's.
+  </p>
+
+  <h2>Wat het niet doet</h2>
+  <div class="card">
+    <p>
+      Er is geen account en geen server. Alles staat in één versleutelde
+      database op je telefoon, achter een pincode of je vingerafdruk.
+    </p>
+    <p>
+      De app heeft op Android <strong>geen internettoegang</strong> — die
+      permissie staat bewust niet in het installatiebestand, en de build haalt
+      hem er actief weer uit als een onderdeel er alsnog om vraagt. Er kan dus
+      niets verstuurd worden, ook niet per ongeluk.
+    </p>
+    <p>
+      Geen analytics, geen crashrapporten, geen advertenties. Een routine deel
+      je met een vriend door een QR-code te scannen, niet via een dienst.
+    </p>
+  </div>
+
+  <h2>Installeren</h2>
+  <p>
+    De app staat niet in de Play Store, dus Android vraagt eenmalig om
+    toestemming. Dat gaat zo:
+  </p>
+  <ol>
+    <li>Tik hierboven op <strong>Download</strong> en wacht tot het bestand binnen is.</li>
+    <li>Open het gedownloade bestand. Android zegt dat installeren van deze bron uitstaat.</li>
+    <li>Tik op <strong>Instellingen</strong> en zet het schuifje aan voor de app waarmee je downloadde (meestal Chrome of Bestanden).</li>
+    <li>Ga terug en tik op <strong>Installeren</strong>. Verschijnt er een waarschuwing van Play Protect, kies dan <strong>Toch installeren</strong>.</li>
+  </ol>
+  <p class="note" style="text-align:left">
+    Die waarschuwing hoort erbij: Google kent de app niet omdat ze niet uit de
+    Play Store komt. Wil je zelf nakijken wat erin zit, dan staat de volledige
+    broncode hieronder.
+  </p>
+
+  <h2>Bijwerken</h2>
+  <p>
+    Een nieuwe versie installeer je er gewoon overheen; je gegevens blijven
+    staan. Wil je bericht krijgen wanneer er een is, dan kun je
+    <a href="https://github.com/ImranR98/Obtainium" rel="noopener">Obtainium</a>
+    de releasepagina laten volgen — die werkt de app dan zelf bij.
+  </p>
+
+  <footer>
+    <p>
+      <a id="source" href="#" rel="noopener">Broncode</a> ·
+      <a id="releases" href="#" rel="noopener">Alle versies</a> ·
+      MIT-licentie
+    </p>
+    <p>Gemaakt voor eigen gebruik, en daarna weggegeven.</p>
+  </footer>
+</main>
+
+<script>
+  // Where the release lives. On GitHub Pages both halves are in the address of
+  // this very page, so the links keep working without editing this file:
+  //   kobe.github.io/fitlog/  ->  github.com/kobe/fitlog
+  // Set REPO by hand if the site ever moves to a domain of its own.
+  const REPO = (function () {
+    const manual = "";
+    if (manual) return manual;
+    const host = location.hostname.split(".");
+    const path = location.pathname.split("/").filter(Boolean);
+    if (host.length > 2 && host[1] === "github" && path.length) {
+      return host[0] + "/" + path[0];
+    }
+    return null;
+  })();
+
+  const base = REPO ? "https://github.com/" + REPO : null;
+  const set = function (id, href) {
+    const el = document.getElementById(id);
+    if (href) { el.href = href; } else { el.removeAttribute("href"); }
+  };
+
+  if (base) {
+    set("download", base + "/releases/latest/download/fitlog.apk");
+    set("source", base);
+    set("releases", base + "/releases");
+  } else {
+    // Opened somewhere other than GitHub Pages - a local preview, most likely.
+    // Say so instead of offering a button that does nothing.
+    const button = document.getElementById("download");
+    button.style.opacity = ".55";
+    button.style.pointerEvents = "none";
+    document.getElementById("meta").textContent =
+      "beschikbaar op de gepubliceerde pagina";
+  }
+</script>
+</body>
+</html>

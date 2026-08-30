@@ -81,6 +81,25 @@ apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
 
 Staat daar `CN=Android Debug`, dan ontbrak de sleutel.
 
+### Publiceren
+
+De downloadpagina staat in `docs/index.html` en wordt door GitHub Pages
+geserveerd vanaf de `main`-branch, map `/docs`. Ze leidt de links naar de
+release af uit haar eigen adres, dus er hoeft niets in aangepast te worden.
+
+Een nieuwe versie de deur uit:
+
+1. Versie ophogen in `pubspec.yaml` en in `about_screen.dart`.
+2. `flutter analyze` en `flutter test` groen.
+3. `flutter build apk --release --target-platform android-arm,android-arm64`
+4. Controleren wie ondertekend heeft (zie hierboven).
+5. Het bestand hernoemen naar **`fitlog.apk`** en als asset aan een nieuwe
+   GitHub-release hangen, met de versie als tag.
+
+Die naam moet elke keer dezelfde zijn: de downloadknop wijst naar
+`releases/latest/download/fitlog.apk`, en Obtainium herkent de app eraan.
+
+
 De oefeningencatalogus opnieuw genereren (samen met de tool hieronder het enige
 dat het internet raakt; geen van beide draait ooit in de app):
 

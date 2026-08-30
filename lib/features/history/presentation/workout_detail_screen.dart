@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../../core/widgets/exercise_avatar.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
@@ -178,10 +179,7 @@ class _ExerciseBlock extends ConsumerWidget {
                   context.push(Routes.exerciseDetail(detail.exercise.id)),
               child: Row(
                 children: [
-                  MuscleAvatar(
-                    muscle: detail.exercise.primaryMuscle,
-                    size: 32,
-                  ),
+                  ExerciseAvatar(exercise: detail.exercise, size: 32),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(

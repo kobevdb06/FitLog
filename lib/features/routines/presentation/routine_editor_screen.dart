@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../../core/widgets/exercise_avatar.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
@@ -504,7 +505,7 @@ class _ExerciseEditorCard extends StatelessWidget {
                     child: Icon(Icons.drag_handle),
                   ),
                 ),
-                MuscleAvatar(muscle: draft.exercise.primaryMuscle, size: 32),
+                ExerciseAvatar(exercise: draft.exercise, size: 32),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(

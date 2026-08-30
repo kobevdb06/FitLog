@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/exercise_avatar.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../routines/presentation/routine_providers.dart';
@@ -93,8 +94,8 @@ class DashboardScreen extends ConsumerWidget {
                   dense: true,
                   onTap: () =>
                       context.push(Routes.exerciseDetail(record.exercise.id)),
-                  leading: MuscleAvatar(
-                    muscle: record.exercise.primaryMuscle,
+                  leading: ExerciseAvatar(
+                    exercise: record.exercise,
                     size: 32,
                   ),
                   title: Text(record.exercise.name),

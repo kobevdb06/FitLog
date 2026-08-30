@@ -9,6 +9,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../../core/widgets/exercise_avatar.dart';
 import '../../../routing/routes.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'routine_providers.dart';
@@ -265,7 +266,7 @@ class _ExerciseBlock extends StatelessWidget {
           children: [
             Row(
               children: [
-                MuscleAvatar(muscle: detail.exercise.primaryMuscle, size: 36),
+                ExerciseAvatar(exercise: detail.exercise, size: 36),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(

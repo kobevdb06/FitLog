@@ -259,6 +259,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
+  Future<void> _reorder(WorkoutDetail workout, int from, int to) async {
+    final ids = workout.exercises
+        .map((e) => e.workoutExercise.id)
+        .toList(growable: true);
+    ids.insert(to, ids.removeAt(from));
+    await ref.read(workoutControllerProvider).reorderExercises(ids);
+  }
+
   // --- Finishing ------------------------------------------------------------
 
   Future<void> _finish(WorkoutDetail workout) async {
@@ -420,33 +428,52 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                   actionLabel: 'Oefening toevoegen',
                   onAction: () => _addExercises(workout),
                 )
-              : ListView(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    for (final exercise in workout.exercises)
-                      Padding(
+              // A sliver list rather than a ReorderableListView so the
+              // "add exercise" button can sit under it without becoming one of
+              // the draggable items.
+              : CustomScrollView(
+                  slivers: [
+                    SliverReorderableList(
+                      itemCount: workout.exercises.length,
+                      onReorderItem: (from, to) =>
+                          _reorder(workout, from, to),
+                      itemBuilder: (context, index) {
+                        final exercise = workout.exercises[index];
+                        return Padding(
+                          key: ValueKey(exercise.workoutExercise.id),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            AppSpacing.sm,
+                            AppSpacing.md,
+                            AppSpacing.sm,
+                          ),
+                          child: _ExerciseCard(
+                            workout: workout,
+                            detail: exercise,
+                            index: index,
+                            formatters: formatters,
+                            settings: settings,
+                            activeTarget: _target,
+                            onFocus: (row, kind) =>
+                                _focus(row, kind, formatters),
+                            onToggle: (row) => _toggleSet(row, settings),
+                          ),
+                        );
+                      },
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
                         padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          AppSpacing.sm,
-                          AppSpacing.md,
-                          AppSpacing.sm,
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                          32,
                         ),
-                        child: _ExerciseCard(
-                          workout: workout,
-                          detail: exercise,
-                          formatters: formatters,
-                          settings: settings,
-                          activeTarget: _target,
-                          onFocus: (row, kind) => _focus(row, kind, formatters),
-                          onToggle: (row) => _toggleSet(row, settings),
+                        child: OutlinedButton.icon(
+                          onPressed: () => _addExercises(workout),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Oefening toevoegen'),
                         ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: OutlinedButton.icon(
-                        onPressed: () => _addExercises(workout),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Oefening toevoegen'),
                       ),
                     ),
                   ],
@@ -496,6 +523,7 @@ class _ExerciseCard extends ConsumerWidget {
   const _ExerciseCard({
     required this.workout,
     required this.detail,
+    required this.index,
     required this.formatters,
     required this.settings,
     required this.activeTarget,
@@ -505,6 +533,9 @@ class _ExerciseCard extends ConsumerWidget {
 
   final WorkoutDetail workout;
   final WorkoutExerciseDetail detail;
+
+  /// Position in the list, which is what the drag handle needs.
+  final int index;
   final Formatters formatters;
   final AppSettingsRow? settings;
   final _KeypadTarget? activeTarget;
@@ -559,6 +590,7 @@ class _ExerciseCard extends ConsumerWidget {
                     PrAttemptHeader(detail: detail, formatters: formatters),
                   _CardHeader(
                     detail: detail,
+                    index: index,
                     groupColor: groupColor,
                     group: group,
                     onMenu: (value) => _onMenu(context, ref, value),
@@ -801,12 +833,14 @@ class _ExerciseCard extends ConsumerWidget {
 class _CardHeader extends StatelessWidget {
   const _CardHeader({
     required this.detail,
+    required this.index,
     required this.groupColor,
     required this.group,
     required this.onMenu,
   });
 
   final WorkoutExerciseDetail detail;
+  final int index;
   final Color? groupColor;
   final int? group;
   final ValueChanged<String> onMenu;
@@ -818,13 +852,27 @@ class _CardHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
+        AppSpacing.sm,
         AppSpacing.sm,
         AppSpacing.xs,
         0,
       ),
       child: Row(
         children: [
+          // Only the handle starts a drag. The card is full of tappable set
+          // rows, and a drag anywhere on it would fight with every one of them.
+          ReorderableDragStartListener(
+            index: index,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Icon(
+                Icons.drag_indicator,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: InkWell(
               onTap: () =>

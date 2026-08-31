@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,9 @@ import 'core/app/app_controller.dart';
 import 'core/db/enums.dart';
 import 'core/providers/core_providers.dart';
 import 'core/theme/app_theme.dart';
+import 'core/util/notification_service.dart';
+import 'features/workout/domain/workout_notice.dart';
+import 'features/workout/presentation/workout_providers.dart';
 import 'routing/router.dart';
 
 /// The root widget. Also owns the lifecycle observer that drives auto-lock.
@@ -45,9 +50,44 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     }
   }
 
+  /// What the standing notification last said, so an unchanged workout does
+  /// not repost it on every rebuild.
+  WorkoutNotice? _shown;
+
+  /// Keeps the standing notification in step with the running workout.
+  ///
+  /// One listener at the root rather than a call at every place a set is
+  /// ticked off: the notification then cannot drift out of step with the
+  /// session, and it is right again after the app is killed and reopened.
+  void _syncWorkoutNotification() {
+    final workout = ref.watch(activeWorkoutProvider).value;
+    final rest = ref.watch(restTimerProvider);
+
+    final notice = workoutNoticeFor(
+      workout,
+      restEndsAt: rest.isActive ? rest.endsAt : null,
+    );
+    if (notice == _shown) return;
+    _shown = notice;
+
+    if (notice == null) {
+      unawaited(NotificationService.instance.cancelWorkout());
+      return;
+    }
+    unawaited(
+      NotificationService.instance.showWorkout(
+        title: notice.title,
+        body: notice.body,
+        startedAt: notice.startedAt,
+        restEndsAt: notice.restEndsAt,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
+    _syncWorkoutNotification();
 
     // Dark is the default; the setting can override it once the database is
     // open, and before that we simply stay dark.

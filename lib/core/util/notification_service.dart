@@ -5,8 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Local notifications, used for exactly one thing: telling the user their
-/// rest is over when they have put the phone away.
+/// Local notifications: the nudge when a rest is over, and the standing one
+/// that shows where you are while a workout runs.
 ///
 /// Nothing here talks to a server; `flutter_local_notifications` schedules on
 /// the device itself.
@@ -21,7 +21,11 @@ class NotificationService {
   /// A fixed id: there is only ever one rest timer.
   static const int restTimerNotificationId = 1001;
 
+  /// And only ever one running workout.
+  static const int workoutNotificationId = 1002;
+
   static const _channelId = 'fitlog_rest_timer';
+  static const _workoutChannelId = 'fitlog_workout';
 
   bool _initialised = false;
   bool _timezoneReady = false;
@@ -111,6 +115,74 @@ class NotificationService {
       interruptionLevel: InterruptionLevel.timeSensitive,
     ),
   );
+
+  /// Shows, or updates, the notification that stands while a workout runs.
+  ///
+  /// Silent and low importance: it is a place to look, not an interruption -
+  /// the rest timer already has the job of getting your attention.
+  ///
+  /// While resting, Android renders the countdown itself from [restEndsAt];
+  /// otherwise it counts the workout up from [startedAt]. Either way the app
+  /// does not have to wake up to redraw a number, which is what lets the time
+  /// keep moving with the screen off.
+  ///
+  /// On Android 14 and later a standing notification can still be swiped away
+  /// - Google made that deliberate - so this is posted again on every change.
+  Future<void> showWorkout({
+    required String title,
+    required String body,
+    required DateTime startedAt,
+    DateTime? restEndsAt,
+  }) async {
+    final resting = restEndsAt != null && restEndsAt.isAfter(DateTime.now());
+
+    try {
+      await _plugin.show(
+        id: workoutNotificationId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _workoutChannelId,
+            'Lopende workout',
+            channelDescription:
+                'Blijft staan zolang je workout bezig is, met je oefening, '
+                'je set en je resterende rust.',
+            importance: Importance.low,
+            priority: Priority.low,
+            category: AndroidNotificationCategory.workout,
+            playSound: false,
+            enableVibration: false,
+            silent: true,
+            onlyAlertOnce: true,
+            ongoing: true,
+            autoCancel: false,
+            showWhen: true,
+            when: (resting ? restEndsAt : startedAt).millisecondsSinceEpoch,
+            usesChronometer: true,
+            chronometerCountDown: resting,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: false,
+            presentSound: false,
+            presentBanner: false,
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      // A workout must never fail to start because a notification would not
+      // go up.
+      debugPrint('FitLog: workoutmelding niet getoond ($error)');
+    }
+  }
+
+  Future<void> cancelWorkout() async {
+    try {
+      await _plugin.cancel(id: workoutNotificationId);
+    } on Object catch (_) {
+      // Nothing showing.
+    }
+  }
 
   /// Schedules the "rest is over" notification for [endsAt].
   ///

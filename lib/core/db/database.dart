@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -129,6 +129,13 @@ class AppDatabase extends _$AppDatabase {
           // the app was not picking anything while it was closed.
           await m.addColumn(appSettingsTable, appSettingsTable.pendingPickKind);
           await m.addColumn(appSettingsTable, appSettingsTable.pendingPickRef);
+        }
+        if (from < 9) {
+          // A colour for a routine, and the copy a session keeps of it.
+          // Additive: everything that exists has no colour, which is what null
+          // says and what the lists already draw.
+          await m.addColumn(routinesTable, routinesTable.colorIndex);
+          await m.addColumn(workoutsTable, workoutsTable.colorIndex);
         }
       });
 

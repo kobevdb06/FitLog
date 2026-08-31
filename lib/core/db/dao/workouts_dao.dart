@@ -88,6 +88,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
           id: id,
           routineId: Value(routine?.id),
           name: name ?? routine?.name ?? 'Losse workout',
+          colorIndex: Value(routine?.colorIndex),
           startedAt: now,
           notes: const Value(null),
         ),
@@ -164,6 +165,10 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
     final id = await startWorkout(
       name: source.workout.name,
       defaultRestSeconds: defaultRestSeconds,
+    );
+    // Doing a session again keeps its colour, the way it keeps its name.
+    await (update(workoutsTable)..where((t) => t.id.equals(id))).write(
+      WorkoutsTableCompanion(colorIndex: Value(source.workout.colorIndex)),
     );
 
     await transaction(() async {

@@ -6,6 +6,7 @@ import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/colour_picker.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
@@ -250,6 +251,7 @@ class _RoutineTile extends StatelessWidget {
 
     return ListTile(
       onTap: () => context.push(Routes.routineDetail(routine.id)),
+      leading: ColourDot(colorIndex: routine.colorIndex),
       title: Text(routine.name),
       subtitle: Text(
         [

@@ -27,6 +27,7 @@ gebruikersdata verwijderen of herschrijven mag niet.
 | 6 | `workouts.perceived_effort`: hoe zwaar de sessie voelde. |
 | 7 | `app_settings.last_backup_at`: wanneer de laatste back-up gemaakt is. |
 | 8 | `app_settings.pending_pick_kind` en `pending_pick_ref`: waar een onderbroken fotokeuze heen moest. |
+| 9 | `routines.color_index` en `workouts.color_index`: de kleur van een routine, en de kopie die een sessie ervan bewaart. |
 
 `test/db/migration_test.dart` bouwt een echte v1-database uit
 `test/db/fixtures/schema_v1.sql`, vult ze met gebruikersdata en controleert dat

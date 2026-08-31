@@ -187,6 +187,9 @@ class RoutinesTable extends Table {
   IntColumn get lastPerformedAt =>
       integer().named('last_performed_at').nullable()();
 
+  /// A position in `AppColors.routinePalette`, or null for no colour.
+  IntColumn get colorIndex => integer().named('color_index').nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -263,6 +266,11 @@ class WorkoutsTable extends Table {
   /// One of [PerceivedEffort], or null while the session has not been rated.
   TextColumn get perceivedEffort =>
       text().named('perceived_effort').nullable()();
+
+  /// Copied from the routine when the session starts, the way the name is. A
+  /// session keeps the colour it was done in, even if the routine is
+  /// recoloured or deleted afterwards.
+  IntColumn get colorIndex => integer().named('color_index').nullable()();
   IntColumn get durationSeconds =>
       integer().named('duration_seconds').withDefault(const Constant(0))();
 

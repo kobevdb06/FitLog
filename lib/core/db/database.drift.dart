@@ -2924,6 +2924,17 @@ class $RoutinesTableTable extends RoutinesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _colorIndexMeta = const VerificationMeta(
+    'colorIndex',
+  );
+  @override
+  late final GeneratedColumn<int> colorIndex = GeneratedColumn<int>(
+    'color_index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2934,6 +2945,7 @@ class $RoutinesTableTable extends RoutinesTable
     createdAt,
     updatedAt,
     lastPerformedAt,
+    colorIndex,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3005,6 +3017,12 @@ class $RoutinesTableTable extends RoutinesTable
         ),
       );
     }
+    if (data.containsKey('color_index')) {
+      context.handle(
+        _colorIndexMeta,
+        colorIndex.isAcceptableOrUnknown(data['color_index']!, _colorIndexMeta),
+      );
+    }
     return context;
   }
 
@@ -3046,6 +3064,10 @@ class $RoutinesTableTable extends RoutinesTable
         DriftSqlType.int,
         data['${effectivePrefix}last_performed_at'],
       ),
+      colorIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_index'],
+      ),
     );
   }
 
@@ -3064,6 +3086,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
   final int createdAt;
   final int updatedAt;
   final int? lastPerformedAt;
+
+  /// A position in `AppColors.routinePalette`, or null for no colour.
+  final int? colorIndex;
   const RoutineRow({
     required this.id,
     required this.name,
@@ -3073,6 +3098,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     required this.createdAt,
     required this.updatedAt,
     this.lastPerformedAt,
+    this.colorIndex,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3090,6 +3116,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     map['updated_at'] = Variable<int>(updatedAt);
     if (!nullToAbsent || lastPerformedAt != null) {
       map['last_performed_at'] = Variable<int>(lastPerformedAt);
+    }
+    if (!nullToAbsent || colorIndex != null) {
+      map['color_index'] = Variable<int>(colorIndex);
     }
     return map;
   }
@@ -3110,6 +3139,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       lastPerformedAt: lastPerformedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastPerformedAt),
+      colorIndex: colorIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(colorIndex),
     );
   }
 
@@ -3127,6 +3159,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
       lastPerformedAt: serializer.fromJson<int?>(json['lastPerformedAt']),
+      colorIndex: serializer.fromJson<int?>(json['colorIndex']),
     );
   }
   @override
@@ -3141,6 +3174,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
       'lastPerformedAt': serializer.toJson<int?>(lastPerformedAt),
+      'colorIndex': serializer.toJson<int?>(colorIndex),
     };
   }
 
@@ -3153,6 +3187,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     int? createdAt,
     int? updatedAt,
     Value<int?> lastPerformedAt = const Value.absent(),
+    Value<int?> colorIndex = const Value.absent(),
   }) => RoutineRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -3164,6 +3199,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     lastPerformedAt: lastPerformedAt.present
         ? lastPerformedAt.value
         : this.lastPerformedAt,
+    colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
   );
   RoutineRow copyWithCompanion(RoutinesTableCompanion data) {
     return RoutineRow(
@@ -3177,6 +3213,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       lastPerformedAt: data.lastPerformedAt.present
           ? data.lastPerformedAt.value
           : this.lastPerformedAt,
+      colorIndex: data.colorIndex.present
+          ? data.colorIndex.value
+          : this.colorIndex,
     );
   }
 
@@ -3190,7 +3229,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('lastPerformedAt: $lastPerformedAt')
+          ..write('lastPerformedAt: $lastPerformedAt, ')
+          ..write('colorIndex: $colorIndex')
           ..write(')'))
         .toString();
   }
@@ -3205,6 +3245,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     createdAt,
     updatedAt,
     lastPerformedAt,
+    colorIndex,
   );
   @override
   bool operator ==(Object other) =>
@@ -3217,7 +3258,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.lastPerformedAt == this.lastPerformedAt);
+          other.lastPerformedAt == this.lastPerformedAt &&
+          other.colorIndex == this.colorIndex);
 }
 
 class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
@@ -3229,6 +3271,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int?> lastPerformedAt;
+  final Value<int?> colorIndex;
   final Value<int> rowid;
   const RoutinesTableCompanion({
     this.id = const Value.absent(),
@@ -3239,6 +3282,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.lastPerformedAt = const Value.absent(),
+    this.colorIndex = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinesTableCompanion.insert({
@@ -3250,6 +3294,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     required int createdAt,
     required int updatedAt,
     this.lastPerformedAt = const Value.absent(),
+    this.colorIndex = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -3265,6 +3310,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<int>? lastPerformedAt,
+    Expression<int>? colorIndex,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3276,6 +3322,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (lastPerformedAt != null) 'last_performed_at': lastPerformedAt,
+      if (colorIndex != null) 'color_index': colorIndex,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3289,6 +3336,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<int?>? lastPerformedAt,
+    Value<int?>? colorIndex,
     Value<int>? rowid,
   }) {
     return RoutinesTableCompanion(
@@ -3300,6 +3348,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastPerformedAt: lastPerformedAt ?? this.lastPerformedAt,
+      colorIndex: colorIndex ?? this.colorIndex,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3331,6 +3380,9 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     if (lastPerformedAt.present) {
       map['last_performed_at'] = Variable<int>(lastPerformedAt.value);
     }
+    if (colorIndex.present) {
+      map['color_index'] = Variable<int>(colorIndex.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3348,6 +3400,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('lastPerformedAt: $lastPerformedAt, ')
+          ..write('colorIndex: $colorIndex, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4442,6 +4495,17 @@ class $WorkoutsTableTable extends WorkoutsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _colorIndexMeta = const VerificationMeta(
+    'colorIndex',
+  );
+  @override
+  late final GeneratedColumn<int> colorIndex = GeneratedColumn<int>(
+    'color_index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _durationSecondsMeta = const VerificationMeta(
     'durationSeconds',
   );
@@ -4465,6 +4529,7 @@ class $WorkoutsTableTable extends WorkoutsTable
     totalVolumeKg,
     totalSets,
     perceivedEffort,
+    colorIndex,
     durationSeconds,
   ];
   @override
@@ -4542,6 +4607,12 @@ class $WorkoutsTableTable extends WorkoutsTable
         ),
       );
     }
+    if (data.containsKey('color_index')) {
+      context.handle(
+        _colorIndexMeta,
+        colorIndex.isAcceptableOrUnknown(data['color_index']!, _colorIndexMeta),
+      );
+    }
     if (data.containsKey('duration_seconds')) {
       context.handle(
         _durationSecondsMeta,
@@ -4596,6 +4667,10 @@ class $WorkoutsTableTable extends WorkoutsTable
         DriftSqlType.string,
         data['${effectivePrefix}perceived_effort'],
       ),
+      colorIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_index'],
+      ),
       durationSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}duration_seconds'],
@@ -4623,6 +4698,11 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
 
   /// One of [PerceivedEffort], or null while the session has not been rated.
   final String? perceivedEffort;
+
+  /// Copied from the routine when the session starts, the way the name is. A
+  /// session keeps the colour it was done in, even if the routine is
+  /// recoloured or deleted afterwards.
+  final int? colorIndex;
   final int durationSeconds;
   const WorkoutRow({
     required this.id,
@@ -4634,6 +4714,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     required this.totalVolumeKg,
     required this.totalSets,
     this.perceivedEffort,
+    this.colorIndex,
     required this.durationSeconds,
   });
   @override
@@ -4655,6 +4736,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     map['total_sets'] = Variable<int>(totalSets);
     if (!nullToAbsent || perceivedEffort != null) {
       map['perceived_effort'] = Variable<String>(perceivedEffort);
+    }
+    if (!nullToAbsent || colorIndex != null) {
+      map['color_index'] = Variable<int>(colorIndex);
     }
     map['duration_seconds'] = Variable<int>(durationSeconds);
     return map;
@@ -4679,6 +4763,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       perceivedEffort: perceivedEffort == null && nullToAbsent
           ? const Value.absent()
           : Value(perceivedEffort),
+      colorIndex: colorIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(colorIndex),
       durationSeconds: Value(durationSeconds),
     );
   }
@@ -4698,6 +4785,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       totalVolumeKg: serializer.fromJson<double>(json['totalVolumeKg']),
       totalSets: serializer.fromJson<int>(json['totalSets']),
       perceivedEffort: serializer.fromJson<String?>(json['perceivedEffort']),
+      colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
     );
   }
@@ -4714,6 +4802,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       'totalVolumeKg': serializer.toJson<double>(totalVolumeKg),
       'totalSets': serializer.toJson<int>(totalSets),
       'perceivedEffort': serializer.toJson<String?>(perceivedEffort),
+      'colorIndex': serializer.toJson<int?>(colorIndex),
       'durationSeconds': serializer.toJson<int>(durationSeconds),
     };
   }
@@ -4728,6 +4817,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     double? totalVolumeKg,
     int? totalSets,
     Value<String?> perceivedEffort = const Value.absent(),
+    Value<int?> colorIndex = const Value.absent(),
     int? durationSeconds,
   }) => WorkoutRow(
     id: id ?? this.id,
@@ -4741,6 +4831,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     perceivedEffort: perceivedEffort.present
         ? perceivedEffort.value
         : this.perceivedEffort,
+    colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
     durationSeconds: durationSeconds ?? this.durationSeconds,
   );
   WorkoutRow copyWithCompanion(WorkoutsTableCompanion data) {
@@ -4758,6 +4849,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       perceivedEffort: data.perceivedEffort.present
           ? data.perceivedEffort.value
           : this.perceivedEffort,
+      colorIndex: data.colorIndex.present
+          ? data.colorIndex.value
+          : this.colorIndex,
       durationSeconds: data.durationSeconds.present
           ? data.durationSeconds.value
           : this.durationSeconds,
@@ -4776,6 +4870,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ..write('totalVolumeKg: $totalVolumeKg, ')
           ..write('totalSets: $totalSets, ')
           ..write('perceivedEffort: $perceivedEffort, ')
+          ..write('colorIndex: $colorIndex, ')
           ..write('durationSeconds: $durationSeconds')
           ..write(')'))
         .toString();
@@ -4792,6 +4887,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     totalVolumeKg,
     totalSets,
     perceivedEffort,
+    colorIndex,
     durationSeconds,
   );
   @override
@@ -4807,6 +4903,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           other.totalVolumeKg == this.totalVolumeKg &&
           other.totalSets == this.totalSets &&
           other.perceivedEffort == this.perceivedEffort &&
+          other.colorIndex == this.colorIndex &&
           other.durationSeconds == this.durationSeconds);
 }
 
@@ -4820,6 +4917,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
   final Value<double> totalVolumeKg;
   final Value<int> totalSets;
   final Value<String?> perceivedEffort;
+  final Value<int?> colorIndex;
   final Value<int> durationSeconds;
   final Value<int> rowid;
   const WorkoutsTableCompanion({
@@ -4832,6 +4930,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.totalVolumeKg = const Value.absent(),
     this.totalSets = const Value.absent(),
     this.perceivedEffort = const Value.absent(),
+    this.colorIndex = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4845,6 +4944,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.totalVolumeKg = const Value.absent(),
     this.totalSets = const Value.absent(),
     this.perceivedEffort = const Value.absent(),
+    this.colorIndex = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -4860,6 +4960,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Expression<double>? totalVolumeKg,
     Expression<int>? totalSets,
     Expression<String>? perceivedEffort,
+    Expression<int>? colorIndex,
     Expression<int>? durationSeconds,
     Expression<int>? rowid,
   }) {
@@ -4873,6 +4974,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       if (totalVolumeKg != null) 'total_volume_kg': totalVolumeKg,
       if (totalSets != null) 'total_sets': totalSets,
       if (perceivedEffort != null) 'perceived_effort': perceivedEffort,
+      if (colorIndex != null) 'color_index': colorIndex,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4888,6 +4990,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Value<double>? totalVolumeKg,
     Value<int>? totalSets,
     Value<String?>? perceivedEffort,
+    Value<int?>? colorIndex,
     Value<int>? durationSeconds,
     Value<int>? rowid,
   }) {
@@ -4901,6 +5004,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       totalVolumeKg: totalVolumeKg ?? this.totalVolumeKg,
       totalSets: totalSets ?? this.totalSets,
       perceivedEffort: perceivedEffort ?? this.perceivedEffort,
+      colorIndex: colorIndex ?? this.colorIndex,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       rowid: rowid ?? this.rowid,
     );
@@ -4936,6 +5040,9 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     if (perceivedEffort.present) {
       map['perceived_effort'] = Variable<String>(perceivedEffort.value);
     }
+    if (colorIndex.present) {
+      map['color_index'] = Variable<int>(colorIndex.value);
+    }
     if (durationSeconds.present) {
       map['duration_seconds'] = Variable<int>(durationSeconds.value);
     }
@@ -4957,6 +5064,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
           ..write('totalVolumeKg: $totalVolumeKg, ')
           ..write('totalSets: $totalSets, ')
           ..write('perceivedEffort: $perceivedEffort, ')
+          ..write('colorIndex: $colorIndex, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -9403,6 +9511,7 @@ typedef $$RoutinesTableTableCreateCompanionBuilder =
       required int createdAt,
       required int updatedAt,
       Value<int?> lastPerformedAt,
+      Value<int?> colorIndex,
       Value<int> rowid,
     });
 typedef $$RoutinesTableTableUpdateCompanionBuilder =
@@ -9415,6 +9524,7 @@ typedef $$RoutinesTableTableUpdateCompanionBuilder =
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<int?> lastPerformedAt,
+      Value<int?> colorIndex,
       Value<int> rowid,
     });
 
@@ -9529,6 +9639,11 @@ class $$RoutinesTableTableFilterComposer
 
   ColumnFilters<int> get lastPerformedAt => $composableBuilder(
     column: $table.lastPerformedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9651,6 +9766,11 @@ class $$RoutinesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutineFoldersTableTableOrderingComposer get folderId {
     final $$RoutineFoldersTableTableOrderingComposer composer =
         $composerBuilder(
@@ -9705,6 +9825,11 @@ class $$RoutinesTableTableAnnotationComposer
 
   GeneratedColumn<int> get lastPerformedAt => $composableBuilder(
     column: $table.lastPerformedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
     builder: (column) => column,
   );
 
@@ -9824,6 +9949,7 @@ class $$RoutinesTableTableTableManager
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int?> lastPerformedAt = const Value.absent(),
+                Value<int?> colorIndex = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion(
                 id: id,
@@ -9834,6 +9960,7 @@ class $$RoutinesTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 lastPerformedAt: lastPerformedAt,
+                colorIndex: colorIndex,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -9846,6 +9973,7 @@ class $$RoutinesTableTableTableManager
                 required int createdAt,
                 required int updatedAt,
                 Value<int?> lastPerformedAt = const Value.absent(),
+                Value<int?> colorIndex = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion.insert(
                 id: id,
@@ -9856,6 +9984,7 @@ class $$RoutinesTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 lastPerformedAt: lastPerformedAt,
+                colorIndex: colorIndex,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10936,6 +11065,7 @@ typedef $$WorkoutsTableTableCreateCompanionBuilder =
       Value<double> totalVolumeKg,
       Value<int> totalSets,
       Value<String?> perceivedEffort,
+      Value<int?> colorIndex,
       Value<int> durationSeconds,
       Value<int> rowid,
     });
@@ -10950,6 +11080,7 @@ typedef $$WorkoutsTableTableUpdateCompanionBuilder =
       Value<double> totalVolumeKg,
       Value<int> totalSets,
       Value<String?> perceivedEffort,
+      Value<int?> colorIndex,
       Value<int> durationSeconds,
       Value<int> rowid,
     });
@@ -11051,6 +11182,11 @@ class $$WorkoutsTableTableFilterComposer
 
   ColumnFilters<String> get perceivedEffort => $composableBuilder(
     column: $table.perceivedEffort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11158,6 +11294,11 @@ class $$WorkoutsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get durationSeconds => $composableBuilder(
     column: $table.durationSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -11221,6 +11362,11 @@ class $$WorkoutsTableTableAnnotationComposer
 
   GeneratedColumn<String> get perceivedEffort => $composableBuilder(
     column: $table.perceivedEffort,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
     builder: (column) => column,
   );
 
@@ -11319,6 +11465,7 @@ class $$WorkoutsTableTableTableManager
                 Value<double> totalVolumeKg = const Value.absent(),
                 Value<int> totalSets = const Value.absent(),
                 Value<String?> perceivedEffort = const Value.absent(),
+                Value<int?> colorIndex = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion(
@@ -11331,6 +11478,7 @@ class $$WorkoutsTableTableTableManager
                 totalVolumeKg: totalVolumeKg,
                 totalSets: totalSets,
                 perceivedEffort: perceivedEffort,
+                colorIndex: colorIndex,
                 durationSeconds: durationSeconds,
                 rowid: rowid,
               ),
@@ -11345,6 +11493,7 @@ class $$WorkoutsTableTableTableManager
                 Value<double> totalVolumeKg = const Value.absent(),
                 Value<int> totalSets = const Value.absent(),
                 Value<String?> perceivedEffort = const Value.absent(),
+                Value<int?> colorIndex = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion.insert(
@@ -11357,6 +11506,7 @@ class $$WorkoutsTableTableTableManager
                 totalVolumeKg: totalVolumeKg,
                 totalSets: totalSets,
                 perceivedEffort: perceivedEffort,
+                colorIndex: colorIndex,
                 durationSeconds: durationSeconds,
                 rowid: rowid,
               ),

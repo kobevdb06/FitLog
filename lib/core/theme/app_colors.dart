@@ -26,6 +26,30 @@ abstract final class AppColors {
     Color(0xFFB07D2B),
   ];
 
+  /// The colours a routine can be given, and with it every session started
+  /// from it.
+  ///
+  /// Stored as the position in this list rather than as a colour value, so a
+  /// later change of palette reaches routines that were already coloured, and
+  /// so nothing in the database can name a colour the app does not have.
+  static const routinePalette = <Color>[
+    Color(0xFF3D7DFF), // blauw
+    Color(0xFF00A9A5), // groenblauw
+    Color(0xFF3BA55D), // groen
+    Color(0xFFB07D2B), // amber
+    Color(0xFFE0629B), // roze
+    Color(0xFF7C5CFF), // paars
+    Color(0xFFE5484D), // rood
+    Color(0xFF8A8F98), // grijs
+  ];
+
+  /// The colour for a stored index, or null when there is none or the index is
+  /// from a palette this version does not have.
+  static Color? routineColor(int? index) =>
+      index == null || index < 0 || index >= routinePalette.length
+      ? null
+      : routinePalette[index];
+
   // --- Dark (default) -------------------------------------------------------
   static const darkBackground = Color(0xFF0E0F12);
   static const darkSurface = Color(0xFF17191E);

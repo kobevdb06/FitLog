@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 8);
+    expect(raw.select('PRAGMA user_version').first.values.first, 9);
     raw.close();
   });
 
@@ -125,7 +125,11 @@ void main() {
     expect(migratedExercise!.startImageFile, isNull);
     expect(migratedExercise.endImageFile, isNull);
     expect(await db.exercisesDao.imageFileNames(), isEmpty);
-    expect((await db.routinesDao.getRoutine('r-1'))!.name, 'Been');
+    final migratedRoutine = (await db.routinesDao.getRoutine('r-1'))!;
+    expect(migratedRoutine.name, 'Been');
+    // v9 added a colour for a routine and the copy a session keeps of it.
+    // Nothing that predates it has one.
+    expect(migratedRoutine.colorIndex, isNull);
 
     final workout = await db.workoutsDao.getWorkoutDetail('w-1');
     expect(workout!.workout.name, 'Been A');
@@ -210,7 +214,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 8);
+    expect(db.schemaVersion, 9);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

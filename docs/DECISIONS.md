@@ -638,3 +638,21 @@ waarom.
 `x86_64` blijft eruit. Dat is de architectuur van emulators, en hij doet 30 MB
 bij een bestand dat toch al groot is. Wat overblijft, 88 MB, draait op elk
 Android-toestel dat er in het wild is.
+
+## 48. Een sessie bewaart de kleur waarin ze gedaan is
+
+De kleur hoort bij de routine, niet bij de losse sessie: je wil hem één keer
+kiezen, niet na elke training. Maar een workout bewaart wél een kopie, precies
+zoals ze de naam van de routine kopieert.
+
+Zou de geschiedenis de kleur live opzoeken bij de routine, dan verandert je
+kalender met terugwerkende kracht zodra je een routine hernoemt of een andere
+kleur geeft, en verliest ze hem helemaal als je de routine weggooit. De naam
+werkte al zo; de kleur volgt die keuze.
+
+Opgeslagen als plaats in een vast palet, niet als kleurwaarde. Zo kan er niets
+in de database staan wat de app niet kan tekenen, blijft het werken als het
+palet ooit verandert, en past de kleur zich aan het thema aan.
+
+Staan er twee sessies op één dag met verschillende kleuren, dan wint de eerste.
+Mengen zou een kleur opleveren die bij geen van beide hoort.

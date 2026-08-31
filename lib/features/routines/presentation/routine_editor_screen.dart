@@ -9,6 +9,7 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/colour_picker.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/exercise_avatar.dart';
@@ -67,6 +68,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
   final List<_DraftExercise> _exercises = [];
 
   String? _folderId;
+  int? _colorIndex;
   bool _loaded = false;
   bool _saving = false;
 
@@ -93,6 +95,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     _nameController.text = detail.routine.name;
     _notesController.text = detail.routine.notes ?? '';
     _folderId = detail.routine.folderId;
+    _colorIndex = detail.routine.colorIndex;
     _exercises.addAll(
       detail.exercises.map(
         (e) => _DraftExercise(
@@ -242,6 +245,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
           ? null
           : _notesController.text.trim(),
       folderId: _folderId,
+      colorIndex: _colorIndex,
       exercises: _exercises
           .map(
             (e) => RoutineExerciseDraft(
@@ -303,6 +307,8 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
           folders: folders,
           folderId: _folderId,
           onFolder: (value) => setState(() => _folderId = value),
+          colorIndex: _colorIndex,
+          onColour: (value) => setState(() => _colorIndex = value),
         ),
         itemCount: _exercises.length,
         // onReorderItem hands over an index that is already corrected for
@@ -397,6 +403,8 @@ class _Header extends StatelessWidget {
     required this.folders,
     required this.folderId,
     required this.onFolder,
+    required this.colorIndex,
+    required this.onColour,
   });
 
   final TextEditingController nameController;
@@ -404,6 +412,8 @@ class _Header extends StatelessWidget {
   final List<RoutineFolderRow> folders;
   final String? folderId;
   final ValueChanged<String?> onFolder;
+  final int? colorIndex;
+  final ValueChanged<int?> onColour;
 
   @override
   Widget build(BuildContext context) {
@@ -423,6 +433,16 @@ class _Header extends StatelessWidget {
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(labelText: 'Notitie'),
           ),
+          const SizedBox(height: AppSpacing.lg),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Kleur',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ColourPicker(selected: colorIndex, onChanged: onColour),
           if (folders.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<String?>(

@@ -14,12 +14,16 @@ class RoutineDraft {
     required this.name,
     this.notes,
     this.folderId,
+    this.colorIndex,
     required this.exercises,
   });
 
   final String name;
   final String? notes;
   final String? folderId;
+
+  /// A position in `AppColors.routinePalette`, or null for no colour.
+  final int? colorIndex;
   final List<RoutineExerciseDraft> exercises;
 }
 
@@ -222,6 +226,7 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
           name: draft.name,
           notes: Value(draft.notes),
           folderId: Value(draft.folderId),
+          colorIndex: Value(draft.colorIndex),
           sortOrder: (row.read(max) ?? -1) + 1,
           createdAt: now,
           updatedAt: now,
@@ -242,6 +247,7 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
               name: Value(draft.name),
               notes: Value(draft.notes),
               folderId: Value(draft.folderId),
+              colorIndex: Value(draft.colorIndex),
               updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
             ),
           );

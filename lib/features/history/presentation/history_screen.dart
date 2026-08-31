@@ -8,6 +8,7 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/colour_picker.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
@@ -24,6 +25,23 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  /// The day the calendar is filtered to, or null for the whole history.
+  DateTime? _day;
+
+  void _goToMonth(DateTime month) {
+    setState(() {
+      _month = month;
+      // A day in a month you are no longer looking at would filter the list to
+      // something the calendar cannot show you.
+      _day = null;
+    });
+  }
+
+  bool _isOn(DateTime day, int millis) {
+    final at = DateTime.fromMillisecondsSinceEpoch(millis);
+    return at.year == day.year && at.month == day.month && at.day == day.day;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,21 +73,43 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             );
           }
 
+          final day = _day;
+
           return ListView(
             padding: const EdgeInsets.only(bottom: 32),
             children: [
               _MonthCalendar(
                 month: _month,
                 workouts: monthWorkouts,
-                onPrevious: () => setState(
-                  () => _month = DateTime(_month.year, _month.month - 1),
+                selected: _day,
+                onSelect: (day) => setState(
+                  () => _day = _day != null && _isOn(_day!, day.millisecondsSinceEpoch)
+                      ? null
+                      : day,
                 ),
-                onNext: () => setState(
-                  () => _month = DateTime(_month.year, _month.month + 1),
+                onPrevious: () => _goToMonth(
+                  DateTime(_month.year, _month.month - 1),
+                ),
+                onNext: () => _goToMonth(
+                  DateTime(_month.year, _month.month + 1),
                 ),
               ),
-              const SectionHeader('Sessies'),
-              for (final summary in workouts)
+              SectionHeader(
+                _day == null
+                    ? 'Sessies'
+                    : Formatters.relativeDay(_day!),
+                action: _day == null
+                    ? null
+                    : TextButton(
+                        onPressed: () => setState(() => _day = null),
+                        child: const Text('Alles'),
+                      ),
+              ),
+              for (final summary in day == null
+                  ? workouts
+                  : workouts
+                        .where((w) => _isOn(day, w.workout.startedAt))
+                        .toList())
                 _WorkoutTile(
                   key: ValueKey(summary.workout.id),
                   summary: summary,
@@ -87,12 +127,19 @@ class _MonthCalendar extends StatelessWidget {
   const _MonthCalendar({
     required this.month,
     required this.workouts,
+    required this.selected,
+    required this.onSelect,
     required this.onPrevious,
     required this.onNext,
   });
 
   final DateTime month;
   final List<WorkoutRow> workouts;
+
+  /// The day the list below is filtered to, or null for all of it.
+  final DateTime? selected;
+
+  final ValueChanged<DateTime> onSelect;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
 
@@ -100,8 +147,11 @@ class _MonthCalendar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Volume per day, so a heavy day shows up darker than a light one.
+    // Volume per day, so a heavy day shows up darker than a light one, and
+    // the colour of the session that ran that day, so you can tell a leg day
+    // from a push day without opening anything.
     final byDay = <int, double>{};
+    final colourByDay = <int, Color>{};
     for (final w in workouts) {
       final day = DateTime.fromMillisecondsSinceEpoch(w.startedAt).day;
       byDay.update(
@@ -109,6 +159,10 @@ class _MonthCalendar extends StatelessWidget {
         (v) => v + w.totalVolumeKg,
         ifAbsent: () => w.totalVolumeKg,
       );
+      // Two sessions in one day and different colours: the first one wins,
+      // rather than a colour that belongs to neither.
+      final colour = AppColors.routineColor(w.colorIndex);
+      if (colour != null) colourByDay.putIfAbsent(day, () => colour);
     }
     final maxVolume = byDay.values.isEmpty
         ? 0.0
@@ -176,19 +230,32 @@ class _MonthCalendar extends StatelessWidget {
                     today.year == month.year &&
                     today.month == month.month &&
                     today.day == day;
+                final isSelected =
+                    selected != null &&
+                    selected!.year == month.year &&
+                    selected!.month == month.month &&
+                    selected!.day == day;
 
-                return Container(
+                // Only a day that has something to show responds. A tap that
+                // empties the list below is worse than a tap that does
+                // nothing.
+                final cell = Container(
                   decoration: BoxDecoration(
                     color: volume == null
                         ? Colors.transparent
-                        : AppColors.accent.withValues(
+                        : (colourByDay[day] ?? AppColors.accent).withValues(
                             alpha: maxVolume <= 0
                                 ? 0.3
                                 : (0.25 + 0.55 * (volume / maxVolume))
                                       .clamp(0.25, 0.8),
                           ),
                     borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                    border: isToday
+                    border: isSelected
+                        ? Border.all(
+                            color: theme.colorScheme.onSurface,
+                            width: 2,
+                          )
+                        : isToday
                         ? Border.all(color: AppColors.accent, width: 1.5)
                         : null,
                   ),
@@ -204,6 +271,15 @@ class _MonthCalendar extends StatelessWidget {
                           : FontWeight.w700,
                     ),
                   ),
+                );
+
+                if (volume == null) return cell;
+                return GestureDetector(
+                  onTap: () => onSelect(
+                    DateTime(month.year, month.month, day),
+                  ),
+                  behavior: HitTestBehavior.opaque,
+                  child: cell,
                 );
               },
             ),
@@ -253,6 +329,7 @@ class _WorkoutTile extends ConsumerWidget {
             PrBadge(label: '${summary.prCount}', compact: true),
         ],
       ),
+      leading: ColourDot(colorIndex: workout.colorIndex, size: 10),
       subtitle: Text(
         [
           Formatters.date(

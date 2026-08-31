@@ -1,0 +1,71 @@
+# The deployment target for the whole iOS build.
+#
+# 15.0 matches IPHONEOS_DEPLOYMENT_TARGET in Runner.xcodeproj, and is above
+# every plugin's own minimum. The highest any of them asks for is 13.0:
+#
+#   image_picker_ios              13.0
+#   flutter_local_notifications   13.0
+#   flutter_secure_storage_darwin 13.0
+#   local_auth_darwin             13.0
+#   mobile_scanner                12.0
+#   share_plus / wakelock_plus    12.0
+#   package_info_plus             12.0
+#
+# Without this line CocoaPods leaves each pod on whatever it declares, which
+# produces a build full of "target overrides the deployment target" warnings
+# and pods compiled against an older SDK than the app.
+platform :ios, '15.0'
+
+# CocoaPods analytics sends network stats synchronously, which slows the build.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(
+    File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__
+  )
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you are " \
+          'running pod install manually, run `flutter pub get` first.'
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. " \
+        'Delete Generated.xcconfig and run `flutter pub get`.'
+end
+
+require File.expand_path(
+  File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root
+)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      # Pull every pod up to the app's own target rather than letting each one
+      # keep its lower minimum.
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
+  end
+end

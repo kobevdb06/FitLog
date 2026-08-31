@@ -29,6 +29,7 @@ class NotificationService {
 
   bool _initialised = false;
   bool _timezoneReady = false;
+  bool _permissionAsked = false;
 
   Future<void> initialise() async {
     if (_initialised) return;
@@ -67,6 +68,40 @@ class NotificationService {
       return 'Europe/Brussels';
     }
     return 'UTC';
+  }
+
+  /// Asks for permission the first time in this run, and not again.
+  ///
+  /// Android 13 and later post nothing at all without it, and a permission
+  /// that is declared in the manifest but never requested is simply refused -
+  /// silently, which is exactly how the rest timer came to have a
+  /// notification nobody ever saw.
+  ///
+  /// Asked when a workout starts rather than at launch: that is the moment it
+  /// is obvious what it is for.
+  Future<bool> ensurePermission() async {
+    if (_permissionAsked) return true;
+    _permissionAsked = true;
+    try {
+      return await requestPermissions();
+    } on Object catch (error) {
+      debugPrint('FitLog: toestemming voor meldingen niet gevraagd ($error)');
+      return false;
+    }
+  }
+
+  /// Whether the user has actually allowed notifications.
+  Future<bool> get isAllowed async {
+    if (!Platform.isAndroid) return true;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      return await android?.areNotificationsEnabled() ?? false;
+    } on Object {
+      return false;
+    }
   }
 
   /// Asks for the runtime permissions the rest timer needs. Safe to call more

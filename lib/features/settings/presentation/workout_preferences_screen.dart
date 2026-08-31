@@ -8,6 +8,7 @@ import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/util/notification_service.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/keypad_sheet.dart';
@@ -35,6 +36,7 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
       body: ListView(
         children: [
           const SectionHeader('Rusttimer'),
+          const _NotificationWarning(),
           ListTile(
             title: const Text('Standaard rusttijd'),
             subtitle: Text('${settings.defaultRestSeconds} seconden'),
@@ -311,6 +313,41 @@ class _PlateEditor extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Says so when notifications are switched off for the app.
+///
+/// Without them the rest timer stays silent when the phone is away and no
+/// standing notification appears during a workout - and nothing else in the
+/// app would ever mention it, which is how it went unnoticed for a fortnight.
+class _NotificationWarning extends StatelessWidget {
+  const _NotificationWarning();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: NotificationService.instance.isAllowed,
+      builder: (context, snapshot) {
+        if (snapshot.data != false) return const SizedBox.shrink();
+        return const Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: InfoBanner(
+            icon: Icons.notifications_off_outlined,
+            message:
+                'Meldingen staan uit voor FitLog. De rusttimer laat dan niets '
+                'zien als je je telefoon wegleg, en tijdens een workout komt '
+                'er geen melding met je oefening en je set. Aan te zetten bij '
+                'de app-instellingen van je toestel.',
+          ),
+        );
+      },
     );
   }
 }

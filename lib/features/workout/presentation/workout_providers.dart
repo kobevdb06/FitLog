@@ -139,26 +139,39 @@ class WorkoutController {
       (await _db.settingsDao.getSettings()).defaultRestSeconds;
 
   Future<String> startFromRoutine(String routineId) async {
-    return _db.workoutsDao.startWorkout(
+    final id = await _db.workoutsDao.startWorkout(
       routineId: routineId,
       defaultRestSeconds: await _defaultRest,
     );
+    await _askAboutNotifications();
+    return id;
   }
 
   Future<String> startEmpty({String? name}) async {
-    return _db.workoutsDao.startWorkout(
+    final id = await _db.workoutsDao.startWorkout(
       name: name ?? 'Losse workout',
       defaultRestSeconds: await _defaultRest,
     );
+    await _askAboutNotifications();
+    return id;
+  }
+
+  /// A workout puts a notification up and schedules another when you rest, so
+  /// this is where the permission is worth asking for. Never blocks the start:
+  /// a refusal only costs the notifications.
+  Future<void> _askAboutNotifications() async {
+    await NotificationService.instance.ensurePermission();
   }
 
   /// Starts the same session again: same exercises, same sets, nothing
   /// filled in. Throws if a workout is already running.
   Future<String> repeat(String workoutId) async {
-    return _db.workoutsDao.startFromWorkout(
+    final id = await _db.workoutsDao.startFromWorkout(
       workoutId,
       defaultRestSeconds: await _defaultRest,
     );
+    await _askAboutNotifications();
+    return id;
   }
 
   Future<void> rename(String workoutId, String name) =>

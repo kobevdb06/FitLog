@@ -801,20 +801,41 @@ database staat. Staat hij achter, dan wordt bij het opstarten alléén het
 kolom is het enige dat ooit gecorrigeerd moest worden, en de pas kan zo geen
 naam, uitleg, foto of zelfgemaakte oefening raken.
 
-## 59. Zijwaarts vegen wisselt van tabblad
+## 59. De tabbladen liggen naast elkaar, niet op elkaar
 
-Vegen wisselt nu van tabblad, zoals in de fotoapps. Een snelle flik telt op
-zichzelf; een trage sleep moet een kwart van het scherm afleggen. Zo doet een
-trilling tijdens het scrollen niets, en werkt een bewuste trage sleep wel.
+`StatefulShellRoute.indexedStack` zet een `IndexedStack` om de vier
+taknavigators: eentje zichtbaar, drie achter een `Offstage`. Daar valt niet
+tussen te vegen - je kan hoogstens een gebaar herkennen en dan springen, en dat
+voelt als een schok.
 
-Het schuift niet mee onder je vinger. Dat zou een `PageView` over de vier
-takken vragen, en die vier takken hebben elk hun eigen genavigeerde pagina's -
-van een routinedetail wegvegen naar een ander tabblad is geen beweging die
-ergens op slaat. De sprong is dezelfde als die van een tik op de balk.
+De algemene `StatefulShellRoute` laat je die container zelf opmaken via
+`navigatorContainerBuilder`. De vier takken liggen nu in een `PageView`, dus de
+pagina volgt je vinger en valt op zijn plaats waar je loslaat. De router hoort
+het pas als de pagina stil ligt: een veeg die je halverwege terugtrekt laat geen
+spoor van takwissels achter.
 
-Het einde loopt niet rond. Voorbij het laatste tabblad zit niets, en van het
-laatste naar het eerste glijden zou aanvoelen als een fout.
+Het loopt niet rond. Voorbij het laatste tabblad zit niets, en van het laatste
+naar het eerste glijden zou aanvoelen als een fout.
 
 Wat zelf zijwaarts scrollt - een grafiek, een rij chips, een sessie die je
-wegveegt in je geschiedenis - pakt het gebaar eerst. Die blijven werken zoals
-ze werkten.
+wegveegt in je geschiedenis - pakt het gebaar eerst, omdat het dieper in de
+boom zit. Die blijven werken zoals ze werkten.
+
+## 60. Wat de pager loslaat, en wat hij vasthoudt
+
+Twee dingen die ik gemeten heb in plaats van aangenomen, want ze bepalen of dit
+een verbetering of een verslechtering is.
+
+Een tabblad dat je verlaat verdwijnt uit de widgetboom - niet verstopt, weg. Ik
+had er eerst een `TickerMode` omheen gezet om de animaties van verborgen
+tabbladen stil te leggen, zoals de `IndexedStack` deed. Die laag deed niets:
+wat er niet is, animeert ook niet. Eruit gehaald.
+
+Je plek blijft wél bewaard. go_router bewaart de navigator van elke tak over
+loslaten en weer oppakken heen, dus je scrollpositie en je half getypte notitie
+staan er nog als je terugkomt. Dat had ik ook eerst zelf willen regelen met een
+keep-alive; ook overbodig, en om het te bewijzen heb ik geteld hoe vaak een
+tabblad opnieuw wordt opgebouwd. Eén keer.
+
+Beide eigenschappen staan vast in `tab_pager_test.dart`, want ze leunen op
+gedrag van go_router dat een volgende versie kan veranderen.

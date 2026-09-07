@@ -34,6 +34,7 @@ import '../features/workout/presentation/active_workout_screen.dart';
 import '../features/workout/presentation/rest_timer_screen.dart';
 import '../features/workout/presentation/workout_summary_screen.dart';
 import 'app_shell.dart';
+import 'tab_pager.dart';
 import 'routes.dart';
 
 part 'router.g.dart';
@@ -144,8 +145,12 @@ GoRouter router(Ref ref) {
       ),
 
       // --- The four tabs -------------------------------------------------
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, shell) => AppShell(shell: shell),
+        // The tabs lie side by side instead of stacked, so a swipe drags the
+        // next one into view rather than cutting to it.
+        navigatorContainerBuilder: (context, shell, children) =>
+            TabPager(shell: shell, branches: children),
         branches: [
           StatefulShellBranch(
             routes: [

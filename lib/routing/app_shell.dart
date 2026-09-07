@@ -9,52 +9,19 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../features/workout/presentation/workout_providers.dart';
 import 'routes.dart';
-import 'tab_swipe.dart';
 
 /// The four-tab shell. A running workout gets a permanent bar above the
 /// navigation bar so it is never more than one tap away.
-class AppShell extends ConsumerStatefulWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
   @override
-  ConsumerState<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends ConsumerState<AppShell> {
-  /// How far sideways the current drag has come, left-to-right.
-  double _dragged = 0;
-
-  static const int _tabCount = 4;
-
-  void _onDragEnd(DragEndDetails details, double width) {
-    final target = swipeTarget(
-      current: widget.shell.currentIndex,
-      count: _tabCount,
-      velocity: details.primaryVelocity ?? 0,
-      dragged: _dragged,
-      width: width,
-    );
-    _dragged = 0;
-    if (target == null) return;
-    widget.shell.goBranch(target);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final shell = widget.shell;
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      // Sideways takes you to the next tab. Anything inside that scrolls
-      // sideways itself - a chart, a row of chips, a row you swipe away -
-      // claims the gesture first, so those keep working as they did.
-      body: GestureDetector(
-        onHorizontalDragStart: (_) => _dragged = 0,
-        onHorizontalDragUpdate: (details) => _dragged += details.delta.dx,
-        onHorizontalDragEnd: (details) =>
-            _onDragEnd(details, MediaQuery.sizeOf(context).width),
-        child: shell,
-      ),
+      // The shell is the pager: swiping between the tabs lives in TabPager.
+      body: shell,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

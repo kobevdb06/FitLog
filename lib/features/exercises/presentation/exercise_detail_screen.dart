@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/exercise_image.dart';
 import '../../../routing/routes.dart';
 import '../../workout/presentation/pr_attempt_screen.dart';
@@ -21,6 +22,30 @@ class ExerciseDetailScreen extends ConsumerWidget {
   const ExerciseDetailScreen({super.key, required this.exerciseId});
 
   final String exerciseId;
+
+  /// Changes how this exercise is done, and with it what a set asks for.
+  ///
+  /// Works on catalogue exercises too. The bundled types are not always right -
+  /// the plank came typed as a body-weight exercise, counted in repetitions -
+  /// and being able to put that right in ten seconds beats waiting for a new
+  /// version of the app.
+  Future<void> _changeCategory(
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseRow row,
+  ) async {
+    final current = ExerciseCategory.fromWire(row.category);
+    final picked = await pickExerciseCategory(context, current: current);
+    if (picked == null || picked == current) return;
+
+    await ref.read(databaseProvider).exercisesDao.setCategory(row.id, picked);
+    if (!context.mounted) return;
+    showSnack(
+      context,
+      '${row.name} wordt nu gelogd in '
+      '${exerciseCategoryDescription(picked).toLowerCase()}',
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,6 +95,17 @@ class ExerciseDetailScreen extends ConsumerWidget {
                     ),
                     icon: const Icon(Icons.edit_outlined),
                   ),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'category') _changeCategory(context, ref, row);
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'category',
+                      child: Text('Type wijzigen'),
+                    ),
+                  ],
+                ),
               ],
               bottom: const TabBar(
                 tabs: [

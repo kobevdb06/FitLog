@@ -1,4 +1,4 @@
-import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/enums.dart';
 import 'package:fitlog/core/widgets/numeric_keypad.dart';
 import 'package:fitlog/features/workout/domain/set_columns.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,22 +8,16 @@ import 'package:flutter_test/flutter_test.dart';
 /// A plank is logged in seconds and a run in distance and time; asking for
 /// kilograms there is asking for a number that means nothing.
 void main() {
-  WorkoutSetRow set({
+  SetValues set({
     double? weightKg,
     int? reps,
     int? durationSeconds,
     double? distanceM,
-  }) => WorkoutSetRow(
-    id: 's',
-    workoutExerciseId: 'we',
-    sortOrder: 0,
-    setType: 'normal',
+  }) => (
     weightKg: weightKg,
     reps: reps,
     durationSeconds: durationSeconds,
     distanceM: distanceM,
-    isCompleted: false,
-    isSkipped: false,
   );
 
   test('anything you load is weight times reps', () {

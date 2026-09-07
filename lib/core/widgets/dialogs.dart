@@ -86,11 +86,8 @@ Future<bool> confirmByTyping(
 }) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (context) => _TypeToConfirmDialog(
-      title: title,
-      message: message,
-      word: word,
-    ),
+    builder: (context) =>
+        _TypeToConfirmDialog(title: title, message: message, word: word),
   );
   return result ?? false;
 }
@@ -149,9 +146,7 @@ class _TypeToConfirmDialogState extends State<_TypeToConfirmDialog> {
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-          onPressed: _matches
-              ? () => Navigator.of(context).pop(true)
-              : null,
+          onPressed: _matches ? () => Navigator.of(context).pop(true) : null,
           child: const Text('Definitief wissen'),
         ),
       ],
@@ -213,15 +208,11 @@ void showSnack(BuildContext context, String message, {bool isError = false}) {
     );
 }
 
-
 /// The set type picker.
 ///
 /// Reached by tapping the set number, which is the primary route, and by
 /// long-pressing it, which keeps working for people who learned that first.
-Future<SetType?> pickSetType(
-  BuildContext context, {
-  required SetType current,
-}) {
+Future<SetType?> pickSetType(BuildContext context, {required SetType current}) {
   return showAppSheet<SetType>(
     context: context,
     title: 'Type set',
@@ -249,6 +240,36 @@ Future<SetType?> pickSetType(
       ],
     ),
   );
+}
+
+/// Picks how an exercise is done, which decides what a set asks you for.
+Future<ExerciseCategory?> pickExerciseCategory(
+  BuildContext context, {
+  required ExerciseCategory current,
+}) {
+  return showAppSheet<ExerciseCategory>(
+    context: context,
+    title: 'Hoe doe je deze oefening?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final category in ExerciseCategory.values)
+          ListTile(
+            title: Text(category.label),
+            subtitle: Text(exerciseCategoryDescription(category)),
+            selected: category == current,
+            onTap: () => Navigator.of(context).pop(category),
+          ),
+      ],
+    ),
+  );
+}
+
+/// What a set of this kind asks you to fill in.
+String exerciseCategoryDescription(ExerciseCategory category) {
+  if (category.hasDistance) return 'Afstand en tijd';
+  if (category.hasDuration) return 'Tijd';
+  return 'Gewicht en herhalingen';
 }
 
 /// The colour the SET column uses per type.

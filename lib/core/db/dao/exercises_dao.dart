@@ -48,9 +48,7 @@ class ExerciseFilter {
   }
 }
 
-@DriftAccessor(
-  tables: [ExercisesTable, WorkoutExercisesTable, WorkoutsTable],
-)
+@DriftAccessor(tables: [ExercisesTable, WorkoutExercisesTable, WorkoutsTable])
 class ExercisesDao extends DatabaseAccessor<AppDatabase>
     with _$ExercisesDaoMixin {
   ExercisesDao(super.db);
@@ -105,9 +103,8 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     return q;
   }
 
-  Future<ExerciseRow?> getById(String id) => (select(
-    exercisesTable,
-  )..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<ExerciseRow?> getById(String id) =>
+      (select(exercisesTable)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Stream<ExerciseRow?> watchById(String id) => (select(
     exercisesTable,
@@ -120,8 +117,9 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> countExercises() async {
     final count = exercisesTable.id.count();
-    final row = await (selectOnly(exercisesTable)..addColumns([count]))
-        .getSingle();
+    final row = await (selectOnly(
+      exercisesTable,
+    )..addColumns([count])).getSingle();
     return row.read(count) ?? 0;
   }
 
@@ -183,7 +181,8 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     await (update(exercisesTable)
           ..where((t) => t.startImageFile.equals(fileName)))
         .write(const ExercisesTableCompanion(startImageFile: Value(null)));
-    await (update(exercisesTable)..where((t) => t.endImageFile.equals(fileName)))
+    await (update(exercisesTable)
+          ..where((t) => t.endImageFile.equals(fileName)))
         .write(const ExercisesTableCompanion(endImageFile: Value(null)));
   }
 
@@ -199,13 +198,30 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     String id,
     ExercisesTableCompanion changes,
   ) async {
-    await (update(exercisesTable)..where((t) => t.id.equals(id)))
-        .write(changes);
+    await (update(
+      exercisesTable,
+    )..where((t) => t.id.equals(id))).write(changes);
+  }
+
+  /// Changes how an exercise is done, and remembers that you said so.
+  ///
+  /// Also for exercises from the catalogue, which is the point: when the
+  /// bundled type is wrong there is no other way to put it right, and waiting
+  /// for a new version of the app is not one. The mark keeps a later catalogue
+  /// correction from quietly undoing the choice.
+  Future<void> setCategory(String id, ExerciseCategory category) async {
+    await (update(exercisesTable)..where((t) => t.id.equals(id))).write(
+      ExercisesTableCompanion(
+        category: Value(category.wire),
+        categoryOverridden: const Value(true),
+      ),
+    );
   }
 
   Future<void> setArchived(String id, {required bool archived}) async {
-    await (update(exercisesTable)..where((t) => t.id.equals(id)))
-        .write(ExercisesTableCompanion(isArchived: Value(archived)));
+    await (update(exercisesTable)..where((t) => t.id.equals(id))).write(
+      ExercisesTableCompanion(isArchived: Value(archived)),
+    );
   }
 
   /// Only ever used for exercises the user created that were never logged.

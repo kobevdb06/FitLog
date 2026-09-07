@@ -47,6 +47,7 @@ void main() {
     startImageFile: start,
     endImageFile: end,
     isCustom: true,
+    categoryOverridden: false,
     isArchived: false,
     createdAt: 0,
   );

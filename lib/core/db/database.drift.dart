@@ -1965,6 +1965,20 @@ class $ExercisesTableTable extends ExercisesTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _categoryOverriddenMeta =
+      const VerificationMeta('categoryOverridden');
+  @override
+  late final GeneratedColumn<bool> categoryOverridden = GeneratedColumn<bool>(
+    'category_overridden',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("category_overridden" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _isArchivedMeta = const VerificationMeta(
     'isArchived',
   );
@@ -2004,6 +2018,7 @@ class $ExercisesTableTable extends ExercisesTable
     startImageFile,
     endImageFile,
     isCustom,
+    categoryOverridden,
     isArchived,
     createdAt,
   ];
@@ -2105,6 +2120,15 @@ class $ExercisesTableTable extends ExercisesTable
         isCustom.isAcceptableOrUnknown(data['is_custom']!, _isCustomMeta),
       );
     }
+    if (data.containsKey('category_overridden')) {
+      context.handle(
+        _categoryOverriddenMeta,
+        categoryOverridden.isAcceptableOrUnknown(
+          data['category_overridden']!,
+          _categoryOverriddenMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_archived')) {
       context.handle(
         _isArchivedMeta,
@@ -2172,6 +2196,10 @@ class $ExercisesTableTable extends ExercisesTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_custom'],
       )!,
+      categoryOverridden: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}category_overridden'],
+      )!,
       isArchived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_archived'],
@@ -2209,6 +2237,15 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
   final String? startImageFile;
   final String? endImageFile;
   final bool isCustom;
+
+  /// Set once the user has picked the type of this exercise themselves.
+  ///
+  /// The bundled catalogue can be wrong about how something is done - it had
+  /// the plank down as a body-weight exercise, counted in repetitions - and
+  /// correcting it in the app is faster than waiting for a new version. This
+  /// marks that choice as the user's, so a later correction to the catalogue
+  /// leaves it alone rather than quietly undoing it.
+  final bool categoryOverridden;
   final bool isArchived;
   final int createdAt;
   const ExerciseRow({
@@ -2223,6 +2260,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     this.startImageFile,
     this.endImageFile,
     required this.isCustom,
+    required this.categoryOverridden,
     required this.isArchived,
     required this.createdAt,
   });
@@ -2250,6 +2288,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       map['end_image_file'] = Variable<String>(endImageFile);
     }
     map['is_custom'] = Variable<bool>(isCustom);
+    map['category_overridden'] = Variable<bool>(categoryOverridden);
     map['is_archived'] = Variable<bool>(isArchived);
     map['created_at'] = Variable<int>(createdAt);
     return map;
@@ -2278,6 +2317,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ? const Value.absent()
           : Value(endImageFile),
       isCustom: Value(isCustom),
+      categoryOverridden: Value(categoryOverridden),
       isArchived: Value(isArchived),
       createdAt: Value(createdAt),
     );
@@ -2300,6 +2340,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       startImageFile: serializer.fromJson<String?>(json['startImageFile']),
       endImageFile: serializer.fromJson<String?>(json['endImageFile']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
+      categoryOverridden: serializer.fromJson<bool>(json['categoryOverridden']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
     );
@@ -2319,6 +2360,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       'startImageFile': serializer.toJson<String?>(startImageFile),
       'endImageFile': serializer.toJson<String?>(endImageFile),
       'isCustom': serializer.toJson<bool>(isCustom),
+      'categoryOverridden': serializer.toJson<bool>(categoryOverridden),
       'isArchived': serializer.toJson<bool>(isArchived),
       'createdAt': serializer.toJson<int>(createdAt),
     };
@@ -2336,6 +2378,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     Value<String?> startImageFile = const Value.absent(),
     Value<String?> endImageFile = const Value.absent(),
     bool? isCustom,
+    bool? categoryOverridden,
     bool? isArchived,
     int? createdAt,
   }) => ExerciseRow(
@@ -2352,6 +2395,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
         : this.startImageFile,
     endImageFile: endImageFile.present ? endImageFile.value : this.endImageFile,
     isCustom: isCustom ?? this.isCustom,
+    categoryOverridden: categoryOverridden ?? this.categoryOverridden,
     isArchived: isArchived ?? this.isArchived,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -2380,6 +2424,9 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ? data.endImageFile.value
           : this.endImageFile,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
+      categoryOverridden: data.categoryOverridden.present
+          ? data.categoryOverridden.value
+          : this.categoryOverridden,
       isArchived: data.isArchived.present
           ? data.isArchived.value
           : this.isArchived,
@@ -2401,6 +2448,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ..write('startImageFile: $startImageFile, ')
           ..write('endImageFile: $endImageFile, ')
           ..write('isCustom: $isCustom, ')
+          ..write('categoryOverridden: $categoryOverridden, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -2420,6 +2468,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     startImageFile,
     endImageFile,
     isCustom,
+    categoryOverridden,
     isArchived,
     createdAt,
   );
@@ -2438,6 +2487,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           other.startImageFile == this.startImageFile &&
           other.endImageFile == this.endImageFile &&
           other.isCustom == this.isCustom &&
+          other.categoryOverridden == this.categoryOverridden &&
           other.isArchived == this.isArchived &&
           other.createdAt == this.createdAt);
 }
@@ -2454,6 +2504,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
   final Value<String?> startImageFile;
   final Value<String?> endImageFile;
   final Value<bool> isCustom;
+  final Value<bool> categoryOverridden;
   final Value<bool> isArchived;
   final Value<int> createdAt;
   final Value<int> rowid;
@@ -2469,6 +2520,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.startImageFile = const Value.absent(),
     this.endImageFile = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.categoryOverridden = const Value.absent(),
     this.isArchived = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2485,6 +2537,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.startImageFile = const Value.absent(),
     this.endImageFile = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.categoryOverridden = const Value.absent(),
     this.isArchived = const Value.absent(),
     required int createdAt,
     this.rowid = const Value.absent(),
@@ -2505,6 +2558,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Expression<String>? startImageFile,
     Expression<String>? endImageFile,
     Expression<bool>? isCustom,
+    Expression<bool>? categoryOverridden,
     Expression<bool>? isArchived,
     Expression<int>? createdAt,
     Expression<int>? rowid,
@@ -2521,6 +2575,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       if (startImageFile != null) 'start_image_file': startImageFile,
       if (endImageFile != null) 'end_image_file': endImageFile,
       if (isCustom != null) 'is_custom': isCustom,
+      if (categoryOverridden != null) 'category_overridden': categoryOverridden,
       if (isArchived != null) 'is_archived': isArchived,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -2539,6 +2594,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Value<String?>? startImageFile,
     Value<String?>? endImageFile,
     Value<bool>? isCustom,
+    Value<bool>? categoryOverridden,
     Value<bool>? isArchived,
     Value<int>? createdAt,
     Value<int>? rowid,
@@ -2555,6 +2611,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       startImageFile: startImageFile ?? this.startImageFile,
       endImageFile: endImageFile ?? this.endImageFile,
       isCustom: isCustom ?? this.isCustom,
+      categoryOverridden: categoryOverridden ?? this.categoryOverridden,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -2597,6 +2654,9 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
+    if (categoryOverridden.present) {
+      map['category_overridden'] = Variable<bool>(categoryOverridden.value);
+    }
     if (isArchived.present) {
       map['is_archived'] = Variable<bool>(isArchived.value);
     }
@@ -2623,6 +2683,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
           ..write('startImageFile: $startImageFile, ')
           ..write('endImageFile: $endImageFile, ')
           ..write('isCustom: $isCustom, ')
+          ..write('categoryOverridden: $categoryOverridden, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -4037,6 +4098,17 @@ class $RoutineSetsTableTable extends RoutineSetsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _targetDistanceMMeta = const VerificationMeta(
+    'targetDistanceM',
+  );
+  @override
+  late final GeneratedColumn<double> targetDistanceM = GeneratedColumn<double>(
+    'target_distance_m',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4046,6 +4118,7 @@ class $RoutineSetsTableTable extends RoutineSetsTable
     targetReps,
     targetWeightKg,
     targetDurationSeconds,
+    targetDistanceM,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4113,6 +4186,15 @@ class $RoutineSetsTableTable extends RoutineSetsTable
         ),
       );
     }
+    if (data.containsKey('target_distance_m')) {
+      context.handle(
+        _targetDistanceMMeta,
+        targetDistanceM.isAcceptableOrUnknown(
+          data['target_distance_m']!,
+          _targetDistanceMMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4150,6 +4232,10 @@ class $RoutineSetsTableTable extends RoutineSetsTable
         DriftSqlType.int,
         data['${effectivePrefix}target_duration_seconds'],
       ),
+      targetDistanceM: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_distance_m'],
+      ),
     );
   }
 
@@ -4169,6 +4255,9 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
   final int? targetReps;
   final double? targetWeightKg;
   final int? targetDurationSeconds;
+
+  /// Always metres, like everywhere else.
+  final double? targetDistanceM;
   const RoutineSetRow({
     required this.id,
     required this.routineExerciseId,
@@ -4177,6 +4266,7 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
     this.targetReps,
     this.targetWeightKg,
     this.targetDurationSeconds,
+    this.targetDistanceM,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4193,6 +4283,9 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
     }
     if (!nullToAbsent || targetDurationSeconds != null) {
       map['target_duration_seconds'] = Variable<int>(targetDurationSeconds);
+    }
+    if (!nullToAbsent || targetDistanceM != null) {
+      map['target_distance_m'] = Variable<double>(targetDistanceM);
     }
     return map;
   }
@@ -4212,6 +4305,9 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
       targetDurationSeconds: targetDurationSeconds == null && nullToAbsent
           ? const Value.absent()
           : Value(targetDurationSeconds),
+      targetDistanceM: targetDistanceM == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetDistanceM),
     );
   }
 
@@ -4230,6 +4326,7 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
       targetDurationSeconds: serializer.fromJson<int?>(
         json['targetDurationSeconds'],
       ),
+      targetDistanceM: serializer.fromJson<double?>(json['targetDistanceM']),
     );
   }
   @override
@@ -4243,6 +4340,7 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
       'targetReps': serializer.toJson<int?>(targetReps),
       'targetWeightKg': serializer.toJson<double?>(targetWeightKg),
       'targetDurationSeconds': serializer.toJson<int?>(targetDurationSeconds),
+      'targetDistanceM': serializer.toJson<double?>(targetDistanceM),
     };
   }
 
@@ -4254,6 +4352,7 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
     Value<int?> targetReps = const Value.absent(),
     Value<double?> targetWeightKg = const Value.absent(),
     Value<int?> targetDurationSeconds = const Value.absent(),
+    Value<double?> targetDistanceM = const Value.absent(),
   }) => RoutineSetRow(
     id: id ?? this.id,
     routineExerciseId: routineExerciseId ?? this.routineExerciseId,
@@ -4266,6 +4365,9 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
     targetDurationSeconds: targetDurationSeconds.present
         ? targetDurationSeconds.value
         : this.targetDurationSeconds,
+    targetDistanceM: targetDistanceM.present
+        ? targetDistanceM.value
+        : this.targetDistanceM,
   );
   RoutineSetRow copyWithCompanion(RoutineSetsTableCompanion data) {
     return RoutineSetRow(
@@ -4284,6 +4386,9 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
       targetDurationSeconds: data.targetDurationSeconds.present
           ? data.targetDurationSeconds.value
           : this.targetDurationSeconds,
+      targetDistanceM: data.targetDistanceM.present
+          ? data.targetDistanceM.value
+          : this.targetDistanceM,
     );
   }
 
@@ -4296,7 +4401,8 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
           ..write('setType: $setType, ')
           ..write('targetReps: $targetReps, ')
           ..write('targetWeightKg: $targetWeightKg, ')
-          ..write('targetDurationSeconds: $targetDurationSeconds')
+          ..write('targetDurationSeconds: $targetDurationSeconds, ')
+          ..write('targetDistanceM: $targetDistanceM')
           ..write(')'))
         .toString();
   }
@@ -4310,6 +4416,7 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
     targetReps,
     targetWeightKg,
     targetDurationSeconds,
+    targetDistanceM,
   );
   @override
   bool operator ==(Object other) =>
@@ -4321,7 +4428,8 @@ class RoutineSetRow extends DataClass implements Insertable<RoutineSetRow> {
           other.setType == this.setType &&
           other.targetReps == this.targetReps &&
           other.targetWeightKg == this.targetWeightKg &&
-          other.targetDurationSeconds == this.targetDurationSeconds);
+          other.targetDurationSeconds == this.targetDurationSeconds &&
+          other.targetDistanceM == this.targetDistanceM);
 }
 
 class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
@@ -4332,6 +4440,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
   final Value<int?> targetReps;
   final Value<double?> targetWeightKg;
   final Value<int?> targetDurationSeconds;
+  final Value<double?> targetDistanceM;
   final Value<int> rowid;
   const RoutineSetsTableCompanion({
     this.id = const Value.absent(),
@@ -4341,6 +4450,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
     this.targetReps = const Value.absent(),
     this.targetWeightKg = const Value.absent(),
     this.targetDurationSeconds = const Value.absent(),
+    this.targetDistanceM = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutineSetsTableCompanion.insert({
@@ -4351,6 +4461,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
     this.targetReps = const Value.absent(),
     this.targetWeightKg = const Value.absent(),
     this.targetDurationSeconds = const Value.absent(),
+    this.targetDistanceM = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        routineExerciseId = Value(routineExerciseId),
@@ -4363,6 +4474,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
     Expression<int>? targetReps,
     Expression<double>? targetWeightKg,
     Expression<int>? targetDurationSeconds,
+    Expression<double>? targetDistanceM,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4374,6 +4486,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
       if (targetWeightKg != null) 'target_weight_kg': targetWeightKg,
       if (targetDurationSeconds != null)
         'target_duration_seconds': targetDurationSeconds,
+      if (targetDistanceM != null) 'target_distance_m': targetDistanceM,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4386,6 +4499,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
     Value<int?>? targetReps,
     Value<double?>? targetWeightKg,
     Value<int?>? targetDurationSeconds,
+    Value<double?>? targetDistanceM,
     Value<int>? rowid,
   }) {
     return RoutineSetsTableCompanion(
@@ -4397,6 +4511,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
       targetWeightKg: targetWeightKg ?? this.targetWeightKg,
       targetDurationSeconds:
           targetDurationSeconds ?? this.targetDurationSeconds,
+      targetDistanceM: targetDistanceM ?? this.targetDistanceM,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4427,6 +4542,9 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
         targetDurationSeconds.value,
       );
     }
+    if (targetDistanceM.present) {
+      map['target_distance_m'] = Variable<double>(targetDistanceM.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4443,6 +4561,7 @@ class RoutineSetsTableCompanion extends UpdateCompanion<RoutineSetRow> {
           ..write('targetReps: $targetReps, ')
           ..write('targetWeightKg: $targetWeightKg, ')
           ..write('targetDurationSeconds: $targetDurationSeconds, ')
+          ..write('targetDistanceM: $targetDistanceM, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8784,6 +8903,7 @@ typedef $$ExercisesTableTableCreateCompanionBuilder =
       Value<String?> startImageFile,
       Value<String?> endImageFile,
       Value<bool> isCustom,
+      Value<bool> categoryOverridden,
       Value<bool> isArchived,
       required int createdAt,
       Value<int> rowid,
@@ -8801,6 +8921,7 @@ typedef $$ExercisesTableTableUpdateCompanionBuilder =
       Value<String?> startImageFile,
       Value<String?> endImageFile,
       Value<bool> isCustom,
+      Value<bool> categoryOverridden,
       Value<bool> isArchived,
       Value<int> createdAt,
       Value<int> rowid,
@@ -8951,6 +9072,11 @@ class $$ExercisesTableTableFilterComposer
 
   ColumnFilters<bool> get isCustom => $composableBuilder(
     column: $table.isCustom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get categoryOverridden => $composableBuilder(
+    column: $table.categoryOverridden,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9106,6 +9232,11 @@ class $$ExercisesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get categoryOverridden => $composableBuilder(
+    column: $table.categoryOverridden,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
     builder: (column) => ColumnOrderings(column),
@@ -9170,6 +9301,11 @@ class $$ExercisesTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isCustom =>
       $composableBuilder(column: $table.isCustom, builder: (column) => column);
+
+  GeneratedColumn<bool> get categoryOverridden => $composableBuilder(
+    column: $table.categoryOverridden,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
@@ -9303,6 +9439,7 @@ class $$ExercisesTableTableTableManager
                 Value<String?> startImageFile = const Value.absent(),
                 Value<String?> endImageFile = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<bool> categoryOverridden = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9318,6 +9455,7 @@ class $$ExercisesTableTableTableManager
                 startImageFile: startImageFile,
                 endImageFile: endImageFile,
                 isCustom: isCustom,
+                categoryOverridden: categoryOverridden,
                 isArchived: isArchived,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -9335,6 +9473,7 @@ class $$ExercisesTableTableTableManager
                 Value<String?> startImageFile = const Value.absent(),
                 Value<String?> endImageFile = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<bool> categoryOverridden = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 required int createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -9350,6 +9489,7 @@ class $$ExercisesTableTableTableManager
                 startImageFile: startImageFile,
                 endImageFile: endImageFile,
                 isCustom: isCustom,
+                categoryOverridden: categoryOverridden,
                 isArchived: isArchived,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -10939,6 +11079,7 @@ typedef $$RoutineSetsTableTableCreateCompanionBuilder =
       Value<int?> targetReps,
       Value<double?> targetWeightKg,
       Value<int?> targetDurationSeconds,
+      Value<double?> targetDistanceM,
       Value<int> rowid,
     });
 typedef $$RoutineSetsTableTableUpdateCompanionBuilder =
@@ -10950,6 +11091,7 @@ typedef $$RoutineSetsTableTableUpdateCompanionBuilder =
       Value<int?> targetReps,
       Value<double?> targetWeightKg,
       Value<int?> targetDurationSeconds,
+      Value<double?> targetDistanceM,
       Value<int> rowid,
     });
 
@@ -11022,6 +11164,11 @@ class $$RoutineSetsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get targetDistanceM => $composableBuilder(
+    column: $table.targetDistanceM,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$RoutineExercisesTableTableFilterComposer get routineExerciseId {
     final $$RoutineExercisesTableTableFilterComposer composer =
         $composerBuilder(
@@ -11086,6 +11233,11 @@ class $$RoutineSetsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get targetDistanceM => $composableBuilder(
+    column: $table.targetDistanceM,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutineExercisesTableTableOrderingComposer get routineExerciseId {
     final $$RoutineExercisesTableTableOrderingComposer composer =
         $composerBuilder(
@@ -11141,6 +11293,11 @@ class $$RoutineSetsTableTableAnnotationComposer
 
   GeneratedColumn<int> get targetDurationSeconds => $composableBuilder(
     column: $table.targetDurationSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get targetDistanceM => $composableBuilder(
+    column: $table.targetDistanceM,
     builder: (column) => column,
   );
 
@@ -11206,6 +11363,7 @@ class $$RoutineSetsTableTableTableManager
                 Value<int?> targetReps = const Value.absent(),
                 Value<double?> targetWeightKg = const Value.absent(),
                 Value<int?> targetDurationSeconds = const Value.absent(),
+                Value<double?> targetDistanceM = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutineSetsTableCompanion(
                 id: id,
@@ -11215,6 +11373,7 @@ class $$RoutineSetsTableTableTableManager
                 targetReps: targetReps,
                 targetWeightKg: targetWeightKg,
                 targetDurationSeconds: targetDurationSeconds,
+                targetDistanceM: targetDistanceM,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11226,6 +11385,7 @@ class $$RoutineSetsTableTableTableManager
                 Value<int?> targetReps = const Value.absent(),
                 Value<double?> targetWeightKg = const Value.absent(),
                 Value<int?> targetDurationSeconds = const Value.absent(),
+                Value<double?> targetDistanceM = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutineSetsTableCompanion.insert(
                 id: id,
@@ -11235,6 +11395,7 @@ class $$RoutineSetsTableTableTableManager
                 targetReps: targetReps,
                 targetWeightKg: targetWeightKg,
                 targetDurationSeconds: targetDurationSeconds,
+                targetDistanceM: targetDistanceM,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

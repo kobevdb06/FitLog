@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -152,6 +152,14 @@ class AppDatabase extends _$AppDatabase {
           // everything that exists, which is exactly right: those were seeded
           // before corrections were tracked, so they all need the first pass.
           await m.addColumn(appSettingsTable, appSettingsTable.seedVersion);
+        }
+        if (from < 13) {
+          // A distance a routine can aim at, and the mark that says the user
+          // chose an exercise's type themselves. Both additive: no routine
+          // asked for a distance before this, and nobody had made that choice
+          // yet, which is what the defaults say.
+          await m.addColumn(routineSetsTable, routineSetsTable.targetDistanceM);
+          await m.addColumn(exercisesTable, exercisesTable.categoryOverridden);
         }
       });
 

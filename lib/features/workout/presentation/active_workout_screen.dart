@@ -170,7 +170,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     final owner = _ownerOf(workout, target.setId);
     if (owner != null) {
-      final columns = setColumnsFor(owner.category, owner.sets);
+      final columns = setColumnsFor(
+        owner.category,
+        owner.sets.map(setValues),
+      );
       final at = columns.indexOf(target.kind);
       if (at >= 0 && at + 1 < columns.length) {
         final row = _findSet(workout, target.setId);
@@ -188,7 +191,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final index = flat.indexWhere((e) => e.set.id == target.setId);
     if (index >= 0 && index + 1 < flat.length) {
       final next = flat[index + 1];
-      final columns = setColumnsFor(next.owner.category, next.owner.sets);
+      final columns = setColumnsFor(
+        next.owner.category,
+        next.owner.sets.map(setValues),
+      );
       if (columns.isNotEmpty) {
         _focus(next.set, columns.first, formatters);
         return;
@@ -619,7 +625,7 @@ class _ExerciseCard extends ConsumerWidget {
 
     // Which value columns make sense here: weight and reps for anything you
     // load, a time for a plank, a distance and a time for a run.
-    final columns = setColumnsFor(detail.category, detail.sets);
+    final columns = setColumnsFor(detail.category, detail.sets.map(setValues));
 
     // Numbering is derived from the current types and sides, so switching one
     // set to warm-up - or the exercise to one arm at a time - renumbers
@@ -1124,16 +1130,6 @@ class _NoteFieldState extends State<_NoteField> {
     );
   }
 }
-
-/// What the header of a value column says.
-String columnLabel(KeypadFieldKind kind, Formatters formatters) =>
-    switch (kind) {
-      KeypadFieldKind.weight => formatters.weightUnitLabel.toUpperCase(),
-      KeypadFieldKind.reps => 'REPS',
-      KeypadFieldKind.duration => 'TIJD',
-      KeypadFieldKind.distance => formatters.distanceUnitLabel.toUpperCase(),
-      KeypadFieldKind.rpe => 'RPE',
-    };
 
 /// What one value cell shows, or null when the set has no value for it yet.
 String? _cellValue(

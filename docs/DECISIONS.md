@@ -839,3 +839,46 @@ tabblad opnieuw wordt opgebouwd. Eén keer.
 
 Beide eigenschappen staan vast in `tab_pager_test.dart`, want ze leunen op
 gedrag van go_router dat een volgende versie kan veranderen.
+
+## 61. Een routine mag alleen mikken op wat je kan loggen
+
+De routine-editor bood altijd gewicht en reps, ook voor een plank. De settabel
+in je sessie volgt sinds versie 1.14 de oefening; de editor doet dat nu ook, met
+letterlijk dezelfde regel - `setColumnsFor` staat op één plek en beide schermen
+lezen eruit.
+
+De kolom `target_duration_seconds` bestond al, werd al opgeslagen én al
+gekopieerd naar je sessie. Alleen het invoerveld ontbrak. Er is nu ook een
+`target_distance_m` bij gekomen, want zonder dat kon je voor cardio maar de helft
+vastleggen.
+
+Om die regel te kunnen delen leest hij niet langer een drift-rij maar vier losse
+waarden. Een set in een sessie en een set in een sjabloon staan in verschillende
+tabellen en betekenen hetzelfde; nu krijgen ze ook hetzelfde antwoord.
+
+## 62. Je kan zelf zeggen hoe een oefening gedaan wordt
+
+Bij de 876 oefeningen uit de catalogus stond geen manier om iets te wijzigen.
+Toen de plank verkeerd getypeerd bleek kon de gebruiker niets: wachten tot ik
+het asset repareerde én een correctiepas bouwde die bestaande databases
+bereikt.
+
+"Type wijzigen" staat nu in het menu van elke oefening, ook die uit de
+catalogus. Er zullen meer van die gevallen zijn die ik niet ken, en dit is de
+noodrem.
+
+`exercises.category_overridden` onthoudt dat de keuze van jou was. De
+cataloguscorrectie slaat zo'n oefening over - anders zou de volgende correctie
+jouw keuze stilletjes terugdraaien, wat erger is dan het probleem dat de
+correctie oplost.
+
+## 63. Het workoutscherm luistert nu ook naar de oefeningentabel
+
+Gevonden door de test die het typewijzigen moest bewijzen: hij faalde, en
+terecht. De stream achter de lopende sessie keek alleen naar `workouts`,
+`workout_exercises` en `workout_sets`. Het type van de oefening zelf staat in
+`exercises`, en dat bepaalt sinds 1.14 welke kolommen de settabel toont.
+
+Zonder deze regel kwam een typewijziging pas door bij de eerstvolgende
+schrijfactie op een van de andere drie tabellen - dus meestal pas nadat je iets
+anders had aangeraakt. Precies het soort bug dat je niet vindt door te kijken.

@@ -49,9 +49,10 @@ class ExerciseSeeder {
   /// Brings an already-seeded catalogue up to [kSeedVersion].
   ///
   /// Only the exercise *type* is rewritten, and only for exercises that came
-  /// from the catalogue. That is the one field a correction has ever needed,
-  /// and keeping the pass that narrow means it cannot touch a name, an
-  /// instruction, a picture, or anything the user made themselves.
+  /// from the catalogue and whose type the user has not set themselves. That
+  /// is the one field a correction has ever needed, and keeping the pass that
+  /// narrow means it cannot touch a name, an instruction, a picture, anything
+  /// the user made, or a choice the user has made.
   ///
   /// Returns how many exercises were re-typed.
   Future<int> refreshIfNeeded({String assetKey = kExerciseSeedAsset}) async {
@@ -76,7 +77,14 @@ class ExerciseSeeder {
         final id = entry['id'] as String;
         final category = entry['category'] as String;
         final row = existing[id];
-        if (row == null || row.isCustom || row.category == category) continue;
+        // Not one of ours, already right, or the user has said themselves
+        // how this exercise is done - all three mean: leave it.
+        if (row == null ||
+            row.isCustom ||
+            row.categoryOverridden ||
+            row.category == category) {
+          continue;
+        }
         await db.exercisesDao.updateExercise(
           id,
           ExercisesTableCompanion(category: Value(category)),

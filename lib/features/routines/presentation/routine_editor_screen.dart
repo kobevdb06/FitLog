@@ -17,6 +17,7 @@ import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
+import '../../workout/domain/set_columns.dart';
 import 'routine_providers.dart';
 
 /// One exercise while the routine is being edited.
@@ -42,12 +43,22 @@ class _DraftSet {
     this.reps,
     this.weightKg,
     this.durationSeconds,
+    this.distanceM,
   });
 
   SetType setType;
   int? reps;
   double? weightKg;
   int? durationSeconds;
+  double? distanceM;
+
+  /// What the column rule needs to see of this set.
+  SetValues get values => (
+    weightKg: weightKg,
+    reps: reps,
+    durationSeconds: durationSeconds,
+    distanceM: distanceM,
+  );
 }
 
 /// Building and changing a routine: order, sets, targets, rest and supersets.
@@ -110,6 +121,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
                   reps: s.targetReps,
                   weightKg: s.targetWeightKg,
                   durationSeconds: s.targetDurationSeconds,
+                  distanceM: s.targetDistanceM,
                 ),
               )
               .toList(),
@@ -189,40 +201,77 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     });
   }
 
+  /// Types the target for one column of one set.
+  ///
+  /// Which columns exist depends on the exercise, the same way it does in a
+  /// running session: kilograms and reps for anything you load, a time for a
+  /// hold, a distance and a time for a run.
   Future<void> _editSetValue(
     _DraftSet set,
     KeypadFieldKind kind,
     Formatters formatters,
   ) async {
-    final isWeight = kind == KeypadFieldKind.weight;
-    final initial = isWeight
-        ? KeypadValue.fromNumber(
-            set.weightKg == null
-                ? null
-                : formatters.toDisplayWeight(set.weightKg!),
-          )
-        : KeypadValue.fromNumber(set.reps, decimals: 0);
+    final initial = switch (kind) {
+      KeypadFieldKind.weight => KeypadValue.fromNumber(
+        set.weightKg == null ? null : formatters.toDisplayWeight(set.weightKg!),
+      ),
+      KeypadFieldKind.reps => KeypadValue.fromNumber(set.reps, decimals: 0),
+      KeypadFieldKind.duration => KeypadValue.fromNumber(
+        set.durationSeconds,
+        decimals: 0,
+      ),
+      KeypadFieldKind.distance => KeypadValue.fromNumber(
+        set.distanceM == null
+            ? null
+            : formatters.toDisplayDistance(set.distanceM!),
+      ),
+      // A routine has no RPE target; the rule never asks for this column.
+      KeypadFieldKind.rpe => KeypadValue.fromNumber(null),
+    };
 
     final result = await showKeypadSheet(
       context: context,
       kind: kind,
       initialValue: initial,
-      unitLabel: isWeight ? formatters.weightUnitLabel : null,
-      title: isWeight ? 'Doelgewicht' : 'Doelreps',
-      steps: isWeight && formatters.weightUnit == WeightUnit.lb
+      unitLabel: switch (kind) {
+        KeypadFieldKind.weight => formatters.weightUnitLabel,
+        KeypadFieldKind.distance => formatters.distanceUnitLabel,
+        KeypadFieldKind.duration => 'sec',
+        _ => null,
+      },
+      title: switch (kind) {
+        KeypadFieldKind.weight => 'Doelgewicht',
+        KeypadFieldKind.reps => 'Doelreps',
+        KeypadFieldKind.duration => 'Doeltijd',
+        KeypadFieldKind.distance => 'Doelafstand',
+        KeypadFieldKind.rpe => 'Doel-RPE',
+      },
+      steps:
+          kind == KeypadFieldKind.weight &&
+              formatters.weightUnit == WeightUnit.lb
           ? const [2.5, 5, 10]
           : null,
     );
     if (result == null) return;
 
     setState(() {
-      if (isWeight) {
-        final value = result.number;
-        set.weightKg = value == null
-            ? null
-            : formatters.fromDisplayWeight(value);
-      } else {
-        set.reps = result.intValue;
+      switch (kind) {
+        case KeypadFieldKind.weight:
+          final value = result.number;
+          set.weightKg = value == null
+              ? null
+              : formatters.fromDisplayWeight(value);
+        case KeypadFieldKind.reps:
+          set.reps = result.intValue;
+        case KeypadFieldKind.duration:
+          set.durationSeconds = result.intValue;
+        case KeypadFieldKind.distance:
+          final value = result.number;
+          set.distanceM = value == null
+              ? null
+              : formatters.fromDisplayDistance(value);
+        case KeypadFieldKind.rpe:
+          break;
       }
     });
   }
@@ -260,6 +309,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
                       targetReps: s.reps,
                       targetWeightKg: s.weightKg,
                       targetDurationSeconds: s.durationSeconds,
+                      targetDistanceM: s.distanceM,
                     ),
                   )
                   .toList(),
@@ -342,6 +392,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
                     reps: last?.reps,
                     weightKg: last?.weightKg,
                     durationSeconds: last?.durationSeconds,
+                    distanceM: last?.distanceM,
                   ),
                 );
               }),
@@ -349,10 +400,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
                 draft.sets.removeAt(setIndex);
                 if (draft.sets.isEmpty) draft.sets.add(_DraftSet());
               }),
-              onEditWeight: (set) =>
-                  _editSetValue(set, KeypadFieldKind.weight, formatters),
-              onEditReps: (set) =>
-                  _editSetValue(set, KeypadFieldKind.reps, formatters),
+              onEditValue: (set, kind) => _editSetValue(set, kind, formatters),
               onSetType: (set, type) => setState(() => set.setType = type),
               onRest: () async {
                 final result = await showKeypadSheet(
@@ -473,8 +521,7 @@ class _ExerciseEditorCard extends StatelessWidget {
     required this.onToggleSuperset,
     required this.onAddSet,
     required this.onRemoveSet,
-    required this.onEditWeight,
-    required this.onEditReps,
+    required this.onEditValue,
     required this.onSetType,
     required this.onRest,
     required this.onNote,
@@ -489,8 +536,7 @@ class _ExerciseEditorCard extends StatelessWidget {
   final VoidCallback onToggleSuperset;
   final VoidCallback onAddSet;
   final ValueChanged<int> onRemoveSet;
-  final ValueChanged<_DraftSet> onEditWeight;
-  final ValueChanged<_DraftSet> onEditReps;
+  final void Function(_DraftSet, KeypadFieldKind) onEditValue;
   final void Function(_DraftSet, SetType) onSetType;
   final VoidCallback onRest;
   final VoidCallback onNote;
@@ -502,6 +548,12 @@ class _ExerciseEditorCard extends StatelessWidget {
     final groupColor = group == null
         ? null
         : AppColors.supersets[group % AppColors.supersets.length];
+    // The same rule the running session uses, so a routine can only aim at
+    // what you will actually be able to log.
+    final columns = setColumnsFor(
+      ExerciseCategory.fromWire(draft.exercise.category),
+      draft.sets.map((s) => s.values),
+    );
 
     return AppCard(
       borderColor: groupColor,
@@ -611,20 +663,14 @@ class _ExerciseEditorCard extends StatelessWidget {
                       width: 36,
                       child: Text('SET', style: theme.textTheme.labelSmall),
                     ),
-                    Expanded(
-                      child: Text(
-                        formatters.weightUnitLabel.toUpperCase(),
-                        style: theme.textTheme.labelSmall,
-                        textAlign: TextAlign.center,
+                    for (final kind in columns)
+                      Expanded(
+                        child: Text(
+                          columnLabel(kind, formatters),
+                          style: theme.textTheme.labelSmall,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'REPS',
-                        style: theme.textTheme.labelSmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
                     const SizedBox(width: 40),
                   ],
                 ),
@@ -632,9 +678,9 @@ class _ExerciseEditorCard extends StatelessWidget {
                   _SetRow(
                     label: labelSets(draft.sets.map((s) => s.setType))[i],
                     set: draft.sets[i],
+                    columns: columns,
                     formatters: formatters,
-                    onWeight: () => onEditWeight(draft.sets[i]),
-                    onReps: () => onEditReps(draft.sets[i]),
+                    onEditValue: (kind) => onEditValue(draft.sets[i], kind),
                     onRemove: () => onRemoveSet(i),
                     onSetType: (type) => onSetType(draft.sets[i], type),
                   ),
@@ -656,18 +702,18 @@ class _SetRow extends StatelessWidget {
   const _SetRow({
     required this.label,
     required this.set,
+    required this.columns,
     required this.formatters,
-    required this.onWeight,
-    required this.onReps,
+    required this.onEditValue,
     required this.onRemove,
     required this.onSetType,
   });
 
   final SetLabel label;
   final _DraftSet set;
+  final List<KeypadFieldKind> columns;
   final Formatters formatters;
-  final VoidCallback onWeight;
-  final VoidCallback onReps;
+  final ValueChanged<KeypadFieldKind> onEditValue;
   final VoidCallback onRemove;
   final ValueChanged<SetType> onSetType;
 
@@ -709,17 +755,13 @@ class _SetRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: _ValueCell(
-              text: set.weightKg == null
-                  ? '-'
-                  : formatters.weightValue(set.weightKg),
-              onTap: onWeight,
+          for (final kind in columns)
+            Expanded(
+              child: _ValueCell(
+                text: _targetText(kind, set, formatters),
+                onTap: () => onEditValue(kind),
+              ),
             ),
-          ),
-          Expanded(
-            child: _ValueCell(text: set.reps?.toString() ?? '-', onTap: onReps),
-          ),
           SizedBox(
             width: 40,
             child: IconButton(
@@ -733,6 +775,24 @@ class _SetRow extends StatelessWidget {
     );
   }
 }
+
+/// What one target cell shows, or a dash when nothing is aimed at.
+String _targetText(
+  KeypadFieldKind kind,
+  _DraftSet set,
+  Formatters formatters,
+) => switch (kind) {
+  KeypadFieldKind.weight =>
+    set.weightKg == null ? '-' : formatters.weightValue(set.weightKg),
+  KeypadFieldKind.reps => set.reps?.toString() ?? '-',
+  KeypadFieldKind.duration =>
+    set.durationSeconds == null
+        ? '-'
+        : Formatters.duration(set.durationSeconds!),
+  KeypadFieldKind.distance =>
+    set.distanceM == null ? '-' : formatters.distanceValue(set.distanceM),
+  KeypadFieldKind.rpe => '-',
+};
 
 class _ValueCell extends StatelessWidget {
   const _ValueCell({required this.text, required this.onTap});

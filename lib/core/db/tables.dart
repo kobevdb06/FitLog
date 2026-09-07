@@ -155,6 +155,17 @@ class ExercisesTable extends Table {
 
   BoolColumn get isCustom =>
       boolean().named('is_custom').withDefault(const Constant(false))();
+
+  /// Set once the user has picked the type of this exercise themselves.
+  ///
+  /// The bundled catalogue can be wrong about how something is done - it had
+  /// the plank down as a body-weight exercise, counted in repetitions - and
+  /// correcting it in the app is faster than waiting for a new version. This
+  /// marks that choice as the user's, so a later correction to the catalogue
+  /// leaves it alone rather than quietly undoing it.
+  BoolColumn get categoryOverridden => boolean()
+      .named('category_overridden')
+      .withDefault(const Constant(false))();
   BoolColumn get isArchived =>
       boolean().named('is_archived').withDefault(const Constant(false))();
   IntColumn get createdAt => integer().named('created_at')();
@@ -245,6 +256,10 @@ class RoutineSetsTable extends Table {
       real().named('target_weight_kg').nullable()();
   IntColumn get targetDurationSeconds =>
       integer().named('target_duration_seconds').nullable()();
+
+  /// Always metres, like everywhere else.
+  RealColumn get targetDistanceM =>
+      real().named('target_distance_m').nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

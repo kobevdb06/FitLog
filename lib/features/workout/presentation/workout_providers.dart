@@ -9,6 +9,7 @@ import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/util/notification_service.dart';
 import '../domain/pr_ramp.dart';
+import '../domain/set_columns.dart';
 import '../domain/rest_timer.dart';
 
 part 'workout_providers.g.dart';
@@ -19,6 +20,14 @@ part 'workout_providers.g.dart';
 @Riverpod(keepAlive: true)
 Stream<WorkoutDetail?> activeWorkout(Ref ref) =>
     ref.watch(databaseProvider).workoutsDao.watchActiveWorkout();
+
+/// A stored set, as the column rule wants to see it.
+SetValues setValues(WorkoutSetRow row) => (
+  weightKg: row.weightKg,
+  reps: row.reps,
+  durationSeconds: row.durationSeconds,
+  distanceM: row.distanceM,
+);
 
 /// What the same exercise looked like last time, keyed by exercise and side.
 ///
@@ -574,6 +583,7 @@ class WorkoutController {
                         targetReps: s.reps,
                         targetWeightKg: s.weightKg,
                         targetDurationSeconds: s.durationSeconds,
+                        targetDistanceM: s.distanceM,
                       ),
                     )
                     .toList(),

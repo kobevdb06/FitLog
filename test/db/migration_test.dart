@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 12);
+    expect(raw.select('PRAGMA user_version').first.values.first, 13);
     raw.close();
   });
 
@@ -148,6 +148,9 @@ void main() {
     // v12 started tracking which build of the catalogue a database holds.
     // Zero means "seeded before corrections were tracked", which is true.
     expect((await db.settingsDao.getSettings()).seedVersion, 0);
+    // v13 added the mark that says the user picked an exercise's type
+    // themselves. Nobody had made that choice before it existed.
+    expect(migratedExercise.categoryOverridden, isFalse);
 
     expect(await db.recordsDao.measurements(), hasLength(1));
     expect(await db.recordsDao.photos(), hasLength(1));
@@ -155,10 +158,7 @@ void main() {
     // Both record rows survive; only the dangling reference is cleared.
     final records = await db.recordsDao.recordsForExercise('ex-1');
     expect(records, hasLength(2));
-    expect(
-      records.firstWhere((r) => r.id == 'pr-1').workoutSetId,
-      'ws-1',
-    );
+    expect(records.firstWhere((r) => r.id == 'pr-1').workoutSetId, 'ws-1');
     expect(
       records.firstWhere((r) => r.id == 'pr-2').workoutSetId,
       isNull,
@@ -181,10 +181,7 @@ void main() {
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
     final migrated = await db.workoutsDao.getWorkoutDetail('w-1');
     expect(migrated!.exercises.single.workoutExercise.isPrAttempt, isFalse);
-    expect(
-      migrated.exercises.single.workoutExercise.prTargetWeightKg,
-      isNull,
-    );
+    expect(migrated.exercises.single.workoutExercise.prTargetWeightKg, isNull);
 
     await db.close();
   });
@@ -224,7 +221,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 12);
+    expect(db.schemaVersion, 13);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

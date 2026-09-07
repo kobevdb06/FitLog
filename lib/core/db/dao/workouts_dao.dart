@@ -53,7 +53,16 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   Stream<WorkoutDetail?> watchActiveWorkout() {
     return customSelect(
       'SELECT id FROM workouts WHERE ended_at IS NULL LIMIT 1',
-      readsFrom: {workoutsTable, workoutExercisesTable, workoutSetsTable},
+      // The exercises table is in here because the detail carries the
+      // exercise row itself, and its type decides which columns the set table
+      // offers. Change how an exercise is done while a session is running and
+      // the table has to follow on the next frame, not the next write.
+      readsFrom: {
+        workoutsTable,
+        workoutExercisesTable,
+        workoutSetsTable,
+        exercisesTable,
+      },
     ).watch().asyncMap((rows) async {
       if (rows.isEmpty) return null;
       return getWorkoutDetail(rows.first.read<String>('id'));
@@ -137,6 +146,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
                 weightKg: Value(s.targetWeightKg),
                 reps: Value(s.targetReps),
                 durationSeconds: Value(s.targetDurationSeconds),
+                distanceM: Value(s.targetDistanceM),
               ),
             );
           }
@@ -224,7 +234,16 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     return customSelect(
       'SELECT id FROM workouts WHERE id = ?',
       variables: [Variable.withString(workoutId)],
-      readsFrom: {workoutsTable, workoutExercisesTable, workoutSetsTable},
+      // The exercises table is in here because the detail carries the
+      // exercise row itself, and its type decides which columns the set table
+      // offers. Change how an exercise is done while a session is running and
+      // the table has to follow on the next frame, not the next write.
+      readsFrom: {
+        workoutsTable,
+        workoutExercisesTable,
+        workoutSetsTable,
+        exercisesTable,
+      },
     ).watch().asyncMap((rows) async {
       if (rows.isEmpty) return null;
       return getWorkoutDetail(workoutId);

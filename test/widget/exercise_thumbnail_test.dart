@@ -133,6 +133,7 @@ void main() {
       category: 'barbell',
       instructions: null,
       isCustom: isCustom,
+      categoryOverridden: false,
       isArchived: false,
       createdAt: 0,
     );

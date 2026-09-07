@@ -25,6 +25,7 @@ void main() {
     startImageFile: null,
     endImageFile: null,
     isCustom: custom,
+    categoryOverridden: false,
     isArchived: false,
     createdAt: 0,
   );

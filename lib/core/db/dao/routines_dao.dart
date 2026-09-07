@@ -49,12 +49,14 @@ class RoutineSetDraft {
     this.targetReps,
     this.targetWeightKg,
     this.targetDurationSeconds,
+    this.targetDistanceM,
   });
 
   final SetType setType;
   final int? targetReps;
   final double? targetWeightKg;
   final int? targetDurationSeconds;
+  final double? targetDistanceM;
 }
 
 @DriftAccessor(
@@ -72,21 +74,20 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
 
   // --- Folders --------------------------------------------------------------
 
-  Stream<List<RoutineFolderRow>> watchFolders() =>
-      (select(routineFoldersTable)
-            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-          .watch();
+  Stream<List<RoutineFolderRow>> watchFolders() => (select(
+    routineFoldersTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).watch();
 
-  Future<List<RoutineFolderRow>> getFolders() =>
-      (select(routineFoldersTable)
-            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-          .get();
+  Future<List<RoutineFolderRow>> getFolders() => (select(
+    routineFoldersTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).get();
 
   Future<String> createFolder(String name) async {
     final id = _uuid.v4();
     final max = routineFoldersTable.sortOrder.max();
-    final row = await (selectOnly(routineFoldersTable)..addColumns([max]))
-        .getSingle();
+    final row = await (selectOnly(
+      routineFoldersTable,
+    )..addColumns([max])).getSingle();
     await into(routineFoldersTable).insert(
       RoutineFoldersTableCompanion.insert(
         id: id,
@@ -98,8 +99,9 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<void> renameFolder(String id, String name) async {
-    await (update(routineFoldersTable)..where((t) => t.id.equals(id)))
-        .write(RoutineFoldersTableCompanion(name: Value(name)));
+    await (update(routineFoldersTable)..where((t) => t.id.equals(id))).write(
+      RoutineFoldersTableCompanion(name: Value(name)),
+    );
   }
 
   /// Deleting a folder does not delete its routines: the foreign key is
@@ -146,9 +148,8 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  Future<RoutineRow?> getRoutine(String id) => (select(
-    routinesTable,
-  )..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<RoutineRow?> getRoutine(String id) =>
+      (select(routinesTable)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Stream<RoutineDetail?> watchRoutineDetail(String routineId) {
     final routine = (select(
@@ -177,17 +178,15 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
   ) async {
     final joined =
         await (select(routineExercisesTable)
-                  ..where((t) => t.routineId.equals(routineId))
-                  ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-                .join([
-                  innerJoin(
-                    exercisesTable,
-                    exercisesTable.id.equalsExp(
-                      routineExercisesTable.exerciseId,
-                    ),
-                  ),
-                ])
-                .get();
+              ..where((t) => t.routineId.equals(routineId))
+              ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+            .join([
+              innerJoin(
+                exercisesTable,
+                exercisesTable.id.equalsExp(routineExercisesTable.exerciseId),
+              ),
+            ])
+            .get();
 
     if (joined.isEmpty) return const [];
 
@@ -200,16 +199,18 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
               ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
             .get();
 
-    return joined.map((row) {
-      final re = row.readTable(routineExercisesTable);
-      return RoutineExerciseDetail(
-        routineExercise: re,
-        exercise: row.readTable(exercisesTable),
-        sets: allSets
-            .where((s) => s.routineExerciseId == re.id)
-            .toList(growable: false),
-      );
-    }).toList(growable: false);
+    return joined
+        .map((row) {
+          final re = row.readTable(routineExercisesTable);
+          return RoutineExerciseDetail(
+            routineExercise: re,
+            exercise: row.readTable(exercisesTable),
+            sets: allSets
+                .where((s) => s.routineExerciseId == re.id)
+                .toList(growable: false),
+          );
+        })
+        .toList(growable: false);
   }
 
   /// Creates a routine and everything under it in one transaction.
@@ -218,8 +219,9 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
     final now = DateTime.now().millisecondsSinceEpoch;
     await transaction(() async {
       final max = routinesTable.sortOrder.max();
-      final row = await (selectOnly(routinesTable)..addColumns([max]))
-          .getSingle();
+      final row = await (selectOnly(
+        routinesTable,
+      )..addColumns([max])).getSingle();
       await into(routinesTable).insert(
         RoutinesTableCompanion.insert(
           id: id,
@@ -241,20 +243,19 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
   /// routine, which keeps sort orders and superset groups consistent.
   Future<void> updateRoutine(String routineId, RoutineDraft draft) async {
     await transaction(() async {
-      await (update(routinesTable)..where((t) => t.id.equals(routineId)))
-          .write(
-            RoutinesTableCompanion(
-              name: Value(draft.name),
-              notes: Value(draft.notes),
-              folderId: Value(draft.folderId),
-              colorIndex: Value(draft.colorIndex),
-              updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
-            ),
-          );
+      await (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
+        RoutinesTableCompanion(
+          name: Value(draft.name),
+          notes: Value(draft.notes),
+          folderId: Value(draft.folderId),
+          colorIndex: Value(draft.colorIndex),
+          updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
       // Cascades to routine_sets.
-      await (delete(routineExercisesTable)
-            ..where((t) => t.routineId.equals(routineId)))
-          .go();
+      await (delete(
+        routineExercisesTable,
+      )..where((t) => t.routineId.equals(routineId))).go();
       await _writeRoutineExercises(routineId, draft.exercises);
     });
   }
@@ -290,6 +291,7 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
               targetReps: Value(s.targetReps),
               targetWeightKg: Value(s.targetWeightKg),
               targetDurationSeconds: Value(s.targetDurationSeconds),
+              targetDistanceM: Value(s.targetDistanceM),
             ),
           );
         }
@@ -334,6 +336,7 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
                         targetReps: s.targetReps,
                         targetWeightKg: s.targetWeightKg,
                         targetDurationSeconds: s.targetDurationSeconds,
+                        targetDistanceM: s.targetDistanceM,
                       ),
                     )
                     .toList(),
@@ -357,8 +360,9 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<void> markPerformed(String routineId, int at) async {
-    await (update(routinesTable)..where((t) => t.id.equals(routineId)))
-        .write(RoutinesTableCompanion(lastPerformedAt: Value(at)));
+    await (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
+      RoutinesTableCompanion(lastPerformedAt: Value(at)),
+    );
   }
 
   /// The routine to suggest on the dashboard: the one that has not been done

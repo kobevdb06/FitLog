@@ -82,6 +82,28 @@ void main() {
       expect(await seeder.refreshIfNeeded(), 0);
     });
 
+    test('leaves a type the user picked themselves alone', () async {
+      final seeder = ExerciseSeeder(db);
+      await seeder.seedIfNeeded();
+
+      // You decided the plank is a body-weight exercise after all.
+      await db.exercisesDao.setCategory(
+        (await plank()).id,
+        ExerciseCategory.bodyweight,
+      );
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(seedVersion: Value(0)),
+      );
+
+      await seeder.refreshIfNeeded();
+
+      expect(
+        (await plank()).category,
+        'bodyweight',
+        reason: 'de catalogus overschrijft jouw keuze niet',
+      );
+    });
+
     test('leaves an exercise the user made alone', () async {
       final seeder = ExerciseSeeder(db);
       await seeder.seedIfNeeded();
@@ -172,11 +194,14 @@ void main() {
     }
   });
 
-  test('a missing asset surfaces as an error rather than an empty seed',
-      () async {
-    expect(
-      () => ExerciseSeeder(db).seedIfNeeded(assetKey: 'assets/data/nope.json'),
-      throwsA(isA<FlutterError>()),
-    );
-  });
+  test(
+    'a missing asset surfaces as an error rather than an empty seed',
+    () async {
+      expect(
+        () =>
+            ExerciseSeeder(db).seedIfNeeded(assetKey: 'assets/data/nope.json'),
+        throwsA(isA<FlutterError>()),
+      );
+    },
+  );
 }

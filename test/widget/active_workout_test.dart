@@ -286,6 +286,26 @@ void main() {
     expect(await db.workoutsDao.getSet(setId), isNull);
   });
 
+  testWidgets('changing the type changes what the set asks for', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    expect(find.text('KG'), findsOneWidget);
+    expect(find.text('TIJD'), findsNothing);
+
+    // The same call the "Type wijzigen" menu makes.
+    await db.exercisesDao.setCategory('ex-bench', ExerciseCategory.duration);
+    await settle(tester);
+
+    expect(find.text('TIJD'), findsOneWidget);
+    final row = await db.exercisesDao.getById('ex-bench');
+    expect(
+      row!.categoryOverridden,
+      isTrue,
+      reason: 'een cataloguscorrectie mag dit niet terugdraaien',
+    );
+  });
+
   testWidgets('tapping a weight cell opens the custom keypad, not the '
       'system keyboard', (tester) async {
     await pumpScreen(tester);

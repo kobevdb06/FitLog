@@ -6,8 +6,21 @@
 /// make sense; this turns that into the columns on screen.
 library;
 
-import '../../../core/db/database.dart';
+import '../../../core/db/enums.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/widgets/numeric_keypad.dart';
+
+/// The four numbers a set can carry, whatever it is stored in.
+///
+/// A running set and a set in a routine template hold the same four values in
+/// two different tables; this is what the column rule needs to see of either,
+/// so both get the same answer.
+typedef SetValues = ({
+  double? weightKg,
+  int? reps,
+  int? durationSeconds,
+  double? distanceM,
+});
 
 /// The columns for [category], in the order they are filled in.
 ///
@@ -25,10 +38,10 @@ import '../../../core/widgets/numeric_keypad.dart';
 /// see or correct it.
 List<KeypadFieldKind> setColumnsFor(
   ExerciseCategory category,
-  Iterable<WorkoutSetRow> sets,
+  Iterable<SetValues> sets,
 ) {
   final rows = sets.toList(growable: false);
-  bool anyHas(bool Function(WorkoutSetRow) has) => rows.any(has);
+  bool anyHas(bool Function(SetValues) has) => rows.any(has);
 
   return [
     if (category.hasReps || anyHas((s) => s.weightKg != null))
@@ -40,3 +53,13 @@ List<KeypadFieldKind> setColumnsFor(
     if (category.hasReps || anyHas((s) => s.reps != null)) KeypadFieldKind.reps,
   ];
 }
+
+/// What the header of a value column says.
+String columnLabel(KeypadFieldKind kind, Formatters formatters) =>
+    switch (kind) {
+      KeypadFieldKind.weight => formatters.weightUnitLabel.toUpperCase(),
+      KeypadFieldKind.reps => 'REPS',
+      KeypadFieldKind.duration => 'TIJD',
+      KeypadFieldKind.distance => formatters.distanceUnitLabel.toUpperCase(),
+      KeypadFieldKind.rpe => 'RPE',
+    };

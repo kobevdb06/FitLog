@@ -737,3 +737,41 @@ belandde. De DELETE kijkt nu ook naar `is_skipped = 0`.
 Om dezelfde reden telt hij niet mee in de vraag "x sets zijn niet ingevuld":
 je hebt er al iets over gezegd, dus er valt niets meer over te vragen. En het
 omschakelen naar één arm per keer laat hem staan, net als een afgevinkte set.
+
+## 55. De settabel volgt de oefening, niet één vaste vorm
+
+De kolommen waren altijd KG en REPS, wat je ook deed. Voor **137 van de 876**
+oefeningen in de catalogus (123 op tijd, 14 cardio) betekende dat niets: een
+plank log je in seconden, een loop in afstand en tijd. Die waarden stonden al
+in de database (`duration_seconds`, `distance_m`) en de keypad kende ze al,
+maar er was geen veld om ze in te tikken.
+
+Nu bepaalt de categorie de kolommen: alles wat je in reps telt krijgt gewicht
+en reps, iets op tijd krijgt TIJD, cardio krijgt AFSTAND en TIJD.
+
+Gewicht hangt bewust aan `hasReps` en niet aan `hasWeight`. Op papier heeft een
+lichaamsgewichtoefening geen gewicht, maar in de praktijk hang je een riem aan
+een dip en een schijf op een push-up, en dat loggen mensen. Die kolom weghalen
+zou 205 oefeningen iets afnemen dat vandaag werkt. Waar gewicht écht niets
+betekent is het werk op tijd en op afstand - precies de categorieën die om iets
+anders vragen.
+
+Een kolom blijft ook staan zodra één set er al een waarde in heeft. Sessies van
+vóór deze verandering zetten gewichten op van alles; die kolom verbergen zou
+het getal onzichtbaar maken terwijl het in de database blijft staan, zonder
+manier om het te corrigeren.
+
+## 56. Een set wegvegen wacht vijf seconden
+
+Vegen verwijderde meteen, zonder weg terug - en de nummering eronder schoof
+direct op, dus je zag niet eens goed wát er weg was.
+
+Nu wordt de rij vijf seconden lang alleen *verborgen*; in de database is er nog
+niets gebeurd. Dezelfde vorm als het verwijderen van een sessie uit je
+geschiedenis, en om dezelfde reden: undo die niets terugzet kan ook niet half
+mislukken. Verbergen is genoeg om het verwijderd te laten lijken, want de
+setnummers worden afgeleid uit de rijen op het scherm - ze sluiten zich vanzelf
+en gaan weer open als de set terugkomt.
+
+De workout afronden ruimt eerst alles op wat nog in dat venster staat. Een rij
+die het scherm al niet meer toont mag niet alsnog in je geschiedenis opduiken.

@@ -111,11 +111,7 @@ class _InfoTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        ExerciseAnimation(
-          exercise: exercise,
-          manifest: images,
-          paths: paths,
-        ),
+        ExerciseAnimation(exercise: exercise, manifest: images, paths: paths),
         const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
@@ -144,10 +140,10 @@ class _InfoTab extends ConsumerWidget {
             ),
           ],
         ),
-        const SectionHeader('Spiergroepen', padding: EdgeInsets.only(
-          top: AppSpacing.xl,
-          bottom: AppSpacing.sm,
-        )),
+        const SectionHeader(
+          'Spiergroepen',
+          padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
+        ),
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
@@ -171,10 +167,10 @@ class _InfoTab extends ConsumerWidget {
         ),
         if (exercise.instructions != null &&
             exercise.instructions!.trim().isNotEmpty) ...[
-          const SectionHeader('Uitvoering', padding: EdgeInsets.only(
-            top: AppSpacing.xl,
-            bottom: AppSpacing.sm,
-          )),
+          const SectionHeader(
+            'Uitvoering',
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
+          ),
           Text(exercise.instructions!, style: theme.textTheme.bodyMedium),
         ],
         const SizedBox(height: AppSpacing.xxl),
@@ -227,9 +223,9 @@ class _HistoryTab extends ConsumerWidget {
                           session.workoutExercise.notes!,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
                       ),
@@ -242,15 +238,14 @@ class _HistoryTab extends ConsumerWidget {
                             SizedBox(
                               width: 26,
                               child: Text(
-                                SetType.fromWire(
-                                      session.sets[i].setType,
-                                    ).marker ??
+                                SetType.fromWire(session.sets[i].setType)
+                                        .marker ??
                                     '${i + 1}',
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
                                     ),
                               ),
                             ),
@@ -260,6 +255,7 @@ class _HistoryTab extends ConsumerWidget {
                                 reps: session.sets[i].reps,
                                 durationSeconds:
                                     session.sets[i].durationSeconds,
+                                distanceM: session.sets[i].distanceM,
                               ),
                             ),
                           ],
@@ -372,10 +368,7 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
                 ),
               ),
               Expanded(
-                child: StatTile(
-                  value: '${points.length}',
-                  label: 'Sessies',
-                ),
+                child: StatTile(value: '${points.length}', label: 'Sessies'),
               ),
             ],
           ),

@@ -133,7 +133,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
         final name = await promptForText(
           context,
           title: 'Naam van de workout',
-          initialValue: ref.read(workoutDetailProvider(workoutId)).value
+          initialValue: ref
+              .read(workoutDetailProvider(workoutId))
+              .value
               ?.workout
               .name,
         );
@@ -312,6 +314,7 @@ class _EditableSetRow extends StatelessWidget {
                   weightKg: row.weightKg,
                   reps: row.reps,
                   durationSeconds: row.durationSeconds,
+                  distanceM: row.distanceM,
                 ),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: row.isCompleted

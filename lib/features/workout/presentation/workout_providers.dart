@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -19,6 +21,65 @@ part 'workout_providers.g.dart';
 @Riverpod(keepAlive: true)
 Stream<WorkoutDetail?> activeWorkout(Ref ref) =>
     ref.watch(databaseProvider).workoutsDao.watchActiveWorkout();
+
+/// Sets that have been swiped away but can still be brought back.
+///
+/// Undo is done by delaying the delete rather than by putting a copy back
+/// afterwards: for five seconds the row is only hidden from the table, and
+/// nothing has happened in the database yet. That is the same shape the
+/// history uses for a deleted session, and it means undo cannot half-fail.
+///
+/// Hiding is enough to make it look deleted: the set numbers are derived from
+/// the rows on screen, so they close up the moment one disappears and open
+/// again when it comes back.
+@Riverpod(keepAlive: true)
+class PendingSetDeletions extends _$PendingSetDeletions {
+  static const Duration grace = Duration(seconds: 5);
+
+  final Map<String, Timer> _timers = {};
+
+  @override
+  Set<String> build() {
+    ref.onDispose(() {
+      for (final timer in _timers.values) {
+        timer.cancel();
+      }
+      _timers.clear();
+    });
+    return const {};
+  }
+
+  /// Hides [setId] and deletes it once the grace period runs out.
+  void schedule(String setId) {
+    _timers.remove(setId)?.cancel();
+    state = {...state, setId};
+    _timers[setId] = Timer(grace, () => _commit(setId));
+  }
+
+  /// Brings the set back. Nothing was ever removed.
+  void undo(String setId) {
+    _timers.remove(setId)?.cancel();
+    state = {...state}..remove(setId);
+  }
+
+  /// Deletes everything still waiting, right away.
+  ///
+  /// Finishing a session must not leave a row behind that the screen has
+  /// already stopped showing.
+  Future<void> flush() async {
+    final waiting = state.toList(growable: false);
+    for (final setId in waiting) {
+      _timers.remove(setId)?.cancel();
+      await _commit(setId);
+    }
+  }
+
+  Future<void> _commit(String setId) async {
+    _timers.remove(setId);
+    await ref.read(workoutControllerProvider).deleteSet(setId);
+    state = {...state}..remove(setId);
+  }
+}
 
 /// What the same exercise looked like last time, keyed by exercise and side.
 ///
@@ -287,6 +348,7 @@ class WorkoutController {
         weightKg: Value(source.weightKg),
         reps: Value(source.reps),
         durationSeconds: Value(source.durationSeconds),
+        distanceM: Value(source.distanceM),
       );
       filled++;
     }
@@ -327,6 +389,7 @@ class WorkoutController {
     double? weightKg,
     int? reps,
     int? durationSeconds,
+    double? distanceM,
   }) async {
     // Read straight from the DAO rather than from activeWorkoutProvider: a
     // provider only starts once something listens to it, and this method must
@@ -352,17 +415,22 @@ class WorkoutController {
     var finalWeight = weightKg ?? row.weightKg;
     var finalReps = reps ?? row.reps;
     var finalDuration = durationSeconds ?? row.durationSeconds;
+    var finalDistance = distanceM ?? row.distanceM;
 
     // What the empty cells show in grey is the matching set from last time.
     // Ticking the set off used to store nothing at all, which made that grey
     // number a lie: it looked like a value the app would use and it was not.
     // Anything still empty now takes what the row is showing.
-    if (finalWeight == null || finalReps == null || finalDuration == null) {
+    if (finalWeight == null ||
+        finalReps == null ||
+        finalDuration == null ||
+        finalDistance == null) {
       final last = await _previousSetFor(owner, row, workout.workout.id);
       if (last != null) {
         finalWeight ??= last.weightKg;
         finalReps ??= last.reps;
         finalDuration ??= last.durationSeconds;
+        finalDistance ??= last.distanceM;
       }
     }
 
@@ -371,6 +439,7 @@ class WorkoutController {
       weightKg: Value(finalWeight),
       reps: Value(finalReps),
       durationSeconds: Value(finalDuration),
+      distanceM: Value(finalDistance),
       isCompleted: const Value(true),
       completedAt: Value(now.millisecondsSinceEpoch),
       isSkipped: const Value(false),
@@ -528,6 +597,9 @@ class WorkoutController {
     required bool discardPending,
     String? notes,
   }) async {
+    // A set that was swiped away seconds ago is gone as far as the screen is
+    // concerned; it must not reappear in the history.
+    await ref.read(pendingSetDeletionsProvider.notifier).flush();
     await _db.workoutsDao.finishWorkout(
       workoutId,
       discardPending: discardPending,
@@ -596,7 +668,7 @@ class WorkoutController {
       for (final s in exercise.sets.where((s) => s.isCompleted)) {
         final marker = SetType.fromWire(s.setType).marker ?? '${index++}';
         buffer.writeln(
-          '  $marker  ${formatters.setSummary(weightKg: s.weightKg, reps: s.reps, durationSeconds: s.durationSeconds)}',
+          '  $marker  ${formatters.setSummary(weightKg: s.weightKg, reps: s.reps, durationSeconds: s.durationSeconds, distanceM: s.distanceM)}',
         );
       }
       buffer.writeln();

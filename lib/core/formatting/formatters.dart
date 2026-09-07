@@ -53,7 +53,22 @@ class Formatters {
   }
 
   /// `80 kg x 8`, the shape used in the "previous" column and in exports.
-  String setSummary({double? weightKg, int? reps, int? durationSeconds}) {
+  ///
+  /// Not every exercise is weight times reps: a plank is a time, a run is a
+  /// distance and a time. Those are read off the values that are actually
+  /// there, so the same summary works for all of them.
+  String setSummary({
+    double? weightKg,
+    int? reps,
+    int? durationSeconds,
+    double? distanceM,
+  }) {
+    if (distanceM != null) {
+      final run = distance(distanceM);
+      return durationSeconds == null
+          ? run
+          : '$run · ${duration(durationSeconds)}';
+    }
     if (durationSeconds != null && weightKg == null && reps == null) {
       return duration(durationSeconds);
     }
@@ -88,12 +103,27 @@ class Formatters {
     return '${_decimal.format(toDisplayLength(cm))} $lengthUnitLabel';
   }
 
+  String get distanceUnitLabel => distanceUnit.label;
+
+  /// Metres converted into the display unit.
+  double toDisplayDistance(double meters) => distanceUnit == DistanceUnit.km
+      ? metersToKm(meters)
+      : metersToMiles(meters);
+
+  /// The inverse of [toDisplayDistance], for reading input back.
+  double fromDisplayDistance(double value) => distanceUnit == DistanceUnit.km
+      ? kmToMeters(value)
+      : milesToMeters(value);
+
+  /// `5` or `10,5`, without a unit.
+  String distanceValue(double? meters) {
+    if (meters == null) return '-';
+    return _decimal.format(toDisplayDistance(meters));
+  }
+
   String distance(double? meters) {
     if (meters == null) return '-';
-    final value = distanceUnit == DistanceUnit.km
-        ? metersToKm(meters)
-        : metersToMiles(meters);
-    return '${_decimal.format(value)} ${distanceUnit.label}';
+    return '${distanceValue(meters)} ${distanceUnit.label}';
   }
 
   /// Body measurements carry their own unit.
@@ -165,9 +195,7 @@ class Formatters {
     final d = Duration(seconds: seconds.abs());
     if (d.inHours > 0) {
       final minutes = d.inMinutes.remainder(60);
-      return minutes == 0
-          ? '${d.inHours} u'
-          : '${d.inHours} u $minutes min';
+      return minutes == 0 ? '${d.inHours} u' : '${d.inHours} u $minutes min';
     }
     if (d.inMinutes > 0) return '${d.inMinutes} min';
     return '${d.inSeconds} s';

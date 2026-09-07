@@ -26,6 +26,7 @@ void main() {
   setUpAll(initialiseTestLocale);
 
   late AppDatabase db;
+  late String workoutId;
   late String setId;
 
   setUp(() async {
@@ -44,15 +45,13 @@ void main() {
           ),
         );
 
-    final workoutId = await db.workoutsDao.startWorkout(
+    workoutId = await db.workoutsDao.startWorkout(
       name: 'Push',
       defaultRestSeconds: 90,
     );
-    final created = await db.workoutsDao.addExercises(
-      workoutId,
-      ['ex-bench'],
-      defaultRestSeconds: 90,
-    );
+    final created = await db.workoutsDao.addExercises(workoutId, [
+      'ex-bench',
+    ], defaultRestSeconds: 90);
     final detail = await db.workoutsDao.getWorkoutDetail(workoutId);
     setId = detail!.exercises.single.sets.single.id;
     expect(created, hasLength(1));
@@ -130,15 +129,12 @@ void main() {
 
     final records = await db.recordsDao.recordsForExercise('ex-bench');
     expect(records, hasLength(4));
-    expect(
-      records.map((r) => PrType.fromWire(r.recordType)).toSet(),
-      {
-        PrType.maxWeight,
-        PrType.est1rm,
-        PrType.maxSetVolume,
-        PrType.maxReps,
-      },
-    );
+    expect(records.map((r) => PrType.fromWire(r.recordType)).toSet(), {
+      PrType.maxWeight,
+      PrType.est1rm,
+      PrType.maxSetVolume,
+      PrType.maxReps,
+    });
   });
 
   testWidgets('a second tap marks the set as skipped', (tester) async {
@@ -251,6 +247,66 @@ void main() {
 
     // Not a dash, which would read as "no data": last time you left it out.
     expect(find.text('Geskipt'), findsOneWidget);
+  });
+
+  testWidgets('a timed exercise asks for a time instead of kilograms', (
+    tester,
+  ) async {
+    await db
+        .into(db.exercisesTable)
+        .insert(
+          ExercisesTableCompanion.insert(
+            id: 'ex-plank',
+            name: 'Plank',
+            primaryMuscle: 'core',
+            category: 'duration',
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+    await db.workoutsDao.addExercises(workoutId, [
+      'ex-plank',
+    ], defaultRestSeconds: 90);
+
+    await pumpScreen(tester);
+
+    // The bench press still has its own two columns...
+    expect(find.text('KG'), findsOneWidget);
+    expect(find.text('REPS'), findsOneWidget);
+    // ...and the plank asks for seconds instead.
+    expect(find.text('TIJD'), findsOneWidget);
+  });
+
+  testWidgets('a swiped set can be brought back', (tester) async {
+    await pumpScreen(tester);
+    expect(find.byType(SetRow), findsOneWidget);
+
+    await tester.drag(find.byType(SetRow), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    // Gone from the table, still in the database.
+    expect(find.byType(SetRow), findsNothing);
+    expect(await db.workoutsDao.getSet(setId), isNotNull);
+
+    await tester.tap(find.text('Ongedaan maken'));
+    await settle(tester);
+
+    expect(find.byType(SetRow), findsOneWidget);
+    final restored = await db.workoutsDao.getSet(setId);
+    expect(restored!.weightKg, 100, reason: 'niets is ooit aangeraakt');
+  });
+
+  testWidgets('a swiped set is really deleted once the moment passes', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await tester.drag(find.byType(SetRow), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    await tester.pump(PendingSetDeletions.grace);
+    await settle(tester);
+
+    expect(await db.workoutsDao.getSet(setId), isNull);
   });
 
   testWidgets('tapping a weight cell opens the custom keypad, not the '

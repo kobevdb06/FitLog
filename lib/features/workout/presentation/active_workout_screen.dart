@@ -21,6 +21,7 @@ import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
+import '../domain/set_columns.dart';
 import 'plate_calculator_sheet.dart';
 import 'pr_attempt_card.dart';
 import 'pr_attempt_providers.dart';
@@ -105,7 +106,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           row.durationSeconds,
           decimals: 0,
         ),
-        KeypadFieldKind.distance => KeypadValue.fromNumber(row.distanceM),
+        KeypadFieldKind.distance => KeypadValue.fromNumber(
+          row.distanceM == null
+              ? null
+              : formatters.toDisplayDistance(row.distanceM!),
+        ),
         KeypadFieldKind.rpe => KeypadValue.fromNumber(row.rpe, decimals: 1),
       };
     });
@@ -139,9 +144,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           durationSeconds: Value(value.intValue),
         );
       case KeypadFieldKind.distance:
+        final typed = value.number;
         await controller.updateSetValues(
           target.setId,
-          distanceM: Value(value.number),
+          distanceM: Value(
+            typed == null ? null : formatters.fromDisplayDistance(typed),
+          ),
         );
       case KeypadFieldKind.rpe:
         await controller.updateSetValues(
@@ -151,29 +159,49 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
   }
 
-  /// Weight to reps, then on to the next set. This is what makes logging
-  /// possible without ever leaving the keypad.
+  /// Along the columns of this exercise, then on to the next set. This is what
+  /// makes logging possible without ever leaving the keypad.
+  ///
+  /// Which columns those are depends on the exercise: weight and reps for
+  /// anything you load, a time for a plank, a distance and a time for a run.
   void _moveToNextField(WorkoutDetail workout, Formatters formatters) {
     final target = _target;
     if (target == null) return;
 
-    if (target.kind == KeypadFieldKind.weight) {
-      final row = _findSet(workout, target.setId);
-      if (row != null) {
-        _focus(row, KeypadFieldKind.reps, formatters);
-        return;
+    final owner = _ownerOf(workout, target.setId);
+    if (owner != null) {
+      final columns = setColumnsFor(owner.category, owner.sets);
+      final at = columns.indexOf(target.kind);
+      if (at >= 0 && at + 1 < columns.length) {
+        final row = _findSet(workout, target.setId);
+        if (row != null) {
+          _focus(row, columns[at + 1], formatters);
+          return;
+        }
       }
     }
 
-    final flat = <WorkoutSetRow>[
-      for (final exercise in workout.exercises) ...exercise.sets,
+    final flat = <({WorkoutExerciseDetail owner, WorkoutSetRow set})>[
+      for (final exercise in workout.exercises)
+        for (final set in exercise.sets) (owner: exercise, set: set),
     ];
-    final index = flat.indexWhere((s) => s.id == target.setId);
+    final index = flat.indexWhere((e) => e.set.id == target.setId);
     if (index >= 0 && index + 1 < flat.length) {
-      _focus(flat[index + 1], KeypadFieldKind.weight, formatters);
-      return;
+      final next = flat[index + 1];
+      final columns = setColumnsFor(next.owner.category, next.owner.sets);
+      if (columns.isNotEmpty) {
+        _focus(next.set, columns.first, formatters);
+        return;
+      }
     }
     setState(() => _target = null);
+  }
+
+  WorkoutExerciseDetail? _ownerOf(WorkoutDetail workout, String setId) {
+    for (final exercise in workout.exercises) {
+      if (exercise.sets.any((s) => s.id == setId)) return exercise;
+    }
+    return null;
   }
 
   /// Straight back to an empty set, whichever state it was in.
@@ -363,7 +391,26 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(body: Center(child: Text('$error'))),
-      data: (workout) {
+      data: (loaded) {
+        // A set that was just swiped away is hidden, not gone: for a few
+        // seconds it is only missing from this list, so bringing it back costs
+        // nothing. The numbering follows the rows on screen, so the table
+        // closes up and opens again on its own.
+        final hidden = ref.watch(pendingSetDeletionsProvider);
+        final workout = loaded == null || hidden.isEmpty
+            ? loaded
+            : WorkoutDetail(
+                workout: loaded.workout,
+                exercises: [
+                  for (final exercise in loaded.exercises)
+                    exercise.copyWith(
+                      sets: exercise.sets
+                          .where((s) => !hidden.contains(s.id))
+                          .toList(),
+                    ),
+                ],
+              );
+
         if (workout == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Workout')),
@@ -501,9 +548,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               ? NumericKeypad(
                   value: _keypadValue,
                   kind: _target!.kind,
-                  unitLabel: _target!.kind == KeypadFieldKind.weight
-                      ? formatters.weightUnitLabel
-                      : null,
+                  unitLabel: switch (_target!.kind) {
+                    KeypadFieldKind.weight => formatters.weightUnitLabel,
+                    KeypadFieldKind.distance => formatters.distanceUnitLabel,
+                    KeypadFieldKind.duration => 'sec',
+                    _ => null,
+                  },
                   steps:
                       _target!.kind == KeypadFieldKind.weight &&
                           formatters.weightUnit == WeightUnit.lb
@@ -586,6 +636,10 @@ class _ExerciseCard extends ConsumerWidget {
         ref.watch(workoutRecordSetIdsProvider(workout.workout.id)).value ??
         const <String>{};
 
+    // Which value columns make sense here: weight and reps for anything you
+    // load, a time for a plank, a distance and a time for a run.
+    final columns = setColumnsFor(detail.category, detail.sets);
+
     // Numbering is derived from the current types and sides, so switching one
     // set to warm-up - or the exercise to one arm at a time - renumbers
     // everything below it on this very build.
@@ -640,7 +694,10 @@ class _ExerciseCard extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        _ColumnHeaders(formatters: formatters),
+                        _ColumnHeaders(
+                          formatters: formatters,
+                          columns: columns,
+                        ),
                         for (var i = 0; i < detail.sets.length; i++)
                           SetRow(
                             key: ValueKey(detail.sets[i].id),
@@ -650,6 +707,7 @@ class _ExerciseCard extends ConsumerWidget {
                               previousBySide[labels[i].side],
                               labels[i],
                             ),
+                            columns: columns,
                             formatters: formatters,
                             isRecord: recordSetIds.contains(detail.sets[i].id),
                             activeKind: activeTarget?.setId == detail.sets[i].id
@@ -658,9 +716,8 @@ class _ExerciseCard extends ConsumerWidget {
                             onFocus: (kind) => onFocus(detail.sets[i], kind),
                             onToggle: () => onToggle(detail.sets[i]),
                             onReset: () => onReset(detail.sets[i]),
-                            onDelete: () => ref
-                                .read(workoutControllerProvider)
-                                .deleteSet(detail.sets[i].id),
+                            onDelete: () =>
+                                _removeSet(context, ref, detail.sets[i].id),
                             onSetType: (type) => ref
                                 .read(workoutControllerProvider)
                                 .setSetType(detail.sets[i].id, type),
@@ -1086,10 +1143,63 @@ class _NoteFieldState extends State<_NoteField> {
   }
 }
 
+/// What the header of a value column says.
+String columnLabel(KeypadFieldKind kind, Formatters formatters) =>
+    switch (kind) {
+      KeypadFieldKind.weight => formatters.weightUnitLabel.toUpperCase(),
+      KeypadFieldKind.reps => 'REPS',
+      KeypadFieldKind.duration => 'TIJD',
+      KeypadFieldKind.distance => formatters.distanceUnitLabel.toUpperCase(),
+      KeypadFieldKind.rpe => 'RPE',
+    };
+
+/// What one value cell shows, or null when the set has no value for it yet.
+String? _cellValue(
+  KeypadFieldKind kind,
+  WorkoutSetRow row,
+  Formatters formatters,
+) => switch (kind) {
+  KeypadFieldKind.weight =>
+    row.weightKg == null ? null : formatters.weightValue(row.weightKg),
+  KeypadFieldKind.reps => row.reps?.toString(),
+  KeypadFieldKind.duration =>
+    row.durationSeconds == null
+        ? null
+        : Formatters.duration(row.durationSeconds!),
+  KeypadFieldKind.distance =>
+    row.distanceM == null ? null : formatters.distanceValue(row.distanceM),
+  KeypadFieldKind.rpe => row.rpe?.toString(),
+};
+
+/// How much room the previous column gets next to [columns].
+///
+/// Three value columns and a wide history do not both fit on a phone, and the
+/// numbers you are typing matter more than the ones from last time.
+int previousFlex(List<KeypadFieldKind> columns) => columns.length > 2 ? 2 : 3;
+
+/// Swiping a set away, with a few seconds to take it back.
+void _removeSet(BuildContext context, WidgetRef ref, String setId) {
+  final pending = ref.read(pendingSetDeletionsProvider.notifier);
+  pending.schedule(setId);
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: const Text('Set verwijderd'),
+        duration: PendingSetDeletions.grace,
+        action: SnackBarAction(
+          label: 'Ongedaan maken',
+          onPressed: () => pending.undo(setId),
+        ),
+      ),
+    );
+}
+
 class _ColumnHeaders extends StatelessWidget {
-  const _ColumnHeaders({required this.formatters});
+  const _ColumnHeaders({required this.formatters, required this.columns});
 
   final Formatters formatters;
+  final List<KeypadFieldKind> columns;
 
   @override
   Widget build(BuildContext context) {
@@ -1103,21 +1213,18 @@ class _ColumnHeaders extends StatelessWidget {
         children: [
           SizedBox(width: 36, child: Text('SET', style: style)),
           Expanded(
-            flex: 3,
+            flex: previousFlex(columns),
             child: Text('VORIGE', style: style, textAlign: TextAlign.center),
           ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              formatters.weightUnitLabel.toUpperCase(),
-              style: style,
-              textAlign: TextAlign.center,
+          for (final kind in columns)
+            Expanded(
+              flex: 2,
+              child: Text(
+                columnLabel(kind, formatters),
+                style: style,
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text('REPS', style: style, textAlign: TextAlign.center),
-          ),
           SizedBox(
             width: AppSpacing.setCheckbox,
             child: Icon(
@@ -1139,6 +1246,7 @@ class SetRow extends StatelessWidget {
     required this.row,
     required this.label,
     required this.previous,
+    required this.columns,
     required this.formatters,
     required this.isRecord,
     required this.activeKind,
@@ -1152,6 +1260,10 @@ class SetRow extends StatelessWidget {
   final WorkoutSetRow row;
   final SetLabel label;
   final WorkoutSetRow? previous;
+
+  /// The value columns this exercise shows, in order.
+  final List<KeypadFieldKind> columns;
+
   final Formatters formatters;
   final bool isRecord;
   final KeypadFieldKind? activeKind;
@@ -1238,7 +1350,7 @@ class SetRow extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 3,
+              flex: previousFlex(columns),
               child: Text(
                 previous == null
                     ? '-'
@@ -1250,6 +1362,7 @@ class SetRow extends StatelessWidget {
                         weightKg: previous!.weightKg,
                         reps: previous!.reps,
                         durationSeconds: previous!.durationSeconds,
+                        distanceM: previous!.distanceM,
                       ),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -1259,30 +1372,20 @@ class SetRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Expanded(
-              flex: 2,
-              child: _Cell(
-                text: row.weightKg == null
-                    ? null
-                    : formatters.weightValue(row.weightKg),
-                placeholder: previous == null || previous!.isSkipped
-                    ? '-'
-                    : formatters.weightValue(previous!.weightKg),
-                active: activeKind == KeypadFieldKind.weight,
-                onTap: () => onFocus(KeypadFieldKind.weight),
+            for (final kind in columns)
+              Expanded(
+                flex: 2,
+                child: _Cell(
+                  text: _cellValue(kind, row, formatters),
+                  // Nothing to suggest from a set that was skipped: there are
+                  // no numbers in it to copy.
+                  placeholder: previous == null || previous!.isSkipped
+                      ? '-'
+                      : _cellValue(kind, previous!, formatters) ?? '-',
+                  active: activeKind == kind,
+                  onTap: () => onFocus(kind),
+                ),
               ),
-            ),
-            Expanded(
-              flex: 2,
-              child: _Cell(
-                text: row.reps?.toString(),
-                placeholder: previous != null && !previous!.isSkipped
-                    ? previous!.reps?.toString() ?? '-'
-                    : '-',
-                active: activeKind == KeypadFieldKind.reps,
-                onTap: () => onFocus(KeypadFieldKind.reps),
-              ),
-            ),
             _CheckBox(
               completed: row.isCompleted,
               skipped: row.isSkipped,

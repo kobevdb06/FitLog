@@ -116,6 +116,33 @@ enum PickKind {
   }
 }
 
+/// Which arm or leg a set was done with.
+///
+/// Only set while the exercise is being done one side at a time; a set done
+/// with both hands has no side, and that absence is what tells the two apart
+/// everywhere else.
+enum SetSide {
+  left('left', 'L', 'links'),
+  right('right', 'R', 'rechts');
+
+  const SetSide(this.wire, this.marker, this.label);
+
+  final String wire;
+
+  /// What the SET column appends to the number.
+  final String marker;
+
+  final String label;
+
+  static SetSide? fromWire(String? value) {
+    if (value == null) return null;
+    for (final side in values) {
+      if (side.wire == value) return side;
+    }
+    return null;
+  }
+}
+
 enum PrType {
   maxWeight('max_weight', 'Zwaarste gewicht'),
   est1rm('est_1rm', 'Geschatte 1RM'),

@@ -656,3 +656,43 @@ palet ooit verandert, en past de kleur zich aan het thema aan.
 
 Staan er twee sessies op één dag met verschillende kleuren, dan wint de eerste.
 Mengen zou een kleur opleveren die bij geen van beide hoort.
+
+## 49. Links en rechts zijn twee sets, geen set met een vinkje
+
+Een oefening één arm per keer doen kon op twee manieren gemodelleerd worden:
+één set met een markering erop, of twee sets naast elkaar. Het zijn er twee
+geworden, want de twee kanten halen zelden hetzelfde: links tien herhalingen,
+rechts acht is de regel en niet de uitzondering. Met één rij was dat niet op te
+schrijven.
+
+Het gevolg is dat het volume vanzelf klopt. Beide kanten zijn echt gedaan en
+worden allebei één keer geteld; er hoeft nergens met twee vermenigvuldigd te
+worden, en de herstelschatting en de grafieken hoefden er niets voor te weten.
+
+De schakelaar zit op de sessie, niet op de routine. Je zet hem aan wanneer je er
+zin in hebt, en de volgende keer staat de routine weer op twee handen - precies
+zoals gevraagd.
+
+Een warming-up blijft één set. Een arm opwarmen is nog steeds één warming-up.
+
+## 50. Twee handen en één hand hebben elk hun eigen verleden
+
+De VORIGE-kolom kijkt naar de laatste sessie waarin de oefening in *dezelfde*
+stand gedaan werd. Zet je hem om, dan verspringt de kolom mee.
+
+Anders zou hij 30 kg tonen boven een set die je met één hand gaat doen, en dat
+is geen richtlijn maar een valstrik. Dezelfde reden waarom een eenhandige set
+geen persoonlijk record kan zetten of breken: 15 kg in één hand is geen mindere
+dag dan 30 kg in twee, en in dezelfde lijst zou het zo lezen. `records_dao`
+laat sets met een kant er daarom helemaal buiten, ook bij het herbouwen van de
+records na het verwijderen van een workout.
+
+## 51. Omschakelen laat staan wat al gelogd is
+
+Wisselen van stand bouwt de sets opnieuw op, maar alleen de sets die nog leeg
+zijn. Wat je al afgevinkt hebt blijft precies zoals je het gedaan hebt, met de
+kant die het toen had.
+
+De gewichten reizen niet mee. Wat je met twee handen tilde zegt niets over wat
+je met één hand tilt, dus de nieuwe rijen beginnen leeg en de VORIGE-kolom vult
+ze uit de juiste geschiedenis.

@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 9);
+    expect(raw.select('PRAGMA user_version').first.values.first, 10);
     raw.close();
   });
 
@@ -138,6 +138,10 @@ void main() {
     // v6 added the session rating. A session from before it is unrated, which
     // the recovery estimate reads as neutral.
     expect(workout.workout.perceivedEffort, isNull);
+    // v10 added training one arm at a time. Everything that predates it was
+    // done with both hands, which is what these defaults say.
+    expect(workout.exercises.single.workoutExercise.isUnilateral, isFalse);
+    expect(workout.exercises.single.sets.single.side, isNull);
 
     expect(await db.recordsDao.measurements(), hasLength(1));
     expect(await db.recordsDao.photos(), hasLength(1));
@@ -214,7 +218,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 9);
+    expect(db.schemaVersion, 10);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

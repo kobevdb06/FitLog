@@ -58,12 +58,20 @@ final class ActiveWorkoutProvider
 
 String _$activeWorkoutHash() => r'5b6903ee8bfb1d6308d47351b30e6023c4423125';
 
-/// What the same exercise looked like last time, keyed by exercise id.
+/// What the same exercise looked like last time, keyed by exercise and side.
+///
+/// [side] is null for the last time it was done with both hands, and a side
+/// for the last time it was done one at a time. The two are separate
+/// histories: switching the exercise over swaps which one the column shows.
 
 @ProviderFor(previousSets)
 final previousSetsProvider = PreviousSetsFamily._();
 
-/// What the same exercise looked like last time, keyed by exercise id.
+/// What the same exercise looked like last time, keyed by exercise and side.
+///
+/// [side] is null for the last time it was done with both hands, and a side
+/// for the last time it was done one at a time. The two are separate
+/// histories: switching the exercise over swaps which one the column shows.
 
 final class PreviousSetsProvider
     extends
@@ -75,10 +83,14 @@ final class PreviousSetsProvider
     with
         $FutureModifier<List<WorkoutSetRow>>,
         $FutureProvider<List<WorkoutSetRow>> {
-  /// What the same exercise looked like last time, keyed by exercise id.
+  /// What the same exercise looked like last time, keyed by exercise and side.
+  ///
+  /// [side] is null for the last time it was done with both hands, and a side
+  /// for the last time it was done one at a time. The two are separate
+  /// histories: switching the exercise over swaps which one the column shows.
   PreviousSetsProvider._({
     required PreviousSetsFamily super.from,
-    required String super.argument,
+    required (String, SetSide?) super.argument,
   }) : super(
          retry: null,
          name: r'previousSetsProvider',
@@ -94,7 +106,7 @@ final class PreviousSetsProvider
   String toString() {
     return r'previousSetsProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -105,8 +117,8 @@ final class PreviousSetsProvider
 
   @override
   FutureOr<List<WorkoutSetRow>> create(Ref ref) {
-    final argument = this.argument as String;
-    return previousSets(ref, argument);
+    final argument = this.argument as (String, SetSide?);
+    return previousSets(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -120,12 +132,20 @@ final class PreviousSetsProvider
   }
 }
 
-String _$previousSetsHash() => r'18234848b8276d61572892da70ddb80e8c8f8858';
+String _$previousSetsHash() => r'be1e2d478949fb324a1f879741ba1920a6aa4172';
 
-/// What the same exercise looked like last time, keyed by exercise id.
+/// What the same exercise looked like last time, keyed by exercise and side.
+///
+/// [side] is null for the last time it was done with both hands, and a side
+/// for the last time it was done one at a time. The two are separate
+/// histories: switching the exercise over swaps which one the column shows.
 
 final class PreviousSetsFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<List<WorkoutSetRow>>, String> {
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<List<WorkoutSetRow>>,
+          (String, SetSide?)
+        > {
   PreviousSetsFamily._()
     : super(
         retry: null,
@@ -135,10 +155,14 @@ final class PreviousSetsFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// What the same exercise looked like last time, keyed by exercise id.
+  /// What the same exercise looked like last time, keyed by exercise and side.
+  ///
+  /// [side] is null for the last time it was done with both hands, and a side
+  /// for the last time it was done one at a time. The two are separate
+  /// histories: switching the exercise over swaps which one the column shows.
 
-  PreviousSetsProvider call(String exerciseId) =>
-      PreviousSetsProvider._(argument: exerciseId, from: this);
+  PreviousSetsProvider call(String exerciseId, [SetSide? side]) =>
+      PreviousSetsProvider._(argument: (exerciseId, side), from: this);
 
   @override
   String toString() => r'previousSetsProvider';

@@ -14,6 +14,7 @@ class SetLabel {
     required this.text,
     required this.type,
     required this.workingIndex,
+    this.side,
   });
 
   /// What the SET column shows: `W`, `D`, `F`, or the working set number.
@@ -24,8 +25,13 @@ class SetLabel {
   /// Zero-based position among the working sets, or null for a warm-up.
   ///
   /// This is what the VORIGE column matches on: working set 1 of today lines
-  /// up with working set 1 of last time, never with a warm-up.
+  /// up with working set 1 of last time, never with a warm-up. While the
+  /// exercise is done one side at a time, left and right are numbered
+  /// separately, so left set 1 lines up with left set 1.
   final int? workingIndex;
+
+  /// The side this set was done with, or null for both hands at once.
+  final SetSide? side;
 
   bool get isWarmup => type == SetType.warmup;
 
@@ -34,37 +40,49 @@ class SetLabel {
       other is SetLabel &&
       other.text == text &&
       other.type == type &&
-      other.workingIndex == workingIndex;
+      other.workingIndex == workingIndex &&
+      other.side == side;
 
   @override
-  int get hashCode => Object.hash(text, type, workingIndex);
+  int get hashCode => Object.hash(text, type, workingIndex, side);
 
   @override
-  String toString() => 'SetLabel($text, ${type.wire}, $workingIndex)';
+  String toString() =>
+      'SetLabel($text, ${type.wire}, $workingIndex, ${side?.wire})';
 }
 
 /// Labels a whole exercise at once.
 ///
 /// Numbering is derived, never stored, so changing one set's type renumbers
 /// everything below it on the next build without any bookkeeping.
-List<SetLabel> labelSets(Iterable<SetType> types) {
-  final labels = <SetLabel>[];
-  var working = 0;
+List<SetLabel> labelSets(Iterable<SetType> types) =>
+    labelSetsWithSides([for (final type in types) (type, null)]);
 
-  for (final type in types) {
+/// The same, for an exercise that may be done one side at a time.
+///
+/// Each side gets its own count, so a left set and the right set that follows
+/// it are both number one. That is what makes the previous column line up:
+/// left compares with left.
+List<SetLabel> labelSetsWithSides(Iterable<(SetType, SetSide?)> sets) {
+  final labels = <SetLabel>[];
+  final working = <SetSide?, int>{};
+
+  for (final (type, side) in sets) {
     if (type == SetType.warmup) {
-      labels.add(
-        SetLabel(text: 'W', type: type, workingIndex: null),
-      );
+      labels.add(SetLabel(text: 'W', type: type, workingIndex: null, side: side));
       continue;
     }
 
-    final index = working++;
+    final index = working[side] ?? 0;
+    working[side] = index + 1;
+
+    final number = type.marker ?? '${index + 1}';
     labels.add(
       SetLabel(
-        text: type.marker ?? '${index + 1}',
+        text: side == null ? number : '$number${side.marker}',
         type: type,
         workingIndex: index,
+        side: side,
       ),
     );
   }

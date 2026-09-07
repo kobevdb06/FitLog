@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -136,6 +136,16 @@ class AppDatabase extends _$AppDatabase {
           // says and what the lists already draw.
           await m.addColumn(routinesTable, routinesTable.colorIndex);
           await m.addColumn(workoutsTable, workoutsTable.colorIndex);
+        }
+        if (from < 10) {
+          // Training one arm at a time. Additive: every exercise that exists
+          // was done with both hands, and every set has no side, which is
+          // exactly what the defaults say.
+          await m.addColumn(
+            workoutExercisesTable,
+            workoutExercisesTable.isUnilateral,
+          );
+          await m.addColumn(workoutSetsTable, workoutSetsTable.side);
         }
       });
 

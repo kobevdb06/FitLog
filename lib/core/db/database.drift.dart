@@ -5158,6 +5158,21 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isUnilateralMeta = const VerificationMeta(
+    'isUnilateral',
+  );
+  @override
+  late final GeneratedColumn<bool> isUnilateral = GeneratedColumn<bool>(
+    'is_unilateral',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_unilateral" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _isPrAttemptMeta = const VerificationMeta(
     'isPrAttempt',
   );
@@ -5204,6 +5219,7 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
     restSeconds,
     supersetGroup,
     notes,
+    isUnilateral,
     isPrAttempt,
     prTargetWeightKg,
     prResult,
@@ -5273,6 +5289,15 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('is_unilateral')) {
+      context.handle(
+        _isUnilateralMeta,
+        isUnilateral.isAcceptableOrUnknown(
+          data['is_unilateral']!,
+          _isUnilateralMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_pr_attempt')) {
       context.handle(
         _isPrAttemptMeta,
@@ -5334,6 +5359,10 @@ class $WorkoutExercisesTableTable extends WorkoutExercisesTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      isUnilateral: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_unilateral'],
+      )!,
       isPrAttempt: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_pr_attempt'],
@@ -5365,6 +5394,13 @@ class WorkoutExerciseRow extends DataClass
   final int? supersetGroup;
   final String? notes;
 
+  /// Marks this exercise as being done one arm or leg at a time.
+  ///
+  /// Lives on the session, not on the routine: it goes back to both hands
+  /// every time you start the routine again, and you turn it on when you feel
+  /// like doing it that way.
+  final bool isUnilateral;
+
   /// Marks this exercise as a one-rep-max attempt with its own warm-up ladder.
   final bool isPrAttempt;
 
@@ -5381,6 +5417,7 @@ class WorkoutExerciseRow extends DataClass
     required this.restSeconds,
     this.supersetGroup,
     this.notes,
+    required this.isUnilateral,
     required this.isPrAttempt,
     this.prTargetWeightKg,
     this.prResult,
@@ -5399,6 +5436,7 @@ class WorkoutExerciseRow extends DataClass
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['is_unilateral'] = Variable<bool>(isUnilateral);
     map['is_pr_attempt'] = Variable<bool>(isPrAttempt);
     if (!nullToAbsent || prTargetWeightKg != null) {
       map['pr_target_weight_kg'] = Variable<double>(prTargetWeightKg);
@@ -5422,6 +5460,7 @@ class WorkoutExerciseRow extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      isUnilateral: Value(isUnilateral),
       isPrAttempt: Value(isPrAttempt),
       prTargetWeightKg: prTargetWeightKg == null && nullToAbsent
           ? const Value.absent()
@@ -5445,6 +5484,7 @@ class WorkoutExerciseRow extends DataClass
       restSeconds: serializer.fromJson<int>(json['restSeconds']),
       supersetGroup: serializer.fromJson<int?>(json['supersetGroup']),
       notes: serializer.fromJson<String?>(json['notes']),
+      isUnilateral: serializer.fromJson<bool>(json['isUnilateral']),
       isPrAttempt: serializer.fromJson<bool>(json['isPrAttempt']),
       prTargetWeightKg: serializer.fromJson<double?>(json['prTargetWeightKg']),
       prResult: serializer.fromJson<String?>(json['prResult']),
@@ -5461,6 +5501,7 @@ class WorkoutExerciseRow extends DataClass
       'restSeconds': serializer.toJson<int>(restSeconds),
       'supersetGroup': serializer.toJson<int?>(supersetGroup),
       'notes': serializer.toJson<String?>(notes),
+      'isUnilateral': serializer.toJson<bool>(isUnilateral),
       'isPrAttempt': serializer.toJson<bool>(isPrAttempt),
       'prTargetWeightKg': serializer.toJson<double?>(prTargetWeightKg),
       'prResult': serializer.toJson<String?>(prResult),
@@ -5475,6 +5516,7 @@ class WorkoutExerciseRow extends DataClass
     int? restSeconds,
     Value<int?> supersetGroup = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    bool? isUnilateral,
     bool? isPrAttempt,
     Value<double?> prTargetWeightKg = const Value.absent(),
     Value<String?> prResult = const Value.absent(),
@@ -5488,6 +5530,7 @@ class WorkoutExerciseRow extends DataClass
         ? supersetGroup.value
         : this.supersetGroup,
     notes: notes.present ? notes.value : this.notes,
+    isUnilateral: isUnilateral ?? this.isUnilateral,
     isPrAttempt: isPrAttempt ?? this.isPrAttempt,
     prTargetWeightKg: prTargetWeightKg.present
         ? prTargetWeightKg.value
@@ -5509,6 +5552,9 @@ class WorkoutExerciseRow extends DataClass
           ? data.supersetGroup.value
           : this.supersetGroup,
       notes: data.notes.present ? data.notes.value : this.notes,
+      isUnilateral: data.isUnilateral.present
+          ? data.isUnilateral.value
+          : this.isUnilateral,
       isPrAttempt: data.isPrAttempt.present
           ? data.isPrAttempt.value
           : this.isPrAttempt,
@@ -5529,6 +5575,7 @@ class WorkoutExerciseRow extends DataClass
           ..write('restSeconds: $restSeconds, ')
           ..write('supersetGroup: $supersetGroup, ')
           ..write('notes: $notes, ')
+          ..write('isUnilateral: $isUnilateral, ')
           ..write('isPrAttempt: $isPrAttempt, ')
           ..write('prTargetWeightKg: $prTargetWeightKg, ')
           ..write('prResult: $prResult')
@@ -5545,6 +5592,7 @@ class WorkoutExerciseRow extends DataClass
     restSeconds,
     supersetGroup,
     notes,
+    isUnilateral,
     isPrAttempt,
     prTargetWeightKg,
     prResult,
@@ -5560,6 +5608,7 @@ class WorkoutExerciseRow extends DataClass
           other.restSeconds == this.restSeconds &&
           other.supersetGroup == this.supersetGroup &&
           other.notes == this.notes &&
+          other.isUnilateral == this.isUnilateral &&
           other.isPrAttempt == this.isPrAttempt &&
           other.prTargetWeightKg == this.prTargetWeightKg &&
           other.prResult == this.prResult);
@@ -5574,6 +5623,7 @@ class WorkoutExercisesTableCompanion
   final Value<int> restSeconds;
   final Value<int?> supersetGroup;
   final Value<String?> notes;
+  final Value<bool> isUnilateral;
   final Value<bool> isPrAttempt;
   final Value<double?> prTargetWeightKg;
   final Value<String?> prResult;
@@ -5586,6 +5636,7 @@ class WorkoutExercisesTableCompanion
     this.restSeconds = const Value.absent(),
     this.supersetGroup = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isUnilateral = const Value.absent(),
     this.isPrAttempt = const Value.absent(),
     this.prTargetWeightKg = const Value.absent(),
     this.prResult = const Value.absent(),
@@ -5599,6 +5650,7 @@ class WorkoutExercisesTableCompanion
     this.restSeconds = const Value.absent(),
     this.supersetGroup = const Value.absent(),
     this.notes = const Value.absent(),
+    this.isUnilateral = const Value.absent(),
     this.isPrAttempt = const Value.absent(),
     this.prTargetWeightKg = const Value.absent(),
     this.prResult = const Value.absent(),
@@ -5615,6 +5667,7 @@ class WorkoutExercisesTableCompanion
     Expression<int>? restSeconds,
     Expression<int>? supersetGroup,
     Expression<String>? notes,
+    Expression<bool>? isUnilateral,
     Expression<bool>? isPrAttempt,
     Expression<double>? prTargetWeightKg,
     Expression<String>? prResult,
@@ -5628,6 +5681,7 @@ class WorkoutExercisesTableCompanion
       if (restSeconds != null) 'rest_seconds': restSeconds,
       if (supersetGroup != null) 'superset_group': supersetGroup,
       if (notes != null) 'notes': notes,
+      if (isUnilateral != null) 'is_unilateral': isUnilateral,
       if (isPrAttempt != null) 'is_pr_attempt': isPrAttempt,
       if (prTargetWeightKg != null) 'pr_target_weight_kg': prTargetWeightKg,
       if (prResult != null) 'pr_result': prResult,
@@ -5643,6 +5697,7 @@ class WorkoutExercisesTableCompanion
     Value<int>? restSeconds,
     Value<int?>? supersetGroup,
     Value<String?>? notes,
+    Value<bool>? isUnilateral,
     Value<bool>? isPrAttempt,
     Value<double?>? prTargetWeightKg,
     Value<String?>? prResult,
@@ -5656,6 +5711,7 @@ class WorkoutExercisesTableCompanion
       restSeconds: restSeconds ?? this.restSeconds,
       supersetGroup: supersetGroup ?? this.supersetGroup,
       notes: notes ?? this.notes,
+      isUnilateral: isUnilateral ?? this.isUnilateral,
       isPrAttempt: isPrAttempt ?? this.isPrAttempt,
       prTargetWeightKg: prTargetWeightKg ?? this.prTargetWeightKg,
       prResult: prResult ?? this.prResult,
@@ -5687,6 +5743,9 @@ class WorkoutExercisesTableCompanion
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (isUnilateral.present) {
+      map['is_unilateral'] = Variable<bool>(isUnilateral.value);
+    }
     if (isPrAttempt.present) {
       map['is_pr_attempt'] = Variable<bool>(isPrAttempt.value);
     }
@@ -5712,6 +5771,7 @@ class WorkoutExercisesTableCompanion
           ..write('restSeconds: $restSeconds, ')
           ..write('supersetGroup: $supersetGroup, ')
           ..write('notes: $notes, ')
+          ..write('isUnilateral: $isUnilateral, ')
           ..write('isPrAttempt: $isPrAttempt, ')
           ..write('prTargetWeightKg: $prTargetWeightKg, ')
           ..write('prResult: $prResult, ')
@@ -5825,6 +5885,15 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sideMeta = const VerificationMeta('side');
+  @override
+  late final GeneratedColumn<String> side = GeneratedColumn<String>(
+    'side',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isCompletedMeta = const VerificationMeta(
     'isCompleted',
   );
@@ -5862,6 +5931,7 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
     durationSeconds,
     distanceM,
     rpe,
+    side,
     isCompleted,
     completedAt,
   ];
@@ -5940,6 +6010,12 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
         rpe.isAcceptableOrUnknown(data['rpe']!, _rpeMeta),
       );
     }
+    if (data.containsKey('side')) {
+      context.handle(
+        _sideMeta,
+        side.isAcceptableOrUnknown(data['side']!, _sideMeta),
+      );
+    }
     if (data.containsKey('is_completed')) {
       context.handle(
         _isCompletedMeta,
@@ -6003,6 +6079,10 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
         DriftSqlType.double,
         data['${effectivePrefix}rpe'],
       ),
+      side: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}side'],
+      ),
       isCompleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_completed'],
@@ -6032,6 +6112,11 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
   final int? durationSeconds;
   final double? distanceM;
   final double? rpe;
+
+  /// One of [SetSide] while the exercise is done one side at a time, null
+  /// otherwise. A left set and a right set are two separate sets: each carries
+  /// its own weight and its own reps, because the two sides rarely match.
+  final String? side;
   final bool isCompleted;
   final int? completedAt;
   const WorkoutSetRow({
@@ -6044,6 +6129,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     this.durationSeconds,
     this.distanceM,
     this.rpe,
+    this.side,
     required this.isCompleted,
     this.completedAt,
   });
@@ -6069,6 +6155,9 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     if (!nullToAbsent || rpe != null) {
       map['rpe'] = Variable<double>(rpe);
     }
+    if (!nullToAbsent || side != null) {
+      map['side'] = Variable<String>(side);
+    }
     map['is_completed'] = Variable<bool>(isCompleted);
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<int>(completedAt);
@@ -6093,6 +6182,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           ? const Value.absent()
           : Value(distanceM),
       rpe: rpe == null && nullToAbsent ? const Value.absent() : Value(rpe),
+      side: side == null && nullToAbsent ? const Value.absent() : Value(side),
       isCompleted: Value(isCompleted),
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
@@ -6115,6 +6205,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       durationSeconds: serializer.fromJson<int?>(json['durationSeconds']),
       distanceM: serializer.fromJson<double?>(json['distanceM']),
       rpe: serializer.fromJson<double?>(json['rpe']),
+      side: serializer.fromJson<String?>(json['side']),
       isCompleted: serializer.fromJson<bool>(json['isCompleted']),
       completedAt: serializer.fromJson<int?>(json['completedAt']),
     );
@@ -6132,6 +6223,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       'durationSeconds': serializer.toJson<int?>(durationSeconds),
       'distanceM': serializer.toJson<double?>(distanceM),
       'rpe': serializer.toJson<double?>(rpe),
+      'side': serializer.toJson<String?>(side),
       'isCompleted': serializer.toJson<bool>(isCompleted),
       'completedAt': serializer.toJson<int?>(completedAt),
     };
@@ -6147,6 +6239,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     Value<int?> durationSeconds = const Value.absent(),
     Value<double?> distanceM = const Value.absent(),
     Value<double?> rpe = const Value.absent(),
+    Value<String?> side = const Value.absent(),
     bool? isCompleted,
     Value<int?> completedAt = const Value.absent(),
   }) => WorkoutSetRow(
@@ -6161,6 +6254,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
         : this.durationSeconds,
     distanceM: distanceM.present ? distanceM.value : this.distanceM,
     rpe: rpe.present ? rpe.value : this.rpe,
+    side: side.present ? side.value : this.side,
     isCompleted: isCompleted ?? this.isCompleted,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
   );
@@ -6179,6 +6273,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           : this.durationSeconds,
       distanceM: data.distanceM.present ? data.distanceM.value : this.distanceM,
       rpe: data.rpe.present ? data.rpe.value : this.rpe,
+      side: data.side.present ? data.side.value : this.side,
       isCompleted: data.isCompleted.present
           ? data.isCompleted.value
           : this.isCompleted,
@@ -6200,6 +6295,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           ..write('durationSeconds: $durationSeconds, ')
           ..write('distanceM: $distanceM, ')
           ..write('rpe: $rpe, ')
+          ..write('side: $side, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('completedAt: $completedAt')
           ..write(')'))
@@ -6217,6 +6313,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     durationSeconds,
     distanceM,
     rpe,
+    side,
     isCompleted,
     completedAt,
   );
@@ -6233,6 +6330,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           other.durationSeconds == this.durationSeconds &&
           other.distanceM == this.distanceM &&
           other.rpe == this.rpe &&
+          other.side == this.side &&
           other.isCompleted == this.isCompleted &&
           other.completedAt == this.completedAt);
 }
@@ -6247,6 +6345,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
   final Value<int?> durationSeconds;
   final Value<double?> distanceM;
   final Value<double?> rpe;
+  final Value<String?> side;
   final Value<bool> isCompleted;
   final Value<int?> completedAt;
   final Value<int> rowid;
@@ -6260,6 +6359,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     this.durationSeconds = const Value.absent(),
     this.distanceM = const Value.absent(),
     this.rpe = const Value.absent(),
+    this.side = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -6274,6 +6374,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     this.durationSeconds = const Value.absent(),
     this.distanceM = const Value.absent(),
     this.rpe = const Value.absent(),
+    this.side = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -6290,6 +6391,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     Expression<int>? durationSeconds,
     Expression<double>? distanceM,
     Expression<double>? rpe,
+    Expression<String>? side,
     Expression<bool>? isCompleted,
     Expression<int>? completedAt,
     Expression<int>? rowid,
@@ -6304,6 +6406,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
       if (distanceM != null) 'distance_m': distanceM,
       if (rpe != null) 'rpe': rpe,
+      if (side != null) 'side': side,
       if (isCompleted != null) 'is_completed': isCompleted,
       if (completedAt != null) 'completed_at': completedAt,
       if (rowid != null) 'rowid': rowid,
@@ -6320,6 +6423,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     Value<int?>? durationSeconds,
     Value<double?>? distanceM,
     Value<double?>? rpe,
+    Value<String?>? side,
     Value<bool>? isCompleted,
     Value<int?>? completedAt,
     Value<int>? rowid,
@@ -6334,6 +6438,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
       durationSeconds: durationSeconds ?? this.durationSeconds,
       distanceM: distanceM ?? this.distanceM,
       rpe: rpe ?? this.rpe,
+      side: side ?? this.side,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
       rowid: rowid ?? this.rowid,
@@ -6370,6 +6475,9 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     if (rpe.present) {
       map['rpe'] = Variable<double>(rpe.value);
     }
+    if (side.present) {
+      map['side'] = Variable<String>(side.value);
+    }
     if (isCompleted.present) {
       map['is_completed'] = Variable<bool>(isCompleted.value);
     }
@@ -6394,6 +6502,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
           ..write('durationSeconds: $durationSeconds, ')
           ..write('distanceM: $distanceM, ')
           ..write('rpe: $rpe, ')
+          ..write('side: $side, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('completedAt: $completedAt, ')
           ..write('rowid: $rowid')
@@ -11609,6 +11718,7 @@ typedef $$WorkoutExercisesTableTableCreateCompanionBuilder =
       Value<int> restSeconds,
       Value<int?> supersetGroup,
       Value<String?> notes,
+      Value<bool> isUnilateral,
       Value<bool> isPrAttempt,
       Value<double?> prTargetWeightKg,
       Value<String?> prResult,
@@ -11623,6 +11733,7 @@ typedef $$WorkoutExercisesTableTableUpdateCompanionBuilder =
       Value<int> restSeconds,
       Value<int?> supersetGroup,
       Value<String?> notes,
+      Value<bool> isUnilateral,
       Value<bool> isPrAttempt,
       Value<double?> prTargetWeightKg,
       Value<String?> prResult,
@@ -11730,6 +11841,11 @@ class $$WorkoutExercisesTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isUnilateral => $composableBuilder(
+    column: $table.isUnilateral,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11854,6 +11970,11 @@ class $$WorkoutExercisesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isUnilateral => $composableBuilder(
+    column: $table.isUnilateral,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isPrAttempt => $composableBuilder(
     column: $table.isPrAttempt,
     builder: (column) => ColumnOrderings(column),
@@ -11943,6 +12064,11 @@ class $$WorkoutExercisesTableTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get isUnilateral => $composableBuilder(
+    column: $table.isUnilateral,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isPrAttempt => $composableBuilder(
     column: $table.isPrAttempt,
@@ -12079,6 +12205,7 @@ class $$WorkoutExercisesTableTableTableManager
                 Value<int> restSeconds = const Value.absent(),
                 Value<int?> supersetGroup = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isUnilateral = const Value.absent(),
                 Value<bool> isPrAttempt = const Value.absent(),
                 Value<double?> prTargetWeightKg = const Value.absent(),
                 Value<String?> prResult = const Value.absent(),
@@ -12091,6 +12218,7 @@ class $$WorkoutExercisesTableTableTableManager
                 restSeconds: restSeconds,
                 supersetGroup: supersetGroup,
                 notes: notes,
+                isUnilateral: isUnilateral,
                 isPrAttempt: isPrAttempt,
                 prTargetWeightKg: prTargetWeightKg,
                 prResult: prResult,
@@ -12105,6 +12233,7 @@ class $$WorkoutExercisesTableTableTableManager
                 Value<int> restSeconds = const Value.absent(),
                 Value<int?> supersetGroup = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> isUnilateral = const Value.absent(),
                 Value<bool> isPrAttempt = const Value.absent(),
                 Value<double?> prTargetWeightKg = const Value.absent(),
                 Value<String?> prResult = const Value.absent(),
@@ -12117,6 +12246,7 @@ class $$WorkoutExercisesTableTableTableManager
                 restSeconds: restSeconds,
                 supersetGroup: supersetGroup,
                 notes: notes,
+                isUnilateral: isUnilateral,
                 isPrAttempt: isPrAttempt,
                 prTargetWeightKg: prTargetWeightKg,
                 prResult: prResult,
@@ -12247,6 +12377,7 @@ typedef $$WorkoutSetsTableTableCreateCompanionBuilder =
       Value<int?> durationSeconds,
       Value<double?> distanceM,
       Value<double?> rpe,
+      Value<String?> side,
       Value<bool> isCompleted,
       Value<int?> completedAt,
       Value<int> rowid,
@@ -12262,6 +12393,7 @@ typedef $$WorkoutSetsTableTableUpdateCompanionBuilder =
       Value<int?> durationSeconds,
       Value<double?> distanceM,
       Value<double?> rpe,
+      Value<String?> side,
       Value<bool> isCompleted,
       Value<int?> completedAt,
       Value<int> rowid,
@@ -12368,6 +12500,11 @@ class $$WorkoutSetsTableTableFilterComposer
 
   ColumnFilters<double> get rpe => $composableBuilder(
     column: $table.rpe,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get side => $composableBuilder(
+    column: $table.side,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12480,6 +12617,11 @@ class $$WorkoutSetsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get side => $composableBuilder(
+    column: $table.side,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
     builder: (column) => ColumnOrderings(column),
@@ -12549,6 +12691,9 @@ class $$WorkoutSetsTableTableAnnotationComposer
 
   GeneratedColumn<double> get rpe =>
       $composableBuilder(column: $table.rpe, builder: (column) => column);
+
+  GeneratedColumn<String> get side =>
+      $composableBuilder(column: $table.side, builder: (column) => column);
 
   GeneratedColumn<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
@@ -12653,6 +12798,7 @@ class $$WorkoutSetsTableTableTableManager
                 Value<int?> durationSeconds = const Value.absent(),
                 Value<double?> distanceM = const Value.absent(),
                 Value<double?> rpe = const Value.absent(),
+                Value<String?> side = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int?> completedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -12666,6 +12812,7 @@ class $$WorkoutSetsTableTableTableManager
                 durationSeconds: durationSeconds,
                 distanceM: distanceM,
                 rpe: rpe,
+                side: side,
                 isCompleted: isCompleted,
                 completedAt: completedAt,
                 rowid: rowid,
@@ -12681,6 +12828,7 @@ class $$WorkoutSetsTableTableTableManager
                 Value<int?> durationSeconds = const Value.absent(),
                 Value<double?> distanceM = const Value.absent(),
                 Value<double?> rpe = const Value.absent(),
+                Value<String?> side = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int?> completedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -12694,6 +12842,7 @@ class $$WorkoutSetsTableTableTableManager
                 durationSeconds: durationSeconds,
                 distanceM: distanceM,
                 rpe: rpe,
+                side: side,
                 isCompleted: isCompleted,
                 completedAt: completedAt,
                 rowid: rowid,

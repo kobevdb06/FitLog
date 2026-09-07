@@ -719,20 +719,30 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
   ///
   /// Warm-ups are left out on purpose: last week's 40 kg warm-up must never
   /// show up as the thing to beat next to working set 1.
+  /// The working sets of the last finished session of this exercise.
+  ///
+  /// [side] picks which history: null is the last time it was done with both
+  /// hands, and a side is the last time it was done one at a time. Switching
+  /// the exercise over therefore changes what the previous column shows, which
+  /// is the point - a one-armed 15 kg has nothing to say about a two-handed
+  /// 30 kg.
   Future<List<WorkoutSetRow>> previousSetsFor(
     String exerciseId, {
     String? excludingWorkoutId,
+    SetSide? side,
   }) async {
     final rows = await customSelect(
       'SELECT we.id AS we_id FROM workout_exercises we '
       'JOIN workouts w ON w.id = we.workout_id '
       'WHERE we.exercise_id = ? AND w.ended_at IS NOT NULL '
       'AND (? IS NULL OR w.id != ?) '
+      'AND we.is_unilateral = ? '
       'ORDER BY w.started_at DESC LIMIT 1',
       variables: [
         Variable.withString(exerciseId),
         Variable<String>(excludingWorkoutId),
         Variable<String>(excludingWorkoutId),
+        Variable.withInt(side == null ? 0 : 1),
       ],
       readsFrom: {workoutExercisesTable, workoutsTable},
     ).get();
@@ -743,10 +753,101 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase> with _$WorkoutsDaoMixin 
           ..where(
             (t) =>
                 t.workoutExerciseId.equals(weId) &
-                t.setType.equals(SetType.warmup.wire).not(),
+                t.setType.equals(SetType.warmup.wire).not() &
+                (side == null ? t.side.isNull() : t.side.equals(side.wire)),
           )
           ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .get();
+  }
+
+  /// Turns doing this exercise one side at a time on or off.
+  ///
+  /// The sets are rebuilt, because the two modes are not the same sets: three
+  /// sets with both hands become three left and three right, each with its own
+  /// weight and reps, and back again. Nothing that was already ticked off is
+  /// touched - those rows stay exactly as they were logged, and the rebuild
+  /// only covers what is still empty.
+  Future<void> setUnilateral(
+    String workoutExerciseId, {
+    required bool unilateral,
+  }) async {
+    await transaction(() async {
+      final existing =
+          await (select(workoutSetsTable)
+                ..where((t) => t.workoutExerciseId.equals(workoutExerciseId))
+                ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+              .get();
+
+      final done = existing.where((s) => s.isCompleted).toList();
+      final open = existing.where((s) => !s.isCompleted).toList();
+
+      // Warm-ups stay one per pair: warming up an arm at a time is still one
+      // warm-up.
+      final warmups = open
+          .where((s) => SetType.fromWire(s.setType) == SetType.warmup)
+          .toList();
+
+      // How many working sets there are, counted as positions rather than as
+      // rows: while the exercise is one-sided each position is already two
+      // rows, and collapsing has to give one back - not two.
+      final workingRows = open
+          .where((s) => SetType.fromWire(s.setType) != SetType.warmup)
+          .toList();
+      final working = workingRows.where((s) => s.side != 'right').toList();
+
+      await (delete(workoutSetsTable)
+            ..where(
+              (t) =>
+                  t.workoutExerciseId.equals(workoutExerciseId) &
+                  t.isCompleted.equals(false),
+            ))
+          .go();
+
+      var order = done.isEmpty ? 0 : done.last.sortOrder + 1;
+      await batch((b) {
+        for (final warmup in warmups) {
+          b.insert(
+            workoutSetsTable,
+            WorkoutSetsTableCompanion.insert(
+              id: _uuid.v4(),
+              workoutExerciseId: workoutExerciseId,
+              sortOrder: order++,
+              setType: Value(warmup.setType),
+              weightKg: Value(warmup.weightKg),
+              reps: Value(warmup.reps),
+              durationSeconds: Value(warmup.durationSeconds),
+            ),
+          );
+        }
+
+        for (final set in working) {
+          // Going one-sided doubles the row; the weight does not come along,
+          // because what you lift with one hand is not what you lifted with
+          // two. The previous column fills that in from the right history.
+          final sides = unilateral
+              ? <SetSide?>[SetSide.left, SetSide.right]
+              : <SetSide?>[null];
+          for (final side in sides) {
+            b.insert(
+              workoutSetsTable,
+              WorkoutSetsTableCompanion.insert(
+                id: _uuid.v4(),
+                workoutExerciseId: workoutExerciseId,
+                sortOrder: order++,
+                setType: Value(set.setType),
+                side: Value(side?.wire),
+              ),
+            );
+          }
+        }
+      });
+
+      await (update(workoutExercisesTable)
+            ..where((t) => t.id.equals(workoutExerciseId)))
+          .write(
+            WorkoutExercisesTableCompanion(isUnilateral: Value(unilateral)),
+          );
+    });
   }
 
   /// The note the user wrote the last time they did this exercise.

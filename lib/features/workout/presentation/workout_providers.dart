@@ -20,14 +20,23 @@ part 'workout_providers.g.dart';
 Stream<WorkoutDetail?> activeWorkout(Ref ref) =>
     ref.watch(databaseProvider).workoutsDao.watchActiveWorkout();
 
-/// What the same exercise looked like last time, keyed by exercise id.
+/// What the same exercise looked like last time, keyed by exercise and side.
+///
+/// [side] is null for the last time it was done with both hands, and a side
+/// for the last time it was done one at a time. The two are separate
+/// histories: switching the exercise over swaps which one the column shows.
 @riverpod
-Future<List<WorkoutSetRow>> previousSets(Ref ref, String exerciseId) async {
+Future<List<WorkoutSetRow>> previousSets(
+  Ref ref,
+  String exerciseId, [
+  SetSide? side,
+]) async {
   final db = ref.watch(databaseProvider);
   final active = await ref.watch(activeWorkoutProvider.future);
   return db.workoutsDao.previousSetsFor(
     exerciseId,
     excludingWorkoutId: active?.workout.id,
+    side: side,
   );
 }
 
@@ -288,6 +297,21 @@ class WorkoutController {
     return filled;
   }
 
+  /// Switches an exercise between both hands and one at a time.
+  ///
+  /// The sets are rebuilt around what is still open; anything already ticked
+  /// off stays as it was logged.
+  Future<void> setUnilateral(
+    String workoutExerciseId, {
+    required bool unilateral,
+  }) async {
+    await _db.workoutsDao.setUnilateral(
+      workoutExerciseId,
+      unilateral: unilateral,
+    );
+    await _recalculate();
+  }
+
   Future<void> setSetType(String setId, SetType type) async {
     await _db.workoutsDao.updateSet(setId, setType: Value(type.wire));
     await _recalculate();
@@ -354,7 +378,11 @@ class WorkoutController {
     );
 
     final setType = SetType.fromWire(row.setType);
-    final records = await _db.recordsDao.registerSet(
+    // A one-armed set has its own history and does not sit in the same
+    // records as the two-handed one; see records_dao.
+    final records = row.side != null
+        ? const <PrCandidate>[]
+        : await _db.recordsDao.registerSet(
       exerciseId: owner.exercise.id,
       workoutSetId: setId,
       setType: setType,
@@ -388,15 +416,17 @@ class WorkoutController {
     final position = owner.sets.indexWhere((s) => s.id == row.id);
     if (position < 0) return null;
 
-    final labels = labelSets(
-      owner.sets.map((s) => SetType.fromWire(s.setType)),
-    );
+    final labels = labelSetsWithSides([
+      for (final s in owner.sets)
+        (SetType.fromWire(s.setType), SetSide.fromWire(s.side)),
+    ]);
     final workingIndex = labels[position].workingIndex;
     if (workingIndex == null) return null;
 
     final previous = await _db.workoutsDao.previousSetsFor(
       owner.exercise.id,
       excludingWorkoutId: runningWorkoutId,
+      side: SetSide.fromWire(row.side),
     );
     if (workingIndex >= previous.length) return null;
     return previous[workingIndex];

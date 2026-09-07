@@ -298,6 +298,14 @@ class WorkoutExercisesTable extends Table {
       integer().named('superset_group').nullable()();
   TextColumn get notes => text().nullable()();
 
+  /// Marks this exercise as being done one arm or leg at a time.
+  ///
+  /// Lives on the session, not on the routine: it goes back to both hands
+  /// every time you start the routine again, and you turn it on when you feel
+  /// like doing it that way.
+  BoolColumn get isUnilateral =>
+      boolean().named('is_unilateral').withDefault(const Constant(false))();
+
   /// Marks this exercise as a one-rep-max attempt with its own warm-up ladder.
   BoolColumn get isPrAttempt =>
       boolean().named('is_pr_attempt').withDefault(const Constant(false))();
@@ -334,6 +342,11 @@ class WorkoutSetsTable extends Table {
       integer().named('duration_seconds').nullable()();
   RealColumn get distanceM => real().named('distance_m').nullable()();
   RealColumn get rpe => real().nullable()();
+  /// One of [SetSide] while the exercise is done one side at a time, null
+  /// otherwise. A left set and a right set are two separate sets: each carries
+  /// its own weight and its own reps, because the two sides rarely match.
+  TextColumn get side => text().nullable()();
+
   BoolColumn get isCompleted =>
       boolean().named('is_completed').withDefault(const Constant(false))();
   IntColumn get completedAt => integer().named('completed_at').nullable()();

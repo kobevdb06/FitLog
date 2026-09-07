@@ -28,6 +28,7 @@ gebruikersdata verwijderen of herschrijven mag niet.
 | 7 | `app_settings.last_backup_at`: wanneer de laatste back-up gemaakt is. |
 | 8 | `app_settings.pending_pick_kind` en `pending_pick_ref`: waar een onderbroken fotokeuze heen moest. |
 | 9 | `routines.color_index` en `workouts.color_index`: de kleur van een routine, en de kopie die een sessie ervan bewaart. |
+| 10 | `workout_exercises.is_unilateral` en `workout_sets.side`: één arm per keer, met links en rechts als aparte sets. |
 
 `test/db/migration_test.dart` bouwt een echte v1-database uit
 `test/db/fixtures/schema_v1.sql`, vult ze met gebruikersdata en controleert dat

@@ -549,7 +549,17 @@ class _ExerciseCard extends ConsumerWidget {
         ? null
         : AppColors.supersets[group % AppColors.supersets.length];
 
-    final previous = ref.watch(previousSetsProvider(detail.exercise.id)).value;
+    // One history per side that is actually on screen. Both hands is one
+    // list; one at a time is two, and they do not mix.
+    final sides = detail.workoutExercise.isUnilateral
+        ? const <SetSide?>[SetSide.left, SetSide.right]
+        : const <SetSide?>[null];
+    final previousBySide = <SetSide?, List<WorkoutSetRow>?>{
+      for (final side in sides)
+        side: ref
+            .watch(previousSetsProvider(detail.exercise.id, side))
+            .value,
+    };
     final previousNote = ref
         .watch(previousNoteProvider(detail.exercise.id))
         .value;
@@ -557,11 +567,13 @@ class _ExerciseCard extends ConsumerWidget {
         ref.watch(workoutRecordSetIdsProvider(workout.workout.id)).value ??
         const <String>{};
 
-    // Numbering is derived from the current types, so switching one set to
-    // warm-up renumbers everything below it on this very build.
-    final labels = labelSets(
-      detail.sets.map((s) => SetType.fromWire(s.setType)),
-    );
+    // Numbering is derived from the current types and sides, so switching one
+    // set to warm-up - or the exercise to one arm at a time - renumbers
+    // everything below it on this very build.
+    final labels = labelSetsWithSides([
+      for (final s in detail.sets)
+        (SetType.fromWire(s.setType), SetSide.fromWire(s.side)),
+    ]);
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -615,7 +627,10 @@ class _ExerciseCard extends ConsumerWidget {
                             key: ValueKey(detail.sets[i].id),
                             row: detail.sets[i],
                             label: labels[i],
-                            previous: _previousFor(previous, labels[i]),
+                            previous: _previousFor(
+                              previousBySide[labels[i].side],
+                              labels[i],
+                            ),
                             formatters: formatters,
                             isRecord: recordSetIds.contains(detail.sets[i].id),
                             activeKind: activeTarget?.setId == detail.sets[i].id
@@ -690,6 +705,20 @@ class _ExerciseCard extends ConsumerWidget {
         if (seconds != null) {
           await controller.setExerciseRest(detail.workoutExercise.id, seconds);
         }
+
+      case 'unilateral':
+        final unilateral = !detail.workoutExercise.isUnilateral;
+        await controller.setUnilateral(
+          detail.workoutExercise.id,
+          unilateral: unilateral,
+        );
+        if (!context.mounted) return;
+        showSnack(
+          context,
+          unilateral
+              ? 'Elke set staat nu twee keer: links en rechts'
+              : 'Terug naar één set voor beide handen',
+        );
 
       case 'fill':
         final filled = await controller.fillRemainingSets(
@@ -921,6 +950,14 @@ class _CardHeader extends StatelessWidget {
               const PopupMenuItem(
                 value: 'rest',
                 child: Text('Rusttimer instellen'),
+              ),
+              PopupMenuItem(
+                value: 'unilateral',
+                child: Text(
+                  detail.workoutExercise.isUnilateral
+                      ? 'Terug naar twee handen'
+                      : 'Eén arm per keer',
+                ),
               ),
               const PopupMenuItem(
                 value: 'fill',

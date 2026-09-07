@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/db/seeder.dart';
@@ -32,6 +33,80 @@ void main() {
     expect(second, 0);
     expect(await db.exercisesDao.countExercises(), first);
     expect((await db.settingsDao.getSettings()).exercisesSeeded, isTrue);
+  });
+
+  group('a correction to the catalogue', () {
+    /// The plank, as it was typed before holds were recognised.
+    Future<ExerciseRow> plank() async => (await db.exercisesDao.getExercises(
+      const ExerciseFilter(query: 'Plank'),
+    )).firstWhere((e) => e.name == 'Plank');
+
+    test('a hold is logged in seconds, not in reps', () async {
+      await ExerciseSeeder(db).seedIfNeeded();
+
+      expect(
+        ExerciseCategory.fromWire((await plank()).category),
+        ExerciseCategory.duration,
+      );
+    });
+
+    test('reaches a database that was seeded before it', () async {
+      final seeder = ExerciseSeeder(db);
+      await seeder.seedIfNeeded();
+
+      // Put the database back the way an older install left it: the plank
+      // typed as a body-weight exercise, and no catalogue version recorded.
+      await db.exercisesDao.updateExercise(
+        (await plank()).id,
+        const ExercisesTableCompanion(category: Value('bodyweight')),
+      );
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(seedVersion: Value(0)),
+      );
+
+      final changed = await seeder.refreshIfNeeded();
+
+      expect(changed, greaterThan(0));
+      expect((await plank()).category, 'duration');
+      expect((await db.settingsDao.getSettings()).seedVersion, kSeedVersion);
+    });
+
+    test('runs only once', () async {
+      final seeder = ExerciseSeeder(db);
+      await seeder.seedIfNeeded();
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(seedVersion: Value(0)),
+      );
+
+      expect(await seeder.refreshIfNeeded(), 0, reason: 'niets te corrigeren');
+      expect(await seeder.refreshIfNeeded(), 0);
+    });
+
+    test('leaves an exercise the user made alone', () async {
+      final seeder = ExerciseSeeder(db);
+      await seeder.seedIfNeeded();
+
+      await db.exercisesDao.insertExercise(
+        ExercisesTableCompanion.insert(
+          id: 'mine-1',
+          name: 'Mijn plank',
+          primaryMuscle: 'buik',
+          category: 'bodyweight',
+          createdAt: 0,
+          isCustom: const Value(true),
+        ),
+      );
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(seedVersion: Value(0)),
+      );
+
+      await seeder.refreshIfNeeded();
+
+      final mine = (await db.exercisesDao.getExercises(
+        const ExerciseFilter(customOnly: true),
+      )).single;
+      expect(mine.category, 'bodyweight');
+    });
   });
 
   test('muscle groups and equipment are in Dutch', () async {

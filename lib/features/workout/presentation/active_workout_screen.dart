@@ -391,26 +391,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(body: Center(child: Text('$error'))),
-      data: (loaded) {
-        // A set that was just swiped away is hidden, not gone: for a few
-        // seconds it is only missing from this list, so bringing it back costs
-        // nothing. The numbering follows the rows on screen, so the table
-        // closes up and opens again on its own.
-        final hidden = ref.watch(pendingSetDeletionsProvider);
-        final workout = loaded == null || hidden.isEmpty
-            ? loaded
-            : WorkoutDetail(
-                workout: loaded.workout,
-                exercises: [
-                  for (final exercise in loaded.exercises)
-                    exercise.copyWith(
-                      sets: exercise.sets
-                          .where((s) => !hidden.contains(s.id))
-                          .toList(),
-                    ),
-                ],
-              );
-
+      data: (workout) {
         if (workout == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Workout')),
@@ -716,8 +697,9 @@ class _ExerciseCard extends ConsumerWidget {
                             onFocus: (kind) => onFocus(detail.sets[i], kind),
                             onToggle: () => onToggle(detail.sets[i]),
                             onReset: () => onReset(detail.sets[i]),
-                            onDelete: () =>
-                                _removeSet(context, ref, detail.sets[i].id),
+                            onDelete: () => ref
+                                .read(workoutControllerProvider)
+                                .deleteSet(detail.sets[i].id),
                             onSetType: (type) => ref
                                 .read(workoutControllerProvider)
                                 .setSetType(detail.sets[i].id, type),
@@ -1176,24 +1158,6 @@ String? _cellValue(
 /// Three value columns and a wide history do not both fit on a phone, and the
 /// numbers you are typing matter more than the ones from last time.
 int previousFlex(List<KeypadFieldKind> columns) => columns.length > 2 ? 2 : 3;
-
-/// Swiping a set away, with a few seconds to take it back.
-void _removeSet(BuildContext context, WidgetRef ref, String setId) {
-  final pending = ref.read(pendingSetDeletionsProvider.notifier);
-  pending.schedule(setId);
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: const Text('Set verwijderd'),
-        duration: PendingSetDeletions.grace,
-        action: SnackBarAction(
-          label: 'Ongedaan maken',
-          onPressed: () => pending.undo(setId),
-        ),
-      ),
-    );
-}
 
 class _ColumnHeaders extends StatelessWidget {
   const _ColumnHeaders({required this.formatters, required this.columns});

@@ -84,6 +84,15 @@ class AppSettingsTable extends Table {
   BoolColumn get exercisesSeeded =>
       boolean().named('exercises_seeded').withDefault(const Constant(false))();
 
+  /// Which build of the bundled catalogue this database has been brought up
+  /// to, so a correction to it can reach a database that was seeded long ago.
+  ///
+  /// The catalogue is only imported once, on the very first start. Without
+  /// this, fixing a wrong exercise type in the asset would reach new installs
+  /// and no one else.
+  IntColumn get seedVersion =>
+      integer().named('seed_version').withDefault(const Constant(0))();
+
   /// Barbell weight in kg used by the plate calculator.
   RealColumn get barWeightKg =>
       real().named('bar_weight_kg').withDefault(const Constant(20.0))();

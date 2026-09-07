@@ -666,6 +666,18 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _seedVersionMeta = const VerificationMeta(
+    'seedVersion',
+  );
+  @override
+  late final GeneratedColumn<int> seedVersion = GeneratedColumn<int>(
+    'seed_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _barWeightKgMeta = const VerificationMeta(
     'barWeightKg',
   );
@@ -765,6 +777,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     locale,
     onboardingDone,
     exercisesSeeded,
+    seedVersion,
     barWeightKg,
     availablePlatesKg,
     defaultWarmupSets,
@@ -904,6 +917,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('seed_version')) {
+      context.handle(
+        _seedVersionMeta,
+        seedVersion.isAcceptableOrUnknown(
+          data['seed_version']!,
+          _seedVersionMeta,
+        ),
+      );
+    }
     if (data.containsKey('bar_weight_kg')) {
       context.handle(
         _barWeightKgMeta,
@@ -1035,6 +1057,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}exercises_seeded'],
       )!,
+      seedVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}seed_version'],
+      )!,
       barWeightKg: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}bar_weight_kg'],
@@ -1113,6 +1139,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// Set once the bundled exercise catalogue has been imported.
   final bool exercisesSeeded;
 
+  /// Which build of the bundled catalogue this database has been brought up
+  /// to, so a correction to it can reach a database that was seeded long ago.
+  ///
+  /// The catalogue is only imported once, on the very first start. Without
+  /// this, fixing a wrong exercise type in the asset would reach new installs
+  /// and no one else.
+  final int seedVersion;
+
   /// Barbell weight in kg used by the plate calculator.
   final double barWeightKg;
 
@@ -1148,6 +1182,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.locale,
     required this.onboardingDone,
     required this.exercisesSeeded,
+    required this.seedVersion,
     required this.barWeightKg,
     required this.availablePlatesKg,
     required this.defaultWarmupSets,
@@ -1180,6 +1215,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['locale'] = Variable<String>(locale);
     map['onboarding_done'] = Variable<bool>(onboardingDone);
     map['exercises_seeded'] = Variable<bool>(exercisesSeeded);
+    map['seed_version'] = Variable<int>(seedVersion);
     map['bar_weight_kg'] = Variable<double>(barWeightKg);
     map['available_plates_kg'] = Variable<String>(availablePlatesKg);
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
@@ -1213,6 +1249,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       locale: Value(locale),
       onboardingDone: Value(onboardingDone),
       exercisesSeeded: Value(exercisesSeeded),
+      seedVersion: Value(seedVersion),
       barWeightKg: Value(barWeightKg),
       availablePlatesKg: Value(availablePlatesKg),
       defaultWarmupSets: Value(defaultWarmupSets),
@@ -1246,6 +1283,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       locale: serializer.fromJson<String>(json['locale']),
       onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
       exercisesSeeded: serializer.fromJson<bool>(json['exercisesSeeded']),
+      seedVersion: serializer.fromJson<int>(json['seedVersion']),
       barWeightKg: serializer.fromJson<double>(json['barWeightKg']),
       availablePlatesKg: serializer.fromJson<String>(json['availablePlatesKg']),
       defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
@@ -1278,6 +1316,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'locale': serializer.toJson<String>(locale),
       'onboardingDone': serializer.toJson<bool>(onboardingDone),
       'exercisesSeeded': serializer.toJson<bool>(exercisesSeeded),
+      'seedVersion': serializer.toJson<int>(seedVersion),
       'barWeightKg': serializer.toJson<double>(barWeightKg),
       'availablePlatesKg': serializer.toJson<String>(availablePlatesKg),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
@@ -1304,6 +1343,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     String? locale,
     bool? onboardingDone,
     bool? exercisesSeeded,
+    int? seedVersion,
     double? barWeightKg,
     String? availablePlatesKg,
     int? defaultWarmupSets,
@@ -1331,6 +1371,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     locale: locale ?? this.locale,
     onboardingDone: onboardingDone ?? this.onboardingDone,
     exercisesSeeded: exercisesSeeded ?? this.exercisesSeeded,
+    seedVersion: seedVersion ?? this.seedVersion,
     barWeightKg: barWeightKg ?? this.barWeightKg,
     availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
@@ -1381,6 +1422,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       exercisesSeeded: data.exercisesSeeded.present
           ? data.exercisesSeeded.value
           : this.exercisesSeeded,
+      seedVersion: data.seedVersion.present
+          ? data.seedVersion.value
+          : this.seedVersion,
       barWeightKg: data.barWeightKg.present
           ? data.barWeightKg.value
           : this.barWeightKg,
@@ -1421,6 +1465,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('locale: $locale, ')
           ..write('onboardingDone: $onboardingDone, ')
           ..write('exercisesSeeded: $exercisesSeeded, ')
+          ..write('seedVersion: $seedVersion, ')
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
@@ -1449,6 +1494,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     locale,
     onboardingDone,
     exercisesSeeded,
+    seedVersion,
     barWeightKg,
     availablePlatesKg,
     defaultWarmupSets,
@@ -1476,6 +1522,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.locale == this.locale &&
           other.onboardingDone == this.onboardingDone &&
           other.exercisesSeeded == this.exercisesSeeded &&
+          other.seedVersion == this.seedVersion &&
           other.barWeightKg == this.barWeightKg &&
           other.availablePlatesKg == this.availablePlatesKg &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
@@ -1501,6 +1548,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String> locale;
   final Value<bool> onboardingDone;
   final Value<bool> exercisesSeeded;
+  final Value<int> seedVersion;
   final Value<double> barWeightKg;
   final Value<String> availablePlatesKg;
   final Value<int> defaultWarmupSets;
@@ -1525,6 +1573,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.locale = const Value.absent(),
     this.onboardingDone = const Value.absent(),
     this.exercisesSeeded = const Value.absent(),
+    this.seedVersion = const Value.absent(),
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
@@ -1550,6 +1599,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.locale = const Value.absent(),
     this.onboardingDone = const Value.absent(),
     this.exercisesSeeded = const Value.absent(),
+    this.seedVersion = const Value.absent(),
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
@@ -1576,6 +1626,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? locale,
     Expression<bool>? onboardingDone,
     Expression<bool>? exercisesSeeded,
+    Expression<int>? seedVersion,
     Expression<double>? barWeightKg,
     Expression<String>? availablePlatesKg,
     Expression<int>? defaultWarmupSets,
@@ -1603,6 +1654,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (locale != null) 'locale': locale,
       if (onboardingDone != null) 'onboarding_done': onboardingDone,
       if (exercisesSeeded != null) 'exercises_seeded': exercisesSeeded,
+      if (seedVersion != null) 'seed_version': seedVersion,
       if (barWeightKg != null) 'bar_weight_kg': barWeightKg,
       if (availablePlatesKg != null) 'available_plates_kg': availablePlatesKg,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
@@ -1632,6 +1684,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String>? locale,
     Value<bool>? onboardingDone,
     Value<bool>? exercisesSeeded,
+    Value<int>? seedVersion,
     Value<double>? barWeightKg,
     Value<String>? availablePlatesKg,
     Value<int>? defaultWarmupSets,
@@ -1657,6 +1710,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       locale: locale ?? this.locale,
       onboardingDone: onboardingDone ?? this.onboardingDone,
       exercisesSeeded: exercisesSeeded ?? this.exercisesSeeded,
+      seedVersion: seedVersion ?? this.seedVersion,
       barWeightKg: barWeightKg ?? this.barWeightKg,
       availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
@@ -1719,6 +1773,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (exercisesSeeded.present) {
       map['exercises_seeded'] = Variable<bool>(exercisesSeeded.value);
     }
+    if (seedVersion.present) {
+      map['seed_version'] = Variable<int>(seedVersion.value);
+    }
     if (barWeightKg.present) {
       map['bar_weight_kg'] = Variable<double>(barWeightKg.value);
     }
@@ -1766,6 +1823,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('locale: $locale, ')
           ..write('onboardingDone: $onboardingDone, ')
           ..write('exercisesSeeded: $exercisesSeeded, ')
+          ..write('seedVersion: $seedVersion, ')
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
@@ -8144,6 +8202,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String> locale,
       Value<bool> onboardingDone,
       Value<bool> exercisesSeeded,
+      Value<int> seedVersion,
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
       Value<int> defaultWarmupSets,
@@ -8170,6 +8229,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String> locale,
       Value<bool> onboardingDone,
       Value<bool> exercisesSeeded,
+      Value<int> seedVersion,
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
       Value<int> defaultWarmupSets,
@@ -8261,6 +8321,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get exercisesSeeded => $composableBuilder(
     column: $table.exercisesSeeded,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get seedVersion => $composableBuilder(
+    column: $table.seedVersion,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8384,6 +8449,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get seedVersion => $composableBuilder(
+    column: $table.seedVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get barWeightKg => $composableBuilder(
     column: $table.barWeightKg,
     builder: (column) => ColumnOrderings(column),
@@ -8498,6 +8568,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get seedVersion => $composableBuilder(
+    column: $table.seedVersion,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get barWeightKg => $composableBuilder(
     column: $table.barWeightKg,
     builder: (column) => column,
@@ -8584,6 +8659,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> locale = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
                 Value<bool> exercisesSeeded = const Value.absent(),
+                Value<int> seedVersion = const Value.absent(),
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
@@ -8608,6 +8684,7 @@ class $$AppSettingsTableTableTableManager
                 locale: locale,
                 onboardingDone: onboardingDone,
                 exercisesSeeded: exercisesSeeded,
+                seedVersion: seedVersion,
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
                 defaultWarmupSets: defaultWarmupSets,
@@ -8634,6 +8711,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> locale = const Value.absent(),
                 Value<bool> onboardingDone = const Value.absent(),
                 Value<bool> exercisesSeeded = const Value.absent(),
+                Value<int> seedVersion = const Value.absent(),
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
@@ -8658,6 +8736,7 @@ class $$AppSettingsTableTableTableManager
                 locale: locale,
                 onboardingDone: onboardingDone,
                 exercisesSeeded: exercisesSeeded,
+                seedVersion: seedVersion,
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
                 defaultWarmupSets: defaultWarmupSets,

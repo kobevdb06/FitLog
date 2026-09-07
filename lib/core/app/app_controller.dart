@@ -170,7 +170,11 @@ class AppController extends _$AppController {
 
       final settings = await db.settingsDao.ensureInitialized();
       _autoLockSeconds = settings.autoLockSeconds;
-      await ExerciseSeeder(db).seedIfNeeded();
+      final seeder = ExerciseSeeder(db);
+      await seeder.seedIfNeeded();
+      // A database seeded before a catalogue correction has to be brought up
+      // to it; the import itself only ever runs once.
+      await seeder.refreshIfNeeded();
 
       // Files and rows can drift apart across a restore or a crash mid-import.
       // Reconciling here keeps the photo grid honest and stops dead files from

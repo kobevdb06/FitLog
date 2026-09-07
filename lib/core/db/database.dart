@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -146,6 +146,12 @@ class AppDatabase extends _$AppDatabase {
           // either done or simply never got to, and neither is a skip, which
           // is what the default of false says.
           await m.addColumn(workoutSetsTable, workoutSetsTable.isSkipped);
+        }
+        if (from < 12) {
+          // Which build of the catalogue this database holds. Zero for
+          // everything that exists, which is exactly right: those were seeded
+          // before corrections were tracked, so they all need the first pass.
+          await m.addColumn(appSettingsTable, appSettingsTable.seedVersion);
         }
       });
 

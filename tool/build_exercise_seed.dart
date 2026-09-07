@@ -60,11 +60,17 @@ const Map<String, String> equipmentTranslations = {
   'other': 'overig',
 };
 
-/// Maps the source's equipment plus category onto the FitLog category, which
-/// decides which input columns a set shows.
-String deriveCategory(String? equipment, String? sourceCategory) {
+/// Maps the source's equipment, category and force onto the FitLog category,
+/// which decides which input columns a set shows.
+///
+/// [force] is what the source calls the direction of the work: `push`, `pull`,
+/// or `static` for something you hold still. A hold is counted in seconds, not
+/// in repetitions - a plank has no reps - so every static exercise becomes a
+/// timed one, whatever equipment it uses.
+String deriveCategory(String? equipment, String? sourceCategory, String? force) {
   if (sourceCategory == 'cardio') return 'cardio';
   if (sourceCategory == 'stretching') return 'duration';
+  if (force == 'static') return 'duration';
 
   switch (equipment) {
     case 'barbell':
@@ -154,7 +160,11 @@ Future<void> main(List<String> args) async {
             .map(translateMuscle),
       ],
       'equipment': equipment,
-      'category': deriveCategory(equipmentRaw, item['category'] as String?),
+      'category': deriveCategory(
+        equipmentRaw,
+        item['category'] as String?,
+        item['force'] as String?,
+      ),
       'instructions': (instructions == null || instructions.isEmpty)
           ? null
           : instructions,

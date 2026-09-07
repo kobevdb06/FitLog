@@ -2935,7 +2935,7 @@
         "onderarmen"
       ],
       "equipment": "overig",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "In the crucifix, you statically hold weights out to the side for time. While the event can be practiced using dumbbells, it is best to practice with one of the various implements used, such as axes and hammers, as it feels different.\n\nBegin standing, and raise your arms out to the side holding the implements. Your arms should be parallel to the ground. In competition, judges or sensors are used to let you know when you break parallel. Hold for as long as you can. Typically, the weights should be heavy enough that you fail in 30-60 seconds.",
       "images": [
         "Crucifix/0.jpg",
@@ -3441,7 +3441,7 @@
         "hamstrings"
       ],
       "equipment": "fitnessbal",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "Lie facedown on top of an exercise ball.\n\nWhile resting on your stomach on the ball, walk your hands forward along the floor and lift your legs, extending your elbows and knees.",
       "images": [
         "Downward_Facing_Balance/0.jpg",
@@ -5610,7 +5610,7 @@
         "triceps"
       ],
       "equipment": "lichaamsgewicht",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "While either seating or standing, bend your arms at a 90-degree angle and place the palms of your hands together in front of your chest. Tip: Your hands should be open with the palms together and fingers facing forward (perpendicular to your torso).\n\nPush both hands against each other as you contract your chest. Start with slow tension and increase slowly. Keep breathing normally as you execute this contraction.\n\nHold for the recommended number of seconds.\n\nNow release the tension slowly.\n\nRest for the recommended amount of time and repeat.",
       "images": [
         "Isometric_Chest_Squeezes/0.jpg",
@@ -5623,7 +5623,7 @@
       "primary_muscle": "nek",
       "secondary_muscles": [],
       "equipment": "lichaamsgewicht",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "With your head and neck in a neutral position (normal position with head erect facing forward), place both of your hands on the front side of your head.\n\nNow gently push forward as you contract the neck muscles but resisting any movement of your head. Start with slow tension and increase slowly. Keep breathing normally as you execute this contraction.\n\nHold for the recommended number of seconds.\n\nNow release the tension slowly.\n\nRest for the recommended amount of time and repeat with your hands placed on the back side of your head.",
       "images": [
         "Isometric_Neck_Exercise_-_Front_And_Back/0.jpg",
@@ -5636,7 +5636,7 @@
       "primary_muscle": "nek",
       "secondary_muscles": [],
       "equipment": "lichaamsgewicht",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "With your head and neck in a neutral position (normal position with head erect facing forward), place your left hand on the left side of your head.\n\nNow gently push towards the left as you contract the left neck muscles but resisting any movement of your head. Start with slow tension and increase slowly. Keep breathing normally as you execute this contraction.\n\nHold for the recommended number of seconds.\n\nNow release the tension slowly.\n\nRest for the recommended amount of time and repeat with your right hand placed on the right side of your head.",
       "images": [
         "Isometric_Neck_Exercise_-_Sides/0.jpg",
@@ -8451,7 +8451,7 @@
       "primary_muscle": "buik",
       "secondary_muscles": [],
       "equipment": "lichaamsgewicht",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "Get into a prone position on the floor, supporting your weight on your toes and your forearms. Your arms are bent and directly below the shoulder.\n\nKeep your body straight at all times, and hold this position as long as possible. To increase difficulty, an arm or leg can be raised.",
       "images": [
         "Plank/0.jpg",
@@ -8464,7 +8464,7 @@
       "primary_muscle": "onderarmen",
       "secondary_muscles": [],
       "equipment": "overig",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "Grab two wide-rimmed plates and put them together with the smooth sides facing outward\n\nUse your fingers to grip the outside part of the plate and your thumb for the other side thus holding both plates together. This is the starting position.\n\nSqueeze the plate with your fingers and thumb. Hold this position for as long as you can.\n\nRepeat for the recommended amount of sets prescribed in your program.\n\nSwitch arms and repeat the movements.",
       "images": [
         "Plate_Pinch/0.jpg",
@@ -8748,7 +8748,7 @@
       "primary_muscle": "hamstrings",
       "secondary_muscles": [],
       "equipment": null,
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "You will need a partner for this exercise. Lay face down with your legs straight. Your assistant will place their hand on your heel.\n\nTo begin, flex the knee to curl your leg up. Your partner should provide resistance, starting light and increasing the pressure as the movement is completed. Communicate with your partner to monitor appropriate resistance levels.\n\nPause at the top, returning the leg to the starting position as your partner provides resistance going the other direction.",
       "images": [
         "Prone_Manual_Hamstring/0.jpg",
@@ -10346,7 +10346,7 @@
         "schouders"
       ],
       "equipment": "lichaamsgewicht",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": null,
       "images": [
         "Side_Bridge/0.jpg",
@@ -12126,7 +12126,7 @@
         "biceps"
       ],
       "equipment": "overig",
-      "category": "bodyweight",
+      "category": "duration",
       "instructions": "To begin, stand straight while holding a weight plate by the ridge at arm's length in each hand using a neutral grip (palms facing in). You feet should be shoulder width apart from each other. This will be your starting position.\n\nLower the plates until the fingers are nearly extended but can still hold weights. Inhale as you lower the plates.\n\nNow raise the plates back to the starting position as you exhale by closing your hands.\n\nRepeat for the recommended amount of repetitions prescribed in your program.",
       "images": [
         "Standing_Olympic_Plate_Hand_Squeeze/0.jpg",

@@ -10,6 +10,15 @@ import 'database.dart';
 /// runtime.
 const String kExerciseSeedAsset = 'assets/data/exercises.json';
 
+/// Bumped whenever the bundled catalogue is corrected in a way that has to
+/// reach databases that were seeded before the correction.
+///
+/// 1: exercises you hold still - the plank, the side bridge, the isometric
+///    neck work - were typed as body-weight exercises and so asked for
+///    kilograms and repetitions. A hold has neither; it is a number of
+///    seconds.
+const int kSeedVersion = 1;
+
 class ExerciseSeeder {
   const ExerciseSeeder(this.db);
 
@@ -28,9 +37,57 @@ class ExerciseSeeder {
     final inserted = await seedFromJson(raw);
 
     await db.settingsDao.updateSettings(
-      const AppSettingsTableCompanion(exercisesSeeded: Value(true)),
+      const AppSettingsTableCompanion(
+        exercisesSeeded: Value(true),
+        // Freshly imported, so it is already the newest catalogue.
+        seedVersion: Value(kSeedVersion),
+      ),
     );
     return inserted;
+  }
+
+  /// Brings an already-seeded catalogue up to [kSeedVersion].
+  ///
+  /// Only the exercise *type* is rewritten, and only for exercises that came
+  /// from the catalogue. That is the one field a correction has ever needed,
+  /// and keeping the pass that narrow means it cannot touch a name, an
+  /// instruction, a picture, or anything the user made themselves.
+  ///
+  /// Returns how many exercises were re-typed.
+  Future<int> refreshIfNeeded({String assetKey = kExerciseSeedAsset}) async {
+    final settings = await db.settingsDao.ensureInitialized();
+    if (!settings.exercisesSeeded) return 0;
+    if (settings.seedVersion >= kSeedVersion) return 0;
+
+    final raw = await rootBundle.loadString(assetKey);
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final list = (decoded['exercises'] as List).cast<Map<String, dynamic>>();
+
+    final existing = {
+      for (final row in await db.exercisesDao.getExercises(
+        const ExerciseFilter(includeArchived: true),
+      ))
+        row.id: row,
+    };
+
+    var changed = 0;
+    await db.transaction(() async {
+      for (final entry in list) {
+        final id = entry['id'] as String;
+        final category = entry['category'] as String;
+        final row = existing[id];
+        if (row == null || row.isCustom || row.category == category) continue;
+        await db.exercisesDao.updateExercise(
+          id,
+          ExercisesTableCompanion(category: Value(category)),
+        );
+        changed++;
+      }
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(seedVersion: Value(kSeedVersion)),
+      );
+    });
+    return changed;
   }
 
   /// Parses [raw] and writes every exercise. Exposed for tests and for the

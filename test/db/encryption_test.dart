@@ -132,7 +132,7 @@ void main() {
     final db = AppDatabase(
       NativeDatabase.memory(),
     );
-    expect(db.schemaVersion, 11);
+    expect(db.schemaVersion, 12);
     await db.settingsDao.ensureInitialized();
     final tables = await db
         .customSelect(

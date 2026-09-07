@@ -276,36 +276,13 @@ void main() {
     expect(find.text('TIJD'), findsOneWidget);
   });
 
-  testWidgets('a swiped set can be brought back', (tester) async {
+  testWidgets('a swiped set is gone', (tester) async {
     await pumpScreen(tester);
-    expect(find.byType(SetRow), findsOneWidget);
 
     await tester.drag(find.byType(SetRow), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
-    // Gone from the table, still in the database.
     expect(find.byType(SetRow), findsNothing);
-    expect(await db.workoutsDao.getSet(setId), isNotNull);
-
-    await tester.tap(find.text('Ongedaan maken'));
-    await settle(tester);
-
-    expect(find.byType(SetRow), findsOneWidget);
-    final restored = await db.workoutsDao.getSet(setId);
-    expect(restored!.weightKg, 100, reason: 'niets is ooit aangeraakt');
-  });
-
-  testWidgets('a swiped set is really deleted once the moment passes', (
-    tester,
-  ) async {
-    await pumpScreen(tester);
-
-    await tester.drag(find.byType(SetRow), const Offset(-500, 0));
-    await tester.pumpAndSettle();
-
-    await tester.pump(PendingSetDeletions.grace);
-    await settle(tester);
-
     expect(await db.workoutsDao.getSet(setId), isNull);
   });
 

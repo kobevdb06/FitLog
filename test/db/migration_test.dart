@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 11);
+    expect(raw.select('PRAGMA user_version').first.values.first, 12);
     raw.close();
   });
 
@@ -145,6 +145,9 @@ void main() {
     // v11 added skipping a set on purpose. Nothing that predates it was
     // skipped: it was either done or simply never got to.
     expect(workout.exercises.single.sets.single.isSkipped, isFalse);
+    // v12 started tracking which build of the catalogue a database holds.
+    // Zero means "seeded before corrections were tracked", which is true.
+    expect((await db.settingsDao.getSettings()).seedVersion, 0);
 
     expect(await db.recordsDao.measurements(), hasLength(1));
     expect(await db.recordsDao.photos(), hasLength(1));
@@ -221,7 +224,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 11);
+    expect(db.schemaVersion, 12);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

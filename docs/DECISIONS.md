@@ -761,17 +761,60 @@ vóór deze verandering zetten gewichten op van alles; die kolom verbergen zou
 het getal onzichtbaar maken terwijl het in de database blijft staan, zonder
 manier om het te corrigeren.
 
-## 56. Een set wegvegen wacht vijf seconden
+## 56. Een set wegvegen verwijdert meteen
 
-Vegen verwijderde meteen, zonder weg terug - en de nummering eronder schoof
-direct op, dus je zag niet eens goed wát er weg was.
+Er heeft kort een undo-venster van vijf seconden op gezeten. Dat is er op
+verzoek weer uit: een set terugzetten is één druk op "Set toevoegen", dus de
+balk onderaan het scherm koste meer aandacht dan hij waard was.
 
-Nu wordt de rij vijf seconden lang alleen *verborgen*; in de database is er nog
-niets gebeurd. Dezelfde vorm als het verwijderen van een sessie uit je
-geschiedenis, en om dezelfde reden: undo die niets terugzet kan ook niet half
-mislukken. Verbergen is genoeg om het verwijderd te laten lijken, want de
-setnummers worden afgeleid uit de rijen op het scherm - ze sluiten zich vanzelf
-en gaan weer open als de set terugkomt.
+Voor een sessie in je geschiedenis blijft de undo wél staan. Daar is het
+verschil groot: een weggegooide workout is een uur werk en tientallen rijen,
+een set is één regel.
 
-De workout afronden ruimt eerst alles op wat nog in dat venster staat. Een rij
-die het scherm al niet meer toont mag niet alsnog in je geschiedenis opduiken.
+## 57. Een houding wordt in seconden gelogd, niet in reps
+
+De plank stond in de catalogus als lichaamsgewichtoefening en vroeg dus om
+kilo's en herhalingen. Een plank heeft geen herhalingen.
+
+De bron (free-exercise-db) markeert zulke oefeningen met `force: static`. Die
+worden nu allemaal `duration`. Het raakt tien oefeningen: plank, side bridge,
+de twee isometrische nekoefeningen, isometric chest squeezes, plate pinch,
+standing olympic plate hand squeeze, crucifix, downward facing balance en prone
+manual hamstring. De rest van de catalogus verandert geen letter, en de ids
+blijven gelijk omdat ze uit een vaste namespace komen.
+
+Bij drie ervan houd je ook gewicht vast (plate pinch, crucifix). Die krijgen nu
+alleen een tijdkolom. Tijd is voor alledrie meer waar dan reps, maar
+"gewicht én tijd" bestaat niet in het model; dat zou een vijfde categorie
+vragen.
+
+## 58. Een correctie aan de catalogus moet ook bestaande installaties bereiken
+
+De catalogus wordt één keer geïmporteerd, bij de allereerste start, bewaakt
+door `exercises_seeded`. Het asset repareren bereikt daardoor alleen nieuwe
+installaties - iedereen die de app al had zou de plank in kilo's blijven
+loggen.
+
+`app_settings.seed_version` houdt daarom bij op welke bouw van de catalogus een
+database staat. Staat hij achter, dan wordt bij het opstarten alléén het
+*type* van catalogusoefeningen bijgewerkt. Zo smal gehouden met opzet: die ene
+kolom is het enige dat ooit gecorrigeerd moest worden, en de pas kan zo geen
+naam, uitleg, foto of zelfgemaakte oefening raken.
+
+## 59. Zijwaarts vegen wisselt van tabblad
+
+Vegen wisselt nu van tabblad, zoals in de fotoapps. Een snelle flik telt op
+zichzelf; een trage sleep moet een kwart van het scherm afleggen. Zo doet een
+trilling tijdens het scrollen niets, en werkt een bewuste trage sleep wel.
+
+Het schuift niet mee onder je vinger. Dat zou een `PageView` over de vier
+takken vragen, en die vier takken hebben elk hun eigen genavigeerde pagina's -
+van een routinedetail wegvegen naar een ander tabblad is geen beweging die
+ergens op slaat. De sprong is dezelfde als die van een tik op de balk.
+
+Het einde loopt niet rond. Voorbij het laatste tabblad zit niets, en van het
+laatste naar het eerste glijden zou aanvoelen als een fout.
+
+Wat zelf zijwaarts scrollt - een grafiek, een rij chips, een sessie die je
+wegveegt in je geschiedenis - pakt het gebaar eerst. Die blijven werken zoals
+ze werkten.

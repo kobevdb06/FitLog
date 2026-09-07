@@ -69,28 +69,17 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
               AppSettingsTableCompanion(restSoundEnabled: Value(value)),
             ),
           ),
-          ListTile(
-            title: const Text('Warming-up sets bij een nieuwe oefening'),
-            subtitle: Text(
-              settings.defaultWarmupSets == 0
-                  ? 'Geen; je voegt ze zelf toe'
-                  : '${settings.defaultWarmupSets} bovenaan elke nieuwe '
-                        'oefening',
-            ),
-            trailing: SegmentedButton<int>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 0, label: Text('0')),
-                ButtonSegment(value: 1, label: Text('1')),
-                ButtonSegment(value: 2, label: Text('2')),
-                ButtonSegment(value: 3, label: Text('3')),
-                ButtonSegment(value: 4, label: Text('4')),
-                ButtonSegment(value: 5, label: Text('5')),
-              ],
-              selected: {settings.defaultWarmupSets},
-              onSelectionChanged: (s) => update(
-                AppSettingsTableCompanion(defaultWarmupSets: Value(s.first)),
-              ),
+          _ChoiceTile<int>(
+            title: 'Warming-up sets bij een nieuwe oefening',
+            subtitle: settings.defaultWarmupSets == 0
+                ? 'Geen; je voegt ze zelf toe'
+                : '${settings.defaultWarmupSets} bovenaan elke nieuwe '
+                      'oefening',
+            values: const [0, 1, 2, 3, 4, 5],
+            label: (v) => '$v',
+            selected: settings.defaultWarmupSets,
+            onChanged: (value) => update(
+              AppSettingsTableCompanion(defaultWarmupSets: Value(value)),
             ),
           ),
           const SectionHeader('Feedback'),
@@ -108,49 +97,28 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
                 update(AppSettingsTableCompanion(prAlertEnabled: Value(value))),
           ),
           const SectionHeader('PR-pogingen'),
-          ListTile(
-            title: const Text('Opwarmsets in de ladder'),
-            subtitle: Text(
-              '${settings.prDefaultWarmupSets} sets tussen 40% en 90% van je '
-              'doel',
-            ),
-            trailing: SegmentedButton<int>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 2, label: Text('2')),
-                ButtonSegment(value: 4, label: Text('4')),
-                ButtonSegment(value: 6, label: Text('6')),
-                ButtonSegment(value: 8, label: Text('8')),
-              ],
-              selected: {
-                const [2, 4, 6, 8].contains(settings.prDefaultWarmupSets)
-                    ? settings.prDefaultWarmupSets
-                    : 4,
-              },
-              onSelectionChanged: (s) => update(
-                AppSettingsTableCompanion(
-                  prDefaultWarmupSets: Value(s.first),
-                ),
-              ),
+          _ChoiceTile<int>(
+            title: 'Opwarmsets in de ladder',
+            subtitle:
+                '${settings.prDefaultWarmupSets} sets tussen 40% en 90% van '
+                'je doel',
+            values: const [2, 4, 6, 8],
+            label: (v) => '$v',
+            selected: const [2, 4, 6, 8].contains(settings.prDefaultWarmupSets)
+                ? settings.prDefaultWarmupSets
+                : 4,
+            onChanged: (value) => update(
+              AppSettingsTableCompanion(prDefaultWarmupSets: Value(value)),
             ),
           ),
-          ListTile(
-            title: const Text('Extra pogingen bij succes'),
-            subtitle: const Text('Aanbod na een geslaagde poging'),
-            trailing: SegmentedButton<int>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 0, label: Text('0')),
-                ButtonSegment(value: 1, label: Text('1')),
-                ButtonSegment(value: 2, label: Text('2')),
-                ButtonSegment(value: 3, label: Text('3')),
-              ],
-              selected: {settings.prDefaultExtraAttempts.clamp(0, 3)},
-              onSelectionChanged: (s) => update(
-                AppSettingsTableCompanion(
-                  prDefaultExtraAttempts: Value(s.first),
-                ),
-              ),
+          _ChoiceTile<int>(
+            title: 'Extra pogingen bij succes',
+            subtitle: 'Aanbod na een geslaagde poging',
+            values: const [0, 1, 2, 3],
+            label: (v) => '$v',
+            selected: settings.prDefaultExtraAttempts.clamp(0, 3),
+            onChanged: (value) => update(
+              AppSettingsTableCompanion(prDefaultExtraAttempts: Value(value)),
             ),
           ),
           const SectionHeader('Eenheden'),
@@ -348,6 +316,78 @@ class _NotificationWarning extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// A setting whose choices sit under its name instead of beside it.
+///
+/// A ListTile hands its trailing widget as much width as it asks for and
+/// squeezes the title into whatever is left. Six segments leave so little that
+/// the title wrapped to one letter per line - a column of single characters
+/// down the screen.
+///
+/// Putting the choices on their own line means no number of options, no font
+/// size and no translation can do that again.
+class _ChoiceTile<T> extends StatelessWidget {
+  const _ChoiceTile({
+    required this.title,
+    this.subtitle,
+    required this.values,
+    required this.label,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String? subtitle;
+  final List<T> values;
+  final String Function(T) label;
+  final T selected;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: theme.textTheme.bodyLarge),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          // Scrollable as a last resort: a narrow phone with a large system
+          // font can still run out of room, and a row that scrolls beats a row
+          // that overflows.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<T>(
+              showSelectedIcon: false,
+              segments: [
+                for (final value in values)
+                  ButtonSegment(value: value, label: Text(label(value))),
+              ],
+              selected: {selected},
+              onSelectionChanged: (s) => onChanged(s.first),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

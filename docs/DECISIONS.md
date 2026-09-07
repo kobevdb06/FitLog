@@ -696,3 +696,44 @@ kant die het toen had.
 De gewichten reizen niet mee. Wat je met twee handen tilde zegt niets over wat
 je met één hand tilt, dus de nieuwe rijen beginnen leeg en de VORIGE-kolom vult
 ze uit de juiste geschiedenis.
+
+## 52. Een overgeslagen set is een eigen toestand, geen settype
+
+De setknop kent er nu drie: leeg, gedaan, overgeslagen. Dat laatste staat in
+een eigen kolom `is_skipped`, niet in `set_type`.
+
+Overslaan is namelijk geen soort set. Een warming-up die je overslaat is nog
+steeds een warming-up, en zou ik het in `set_type` proppen dan verlies ik het
+type dat de set had én verspringt de nummering eronder - `labelSets` telt op
+type. Twee losse velden houden de twee vragen uit elkaar: wát voor set is dit,
+en wat is ermee gebeurd.
+
+Het onderscheid dat het oplevert: leeg betekent "hier ben ik niet aan
+toegekomen", overgeslagen betekent "die heb ik bewust laten staan". Alleen het
+tweede is de moeite waard om mee te nemen, en daarom zegt de VORIGE-kolom de
+volgende keer "Geskipt" in plaats van een streepje.
+
+## 53. De tweede tik skipt, de lange druk wist
+
+Vroeger was de tweede tik "toch niet gedaan". Dat is nu de derde. Wie zich
+vergist heeft moet dus twee keer tikken in plaats van één, en dat is een echte
+verslechtering voor de meest voorkomende correctie.
+
+Daarom zit er een lange druk op de knop die in één gebaar terug naar leeg gaat,
+vanuit beide andere toestanden. De cyclus blijft daarmee te doorlopen met één
+vinger, en het ongeluk blijft één gebaar om terug te draaien.
+
+De rusttimer blijft ongemoeid bij het skippen. Hij kan van een héél andere set
+lopen, en die stilzetten omdat je elders een set wegstreept zou een timer
+afbreken waar niets mis mee is.
+
+## 54. Afronden mag een overgeslagen set nooit weggooien
+
+"Verwijderen" bij het afronden wist elke set die niet is afgevinkt. Een
+overgeslagen set is niet afgevinkt, dus die viel daar precies onder - en
+daarmee zou het hele idee in rook opgaan voordat het ooit in de geschiedenis
+belandde. De DELETE kijkt nu ook naar `is_skipped = 0`.
+
+Om dezelfde reden telt hij niet mee in de vraag "x sets zijn niet ingevuld":
+je hebt er al iets over gezegd, dus er valt niets meer over te vragen. En het
+omschakelen naar één arm per keer laat hem staan, net als een afgevinkte set.

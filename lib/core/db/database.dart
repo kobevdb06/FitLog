@@ -34,19 +34,13 @@ part 'database.drift.dart';
     BodyMeasurementsTable,
     ProgressPhotosTable,
   ],
-  daos: [
-    SettingsDao,
-    ExercisesDao,
-    RoutinesDao,
-    WorkoutsDao,
-    RecordsDao,
-  ],
+  daos: [SettingsDao, ExercisesDao, RoutinesDao, WorkoutsDao, RecordsDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -146,6 +140,12 @@ class AppDatabase extends _$AppDatabase {
             workoutExercisesTable.isUnilateral,
           );
           await m.addColumn(workoutSetsTable, workoutSetsTable.side);
+        }
+        if (from < 11) {
+          // Sets you deliberately skipped. Additive: every set that exists was
+          // either done or simply never got to, and neither is a skip, which
+          // is what the default of false says.
+          await m.addColumn(workoutSetsTable, workoutSetsTable.isSkipped);
         }
       });
 

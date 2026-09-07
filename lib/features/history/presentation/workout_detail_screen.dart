@@ -323,7 +323,7 @@ class _EditableSetRow extends StatelessWidget {
             if (isRecord) const PrBadge(compact: true),
             if (!row.isCompleted)
               Text(
-                'niet afgevinkt',
+                row.isSkipped ? 'geskipt' : 'niet afgevinkt',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

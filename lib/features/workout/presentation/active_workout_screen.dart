@@ -176,6 +176,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     setState(() => _target = null);
   }
 
+  /// Straight back to an empty set, whichever state it was in.
+  Future<void> _resetSet(WorkoutSetRow row, AppSettingsRow? settings) async {
+    if (!row.isCompleted && !row.isSkipped) return;
+    unawaited(_feedback(settings).setUncompleted());
+    await ref.read(workoutControllerProvider).uncompleteSet(row.id);
+  }
+
   WorkoutSetRow? _findSet(WorkoutDetail workout, String setId) {
     for (final exercise in workout.exercises) {
       for (final s in exercise.sets) {
@@ -187,13 +194,25 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   // --- Set completion -------------------------------------------------------
 
+  /// One button, three states: empty, done, skipped, and round again.
+  ///
+  /// The second tap used to clear the tick. It now marks the set as one you
+  /// deliberately left out, which is a thing worth keeping - the next session
+  /// says "Geskipt" in that row instead of showing a dash. Clearing is still
+  /// one gesture away: a long press, see [_resetSet].
   Future<void> _toggleSet(WorkoutSetRow row, AppSettingsRow? settings) async {
     final controller = ref.read(workoutControllerProvider);
     final feedback = _feedback(settings);
 
-    if (row.isCompleted) {
+    if (row.isSkipped) {
       unawaited(feedback.setUncompleted());
       await controller.uncompleteSet(row.id);
+      return;
+    }
+
+    if (row.isCompleted) {
+      unawaited(feedback.setUncompleted());
+      await controller.skipSet(row.id);
       return;
     }
 
@@ -435,8 +454,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                   slivers: [
                     SliverReorderableList(
                       itemCount: workout.exercises.length,
-                      onReorderItem: (from, to) =>
-                          _reorder(workout, from, to),
+                      onReorderItem: (from, to) => _reorder(workout, from, to),
                       itemBuilder: (context, index) {
                         final exercise = workout.exercises[index];
                         return Padding(
@@ -457,6 +475,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                             onFocus: (row, kind) =>
                                 _focus(row, kind, formatters),
                             onToggle: (row) => _toggleSet(row, settings),
+                            onReset: (row) => _resetSet(row, settings),
                           ),
                         );
                       },
@@ -529,6 +548,7 @@ class _ExerciseCard extends ConsumerWidget {
     required this.activeTarget,
     required this.onFocus,
     required this.onToggle,
+    required this.onReset,
   });
 
   final WorkoutDetail workout;
@@ -541,6 +561,7 @@ class _ExerciseCard extends ConsumerWidget {
   final _KeypadTarget? activeTarget;
   final void Function(WorkoutSetRow, KeypadFieldKind) onFocus;
   final void Function(WorkoutSetRow) onToggle;
+  final void Function(WorkoutSetRow) onReset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -556,9 +577,7 @@ class _ExerciseCard extends ConsumerWidget {
         : const <SetSide?>[null];
     final previousBySide = <SetSide?, List<WorkoutSetRow>?>{
       for (final side in sides)
-        side: ref
-            .watch(previousSetsProvider(detail.exercise.id, side))
-            .value,
+        side: ref.watch(previousSetsProvider(detail.exercise.id, side)).value,
     };
     final previousNote = ref
         .watch(previousNoteProvider(detail.exercise.id))
@@ -638,6 +657,7 @@ class _ExerciseCard extends ConsumerWidget {
                                 : null,
                             onFocus: (kind) => onFocus(detail.sets[i], kind),
                             onToggle: () => onToggle(detail.sets[i]),
+                            onReset: () => onReset(detail.sets[i]),
                             onDelete: () => ref
                                 .read(workoutControllerProvider)
                                 .deleteSet(detail.sets[i].id),
@@ -725,15 +745,11 @@ class _ExerciseCard extends ConsumerWidget {
           detail.workoutExercise.id,
         );
         if (!context.mounted) return;
-        showSnack(
-          context,
-          switch (filled) {
-            0 => 'Vink eerst één set af om over te nemen.',
-            1 => '1 set ingevuld',
-            _ => '$filled sets ingevuld',
-          },
-          isError: filled == 0,
-        );
+        showSnack(context, switch (filled) {
+          0 => 'Vink eerst één set af om over te nemen.',
+          1 => '1 set ingevuld',
+          _ => '$filled sets ingevuld',
+        }, isError: filled == 0);
 
       case 'note':
         final note = await promptForText(
@@ -1128,6 +1144,7 @@ class SetRow extends StatelessWidget {
     required this.activeKind,
     required this.onFocus,
     required this.onToggle,
+    required this.onReset,
     required this.onDelete,
     required this.onSetType,
   });
@@ -1140,6 +1157,10 @@ class SetRow extends StatelessWidget {
   final KeypadFieldKind? activeKind;
   final ValueChanged<KeypadFieldKind> onFocus;
   final VoidCallback onToggle;
+
+  /// Long press on the check box: back to an empty set in one gesture.
+  final VoidCallback onReset;
+
   final VoidCallback onDelete;
   final ValueChanged<SetType> onSetType;
 
@@ -1171,6 +1192,8 @@ class SetRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: row.isCompleted
               ? AppColors.success.withValues(alpha: 0.12)
+              : row.isSkipped
+              ? AppColors.danger.withValues(alpha: 0.10)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
@@ -1219,6 +1242,10 @@ class SetRow extends StatelessWidget {
               child: Text(
                 previous == null
                     ? '-'
+                    : previous!.isSkipped
+                    // Last time you left this one out on purpose. A dash would
+                    // read as "no data"; this says which of the two it is.
+                    ? 'Geskipt'
                     : formatters.setSummary(
                         weightKg: previous!.weightKg,
                         reps: previous!.reps,
@@ -1238,7 +1265,7 @@ class SetRow extends StatelessWidget {
                 text: row.weightKg == null
                     ? null
                     : formatters.weightValue(row.weightKg),
-                placeholder: previous?.weightKg == null
+                placeholder: previous == null || previous!.isSkipped
                     ? '-'
                     : formatters.weightValue(previous!.weightKg),
                 active: activeKind == KeypadFieldKind.weight,
@@ -1249,12 +1276,19 @@ class SetRow extends StatelessWidget {
               flex: 2,
               child: _Cell(
                 text: row.reps?.toString(),
-                placeholder: previous?.reps?.toString() ?? '-',
+                placeholder: previous != null && !previous!.isSkipped
+                    ? previous!.reps?.toString() ?? '-'
+                    : '-',
                 active: activeKind == KeypadFieldKind.reps,
                 onTap: () => onFocus(KeypadFieldKind.reps),
               ),
             ),
-            _CheckBox(completed: row.isCompleted, onTap: onToggle),
+            _CheckBox(
+              completed: row.isCompleted,
+              skipped: row.isSkipped,
+              onTap: onToggle,
+              onLongPress: onReset,
+            ),
           ],
         ),
       ),
@@ -1312,45 +1346,60 @@ class _Cell extends StatelessWidget {
   }
 }
 
+/// The set button, which cycles through the three states it can show.
+///
+/// Green tick: done. Red cross: skipped on purpose. Grey: not yet.
 class _CheckBox extends StatelessWidget {
-  const _CheckBox({required this.completed, required this.onTap});
+  const _CheckBox({
+    required this.completed,
+    required this.skipped,
+    required this.onTap,
+    required this.onLongPress,
+  });
 
   final bool completed;
+  final bool skipped;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final filled = completed
+        ? AppColors.success
+        : skipped
+        ? AppColors.danger
+        : null;
+
     return Semantics(
-      label: completed ? 'Set voltooid' : 'Set afvinken',
+      label: completed
+          ? 'Set voltooid'
+          : skipped
+          ? 'Set overgeslagen'
+          : 'Set afvinken',
       button: true,
       child: SizedBox(
         width: AppSpacing.setCheckbox,
         height: AppSpacing.setCheckbox,
         child: InkResponse(
           onTap: onTap,
+          onLongPress: onLongPress,
           radius: 28,
           child: Center(
             child: Container(
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: completed
-                    ? AppColors.success
-                    : theme.colorScheme.surfaceContainerHighest,
+                color: filled ?? theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                border: Border.all(
-                  color: completed
-                      ? AppColors.success
-                      : theme.colorScheme.outline,
-                ),
+                border: Border.all(color: filled ?? theme.colorScheme.outline),
               ),
               child: Icon(
-                Icons.check,
+                skipped ? Icons.close : Icons.check,
                 size: 20,
-                color: completed
-                    ? Colors.white
-                    : theme.colorScheme.onSurfaceVariant,
+                color: filled == null
+                    ? theme.colorScheme.onSurfaceVariant
+                    : Colors.white,
               ),
             ),
           ),

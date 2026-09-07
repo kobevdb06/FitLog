@@ -211,24 +211,18 @@ class WorkoutController {
         notes: Value(note == null || note.trim().isEmpty ? null : note.trim()),
       );
 
-  Future<void> setExerciseRest(String workoutExerciseId, int seconds) =>
-      _db.workoutsDao.updateWorkoutExercise(
-        workoutExerciseId,
-        restSeconds: Value(seconds),
-      );
+  Future<void> setExerciseRest(String workoutExerciseId, int seconds) => _db
+      .workoutsDao
+      .updateWorkoutExercise(workoutExerciseId, restSeconds: Value(seconds));
 
-  Future<void> setSupersetGroup(String workoutExerciseId, int? group) =>
-      _db.workoutsDao.updateWorkoutExercise(
-        workoutExerciseId,
-        supersetGroup: Value(group),
-      );
+  Future<void> setSupersetGroup(String workoutExerciseId, int? group) => _db
+      .workoutsDao
+      .updateWorkoutExercise(workoutExerciseId, supersetGroup: Value(group));
 
   /// Returns the id of the new set, so callers can act on it right away.
-  Future<String> addSet(String workoutExerciseId, {SetType? setType}) =>
-      _db.workoutsDao.addSet(
-        workoutExerciseId,
-        setType: setType ?? SetType.normal,
-      );
+  Future<String> addSet(String workoutExerciseId, {SetType? setType}) => _db
+      .workoutsDao
+      .addSet(workoutExerciseId, setType: setType ?? SetType.normal);
 
   Future<void> deleteSet(String setId) async {
     await _db.workoutsDao.deleteSet(setId);
@@ -283,7 +277,11 @@ class WorkoutController {
     var filled = 0;
     for (var i = sourceIndex + 1; i < owner.sets.length; i++) {
       final target = owner.sets[i];
-      if (target.isCompleted || !isWorking(target)) continue;
+      // A skipped set was left out on purpose; filling it in would undo
+      // that silently.
+      if (target.isCompleted || target.isSkipped || !isWorking(target)) {
+        continue;
+      }
       await _db.workoutsDao.updateSet(
         target.id,
         weightKg: Value(source.weightKg),
@@ -375,6 +373,7 @@ class WorkoutController {
       durationSeconds: Value(finalDuration),
       isCompleted: const Value(true),
       completedAt: Value(now.millisecondsSinceEpoch),
+      isSkipped: const Value(false),
     );
 
     final setType = SetType.fromWire(row.setType);
@@ -383,14 +382,14 @@ class WorkoutController {
     final records = row.side != null
         ? const <PrCandidate>[]
         : await _db.recordsDao.registerSet(
-      exerciseId: owner.exercise.id,
-      workoutSetId: setId,
-      setType: setType,
-      isCompleted: true,
-      weightKg: finalWeight,
-      reps: finalReps,
-      achievedAt: now.millisecondsSinceEpoch,
-    );
+            exerciseId: owner.exercise.id,
+            workoutSetId: setId,
+            setType: setType,
+            isCompleted: true,
+            weightKg: finalWeight,
+            reps: finalReps,
+            achievedAt: now.millisecondsSinceEpoch,
+          );
 
     await _recalculate();
 
@@ -429,14 +428,38 @@ class WorkoutController {
       side: SetSide.fromWire(row.side),
     );
     if (workingIndex >= previous.length) return null;
-    return previous[workingIndex];
+    final match = previous[workingIndex];
+    // A skipped set holds no numbers worth taking over; the grey placeholder
+    // reads "Geskipt" there rather than a weight, so there is nothing on
+    // screen for the empty cell to adopt.
+    return match.isSkipped ? null : match;
   }
 
+  /// Marks a set as one you deliberately left out.
+  ///
+  /// The values that were typed stay where they are: skipping is reversible,
+  /// and clearing them would make going back lose work. Nothing counts them,
+  /// because everything that counts keys on `is_completed`.
+  Future<void> skipSet(String setId) async {
+    await _db.workoutsDao.updateSet(
+      setId,
+      isCompleted: const Value(false),
+      completedAt: const Value(null),
+      isSkipped: const Value(true),
+    );
+    await _recalculate();
+    // The set may have been completed a moment ago, and a record may have come
+    // from it, so the history is replayed.
+    await _db.recordsDao.rebuildAllRecords();
+  }
+
+  /// Back to an ordinary empty set, from either of the other two states.
   Future<void> uncompleteSet(String setId) async {
     await _db.workoutsDao.updateSet(
       setId,
       isCompleted: const Value(false),
       completedAt: const Value(null),
+      isSkipped: const Value(false),
     );
     await _recalculate();
     // A record may have come from this set, so the history is replayed.
@@ -573,11 +596,7 @@ class WorkoutController {
       for (final s in exercise.sets.where((s) => s.isCompleted)) {
         final marker = SetType.fromWire(s.setType).marker ?? '${index++}';
         buffer.writeln(
-          '  $marker  ${formatters.setSummary(
-            weightKg: s.weightKg,
-            reps: s.reps,
-            durationSeconds: s.durationSeconds,
-          )}',
+          '  $marker  ${formatters.setSummary(weightKg: s.weightKg, reps: s.reps, durationSeconds: s.durationSeconds)}',
         );
       }
       buffer.writeln();

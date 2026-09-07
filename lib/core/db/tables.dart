@@ -59,8 +59,7 @@ class AppSettingsTable extends Table {
   /// It is written before the database snapshot is taken, so the value inside
   /// a backup is that backup's own moment: after a restore the reminder is
   /// right without any extra bookkeeping.
-  IntColumn get lastBackupAt =>
-      integer().named('last_backup_at').nullable()();
+  IntColumn get lastBackupAt => integer().named('last_backup_at').nullable()();
 
   /// One of [PickKind] while a photo is being picked, null otherwise.
   ///
@@ -129,9 +128,8 @@ class ExercisesTable extends Table {
   TextColumn get primaryMuscle => text().named('primary_muscle')();
 
   /// JSON array of muscle names.
-  TextColumn get secondaryMuscles => text()
-      .named('secondary_muscles')
-      .withDefault(const Constant('[]'))();
+  TextColumn get secondaryMuscles =>
+      text().named('secondary_muscles').withDefault(const Constant('[]'))();
   TextColumn get equipment => text().nullable()();
 
   /// One of [ExerciseCategory].
@@ -208,15 +206,17 @@ class RoutineExercisesTable extends Table {
       text().named('exercise_id').references(ExercisesTable, #id)();
   IntColumn get sortOrder => integer().named('sort_order')();
   IntColumn get restSeconds => integer().named('rest_seconds').nullable()();
-  IntColumn get supersetGroup =>
-      integer().named('superset_group').nullable()();
+  IntColumn get supersetGroup => integer().named('superset_group').nullable()();
   TextColumn get notes => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
 }
 
-@TableIndex(name: 'idx_routine_sets_routine_exercise', columns: {#routineExerciseId})
+@TableIndex(
+  name: 'idx_routine_sets_routine_exercise',
+  columns: {#routineExerciseId},
+)
 @DataClassName('RoutineSetRow')
 class RoutineSetsTable extends Table {
   @override
@@ -294,8 +294,7 @@ class WorkoutExercisesTable extends Table {
   IntColumn get sortOrder => integer().named('sort_order')();
   IntColumn get restSeconds =>
       integer().named('rest_seconds').withDefault(const Constant(90))();
-  IntColumn get supersetGroup =>
-      integer().named('superset_group').nullable()();
+  IntColumn get supersetGroup => integer().named('superset_group').nullable()();
   TextColumn get notes => text().nullable()();
 
   /// Marks this exercise as being done one arm or leg at a time.
@@ -321,7 +320,10 @@ class WorkoutExercisesTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@TableIndex(name: 'idx_workout_sets_workout_exercise', columns: {#workoutExerciseId})
+@TableIndex(
+  name: 'idx_workout_sets_workout_exercise',
+  columns: {#workoutExerciseId},
+)
 @DataClassName('WorkoutSetRow')
 class WorkoutSetsTable extends Table {
   @override
@@ -342,6 +344,7 @@ class WorkoutSetsTable extends Table {
       integer().named('duration_seconds').nullable()();
   RealColumn get distanceM => real().named('distance_m').nullable()();
   RealColumn get rpe => real().nullable()();
+
   /// One of [SetSide] while the exercise is done one side at a time, null
   /// otherwise. A left set and a right set are two separate sets: each carries
   /// its own weight and its own reps, because the two sides rarely match.
@@ -351,11 +354,27 @@ class WorkoutSetsTable extends Table {
       boolean().named('is_completed').withDefault(const Constant(false))();
   IntColumn get completedAt => integer().named('completed_at').nullable()();
 
+  /// A set you deliberately did not do.
+  ///
+  /// Separate from [isCompleted] because those are two different answers: an
+  /// empty set is one you have not got to yet, a skipped set is one you chose
+  /// to leave out. Only the second is worth carrying into the next session,
+  /// where the previous column says so instead of showing a dash.
+  ///
+  /// Separate from [setType] as well: skipping is not a kind of set. A
+  /// warm-up you skip is still a warm-up, and folding the two together would
+  /// lose the type and renumber everything below it.
+  BoolColumn get isSkipped =>
+      boolean().named('is_skipped').withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
 
-@TableIndex(name: 'idx_personal_records_exercise_type', columns: {#exerciseId, #recordType})
+@TableIndex(
+  name: 'idx_personal_records_exercise_type',
+  columns: {#exerciseId, #recordType},
+)
 @DataClassName('PersonalRecordRow')
 class PersonalRecordsTable extends Table {
   @override
@@ -369,6 +388,7 @@ class PersonalRecordsTable extends Table {
   /// One of [PrType]: `max_weight` | `est_1rm` | `max_set_volume` | `max_reps`.
   TextColumn get recordType => text().named('record_type')();
   RealColumn get value => real()();
+
   /// The set that produced this record.
   ///
   /// `ON DELETE SET NULL`: deleting a workout takes its sets with it, and a
@@ -384,7 +404,10 @@ class PersonalRecordsTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@TableIndex(name: 'idx_body_measurements_type_date', columns: {#type, #measuredAt})
+@TableIndex(
+  name: 'idx_body_measurements_type_date',
+  columns: {#type, #measuredAt},
+)
 @DataClassName('BodyMeasurementRow')
 class BodyMeasurementsTable extends Table {
   @override

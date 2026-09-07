@@ -269,7 +269,7 @@ class BackupService {
           'ws.sort_order AS set_index, ws.set_type AS set_type, '
           'ws.weight_kg AS weight_kg, ws.reps AS reps, '
           'ws.duration_seconds AS set_duration, ws.distance_m AS distance_m, '
-          'ws.rpe AS rpe, ws.is_completed AS is_completed '
+          'ws.rpe AS rpe, ws.is_completed AS is_completed, ws.is_skipped AS is_skipped '
           'FROM workout_sets ws '
           'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
           'JOIN workouts w ON w.id = we.workout_id '
@@ -282,7 +282,7 @@ class BackupService {
     final buffer = StringBuffer()
       ..writeln(
         'datum,workout,duur_seconden,oefening,set,type,gewicht_kg,reps,'
-        'duur_seconden_set,afstand_m,rpe,afgevinkt',
+        'duur_seconden_set,afstand_m,rpe,afgevinkt,geskipt',
       );
 
     for (final row in rows) {
@@ -303,6 +303,7 @@ class BackupService {
           row.read<double?>('distance_m') ?? '',
           row.read<double?>('rpe') ?? '',
           row.read<bool>('is_completed') ? 'ja' : 'nee',
+          row.read<bool>('is_skipped') ? 'ja' : 'nee',
         ].join(','),
       );
     }

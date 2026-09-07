@@ -141,7 +141,7 @@ void main() {
     );
   });
 
-  testWidgets('unchecking a set clears it again', (tester) async {
+  testWidgets('a second tap marks the set as skipped', (tester) async {
     await pumpScreen(tester);
 
     await tester.tap(find.bySemanticsLabel('Set afvinken'));
@@ -154,10 +154,103 @@ void main() {
     final stored = await db.workoutsDao.getSet(setId);
     expect(stored!.isCompleted, isFalse);
     expect(stored.completedAt, isNull);
+    expect(stored.isSkipped, isTrue);
 
-    // The values themselves survive an accidental un-tick.
+    // The values themselves survive, so a third tap loses nothing.
     expect(stored.weightKg, 100);
     expect(stored.reps, 5);
+
+    // And the button says so: a cross where the tick was.
+    expect(find.bySemanticsLabel('Set overgeslagen'), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsOneWidget);
+  });
+
+  testWidgets('a third tap brings the set back to empty', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.bySemanticsLabel('Set afvinken'));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Set voltooid'));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Set overgeslagen'));
+    await settle(tester);
+
+    final stored = await db.workoutsDao.getSet(setId);
+    expect(stored!.isCompleted, isFalse);
+    expect(stored.isSkipped, isFalse);
+    expect(find.bySemanticsLabel('Set afvinken'), findsOneWidget);
+  });
+
+  testWidgets('a long press clears a checked set in one gesture', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.bySemanticsLabel('Set afvinken'));
+    await settle(tester);
+
+    await tester.longPress(find.bySemanticsLabel('Set voltooid'));
+    await settle(tester);
+
+    final stored = await db.workoutsDao.getSet(setId);
+    expect(stored!.isCompleted, isFalse);
+    expect(stored.isSkipped, isFalse, reason: 'niet via geskipt eromheen');
+    expect(stored.weightKg, 100);
+  });
+
+  testWidgets('a long press clears a skipped set too', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.bySemanticsLabel('Set afvinken'));
+    await settle(tester);
+    await tester.tap(find.bySemanticsLabel('Set voltooid'));
+    await settle(tester);
+
+    await tester.longPress(find.bySemanticsLabel('Set overgeslagen'));
+    await settle(tester);
+
+    expect((await db.workoutsDao.getSet(setId))!.isSkipped, isFalse);
+  });
+
+  testWidgets('the previous column says which set was skipped last time', (
+    tester,
+  ) async {
+    // A finished session where the one set was deliberately left out.
+    await db
+        .into(db.workoutsTable)
+        .insert(
+          WorkoutsTableCompanion.insert(
+            id: 'w-old',
+            name: 'Push',
+            startedAt: 1000,
+            endedAt: const Value(2000),
+          ),
+        );
+    await db
+        .into(db.workoutExercisesTable)
+        .insert(
+          WorkoutExercisesTableCompanion.insert(
+            id: 'we-old',
+            workoutId: 'w-old',
+            exerciseId: 'ex-bench',
+            sortOrder: 0,
+          ),
+        );
+    await db
+        .into(db.workoutSetsTable)
+        .insert(
+          WorkoutSetsTableCompanion.insert(
+            id: 's-old',
+            workoutExerciseId: 'we-old',
+            sortOrder: 0,
+            isSkipped: const Value(true),
+          ),
+        );
+
+    await pumpScreen(tester);
+
+    // Not a dash, which would read as "no data": last time you left it out.
+    expect(find.text('Geskipt'), findsOneWidget);
   });
 
   testWidgets('tapping a weight cell opens the custom keypad, not the '

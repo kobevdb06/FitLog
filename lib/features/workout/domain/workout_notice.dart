@@ -74,7 +74,9 @@ String _whereYouAre(WorkoutDetail detail) {
     final workingTotal = labels.where((l) => l.workingIndex != null).length;
 
     for (var i = 0; i < exercise.sets.length; i++) {
-      if (exercise.sets[i].isCompleted) continue;
+      // Done and skipped are both settled: the notification names the first
+      // set you still have to do something about.
+      if (exercise.sets[i].isCompleted || exercise.sets[i].isSkipped) continue;
 
       final label = labels[i];
       final where = switch (label.type) {

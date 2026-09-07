@@ -38,8 +38,7 @@ class RoutineDetail {
   final RoutineRow routine;
   final List<RoutineExerciseDetail> exercises;
 
-  int get totalSets =>
-      exercises.fold(0, (sum, e) => sum + e.sets.length);
+  int get totalSets => exercises.fold(0, (sum, e) => sum + e.sets.length);
 }
 
 class WorkoutExerciseDetail {
@@ -56,6 +55,8 @@ class WorkoutExerciseDetail {
   ExerciseCategory get category => ExerciseCategory.fromWire(exercise.category);
 
   int get completedSets => sets.where((s) => s.isCompleted).length;
+
+  int get skippedSets => sets.where((s) => s.isSkipped).length;
 
   WorkoutExerciseDetail copyWith({List<WorkoutSetRow>? sets}) {
     return WorkoutExerciseDetail(
@@ -78,7 +79,13 @@ class WorkoutDetail {
 
   int get completedSets => exercises.fold(0, (s, e) => s + e.completedSets);
 
-  int get pendingSets => totalSets - completedSets;
+  int get skippedSets => exercises.fold(0, (s, e) => s + e.skippedSets);
+
+  /// Sets that are neither done nor deliberately skipped.
+  ///
+  /// A skipped set is not pending: you already said what you wanted to happen
+  /// to it, so finishing the session has nothing to ask about it.
+  int get pendingSets => totalSets - completedSets - skippedSets;
 
   /// All exercises that belong to the same superset group as [group],
   /// in display order.
@@ -102,8 +109,7 @@ class ExerciseSession {
   final WorkoutExerciseRow workoutExercise;
   final List<WorkoutSetRow> sets;
 
-  DateTime get date =>
-      DateTime.fromMillisecondsSinceEpoch(workout.startedAt);
+  DateTime get date => DateTime.fromMillisecondsSinceEpoch(workout.startedAt);
 }
 
 /// A single entry in the history list.

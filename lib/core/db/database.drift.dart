@@ -5920,6 +5920,21 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isSkippedMeta = const VerificationMeta(
+    'isSkipped',
+  );
+  @override
+  late final GeneratedColumn<bool> isSkipped = GeneratedColumn<bool>(
+    'is_skipped',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_skipped" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5934,6 +5949,7 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
     side,
     isCompleted,
     completedAt,
+    isSkipped,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -6034,6 +6050,12 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
         ),
       );
     }
+    if (data.containsKey('is_skipped')) {
+      context.handle(
+        _isSkippedMeta,
+        isSkipped.isAcceptableOrUnknown(data['is_skipped']!, _isSkippedMeta),
+      );
+    }
     return context;
   }
 
@@ -6091,6 +6113,10 @@ class $WorkoutSetsTableTable extends WorkoutSetsTable
         DriftSqlType.int,
         data['${effectivePrefix}completed_at'],
       ),
+      isSkipped: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_skipped'],
+      )!,
     );
   }
 
@@ -6119,6 +6145,18 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
   final String? side;
   final bool isCompleted;
   final int? completedAt;
+
+  /// A set you deliberately did not do.
+  ///
+  /// Separate from [isCompleted] because those are two different answers: an
+  /// empty set is one you have not got to yet, a skipped set is one you chose
+  /// to leave out. Only the second is worth carrying into the next session,
+  /// where the previous column says so instead of showing a dash.
+  ///
+  /// Separate from [setType] as well: skipping is not a kind of set. A
+  /// warm-up you skip is still a warm-up, and folding the two together would
+  /// lose the type and renumber everything below it.
+  final bool isSkipped;
   const WorkoutSetRow({
     required this.id,
     required this.workoutExerciseId,
@@ -6132,6 +6170,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     this.side,
     required this.isCompleted,
     this.completedAt,
+    required this.isSkipped,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6162,6 +6201,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<int>(completedAt);
     }
+    map['is_skipped'] = Variable<bool>(isSkipped);
     return map;
   }
 
@@ -6187,6 +6227,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
+      isSkipped: Value(isSkipped),
     );
   }
 
@@ -6208,6 +6249,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       side: serializer.fromJson<String?>(json['side']),
       isCompleted: serializer.fromJson<bool>(json['isCompleted']),
       completedAt: serializer.fromJson<int?>(json['completedAt']),
+      isSkipped: serializer.fromJson<bool>(json['isSkipped']),
     );
   }
   @override
@@ -6226,6 +6268,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       'side': serializer.toJson<String?>(side),
       'isCompleted': serializer.toJson<bool>(isCompleted),
       'completedAt': serializer.toJson<int?>(completedAt),
+      'isSkipped': serializer.toJson<bool>(isSkipped),
     };
   }
 
@@ -6242,6 +6285,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     Value<String?> side = const Value.absent(),
     bool? isCompleted,
     Value<int?> completedAt = const Value.absent(),
+    bool? isSkipped,
   }) => WorkoutSetRow(
     id: id ?? this.id,
     workoutExerciseId: workoutExerciseId ?? this.workoutExerciseId,
@@ -6257,6 +6301,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     side: side.present ? side.value : this.side,
     isCompleted: isCompleted ?? this.isCompleted,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    isSkipped: isSkipped ?? this.isSkipped,
   );
   WorkoutSetRow copyWithCompanion(WorkoutSetsTableCompanion data) {
     return WorkoutSetRow(
@@ -6280,6 +6325,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
+      isSkipped: data.isSkipped.present ? data.isSkipped.value : this.isSkipped,
     );
   }
 
@@ -6297,7 +6343,8 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           ..write('rpe: $rpe, ')
           ..write('side: $side, ')
           ..write('isCompleted: $isCompleted, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('isSkipped: $isSkipped')
           ..write(')'))
         .toString();
   }
@@ -6316,6 +6363,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     side,
     isCompleted,
     completedAt,
+    isSkipped,
   );
   @override
   bool operator ==(Object other) =>
@@ -6332,7 +6380,8 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           other.rpe == this.rpe &&
           other.side == this.side &&
           other.isCompleted == this.isCompleted &&
-          other.completedAt == this.completedAt);
+          other.completedAt == this.completedAt &&
+          other.isSkipped == this.isSkipped);
 }
 
 class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
@@ -6348,6 +6397,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
   final Value<String?> side;
   final Value<bool> isCompleted;
   final Value<int?> completedAt;
+  final Value<bool> isSkipped;
   final Value<int> rowid;
   const WorkoutSetsTableCompanion({
     this.id = const Value.absent(),
@@ -6362,6 +6412,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     this.side = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.isSkipped = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkoutSetsTableCompanion.insert({
@@ -6377,6 +6428,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     this.side = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.isSkipped = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        workoutExerciseId = Value(workoutExerciseId),
@@ -6394,6 +6446,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     Expression<String>? side,
     Expression<bool>? isCompleted,
     Expression<int>? completedAt,
+    Expression<bool>? isSkipped,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6409,6 +6462,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
       if (side != null) 'side': side,
       if (isCompleted != null) 'is_completed': isCompleted,
       if (completedAt != null) 'completed_at': completedAt,
+      if (isSkipped != null) 'is_skipped': isSkipped,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6426,6 +6480,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     Value<String?>? side,
     Value<bool>? isCompleted,
     Value<int?>? completedAt,
+    Value<bool>? isSkipped,
     Value<int>? rowid,
   }) {
     return WorkoutSetsTableCompanion(
@@ -6441,6 +6496,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
       side: side ?? this.side,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
+      isSkipped: isSkipped ?? this.isSkipped,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6484,6 +6540,9 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
     if (completedAt.present) {
       map['completed_at'] = Variable<int>(completedAt.value);
     }
+    if (isSkipped.present) {
+      map['is_skipped'] = Variable<bool>(isSkipped.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6505,6 +6564,7 @@ class WorkoutSetsTableCompanion extends UpdateCompanion<WorkoutSetRow> {
           ..write('side: $side, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('completedAt: $completedAt, ')
+          ..write('isSkipped: $isSkipped, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -12380,6 +12440,7 @@ typedef $$WorkoutSetsTableTableCreateCompanionBuilder =
       Value<String?> side,
       Value<bool> isCompleted,
       Value<int?> completedAt,
+      Value<bool> isSkipped,
       Value<int> rowid,
     });
 typedef $$WorkoutSetsTableTableUpdateCompanionBuilder =
@@ -12396,6 +12457,7 @@ typedef $$WorkoutSetsTableTableUpdateCompanionBuilder =
       Value<String?> side,
       Value<bool> isCompleted,
       Value<int?> completedAt,
+      Value<bool> isSkipped,
       Value<int> rowid,
     });
 
@@ -12518,6 +12580,11 @@ class $$WorkoutSetsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isSkipped => $composableBuilder(
+    column: $table.isSkipped,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$WorkoutExercisesTableTableFilterComposer get workoutExerciseId {
     final $$WorkoutExercisesTableTableFilterComposer composer =
         $composerBuilder(
@@ -12632,6 +12699,11 @@ class $$WorkoutSetsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isSkipped => $composableBuilder(
+    column: $table.isSkipped,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkoutExercisesTableTableOrderingComposer get workoutExerciseId {
     final $$WorkoutExercisesTableTableOrderingComposer composer =
         $composerBuilder(
@@ -12704,6 +12776,9 @@ class $$WorkoutSetsTableTableAnnotationComposer
     column: $table.completedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get isSkipped =>
+      $composableBuilder(column: $table.isSkipped, builder: (column) => column);
 
   $$WorkoutExercisesTableTableAnnotationComposer get workoutExerciseId {
     final $$WorkoutExercisesTableTableAnnotationComposer composer =
@@ -12801,6 +12876,7 @@ class $$WorkoutSetsTableTableTableManager
                 Value<String?> side = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int?> completedAt = const Value.absent(),
+                Value<bool> isSkipped = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutSetsTableCompanion(
                 id: id,
@@ -12815,6 +12891,7 @@ class $$WorkoutSetsTableTableTableManager
                 side: side,
                 isCompleted: isCompleted,
                 completedAt: completedAt,
+                isSkipped: isSkipped,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -12831,6 +12908,7 @@ class $$WorkoutSetsTableTableTableManager
                 Value<String?> side = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int?> completedAt = const Value.absent(),
+                Value<bool> isSkipped = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutSetsTableCompanion.insert(
                 id: id,
@@ -12845,6 +12923,7 @@ class $$WorkoutSetsTableTableTableManager
                 side: side,
                 isCompleted: isCompleted,
                 completedAt: completedAt,
+                isSkipped: isSkipped,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

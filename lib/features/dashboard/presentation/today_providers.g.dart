@@ -8,6 +8,52 @@ part of 'today_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Which blocks the Start tab shows, and in what order.
+
+@ProviderFor(homeLayout)
+final homeLayoutProvider = HomeLayoutProvider._();
+
+/// Which blocks the Start tab shows, and in what order.
+
+final class HomeLayoutProvider
+    extends $FunctionalProvider<HomeLayout, HomeLayout, HomeLayout>
+    with $Provider<HomeLayout> {
+  /// Which blocks the Start tab shows, and in what order.
+  HomeLayoutProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'homeLayoutProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$homeLayoutHash();
+
+  @$internal
+  @override
+  $ProviderElement<HomeLayout> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  HomeLayout create(Ref ref) {
+    return homeLayout(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(HomeLayout value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<HomeLayout>(value),
+    );
+  }
+}
+
+String _$homeLayoutHash() => r'd25b40b4d214a16118242af2e1a90f52b788e1e0';
+
 /// Every routine that is planned on at least one weekday.
 
 @ProviderFor(scheduledRoutines)

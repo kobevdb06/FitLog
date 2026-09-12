@@ -21,6 +21,13 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           const SectionHeader('App'),
           ListTile(
+            leading: const Icon(Icons.dashboard_customize_outlined),
+            title: const Text('Startscherm'),
+            subtitle: const Text('Welke blokken je ziet, en in welke volgorde'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.settingsHome),
+          ),
+          ListTile(
             leading: const Icon(Icons.tune),
             title: const Text('Workout-voorkeuren'),
             subtitle: const Text(

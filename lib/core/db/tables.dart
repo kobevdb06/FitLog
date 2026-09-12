@@ -124,6 +124,14 @@ class AppSettingsTable extends Table {
       .named('pr_default_extra_attempts')
       .withDefault(const Constant(1))();
 
+  /// Which blocks the Start tab shows and in what order, as the JSON that
+  /// `parseHomeLayout` reads.
+  ///
+  /// Null means it has never been changed, which is what the default layout
+  /// answers. A damaged value answers the same rather than throwing: the first
+  /// screen of the app is the worst place to fail.
+  TextColumn get homeLayout => text().named('home_layout').nullable()();
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   IntColumn get autoLockSeconds =>

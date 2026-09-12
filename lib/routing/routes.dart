@@ -42,6 +42,7 @@ abstract final class Routes {
 
   // Profile and settings
   static const settings = '/profiel/instellingen';
+  static const settingsHome = '/profiel/instellingen/startscherm';
   static const settingsWorkout = '/profiel/instellingen/workout';
   static const settingsSecurity = '/profiel/instellingen/beveiliging';
   static const settingsBackup = '/profiel/instellingen/backup';

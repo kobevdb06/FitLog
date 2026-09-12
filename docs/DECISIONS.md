@@ -1403,3 +1403,46 @@ was het daar al mee eens: de begroeting zegt tot zes uur "Goedenacht".
 `kDayStartHour` staat op 4. Laat genoeg voor de late avond, vroeg genoeg dat
 niemand er overheen traint. Het bepaalt welke dag van het schema gelezen wordt
 én of een routine "vandaag al gedaan" is.
+
+## 94. Het startscherm is een lijst geworden, geen vaste volgorde
+
+De blokken op Start waren altijd al losse widgets; wat vastlag was de volgorde
+waarin ze opgeschreven stonden. Die lijst zit nu in `app_settings.home_layout`
+(schema v17), en daarmee kan iedereen zijn eigen eerste scherm hebben.
+
+Alleen de begroeting en de back-upwaarschuwing staan vast, en die tweede is
+daarmee naar boven verhuisd, direct onder de begroeting. Een waarschuwing die
+je niet kunt uitzetten hoort een vaste plek te hebben, en als alles eronder kan
+schuiven is halverwege geen plek meer.
+
+Zet je alles uit, dan staat er geen leeg scherm maar één regel die zegt wat er
+gebeurd is en waar je het terugdraait. De app die je keuze stilletjes overrulet
+zou makkelijker zijn en minder eerlijk.
+
+## 95. Verbergen is een naam op een lijst, geen afwezigheid
+
+`home_layout` bewaart twee lijsten: `order` met alle blokken in jouw volgorde,
+en `hidden` met wat uit staat.
+
+Dat had korter gekund - alleen de zichtbare blokken opslaan - maar dan kan de
+app niet zien of een blok uit staat of nog niet bestond toen je je scherm
+indeelde. Een blok dat ik in een latere versie toevoeg zou dan onzichtbaar
+blijven voor precies de mensen die ooit iets verzet hebben. Nu komt zo'n blok
+achteraan en staat het aan, zonder migratie.
+
+De hidden-blokken blijven ook op hun plek in `order` staan: zet je er een weer
+aan, dan komt hij terug waar hij stond in plaats van onderaan.
+
+Een waarde die stuk is levert de standaardindeling op, niet een uitzondering.
+Het eerste scherm van de app is de slechtste plek om te falen.
+
+## 96. Geen aparte instelling voor "schema of favorieten"
+
+De vraag was: als ik én een weekschema én favorieten heb, wat komt er bovenaan?
+Een schakelaar met drie standen zou dat oplossen, en zou daarna naast een
+indeelbaar startscherm staan dat hetzelfde nog eens kan.
+
+Dus is er geen schakelaar. "Favorieten" is gewoon een blok: zet je het aan, dan
+staat het naast je planning; laat je het uit, dan zie je alleen je planning. Het
+blok houdt zich stil wanneer "Vandaag" al op je favorieten is teruggevallen -
+dezelfde drie routines twee keer is geen indeling die iemand kiest.

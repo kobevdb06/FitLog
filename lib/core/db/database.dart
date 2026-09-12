@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -177,6 +177,12 @@ class AppDatabase extends _$AppDatabase {
           // the dashboard reads as "no schedule", which is the behaviour these
           // databases already had.
           await m.addColumn(routinesTable, routinesTable.scheduledDays);
+        }
+        if (from < 17) {
+          // How the user arranged the Start tab. Additive and null, which is
+          // "never changed" - and that is the layout these databases were
+          // already showing.
+          await m.addColumn(appSettingsTable, appSettingsTable.homeLayout);
         }
       });
 

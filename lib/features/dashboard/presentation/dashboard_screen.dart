@@ -10,6 +10,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
+import '../../../core/widgets/colour_picker.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/exercise_avatar.dart';
 import '../../backup/domain/backup_reminder.dart';
@@ -19,10 +20,15 @@ import '../../progress/presentation/recovery_view.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../workout/presentation/workout_providers.dart';
+import '../domain/home_layout.dart';
 import '../domain/today_plan.dart';
 import 'today_providers.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
+///
+/// The blocks below it are the user's own list, in the user's own order. Only
+/// the greeting and the backup warning are fixed: the first is the page's
+/// heading, and the second is a warning you should not be able to switch off.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -30,10 +36,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider).value;
     final streak = ref.watch(streakProvider).value;
-    final week = ref.watch(thisWeekStatsProvider).value;
-    final buckets = ref.watch(weeklyBucketsProvider()).value ?? const [];
-    final records = ref.watch(latestRecordsProvider()).value ?? const [];
-    final formatters = ref.watch(formattersProvider);
+    final layout = ref.watch(homeLayoutProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -49,115 +52,194 @@ class DashboardScreen extends ConsumerWidget {
               ),
               child: _Greeting(name: profile?.displayName, streak: streak),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: _TodayCard(),
-            ),
-            const SectionHeader('Deze week'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: AppCard(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: StatTile(
-                        value: '${week?.workouts ?? 0}',
-                        label: 'Workouts',
-                      ),
-                    ),
-                    Expanded(
-                      child: StatTile(
-                        value: '${week?.sets ?? 0}',
-                        label: 'Sets',
-                      ),
-                    ),
-                    Expanded(
-                      child: StatTile(
-                        value: formatters.volume(week?.volumeKg ?? 0),
-                        label: 'Volume',
-                        emphasis: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             const _BackupReminderBanner(),
-            const _RecoveryBlock(),
-            if (records.isNotEmpty) ...[
-              SectionHeader(
-                'Laatste records',
-                action: TextButton(
-                  onPressed: () => context.push(Routes.records),
-                  child: const Text('Alles'),
-                ),
-              ),
-              for (final record in records)
-                ListTile(
-                  dense: true,
-                  onTap: () =>
-                      context.push(Routes.exerciseDetail(record.exercise.id)),
-                  leading: ExerciseAvatar(exercise: record.exercise, size: 32),
-                  title: Text(record.exercise.name),
-                  subtitle: Text(
-                    '${record.type.label} · '
-                    '${Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(record.record.achievedAt)).toLowerCase()}',
-                  ),
-                  trailing: Text(
-                    _recordValue(record, formatters),
-                    style: Theme.of(context).textTheme.titleSmall
-                        ?.copyWith(color: AppColors.record),
-                  ),
-                ),
-            ],
-            SectionHeader(
-              'Volume, laatste 8 weken',
-              action: TextButton(
-                onPressed: () => context.go(Routes.progress),
-                child: const Text('Meer'),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MiniBarChart(values: [for (final b in buckets) b.volumeKg]),
-                    const SizedBox(height: AppSpacing.sm),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          buckets.isEmpty
-                              ? ''
-                              : Formatters.dayMonth(buckets.first.weekStart),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                        ),
-                        Text(
-                          'nu',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            const SizedBox(height: AppSpacing.lg),
+            for (final block in layout.visible) _HomeBlockView(block: block),
+            if (layout.visible.isEmpty) const _EmptyHomeNotice(),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// One block of the Start tab, whichever one the layout asked for.
+class _HomeBlockView extends StatelessWidget {
+  const _HomeBlockView({required this.block});
+
+  final HomeBlock block;
+
+  @override
+  Widget build(BuildContext context) => switch (block) {
+    HomeBlock.today => const Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: _TodayCard(),
+    ),
+    HomeBlock.favourites => const _FavouritesBlock(),
+    HomeBlock.week => const _WeekBlock(),
+    HomeBlock.recovery => const _RecoveryBlock(),
+    HomeBlock.records => const _RecordsBlock(),
+    HomeBlock.volume => const _VolumeBlock(),
+  };
+}
+
+/// What is left when you switch everything off.
+///
+/// An empty screen with no way back would be the app overruling you; this says
+/// what happened and where to undo it.
+class _EmptyHomeNotice extends StatelessWidget {
+  const _EmptyHomeNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: EmptyState(
+        icon: Icons.dashboard_customize_outlined,
+        title: 'Je startscherm is leeg',
+        message:
+            'Je hebt alle blokken uitgezet. Zet er weer een aan om hier '
+            'iets te zien.',
+        actionLabel: 'Startscherm indelen',
+        onAction: () => context.push(Routes.settingsHome),
+      ),
+    );
+  }
+}
+
+/// Your starred routines, one tap from starting.
+///
+/// Off unless you ask for it, and silent when the block above is already
+/// showing them: with no schedule, "Vandaag" falls through to your favourites,
+/// and the same three routines twice is not a layout choice anybody made.
+class _FavouritesBlock extends ConsumerWidget {
+  const _FavouritesBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favourites = ref.watch(favouriteRoutinesProvider).value ?? const [];
+    if (favourites.isEmpty) return const SizedBox.shrink();
+
+    final layout = ref.watch(homeLayoutProvider);
+    final alreadyShown =
+        layout.shows(HomeBlock.today) &&
+        ref.watch(todayPlanProvider).kind == TodayPlanKind.favourites;
+    if (alreadyShown) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader('Favorieten'),
+        for (final routine in favourites)
+          ListTile(
+            dense: true,
+            onTap: () => context.push(Routes.routineDetail(routine.id)),
+            leading: ColourDot(colorIndex: routine.colorIndex),
+            title: Text(routine.name),
+            subtitle: Text(
+              routine.lastPerformedAt == null
+                  ? 'Nog nooit gedaan'
+                  : Formatters.relativeDay(
+                      DateTime.fromMillisecondsSinceEpoch(
+                        routine.lastPerformedAt!,
+                      ),
+                    ),
+            ),
+            trailing: IconButton(
+              tooltip: 'Starten',
+              icon: const Icon(Icons.play_arrow),
+              onPressed: () async {
+                await ref
+                    .read(workoutControllerProvider)
+                    .startFromRoutine(routine.id);
+                if (context.mounted) context.push(Routes.workout);
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _WeekBlock extends ConsumerWidget {
+  const _WeekBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final week = ref.watch(thisWeekStatsProvider).value;
+    final formatters = ref.watch(formattersProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader('Deze week'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: AppCard(
+            child: Row(
+              children: [
+                Expanded(
+                  child: StatTile(
+                    value: '${week?.workouts ?? 0}',
+                    label: 'Workouts',
+                  ),
+                ),
+                Expanded(
+                  child: StatTile(value: '${week?.sets ?? 0}', label: 'Sets'),
+                ),
+                Expanded(
+                  child: StatTile(
+                    value: formatters.volume(week?.volumeKg ?? 0),
+                    label: 'Volume',
+                    emphasis: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecordsBlock extends ConsumerWidget {
+  const _RecordsBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final records = ref.watch(latestRecordsProvider()).value ?? const [];
+    if (records.isEmpty) return const SizedBox.shrink();
+
+    final formatters = ref.watch(formattersProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          'Laatste records',
+          action: TextButton(
+            onPressed: () => context.push(Routes.records),
+            child: const Text('Alles'),
+          ),
+        ),
+        for (final record in records)
+          ListTile(
+            dense: true,
+            onTap: () =>
+                context.push(Routes.exerciseDetail(record.exercise.id)),
+            leading: ExerciseAvatar(exercise: record.exercise, size: 32),
+            title: Text(record.exercise.name),
+            subtitle: Text(
+              '${record.type.label} · '
+              '${Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(record.record.achievedAt)).toLowerCase()}',
+            ),
+            trailing: Text(
+              _recordValue(record, formatters),
+              style: Theme.of(context).textTheme.titleSmall
+                  ?.copyWith(color: AppColors.record),
+            ),
+          ),
+      ],
     );
   }
 
@@ -175,6 +257,54 @@ class DashboardScreen extends ConsumerWidget {
       case PrType.maxDistance:
         return formatters.distance(record.record.value);
     }
+  }
+}
+
+class _VolumeBlock extends ConsumerWidget {
+  const _VolumeBlock();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final buckets = ref.watch(weeklyBucketsProvider()).value ?? const [];
+    final muted = Theme.of(context).textTheme.bodySmall
+        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          'Volume, laatste 8 weken',
+          action: TextButton(
+            onPressed: () => context.go(Routes.progress),
+            child: const Text('Meer'),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MiniBarChart(values: [for (final b in buckets) b.volumeKg]),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      buckets.isEmpty
+                          ? ''
+                          : Formatters.dayMonth(buckets.first.weekStart),
+                      style: muted,
+                    ),
+                    Text('nu', style: muted),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

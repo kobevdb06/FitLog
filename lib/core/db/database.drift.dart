@@ -752,6 +752,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _homeLayoutMeta = const VerificationMeta(
+    'homeLayout',
+  );
+  @override
+  late final GeneratedColumn<String> homeLayout = GeneratedColumn<String>(
+    'home_layout',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _autoLockSecondsMeta = const VerificationMeta(
     'autoLockSeconds',
   );
@@ -799,6 +810,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
+    homeLayout,
     autoLockSeconds,
     updatedAt,
   ];
@@ -993,6 +1005,12 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('home_layout')) {
+      context.handle(
+        _homeLayoutMeta,
+        homeLayout.isAcceptableOrUnknown(data['home_layout']!, _homeLayoutMeta),
+      );
+    }
     if (data.containsKey('auto_lock_seconds')) {
       context.handle(
         _autoLockSecondsMeta,
@@ -1107,6 +1125,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}pr_default_extra_attempts'],
       )!,
+      homeLayout: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}home_layout'],
+      ),
       autoLockSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}auto_lock_seconds'],
@@ -1195,6 +1217,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// How many further attempts to offer after a successful one, 0 to 3.
   final int prDefaultExtraAttempts;
 
+  /// Which blocks the Start tab shows and in what order, as the JSON that
+  /// `parseHomeLayout` reads.
+  ///
+  /// Null means it has never been changed, which is what the default layout
+  /// answers. A damaged value answers the same rather than throwing: the first
+  /// screen of the app is the worst place to fail.
+  final String? homeLayout;
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   final int autoLockSeconds;
@@ -1222,6 +1252,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.defaultWarmupSets,
     required this.prDefaultWarmupSets,
     required this.prDefaultExtraAttempts,
+    this.homeLayout,
     required this.autoLockSeconds,
     required this.updatedAt,
   });
@@ -1256,6 +1287,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
     map['pr_default_extra_attempts'] = Variable<int>(prDefaultExtraAttempts);
+    if (!nullToAbsent || homeLayout != null) {
+      map['home_layout'] = Variable<String>(homeLayout);
+    }
     map['auto_lock_seconds'] = Variable<int>(autoLockSeconds);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
@@ -1291,6 +1325,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       defaultWarmupSets: Value(defaultWarmupSets),
       prDefaultWarmupSets: Value(prDefaultWarmupSets),
       prDefaultExtraAttempts: Value(prDefaultExtraAttempts),
+      homeLayout: homeLayout == null && nullToAbsent
+          ? const Value.absent()
+          : Value(homeLayout),
       autoLockSeconds: Value(autoLockSeconds),
       updatedAt: Value(updatedAt),
     );
@@ -1330,6 +1367,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       prDefaultExtraAttempts: serializer.fromJson<int>(
         json['prDefaultExtraAttempts'],
       ),
+      homeLayout: serializer.fromJson<String?>(json['homeLayout']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -1360,6 +1398,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
       'prDefaultExtraAttempts': serializer.toJson<int>(prDefaultExtraAttempts),
+      'homeLayout': serializer.toJson<String?>(homeLayout),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -1388,6 +1427,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     int? defaultWarmupSets,
     int? prDefaultWarmupSets,
     int? prDefaultExtraAttempts,
+    Value<String?> homeLayout = const Value.absent(),
     int? autoLockSeconds,
     int? updatedAt,
   }) => AppSettingsRow(
@@ -1418,6 +1458,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
     prDefaultExtraAttempts:
         prDefaultExtraAttempts ?? this.prDefaultExtraAttempts,
+    homeLayout: homeLayout.present ? homeLayout.value : this.homeLayout,
     autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1481,6 +1522,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       prDefaultExtraAttempts: data.prDefaultExtraAttempts.present
           ? data.prDefaultExtraAttempts.value
           : this.prDefaultExtraAttempts,
+      homeLayout: data.homeLayout.present
+          ? data.homeLayout.value
+          : this.homeLayout,
       autoLockSeconds: data.autoLockSeconds.present
           ? data.autoLockSeconds.value
           : this.autoLockSeconds,
@@ -1513,6 +1557,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
+          ..write('homeLayout: $homeLayout, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1543,6 +1588,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
+    homeLayout,
     autoLockSeconds,
     updatedAt,
   ]);
@@ -1572,6 +1618,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.defaultWarmupSets == this.defaultWarmupSets &&
           other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
           other.prDefaultExtraAttempts == this.prDefaultExtraAttempts &&
+          other.homeLayout == this.homeLayout &&
           other.autoLockSeconds == this.autoLockSeconds &&
           other.updatedAt == this.updatedAt);
 }
@@ -1599,6 +1646,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> defaultWarmupSets;
   final Value<int> prDefaultWarmupSets;
   final Value<int> prDefaultExtraAttempts;
+  final Value<String?> homeLayout;
   final Value<int> autoLockSeconds;
   final Value<int> updatedAt;
   final Value<int> rowid;
@@ -1625,6 +1673,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
+    this.homeLayout = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1652,6 +1701,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
+    this.homeLayout = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     required int updatedAt,
     this.rowid = const Value.absent(),
@@ -1680,6 +1730,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? defaultWarmupSets,
     Expression<int>? prDefaultWarmupSets,
     Expression<int>? prDefaultExtraAttempts,
+    Expression<String>? homeLayout,
     Expression<int>? autoLockSeconds,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
@@ -1711,6 +1762,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         'pr_default_warmup_sets': prDefaultWarmupSets,
       if (prDefaultExtraAttempts != null)
         'pr_default_extra_attempts': prDefaultExtraAttempts,
+      if (homeLayout != null) 'home_layout': homeLayout,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1740,6 +1792,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? defaultWarmupSets,
     Value<int>? prDefaultWarmupSets,
     Value<int>? prDefaultExtraAttempts,
+    Value<String?>? homeLayout,
     Value<int>? autoLockSeconds,
     Value<int>? updatedAt,
     Value<int>? rowid,
@@ -1768,6 +1821,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
       prDefaultExtraAttempts:
           prDefaultExtraAttempts ?? this.prDefaultExtraAttempts,
+      homeLayout: homeLayout ?? this.homeLayout,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1847,6 +1901,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         prDefaultExtraAttempts.value,
       );
     }
+    if (homeLayout.present) {
+      map['home_layout'] = Variable<String>(homeLayout.value);
+    }
     if (autoLockSeconds.present) {
       map['auto_lock_seconds'] = Variable<int>(autoLockSeconds.value);
     }
@@ -1884,6 +1941,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
+          ..write('homeLayout: $homeLayout, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -8501,6 +8559,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
+      Value<String?> homeLayout,
       Value<int> autoLockSeconds,
       required int updatedAt,
       Value<int> rowid,
@@ -8529,6 +8588,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
+      Value<String?> homeLayout,
       Value<int> autoLockSeconds,
       Value<int> updatedAt,
       Value<int> rowid,
@@ -8650,6 +8710,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<int> get prDefaultExtraAttempts => $composableBuilder(
     column: $table.prDefaultExtraAttempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get homeLayout => $composableBuilder(
+    column: $table.homeLayout,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8783,6 +8848,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get homeLayout => $composableBuilder(
+    column: $table.homeLayout,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -8905,6 +8975,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get homeLayout => $composableBuilder(
+    column: $table.homeLayout,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => column,
@@ -8973,6 +9048,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
+                Value<String?> homeLayout = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8999,6 +9075,7 @@ class $$AppSettingsTableTableTableManager
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
+                homeLayout: homeLayout,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -9027,6 +9104,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
+                Value<String?> homeLayout = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -9053,6 +9131,7 @@ class $$AppSettingsTableTableTableManager
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
+                homeLayout: homeLayout,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,

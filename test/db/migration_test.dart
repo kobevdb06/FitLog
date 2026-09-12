@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 16);
+    expect(raw.select('PRAGMA user_version').first.values.first, 17);
     raw.close();
   });
 
@@ -183,6 +183,10 @@ void main() {
     // app was closed, so null is the only right answer here.
     expect(settings.pendingPickKind, isNull);
     expect(settings.pendingPickRef, isNull);
+    // v17 added the arrangement of the Start tab. Null means "never changed",
+    // and the default layout it stands for is the screen this database was
+    // already showing.
+    expect(settings.homeLayout, isNull);
 
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
     final migrated = await db.workoutsDao.getWorkoutDetail('w-1');
@@ -227,7 +231,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 16);
+    expect(db.schemaVersion, 17);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

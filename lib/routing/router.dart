@@ -26,6 +26,7 @@ import '../features/routines/presentation/routine_editor_screen.dart';
 import '../features/routines/presentation/routines_screen.dart';
 import '../features/settings/presentation/about_screen.dart';
 import '../features/settings/presentation/backup_screen.dart';
+import '../features/settings/presentation/home_settings_screen.dart';
 import '../features/settings/presentation/profile_screen.dart';
 import '../features/settings/presentation/security_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
@@ -286,6 +287,11 @@ GoRouter router(Ref ref) {
                     pageBuilder: (context, state) =>
                         appPage(state, const SettingsScreen()),
                     routes: [
+                      GoRoute(
+                        path: 'startscherm',
+                        pageBuilder: (context, state) =>
+                            appPage(state, const HomeSettingsScreen()),
+                      ),
                       GoRoute(
                         path: 'workout',
                         pageBuilder: (context, state) =>

@@ -5,10 +5,17 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../routines/presentation/routine_providers.dart';
+import '../domain/home_layout.dart';
 import '../domain/today_plan.dart';
 
 part 'today_providers.g.dart';
+
+/// Which blocks the Start tab shows, and in what order.
+@riverpod
+HomeLayout homeLayout(Ref ref) =>
+    parseHomeLayout(ref.watch(settingsProvider).value?.homeLayout);
 
 /// How many starred routines the card has room for.
 const int kHomeFavourites = 3;

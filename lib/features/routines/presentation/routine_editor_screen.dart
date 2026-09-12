@@ -58,6 +58,8 @@ class _DraftSet {
     reps: reps,
     durationSeconds: durationSeconds,
     distanceM: distanceM,
+    // A routine plans what to do, not how hard it felt afterwards.
+    rpe: null,
   );
 }
 

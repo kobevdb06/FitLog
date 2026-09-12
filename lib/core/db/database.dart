@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -165,6 +165,11 @@ class AppDatabase extends _$AppDatabase {
           // Starred routines, which the home-screen shortcuts are picked from.
           // Additive: nothing was starred before the star existed.
           await m.addColumn(routinesTable, routinesTable.isFavourite);
+        }
+        if (from < 15) {
+          // Asking for an RPE per set. Additive and off: nobody was being
+          // asked before the question existed.
+          await m.addColumn(appSettingsTable, appSettingsTable.trackRpe);
         }
       });
 

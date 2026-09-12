@@ -43,6 +43,7 @@ class NumericKeypad extends StatelessWidget {
     this.unitLabel,
     this.title,
     this.steps,
+    this.onPlates,
     this.feedback = const FeedbackService(),
   });
 
@@ -61,6 +62,11 @@ class NumericKeypad extends StatelessWidget {
   final List<double>? steps;
 
   final FeedbackService feedback;
+
+  /// Opens the plate calculator with whatever is typed, when there is a bar to
+  /// load. Null everywhere else - on a dumbbell or a machine the calculator
+  /// would subtract a bar that is not there.
+  final VoidCallback? onPlates;
 
   List<double> get _steps => steps ?? kind.steps;
 
@@ -94,20 +100,19 @@ class NumericKeypad extends StatelessWidget {
                 value: value,
                 unitLabel: unitLabel,
                 onClear: () => _emit(value.clear()),
+                onPlates: onPlates,
               ),
               const SizedBox(height: AppSpacing.sm),
               _StepRow(
                 steps: _steps,
-                onStep: (delta) => _emit(
-                  value.step(delta, decimals: kind.decimals),
-                ),
+                onStep: (delta) =>
+                    _emit(value.step(delta, decimals: kind.decimals)),
               ),
               const SizedBox(height: AppSpacing.sm),
               _Digits(
                 kind: kind,
-                onDigit: (d) => _emit(
-                  value.appendDigit(d, maxDecimals: kind.decimals),
-                ),
+                onDigit: (d) =>
+                    _emit(value.appendDigit(d, maxDecimals: kind.decimals)),
                 onDecimal: () => _emit(
                   value.appendDecimal(allowDecimal: kind.allowsDecimal),
                 ),
@@ -129,12 +134,14 @@ class _Header extends StatelessWidget {
     required this.value,
     required this.unitLabel,
     required this.onClear,
+    required this.onPlates,
   });
 
   final String title;
   final KeypadValue value;
   final String? unitLabel;
   final VoidCallback onClear;
+  final VoidCallback? onPlates;
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +169,12 @@ class _Header extends StatelessWidget {
           ),
         ],
         const SizedBox(width: AppSpacing.sm),
+        if (onPlates != null)
+          IconButton(
+            tooltip: 'Schijven berekenen',
+            onPressed: onPlates,
+            icon: const Icon(Icons.donut_large_outlined),
+          ),
         IconButton(
           tooltip: 'Leegmaken',
           onPressed: onClear,
@@ -323,7 +336,9 @@ class _Digits extends StatelessWidget {
             child: Row(
               children: [
                 for (final d in row) ...[
-                  Expanded(child: _Key(label: d, onTap: () => onDigit(d))),
+                  Expanded(
+                    child: _Key(label: d, onTap: () => onDigit(d)),
+                  ),
                   if (d != row.last) const SizedBox(width: AppSpacing.xs),
                 ],
                 const SizedBox(width: AppSpacing.xs),
@@ -419,9 +434,7 @@ class _Key extends StatelessWidget {
       child: SizedBox(
         height: tall ? 56 : 52,
         child: Material(
-          color: onTap == null
-              ? Colors.transparent
-              : background,
+          color: onTap == null ? Colors.transparent : background,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           child: InkWell(
             onTap: onTap,

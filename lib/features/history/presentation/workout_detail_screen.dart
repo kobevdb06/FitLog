@@ -214,7 +214,7 @@ class _ExerciseBlock extends ConsumerWidget {
                 number: i + 1,
                 formatters: formatters,
                 isRecord: recordSetIds.contains(detail.sets[i].id),
-                onEdit: () => _editSet(context, actions, detail, i),
+                onEdit: () => _editSet(context, ref, actions, detail, i),
                 onDelete: () async {
                   final ok = await confirm(
                     context,
@@ -244,6 +244,7 @@ class _ExerciseBlock extends ConsumerWidget {
   /// that means nothing.
   Future<void> _editSet(
     BuildContext context,
+    WidgetRef ref,
     HistoryActions actions,
     WorkoutExerciseDetail exercise,
     int index,
@@ -252,12 +253,14 @@ class _ExerciseBlock extends ConsumerWidget {
     final columns = setColumnsFor(
       exercise.category,
       exercise.sets.map(setValues),
+      trackRpe: ref.read(settingsProvider).value?.trackRpe ?? false,
     );
 
     var weightKg = const Value<double?>.absent();
     var reps = const Value<int?>.absent();
     var durationSeconds = const Value<int?>.absent();
     var distanceM = const Value<double?>.absent();
+    var rpe = const Value<double?>.absent();
 
     for (final kind in columns) {
       if (!context.mounted) return;
@@ -318,7 +321,7 @@ class _ExerciseBlock extends ConsumerWidget {
                 : formatters.fromDisplayDistance(result.number!),
           );
         case KeypadFieldKind.rpe:
-          break;
+          rpe = Value(result.number);
       }
     }
 
@@ -329,6 +332,7 @@ class _ExerciseBlock extends ConsumerWidget {
       reps: reps,
       durationSeconds: durationSeconds,
       distanceM: distanceM,
+      rpe: rpe,
     );
   }
 }

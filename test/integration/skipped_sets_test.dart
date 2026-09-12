@@ -83,21 +83,24 @@ void main() {
       expect(row.isSkipped, isFalse);
     });
 
-    test('skipping keeps what was typed, so going back loses nothing', () async {
-      final id = await start(sets: 1);
-      final setId = (await bench(id)).sets.single.id;
-      await controller.updateSetValues(
-        setId,
-        weightKg: const Value(100),
-        reps: const Value(5),
-      );
+    test(
+      'skipping keeps what was typed, so going back loses nothing',
+      () async {
+        final id = await start(sets: 1);
+        final setId = (await bench(id)).sets.single.id;
+        await controller.updateSetValues(
+          setId,
+          weightKg: const Value(100),
+          reps: const Value(5),
+        );
 
-      await controller.skipSet(setId);
+        await controller.skipSet(setId);
 
-      final row = (await db.workoutsDao.getSet(setId))!;
-      expect(row.weightKg, 100);
-      expect(row.reps, 5);
-    });
+        final row = (await db.workoutsDao.getSet(setId))!;
+        expect(row.weightKg, 100);
+        expect(row.reps, 5);
+      },
+    );
 
     test('a skipped set is not pending', () async {
       final id = await start(sets: 3);
@@ -127,18 +130,21 @@ void main() {
       expect(stored[1].isSkipped, isTrue);
     });
 
-    test('a session of nothing but skipped sets still has its exercise', () async {
-      final id = await start(sets: 2);
-      for (final set in (await bench(id)).sets) {
-        await controller.skipSet(set.id);
-      }
+    test(
+      'a session of nothing but skipped sets still has its exercise',
+      () async {
+        final id = await start(sets: 2);
+        for (final set in (await bench(id)).sets) {
+          await controller.skipSet(set.id);
+        }
 
-      await controller.finish(id, discardPending: true);
+        await controller.finish(id, discardPending: true);
 
-      final workout = (await db.workoutsDao.getWorkoutDetail(id))!;
-      expect(workout.exercises, hasLength(1));
-      expect(workout.exercises.single.sets, hasLength(2));
-    });
+        final workout = (await db.workoutsDao.getWorkoutDetail(id))!;
+        expect(workout.exercises, hasLength(1));
+        expect(workout.exercises.single.sets, hasLength(2));
+      },
+    );
 
     test('it counts for no volume and no record', () async {
       final id = await start(sets: 2);
@@ -152,17 +158,20 @@ void main() {
       expect(workout.workout.totalSets, 1);
     });
 
-    test('skipping a set that was already checked off takes its record away', () async {
-      final id = await start(sets: 1);
-      final setId = (await bench(id)).sets.single.id;
-      await controller.completeSet(setId: setId, weightKg: 100, reps: 5);
-      await controller.finish(id, discardPending: true);
-      expect(await db.recordsDao.recordsForExercise('ex-bench'), isNotEmpty);
+    test(
+      'skipping a set that was already checked off takes its record away',
+      () async {
+        final id = await start(sets: 1);
+        final setId = (await bench(id)).sets.single.id;
+        await controller.completeSet(setId: setId, weightKg: 100, reps: 5);
+        await controller.finish(id, discardPending: true);
+        expect(await db.recordsDao.recordsForExercise('ex-bench'), isNotEmpty);
 
-      await controller.skipSet(setId);
+        await controller.skipSet(setId);
 
-      expect(await db.recordsDao.recordsForExercise('ex-bench'), isEmpty);
-    });
+        expect(await db.recordsDao.recordsForExercise('ex-bench'), isEmpty);
+      },
+    );
   });
 
   group('the next session', () {
@@ -241,6 +250,43 @@ void main() {
       expect(stored[2].weightKg, 100);
     });
 
+    test('a whole exercise can be skipped in one go', () async {
+      final id = await start(sets: 3);
+      final weId = (await bench(id)).workoutExercise.id;
+      final sets = (await bench(id)).sets;
+      await controller.completeSet(setId: sets[0].id, weightKg: 100, reps: 5);
+
+      final changed = await controller.setExerciseSkipped(weId, skipped: true);
+
+      expect(changed, 2, reason: 'de afgevinkte set blijft afgevinkt');
+      final stored = (await bench(id)).sets;
+      expect(stored[0].isCompleted, isTrue);
+      expect(stored[0].isSkipped, isFalse);
+      expect(stored.skip(1).every((s) => s.isSkipped), isTrue);
+    });
+
+    test('and taken back the same way', () async {
+      final id = await start(sets: 2);
+      final weId = (await bench(id)).workoutExercise.id;
+      await controller.setExerciseSkipped(weId, skipped: true);
+
+      await controller.setExerciseSkipped(weId, skipped: false);
+
+      expect((await bench(id)).sets.every((s) => !s.isSkipped), isTrue);
+    });
+
+    test('skipping when there is nothing open moves nothing', () async {
+      final id = await start(sets: 1);
+      final weId = (await bench(id)).workoutExercise.id;
+      await controller.completeSet(
+        setId: (await bench(id)).sets.single.id,
+        weightKg: 100,
+        reps: 5,
+      );
+
+      expect(await controller.setExerciseSkipped(weId, skipped: true), 0);
+    });
+
     test('switching to one arm at a time keeps it', () async {
       final id = await start(sets: 2);
       final weId = (await bench(id)).workoutExercise.id;
@@ -251,11 +297,10 @@ void main() {
       final sets = (await bench(id)).sets;
       expect(sets.first.isSkipped, isTrue);
       expect(sets.first.side, isNull, reason: 'die set is al afgehandeld');
-      expect(
-        sets.skip(1).map((s) => s.side),
-        ['left', 'right'],
-        reason: 'alleen de openstaande set wordt verdubbeld',
-      );
+      expect(sets.skip(1).map((s) => s.side), [
+        'left',
+        'right',
+      ], reason: 'alleen de openstaande set wordt verdubbeld');
     });
   });
 }

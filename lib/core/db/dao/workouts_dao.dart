@@ -542,7 +542,8 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
       'we.exercise_id AS exercise_id, we.is_pr_attempt AS is_pr_attempt, '
       'e.primary_muscle AS primary_muscle, '
       'e.secondary_muscles AS secondary_muscles, e.category AS category, '
-      'ws.weight_kg AS weight_kg, ws.reps AS reps, ws.set_type AS set_type '
+      'ws.weight_kg AS weight_kg, ws.reps AS reps, ws.rpe AS rpe, '
+      'ws.set_type AS set_type '
       'FROM workout_sets ws '
       'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
       'JOIN workouts w ON w.id = we.workout_id '
@@ -584,6 +585,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
           ),
           weightKg: row.readNullable<double>('weight_kg'),
           reps: row.readNullable<int>('reps'),
+          rpe: row.readNullable<double>('rpe'),
         ),
     ];
   }
@@ -780,6 +782,24 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
           )
           ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .get();
+  }
+
+  /// Marks every set of an exercise that is still open as skipped, or clears
+  /// those marks again.
+  ///
+  /// Only the open ones: a set you already ticked off was done, and skipping
+  /// the exercise afterwards cannot unmake that.
+  Future<int> setExerciseSkipped(
+    String workoutExerciseId, {
+    required bool skipped,
+  }) async {
+    return (update(workoutSetsTable)..where(
+          (t) =>
+              t.workoutExerciseId.equals(workoutExerciseId) &
+              t.isCompleted.equals(false) &
+              t.isSkipped.equals(!skipped),
+        ))
+        .write(WorkoutSetsTableCompanion(isSkipped: Value(skipped)));
   }
 
   /// Turns doing this exercise one side at a time on or off.

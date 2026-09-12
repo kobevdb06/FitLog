@@ -73,6 +73,7 @@ class HistoryActions {
     Value<int?> reps = const Value.absent(),
     Value<int?> durationSeconds = const Value.absent(),
     Value<double?> distanceM = const Value.absent(),
+    Value<double?> rpe = const Value.absent(),
     bool? isCompleted,
   }) async {
     await _db.workoutsDao.updateSet(
@@ -81,6 +82,7 @@ class HistoryActions {
       reps: reps,
       durationSeconds: durationSeconds,
       distanceM: distanceM,
+      rpe: rpe,
       isCompleted: isCompleted == null
           ? const Value.absent()
           : Value(isCompleted),

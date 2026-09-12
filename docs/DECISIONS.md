@@ -1210,3 +1210,59 @@ of een fout - blijft hij weg, want dan valt er niets te starten.
 De test moest het laadmoment vasthouden met een stream die nooit iets geeft. In
 een test antwoordt de database sneller dan de eerste assertie, en de eerste
 versie van de test slaagde daardoor ook met de fout er nog in.
+
+## 83. Een hele oefening in één keer overslaan
+
+Vier sets overslaan was vier keer dubbeltikken. Er staat nu "Oefening
+overslaan" in het ⋮-menu, en als alles al overgeslagen is heet dezelfde regel
+"Oefening toch doen".
+
+Alleen de sets die nog openstaan bewegen mee. Een set die je al afgevinkt hebt
+heb je gedaan, en de oefening achteraf overslaan maakt dat niet ongedaan.
+
+De actie geeft terug hoeveel sets er bewogen. Was er niets te doen, dan zegt de
+app ook niets - een bevestiging voor iets dat niet gebeurde is erger dan stilte.
+
+## 84. De schijvenberekening zit waar je staat
+
+Hij stond drie tikken ver in het ⋮-menu en ráádde je doelgewicht uit de
+zwaarste set van de oefening. Op het moment dat je hem nodig hebt sta je met de
+keypad open op een gewichtsveld, en dan weet de app precies welk gewicht je
+bedoelt.
+
+Er staat nu een knopje in de keypad, naast het wisknopje, dat het blad opent op
+het getal dat je net getikt hebt. Alleen bij halterstang-oefeningen: bij
+dumbbells, machines en kabels trekt de berekening een stanggewicht af dat er
+niet is, en dan belooft de knop iets wat hij niet waarmaakt.
+
+Het oude menu-item blijft staan voor wie er al aan gewend is.
+
+## 85. RPE is een keuze, en vervangt de sessiebeoordeling
+
+RPE lag half in de app: de kolom in de database, de keypadmodus, het
+wegschrijven - alleen geen veld om hem in te tikken. Hij staat nu achter een
+schakelaar in de workout-voorkeuren, uit als standaard. Het is een extra getal
+per set en niet iedereen wil alles scoren.
+
+Aan gezet verschijnt er een RPE-kolom, achteraan: het is een aantekening over
+de set, niet een van de getallen die de set maken. Een set die er al een draagt
+houdt de kolom ook als je de schakelaar weer uitzet, anders staat het getal
+ergens waar je het niet kan zien of verbeteren.
+
+Wat het doet met de hersteltijd:
+
+Per spiergroep wordt het gemiddelde genomen van de sets die haar belastten,
+**gewogen naar die belasting**. Een zware set op 9 zegt meer over wat de spier
+doorstond dan een lichte op 6. Sets zonder score tellen niet mee in plaats van
+als nul: de helft scoren middelt die helft.
+
+RPE 8 is een gewone zware dag en verandert niets. Elk punt erboven of eronder
+verschuift de schatting met 5%. Alles op 10 rekt hem dus met een tiende - zo'n
+drie uur op een beendag. Bewust klein: een RPE is één indruk van één set,
+gegeven terwijl je buiten adem bent. Dat verdient een duwtje, geen oordeel.
+
+En het **vervangt** de beoordeling die je na de sessie geeft, in plaats van er
+bovenop te komen. Allebei beantwoorden ze dezelfde vraag. Ze vermenigvuldigen
+zou dezelfde indruk twee keer tellen; de RPE wint waar hij er is, want die is
+per set en per spier, terwijl de sessiebeoordeling een hele avond dekt waarin
+je benen zwaar waren en je armen een bijzaak.

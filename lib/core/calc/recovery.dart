@@ -37,6 +37,16 @@ const int kSessionsForBaseline = 3;
 const double kMinLoadRatio = 0.6;
 const double kMaxLoadRatio = 1.5;
 
+/// The RPE an ordinary hard working set sits at, and how much one point above
+/// or below it moves the estimate.
+///
+/// Deliberately small. An RPE is one person's impression of one set, given
+/// while out of breath; it deserves a nudge, not a verdict. Two full points
+/// above a normal day - every set at 10 - stretches the estimate by a tenth,
+/// which is about three hours on a leg day.
+const double kNeutralRpe = 8;
+const double kRpeHoursPerPoint = 0.05;
+
 /// Added on top, in hours, for the three things that leave a muscle sorer than
 /// its tonnage suggests.
 const double kFailureBonusHours = 12;
@@ -114,6 +124,7 @@ class RecoverySet {
     required this.effort,
     this.weightKg,
     this.reps,
+    this.rpe,
   });
 
   final String workoutId;
@@ -127,6 +138,9 @@ class RecoverySet {
   final PerceivedEffort? effort;
   final double? weightKg;
   final int? reps;
+
+  /// How hard this set felt, 1 to 10, when the user is keeping track of that.
+  final double? rpe;
 }
 
 /// What one muscle got out of one session.
@@ -140,6 +154,7 @@ class MuscleSession {
     required this.hadFailureSets,
     required this.wasPrAttempt,
     required this.effort,
+    this.averageRpe,
   });
 
   final String muscle;
@@ -155,6 +170,13 @@ class MuscleSession {
   final bool hadFailureSets;
   final bool wasPrAttempt;
   final PerceivedEffort? effort;
+
+  /// The RPE of this muscle's sets in this session, weighted by how much load
+  /// each of them put on it, or null when none were scored.
+  ///
+  /// Weighted rather than averaged flat: a heavy set at 9 says more about what
+  /// the muscle went through than a light one at 6 does.
+  final double? averageRpe;
 }
 
 /// One muscle's estimate, as of [RecoveryEstimate.trainedAt].
@@ -255,6 +277,7 @@ List<MuscleSession> muscleSessions(
             exerciseId: set.exerciseId,
             failure: set.setType == SetType.failure,
             prAttempt: set.isPrAttempt,
+            rpe: set.rpe,
           );
     }
 
@@ -281,6 +304,7 @@ Duration recoveryDuration({
   required bool wasPrAttempt,
   required bool unaccustomed,
   required PerceivedEffort? effort,
+  double? averageRpe,
 }) {
   final ratio = (baselineLoadKg == null || baselineLoadKg <= 0)
       ? 1.0
@@ -288,7 +312,15 @@ Duration recoveryDuration({
 
   var hours =
       baseRecoveryHours(muscle) * ratio.clamp(kMinLoadRatio, kMaxLoadRatio);
-  hours *= effort?.recoveryFactor ?? 1.0;
+
+  // Both the RPE and the rating you give the session afterwards answer the
+  // same question - how hard was that - so they are not applied on top of one
+  // another. The RPE wins where there is one: it is per set and per muscle,
+  // while the rating covers a whole evening in which the legs may have been
+  // brutal and the arms an afterthought.
+  hours *= averageRpe != null
+      ? 1 + (averageRpe - kNeutralRpe) * kRpeHoursPerPoint
+      : effort?.recoveryFactor ?? 1.0;
 
   if (hadFailureSets) hours += kFailureBonusHours;
   if (wasPrAttempt) hours += kPrAttemptBonusHours;
@@ -326,6 +358,7 @@ List<RecoveryEstimate> estimateRecovery(List<MuscleSession> sessions) {
       wasPrAttempt: latest.wasPrAttempt,
       unaccustomed: _isUnaccustomed(latest, earlier),
       effort: latest.effort,
+      averageRpe: latest.averageRpe,
     );
 
     estimates.add(
@@ -382,16 +415,27 @@ class _Accumulator {
   bool hadFailureSets = false;
   bool wasPrAttempt = false;
 
+  /// Running totals for the load-weighted RPE, counting only the sets that
+  /// were actually scored. Scoring half your sets should average those half,
+  /// not treat the rest as zero.
+  double rpeWeighted = 0;
+  double rpeLoad = 0;
+
   void add({
     required double load,
     required String exerciseId,
     required bool failure,
     required bool prAttempt,
+    double? rpe,
   }) {
     loadKg += load;
     exerciseIds.add(exerciseId);
     hadFailureSets |= failure;
     wasPrAttempt |= prAttempt;
+    if (rpe != null && load > 0) {
+      rpeWeighted += rpe * load;
+      rpeLoad += load;
+    }
   }
 
   MuscleSession build() => MuscleSession(
@@ -403,5 +447,6 @@ class _Accumulator {
     hadFailureSets: hadFailureSets,
     wasPrAttempt: wasPrAttempt,
     effort: effort,
+    averageRpe: rpeLoad > 0 ? rpeWeighted / rpeLoad : null,
   );
 }

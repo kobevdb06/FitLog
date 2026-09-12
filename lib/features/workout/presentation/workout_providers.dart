@@ -28,6 +28,7 @@ SetValues setValues(WorkoutSetRow row) => (
   reps: row.reps,
   durationSeconds: row.durationSeconds,
   distanceM: row.distanceM,
+  rpe: row.rpe,
 );
 
 /// What the same exercise looked like last time, keyed by exercise and side.
@@ -482,6 +483,28 @@ class WorkoutController {
     // reads "Geskipt" there rather than a weight, so there is nothing on
     // screen for the empty cell to adopt.
     return match.isSkipped ? null : match;
+  }
+
+  /// Skips what is left of an exercise in one go, or takes that back.
+  ///
+  /// The machine is taken, or you are out of time. Doing it set by set works
+  /// too, but four sets is four double taps.
+  /// Returns how many sets it moved, so a menu that could do nothing does not
+  /// report that it did something.
+  Future<int> setExerciseSkipped(
+    String workoutExerciseId, {
+    required bool skipped,
+  }) async {
+    final changed = await _db.workoutsDao.setExerciseSkipped(
+      workoutExerciseId,
+      skipped: skipped,
+    );
+    if (changed == 0) return 0;
+    await _recalculate();
+    // A set that was completed is untouched, but a record could have come from
+    // one that is now skipped, so the history is replayed.
+    await _db.recordsDao.rebuildAllRecords();
+    return changed;
   }
 
   /// Marks a set as one you deliberately left out.

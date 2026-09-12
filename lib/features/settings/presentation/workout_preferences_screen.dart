@@ -82,6 +82,16 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
               AppSettingsTableCompanion(defaultWarmupSets: Value(value)),
             ),
           ),
+          SwitchListTile(
+            title: const Text('RPE bijhouden'),
+            subtitle: const Text(
+              'Een extra kolom per set: hoe zwaar die aanvoelde, van 1 tot 10. '
+              'De herstelschatting luistert ernaar.',
+            ),
+            value: settings.trackRpe,
+            onChanged: (value) =>
+                update(AppSettingsTableCompanion(trackRpe: Value(value))),
+          ),
           const SectionHeader('Feedback'),
           SwitchListTile(
             title: const Text('Klik bij het afvinken van een set'),

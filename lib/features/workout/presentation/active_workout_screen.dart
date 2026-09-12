@@ -201,6 +201,24 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     setState(() => _target = null);
   }
 
+  /// Opening the plate calculator from the pad, or null where it would not
+  /// mean anything.
+  VoidCallback? _platesAction(WorkoutDetail workout, Formatters formatters) {
+    final target = _target;
+    if (target == null || target.kind != KeypadFieldKind.weight) return null;
+
+    final owner = _ownerOf(workout, target.setId);
+    if (owner == null || owner.category != ExerciseCategory.barbell) {
+      return null;
+    }
+
+    final typed = _keypadValue.number;
+    return () => PlateCalculatorSheet.show(
+      context,
+      targetKg: typed == null ? null : formatters.fromDisplayWeight(typed),
+    );
+  }
+
   WorkoutExerciseDetail? _ownerOf(WorkoutDetail workout, String setId) {
     for (final exercise in workout.exercises) {
       if (exercise.sets.any((s) => s.id == setId)) return exercise;
@@ -605,6 +623,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                                 formatters.weightUnit == WeightUnit.lb
                             ? const [2.5, 5, 10]
                             : null,
+                        // Only where there is a bar to load, and with the
+                        // number you are typing rather than a guess from the
+                        // heaviest set of the exercise: standing on the weight
+                        // field is the moment the app knows exactly which
+                        // weight you mean.
+                        onPlates: _platesAction(workout, formatters),
                         feedback: _feedback(settings),
                         onChanged: (value) {
                           setState(() => _keypadValue = value);
@@ -687,7 +711,11 @@ class _ExerciseCard extends ConsumerWidget {
 
     // Which value columns make sense here: weight and reps for anything you
     // load, a time for a plank, a distance and a time for a run.
-    final columns = setColumnsFor(detail.category, detail.sets.map(setValues));
+    final columns = setColumnsFor(
+      detail.category,
+      detail.sets.map(setValues),
+      trackRpe: ref.watch(settingsProvider).value?.trackRpe ?? false,
+    );
 
     // Numbering is derived from the current types and sides, so switching one
     // set to warm-up - or the exercise to one arm at a time - renumbers
@@ -855,6 +883,20 @@ class _ExerciseCard extends ConsumerWidget {
         if (seconds != null) {
           await controller.setExerciseRest(detail.workoutExercise.id, seconds);
         }
+
+      case 'skip':
+        final open = detail.sets.any((s) => !s.isCompleted && !s.isSkipped);
+        final changed = await controller.setExerciseSkipped(
+          detail.workoutExercise.id,
+          skipped: open,
+        );
+        if (changed == 0 || !context.mounted) return;
+        showSnack(
+          context,
+          open
+              ? '${detail.exercise.name} overgeslagen'
+              : '${detail.exercise.name} staat weer open',
+        );
 
       case 'unilateral':
         final unilateral = !detail.workoutExercise.isUnilateral;
@@ -1105,6 +1147,14 @@ class _CardHeader extends ConsumerWidget {
               const PopupMenuItem(
                 value: 'rest',
                 child: Text('Rusttimer instellen'),
+              ),
+              PopupMenuItem(
+                value: 'skip',
+                child: Text(
+                  detail.sets.any((s) => !s.isCompleted && !s.isSkipped)
+                      ? 'Oefening overslaan'
+                      : 'Oefening toch doen',
+                ),
               ),
               PopupMenuItem(
                 value: 'unilateral',

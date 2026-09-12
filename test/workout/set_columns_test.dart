@@ -13,11 +13,13 @@ void main() {
     int? reps,
     int? durationSeconds,
     double? distanceM,
+    double? rpe,
   }) => (
     weightKg: weightKg,
     reps: reps,
     durationSeconds: durationSeconds,
     distanceM: distanceM,
+    rpe: rpe,
   );
 
   test('anything you load is weight times reps', () {

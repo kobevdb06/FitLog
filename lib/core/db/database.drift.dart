@@ -703,6 +703,21 @@ class $AppSettingsTableTable extends AppSettingsTable
         requiredDuringInsert: false,
         defaultValue: const Constant('[25,20,15,10,5,2.5,1.25]'),
       );
+  static const VerificationMeta _trackRpeMeta = const VerificationMeta(
+    'trackRpe',
+  );
+  @override
+  late final GeneratedColumn<bool> trackRpe = GeneratedColumn<bool>(
+    'track_rpe',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("track_rpe" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _defaultWarmupSetsMeta = const VerificationMeta(
     'defaultWarmupSets',
   );
@@ -780,6 +795,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     seedVersion,
     barWeightKg,
     availablePlatesKg,
+    trackRpe,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -944,6 +960,12 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('track_rpe')) {
+      context.handle(
+        _trackRpeMeta,
+        trackRpe.isAcceptableOrUnknown(data['track_rpe']!, _trackRpeMeta),
+      );
+    }
     if (data.containsKey('default_warmup_sets')) {
       context.handle(
         _defaultWarmupSetsMeta,
@@ -1069,6 +1091,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}available_plates_kg'],
       )!,
+      trackRpe: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}track_rpe'],
+      )!,
       defaultWarmupSets: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}default_warmup_sets'],
@@ -1153,6 +1179,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// JSON array of available plate weights in kg, per side.
   final String availablePlatesKg;
 
+  /// Whether every set asks for an RPE as well.
+  ///
+  /// Off by default: it is one more number per set, and most people do not
+  /// want to score every set they do. Turn it on and the estimate of how long
+  /// a muscle needs starts listening to it.
+  final bool trackRpe;
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   final int defaultWarmupSets;
 
@@ -1185,6 +1218,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.seedVersion,
     required this.barWeightKg,
     required this.availablePlatesKg,
+    required this.trackRpe,
     required this.defaultWarmupSets,
     required this.prDefaultWarmupSets,
     required this.prDefaultExtraAttempts,
@@ -1218,6 +1252,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['seed_version'] = Variable<int>(seedVersion);
     map['bar_weight_kg'] = Variable<double>(barWeightKg);
     map['available_plates_kg'] = Variable<String>(availablePlatesKg);
+    map['track_rpe'] = Variable<bool>(trackRpe);
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
     map['pr_default_extra_attempts'] = Variable<int>(prDefaultExtraAttempts);
@@ -1252,6 +1287,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       seedVersion: Value(seedVersion),
       barWeightKg: Value(barWeightKg),
       availablePlatesKg: Value(availablePlatesKg),
+      trackRpe: Value(trackRpe),
       defaultWarmupSets: Value(defaultWarmupSets),
       prDefaultWarmupSets: Value(prDefaultWarmupSets),
       prDefaultExtraAttempts: Value(prDefaultExtraAttempts),
@@ -1286,6 +1322,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       seedVersion: serializer.fromJson<int>(json['seedVersion']),
       barWeightKg: serializer.fromJson<double>(json['barWeightKg']),
       availablePlatesKg: serializer.fromJson<String>(json['availablePlatesKg']),
+      trackRpe: serializer.fromJson<bool>(json['trackRpe']),
       defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
       prDefaultWarmupSets: serializer.fromJson<int>(
         json['prDefaultWarmupSets'],
@@ -1319,6 +1356,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'seedVersion': serializer.toJson<int>(seedVersion),
       'barWeightKg': serializer.toJson<double>(barWeightKg),
       'availablePlatesKg': serializer.toJson<String>(availablePlatesKg),
+      'trackRpe': serializer.toJson<bool>(trackRpe),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
       'prDefaultExtraAttempts': serializer.toJson<int>(prDefaultExtraAttempts),
@@ -1346,6 +1384,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     int? seedVersion,
     double? barWeightKg,
     String? availablePlatesKg,
+    bool? trackRpe,
     int? defaultWarmupSets,
     int? prDefaultWarmupSets,
     int? prDefaultExtraAttempts,
@@ -1374,6 +1413,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     seedVersion: seedVersion ?? this.seedVersion,
     barWeightKg: barWeightKg ?? this.barWeightKg,
     availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
+    trackRpe: trackRpe ?? this.trackRpe,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
     prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
     prDefaultExtraAttempts:
@@ -1431,6 +1471,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       availablePlatesKg: data.availablePlatesKg.present
           ? data.availablePlatesKg.value
           : this.availablePlatesKg,
+      trackRpe: data.trackRpe.present ? data.trackRpe.value : this.trackRpe,
       defaultWarmupSets: data.defaultWarmupSets.present
           ? data.defaultWarmupSets.value
           : this.defaultWarmupSets,
@@ -1468,6 +1509,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('seedVersion: $seedVersion, ')
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
+          ..write('trackRpe: $trackRpe, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -1497,6 +1539,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     seedVersion,
     barWeightKg,
     availablePlatesKg,
+    trackRpe,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -1525,6 +1568,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.seedVersion == this.seedVersion &&
           other.barWeightKg == this.barWeightKg &&
           other.availablePlatesKg == this.availablePlatesKg &&
+          other.trackRpe == this.trackRpe &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
           other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
           other.prDefaultExtraAttempts == this.prDefaultExtraAttempts &&
@@ -1551,6 +1595,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int> seedVersion;
   final Value<double> barWeightKg;
   final Value<String> availablePlatesKg;
+  final Value<bool> trackRpe;
   final Value<int> defaultWarmupSets;
   final Value<int> prDefaultWarmupSets;
   final Value<int> prDefaultExtraAttempts;
@@ -1576,6 +1621,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.seedVersion = const Value.absent(),
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
+    this.trackRpe = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -1602,6 +1648,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.seedVersion = const Value.absent(),
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
+    this.trackRpe = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -1629,6 +1676,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? seedVersion,
     Expression<double>? barWeightKg,
     Expression<String>? availablePlatesKg,
+    Expression<bool>? trackRpe,
     Expression<int>? defaultWarmupSets,
     Expression<int>? prDefaultWarmupSets,
     Expression<int>? prDefaultExtraAttempts,
@@ -1657,6 +1705,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (seedVersion != null) 'seed_version': seedVersion,
       if (barWeightKg != null) 'bar_weight_kg': barWeightKg,
       if (availablePlatesKg != null) 'available_plates_kg': availablePlatesKg,
+      if (trackRpe != null) 'track_rpe': trackRpe,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
       if (prDefaultWarmupSets != null)
         'pr_default_warmup_sets': prDefaultWarmupSets,
@@ -1687,6 +1736,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int>? seedVersion,
     Value<double>? barWeightKg,
     Value<String>? availablePlatesKg,
+    Value<bool>? trackRpe,
     Value<int>? defaultWarmupSets,
     Value<int>? prDefaultWarmupSets,
     Value<int>? prDefaultExtraAttempts,
@@ -1713,6 +1763,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       seedVersion: seedVersion ?? this.seedVersion,
       barWeightKg: barWeightKg ?? this.barWeightKg,
       availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
+      trackRpe: trackRpe ?? this.trackRpe,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
       prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
       prDefaultExtraAttempts:
@@ -1782,6 +1833,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (availablePlatesKg.present) {
       map['available_plates_kg'] = Variable<String>(availablePlatesKg.value);
     }
+    if (trackRpe.present) {
+      map['track_rpe'] = Variable<bool>(trackRpe.value);
+    }
     if (defaultWarmupSets.present) {
       map['default_warmup_sets'] = Variable<int>(defaultWarmupSets.value);
     }
@@ -1826,6 +1880,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('seedVersion: $seedVersion, ')
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
+          ..write('trackRpe: $trackRpe, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -8384,6 +8439,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int> seedVersion,
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
+      Value<bool> trackRpe,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -8411,6 +8467,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int> seedVersion,
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
+      Value<bool> trackRpe,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -8515,6 +8572,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get availablePlatesKg => $composableBuilder(
     column: $table.availablePlatesKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get trackRpe => $composableBuilder(
+    column: $table.trackRpe,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8643,6 +8705,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get trackRpe => $composableBuilder(
+    column: $table.trackRpe,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => ColumnOrderings(column),
@@ -8762,6 +8829,9 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get trackRpe =>
+      $composableBuilder(column: $table.trackRpe, builder: (column) => column);
+
   GeneratedColumn<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => column,
@@ -8841,6 +8911,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> seedVersion = const Value.absent(),
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
+                Value<bool> trackRpe = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -8866,6 +8937,7 @@ class $$AppSettingsTableTableTableManager
                 seedVersion: seedVersion,
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
+                trackRpe: trackRpe,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -8893,6 +8965,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int> seedVersion = const Value.absent(),
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
+                Value<bool> trackRpe = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -8918,6 +8991,7 @@ class $$AppSettingsTableTableTableManager
                 seedVersion: seedVersion,
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
+                trackRpe: trackRpe,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,

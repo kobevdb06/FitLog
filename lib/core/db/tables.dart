@@ -102,6 +102,14 @@ class AppSettingsTable extends Table {
       .named('available_plates_kg')
       .withDefault(const Constant('[25,20,15,10,5,2.5,1.25]'))();
 
+  /// Whether every set asks for an RPE as well.
+  ///
+  /// Off by default: it is one more number per set, and most people do not
+  /// want to score every set they do. Turn it on and the estimate of how long
+  /// a muscle needs starts listening to it.
+  BoolColumn get trackRpe =>
+      boolean().named('track_rpe').withDefault(const Constant(false))();
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   IntColumn get defaultWarmupSets =>
       integer().named('default_warmup_sets').withDefault(const Constant(0))();

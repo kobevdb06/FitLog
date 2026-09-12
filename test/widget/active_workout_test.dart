@@ -315,7 +315,11 @@ void main() {
 
     // The sheet, over the session - not the four-tab exercise page.
     expect(find.text('Records en grafieken'), findsOneWidget);
-    expect(find.byType(SetRow), findsOneWidget, reason: 'de sessie staat er nog');
+    expect(
+      find.byType(SetRow),
+      findsOneWidget,
+      reason: 'de sessie staat er nog',
+    );
   });
 
   group('tapping the previous column', () {
@@ -446,6 +450,55 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(NumericKeypad), findsOneWidget);
+    });
+  });
+
+  group('the plate calculator from the pad', () {
+    testWidgets('is offered on the weight of a barbell exercise', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Schijven berekenen'), findsOneWidget);
+    });
+
+    testWidgets('but not on the reps', (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('5').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Schijven berekenen'), findsNothing);
+    });
+
+    testWidgets('and not where there is no bar to load', (tester) async {
+      // A dumbbell has no bar to take off the total.
+      await db.exercisesDao.setCategory('ex-bench', ExerciseCategory.dumbbell);
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Schijven berekenen'), findsNothing);
+    });
+
+    testWidgets('it opens on the number you typed', (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Leegmaken'));
+      await tester.pumpAndSettle();
+      for (final digit in ['6', '0']) {
+        await tester.tap(find.text(digit));
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(find.byTooltip('Schijven berekenen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Schijvenberekening'), findsOneWidget);
+      // Not the heaviest set of the exercise, which is what the menu guessed.
+      expect(find.textContaining('60'), findsWidgets);
     });
   });
 

@@ -20,6 +20,7 @@ typedef SetValues = ({
   int? reps,
   int? durationSeconds,
   double? distanceM,
+  double? rpe,
 });
 
 /// The columns for [category], in the order they are filled in.
@@ -38,8 +39,9 @@ typedef SetValues = ({
 /// see or correct it.
 List<KeypadFieldKind> setColumnsFor(
   ExerciseCategory category,
-  Iterable<SetValues> sets,
-) {
+  Iterable<SetValues> sets, {
+  bool trackRpe = false,
+}) {
   final rows = sets.toList(growable: false);
   bool anyHas(bool Function(SetValues) has) => rows.any(has);
 
@@ -51,6 +53,11 @@ List<KeypadFieldKind> setColumnsFor(
     if (category.hasDuration || anyHas((s) => s.durationSeconds != null))
       KeypadFieldKind.duration,
     if (category.hasReps || anyHas((s) => s.reps != null)) KeypadFieldKind.reps,
+    // Last, and only when asked for: it is a note about the set rather than
+    // one of the numbers that make it. A set that already carries one keeps
+    // the column even after the setting goes off, or the value would sit
+    // there with no way to see or correct it.
+    if (trackRpe || anyHas((s) => s.rpe != null)) KeypadFieldKind.rpe,
   ];
 }
 

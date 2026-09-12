@@ -1139,3 +1139,23 @@ niets.
 De sessie kwam van onderaf; de samenvatting nam haar plaats in met de zoom van
 Android. Twee verschillende bewegingen in één stap, en de tweede begint voordat
 de eerste is uitgewerkt. Nu rijst de samenvatting net zo.
+
+## 79. Een pijltje naar rechts opent iets dat van rechts komt
+
+Rijen die eindigen in een chevron - een routine, een oefening in de catalogus,
+een sessie in je geschiedenis, een instelling - openen nu iets dat van rechts
+binnenschuift, met de lijst die er een stukje onder wegschuift. Terug is
+hetzelfde andersom.
+
+De standaard van Android is een zoom. Die zegt niets over richting, en naast
+een pijltje dat wél een richting aanwijst betekent dat pijltje dan niets meer.
+
+Op één plek geregeld, in het thema, niet per route. Elke lijst in de app is
+hetzelfde gebaar; lieten we elke route het zelf beslissen, dan lopen ze uit
+elkaar zodra er één bijkomt. De schermen die van onderaf komen dragen hun eigen
+pagina en blijven daarbuiten - die beweging betekent iets anders en moet anders
+blijven.
+
+Wat dit niet meebrengt is het terugveeggebaar vanaf de rand. Dat zit aan
+`CupertinoPageRoute` vast, niet aan de animatie, en de rest van de app is
+Material. De beweging alleen is wat gevraagd werd.

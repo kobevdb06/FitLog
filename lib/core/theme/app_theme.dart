@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,16 +13,20 @@ abstract final class AppTheme {
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
-    final background =
-        isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final background = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground;
     final surface = isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    final surfaceHigh =
-        isDark ? AppColors.darkSurfaceHigh : AppColors.lightSurfaceHigh;
+    final surfaceHigh = isDark
+        ? AppColors.darkSurfaceHigh
+        : AppColors.lightSurfaceHigh;
     final outline = isDark ? AppColors.darkOutline : AppColors.lightOutline;
-    final onSurface =
-        isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
-    final onSurfaceMuted =
-        isDark ? AppColors.darkOnSurfaceMuted : AppColors.lightOnSurfaceMuted;
+    final onSurface = isDark
+        ? AppColors.darkOnSurface
+        : AppColors.lightOnSurface;
+    final onSurfaceMuted = isDark
+        ? AppColors.darkOnSurfaceMuted
+        : AppColors.lightOnSurfaceMuted;
 
     final scheme = ColorScheme(
       brightness: brightness,
@@ -52,6 +57,22 @@ abstract final class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
+      // Rows that end in a chevron pointing right should open something that
+      // comes from the right. Android's own default is a zoom, which says
+      // nothing about direction and leaves the arrow meaning nothing.
+      //
+      // One place rather than per route: every list in the app - routines,
+      // the catalogue, your history, the settings - is the same gesture, and
+      // they would drift apart if each one decided for itself. The screens
+      // that rise from the bottom carry their own page and are untouched by
+      // this.
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
     );
 
     final text = _textTheme(base.textTheme, onSurface);
@@ -67,8 +88,9 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: text.titleLarge,
-        systemOverlayStyle:
-            isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
       ),
       cardTheme: CardThemeData(
         color: surface,
@@ -213,9 +235,8 @@ abstract final class AppTheme {
               s.contains(WidgetState.selected) ? Colors.white : onSurfaceMuted,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected)
-              ? AppColors.accent
-              : surfaceHigh,
+          (s) =>
+              s.contains(WidgetState.selected) ? AppColors.accent : surfaceHigh,
         ),
       ),
       tabBarTheme: TabBarThemeData(

@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -170,6 +170,13 @@ class AppDatabase extends _$AppDatabase {
           // Asking for an RPE per set. Additive and off: nobody was being
           // asked before the question existed.
           await m.addColumn(appSettingsTable, appSettingsTable.trackRpe);
+        }
+        if (from < 16) {
+          // The weekdays a routine is planned on. Additive and empty: nothing
+          // was planned before there was anywhere to plan it, and zero is what
+          // the dashboard reads as "no schedule", which is the behaviour these
+          // databases already had.
+          await m.addColumn(routinesTable, routinesTable.scheduledDays);
         }
       });
 

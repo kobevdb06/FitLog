@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../calc/schedule.dart';
 import '../calc/units.dart';
 import '../db/enums.dart';
 
@@ -212,6 +213,7 @@ class Formatters {
   static final DateFormat _fullDate = DateFormat('d MMMM yyyy', _locale);
   static final DateFormat _shortDate = DateFormat('d MMM yyyy', _locale);
   static final DateFormat _weekday = DateFormat('EEEE', _locale);
+  static final DateFormat _weekdayShort = DateFormat('E', _locale);
   static final DateFormat _monthYear = DateFormat('MMMM yyyy', _locale);
   static final DateFormat _time = DateFormat('HH:mm', _locale);
 
@@ -230,6 +232,42 @@ class Formatters {
   static String weekdayName(int weekday) {
     // 1 = Monday .. 7 = Sunday. 5 January 2026 is a Monday.
     return _weekday.format(DateTime(2026, 1, 4 + weekday));
+  }
+
+  /// `ma`, `di`, ... - short enough to put seven of them next to each other.
+  static String weekdayShort(int weekday) =>
+      _weekdayShort.format(DateTime(2026, 1, 4 + weekday));
+
+  /// When the next planned day is: `Morgen`, otherwise its own name.
+  ///
+  /// A weekday a whole week out is still only called by its name. Saying "over
+  /// 7 dagen" would be more precise and less useful: the name is what you plan
+  /// around.
+  static String nextDayWords(int daysUntil, int weekday) {
+    if (daysUntil == 1) return 'Morgen';
+    final name = weekdayName(weekday);
+    if (name.isEmpty) return name;
+    return name[0].toUpperCase() + name.substring(1);
+  }
+
+  /// What a routine's schedule says, as a line you can read out loud.
+  ///
+  /// `Niet ingepland`, `Elke dag`, `Elke maandag en donderdag`.
+  static String scheduleSentence(WeekdaySet days) {
+    if (days.isEmpty) return 'Niet ingepland';
+    if (days.length == DateTime.daysPerWeek) return 'Elke dag';
+    return 'Elke ${weekdayList(days)}';
+  }
+
+  /// `maandag`, `maandag en donderdag`, `maandag, woensdag en vrijdag`.
+  ///
+  /// Written out rather than abbreviated: this ends up in a sentence, and a
+  /// sentence made of two-letter stumps reads like a train timetable.
+  static String weekdayList(WeekdaySet days) {
+    final names = [for (final day in days.weekdays) weekdayName(day)];
+    if (names.isEmpty) return '';
+    if (names.length == 1) return names.single;
+    return '${names.sublist(0, names.length - 1).join(', ')} en ${names.last}';
   }
 
   /// `Vandaag`, `Gisteren`, `3 dagen geleden`, then a plain date.

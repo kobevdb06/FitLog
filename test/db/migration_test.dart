@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 15);
+    expect(raw.select('PRAGMA user_version').first.values.first, 16);
     raw.close();
   });
 
@@ -151,6 +151,12 @@ void main() {
     // v13 added the mark that says the user picked an exercise's type
     // themselves. Nobody had made that choice before it existed.
     expect(migratedExercise.categoryOverridden, isFalse);
+    // v14 and v16 added the star and the weekly schedule. A routine from
+    // before either is unstarred and unplanned, which is what the Start tab
+    // reads as "fall back to what you have done least recently" - the exact
+    // behaviour this database already had.
+    expect(migratedRoutine.isFavourite, isFalse);
+    expect(migratedRoutine.scheduledDays, 0);
 
     expect(await db.recordsDao.measurements(), hasLength(1));
     expect(await db.recordsDao.photos(), hasLength(1));
@@ -221,7 +227,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 15);
+    expect(db.schemaVersion, 16);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

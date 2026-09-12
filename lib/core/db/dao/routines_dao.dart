@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../calc/schedule.dart';
 import '../database.dart';
 import '../models.dart';
 
@@ -372,6 +373,28 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
       RoutinesTableCompanion(isFavourite: Value(favourite)),
     );
   }
+
+  /// Plans a routine on a set of weekdays, or on none at all.
+  ///
+  /// Its own write rather than a field on [RoutineDraft], so that editing the
+  /// exercises in a routine cannot quietly unplan it and so that a routine
+  /// shared over QR arrives without a schedule attached.
+  Future<void> setScheduledDays(String routineId, WeekdaySet days) async {
+    await (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
+      RoutinesTableCompanion(scheduledDays: Value(days.mask)),
+    );
+  }
+
+  /// Every routine that is planned on at least one day, in your own order.
+  ///
+  /// Which day is which is decided by the caller: the whole week is a handful
+  /// of rows, and reading them all keeps "what is on tomorrow" a question the
+  /// dashboard can answer without going back to the database.
+  Stream<List<RoutineRow>> watchScheduledRoutines() =>
+      (select(routinesTable)
+            ..where((t) => t.scheduledDays.isBiggerThanValue(0))
+            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .watch();
 
   /// The starred routines, the ones you do most often first.
   ///

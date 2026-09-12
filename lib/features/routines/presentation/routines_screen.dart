@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
@@ -247,6 +248,7 @@ class _RoutineTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final routine = summary.routine;
     final last = routine.lastPerformedAt;
+    final days = WeekdaySet(routine.scheduledDays);
 
     return ListTile(
       onTap: () => context.push(Routes.routineDetail(routine.id)),
@@ -254,6 +256,11 @@ class _RoutineTile extends ConsumerWidget {
       title: Text(routine.name),
       subtitle: Text(
         [
+          // First, because it is what tells two routines apart at a glance and
+          // it is the half that survives when the line runs out of room.
+          if (days.isNotEmpty)
+            [for (final day in days.weekdays) Formatters.weekdayShort(day)]
+                .join(' '),
           '${summary.exerciseCount} oefeningen',
           '${summary.setCount} sets',
           if (last != null)

@@ -150,6 +150,7 @@ void main() {
       createdAt: 0,
       updatedAt: 0,
       isFavourite: true,
+      scheduledDays: 0,
     );
 
     test('one entry per routine, in the order given', () {

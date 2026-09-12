@@ -1359,3 +1359,47 @@ Allebei vragen ze hetzelfde, en de herstelschatting luistert naar het cijfer
 per set: in `lib/core/calc/recovery.dart` vervángt een RPE die beoordeling in
 plaats van er bovenop te komen. Ze allebei blijven vragen betekent dus twee
 keer vragen en er één gebruiken.
+
+## 91. De app wist niet wat "vandaag" was
+
+Bovenaan het startscherm stond "Workout van vandaag" boven de routine die je
+het langst niet gedaan had. Dat is geen dagplanning, dat is een sortering - de
+app had geen enkele manier om te weten dat jij op maandag borst doet.
+
+Nu draagt elke routine zelf de dagen waarop ze staat, als zeven bits in
+`routines.scheduled_days` (schema v16). Geen eigen tabel: zeven vaste waarden
+zijn geen relatie, elke routine die haar eigen dagen draagt betekent dat één
+dag vanzelf meerdere routines kan dragen, en één routine kan op meerdere dagen
+staan.
+
+Bewust géén veld op `RoutineDraft`. De editor schrijft de hele routine opnieuw,
+dus een planning die in de draft zit zou verdwijnen zodra je een oefening
+wijzigt. En een routine die je via QR van iemand krijgt hoort niet met diens
+maandag aan te komen. Het is een eigen schrijfactie, net als de ster.
+
+## 92. De ladder onder de kaart van vandaag
+
+`buildTodayPlan` leest vijf sporten van boven naar beneden en stopt bij de
+eerste die iets te zeggen heeft: wat vandaag gepland staat, anders "rustdag"
+als er wél een schema is, anders je favorieten, anders de routine die je het
+langst hebt laten liggen.
+
+Die laatste sport is er met opzet. Zonder die zou iemand met routines maar
+zonder sterren en zonder schema van een gevulde kaart naar een lege gaan - het
+gedrag dat de app altijd had, weggehaald door een functie die alleen maar iets
+toevoegde. Elke sport heeft een eigen kop, zodat de kaart nooit meer beweert
+dan ze weet.
+
+Een rustdag krijgt niets aangeboden. Een rustdag ís een antwoord, en er alsnog
+een workout op duwen maakt het plan dat je zelf maakte ongedaan. Wat er wel
+staat is wanneer de volgende dag is, plus een knop voor als je toch wil.
+
+## 93. Een trainingsdag begint om vier uur, niet om middernacht
+
+De kalender slaat om om twaalf uur; een trainingsdag niet. Wie om half één
+'s nachts nog in de sportschool staat bedoelt de sessie van vrijdag, en de app
+was het daar al mee eens: de begroeting zegt tot zes uur "Goedenacht".
+
+`kDayStartHour` staat op 4. Laat genoeg voor de late avond, vroeg genoeg dat
+niemand er overheen traint. Het bepaalt welke dag van het schema gelezen wordt
+én of een routine "vandaag al gedaan" is.

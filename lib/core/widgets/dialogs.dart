@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../calc/rpe.dart';
+import '../calc/schedule.dart';
 import '../db/enums.dart';
+import '../formatting/formatters.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
@@ -371,6 +373,112 @@ Future<double?> pickRpe(BuildContext context, {required double? current}) {
 /// What [pickRpe] returns when you choose to leave the set unscored. A plain
 /// null already means "you closed the sheet without choosing".
 const double kRpeCleared = -1;
+
+/// The days a routine is planned on.
+///
+/// Several at once, so the sheet holds the choice until you say you are done
+/// rather than closing on the first tap. Returns null when you back out, which
+/// is a different answer from an empty set: that one means "no day at all".
+Future<WeekdaySet?> pickWeekdays(
+  BuildContext context, {
+  required WeekdaySet current,
+}) {
+  return showAppSheet<WeekdaySet>(
+    context: context,
+    title: 'Op welke dagen doe je dit?',
+    builder: (context) {
+      var chosen = current;
+      return StatefulBuilder(
+        builder: (context, setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (
+                    var weekday = DateTime.monday;
+                    weekday <= DateTime.sunday;
+                    weekday++
+                  )
+                    _WeekdayChip(
+                      weekday: weekday,
+                      selected: chosen.has(weekday),
+                      onTap: () =>
+                          setState(() => chosen = chosen.toggle(weekday)),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Text(
+                chosen.isEmpty
+                    ? 'Zonder dagen staat deze routine niet in je week, en '
+                          'blijft je startscherm je favorieten tonen.'
+                    : 'Op die dagen staat deze routine op je startscherm. '
+                          'Meerdere routines op dezelfde dag mag.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(chosen),
+                child: const Text('Klaar'),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class _WeekdayChip extends StatelessWidget {
+  const _WeekdayChip({
+    required this.weekday,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final int weekday;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 42,
+      height: 42,
+      child: Material(
+        color: selected ? AppColors.accent : scheme.surfaceContainerHighest,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Center(
+            child: Text(
+              Formatters.weekdayShort(weekday),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: selected ? Colors.white : scheme.onSurfaceVariant,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// The choices, hardest first. The third field says what the effort is about
 /// and never what it feels like: people readily confuse heavy with painful,

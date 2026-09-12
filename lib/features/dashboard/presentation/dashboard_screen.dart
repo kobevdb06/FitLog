@@ -18,8 +18,9 @@ import '../../progress/presentation/recovery_providers.dart';
 import '../../progress/presentation/recovery_view.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/progress_providers.dart';
-import '../../routines/presentation/routine_providers.dart';
 import '../../workout/presentation/workout_providers.dart';
+import '../domain/today_plan.dart';
+import 'today_providers.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
 class DashboardScreen extends ConsumerWidget {
@@ -232,102 +233,200 @@ class _Greeting extends StatelessWidget {
   }
 }
 
+/// The card at the top of the Start tab: what today is for.
+///
+/// It used to say "Workout van vandaag" above whichever routine had been left
+/// alone longest, which was a claim the app could not back up - nothing told it
+/// what happens on a Tuesday. Now the heading says which rung of
+/// [buildTodayPlan] is talking, so the card never promises more than it knows.
 class _TodayCard extends ConsumerWidget {
   const _TodayCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final active = ref.watch(activeWorkoutProvider).value;
-    final suggested = ref.watch(suggestedRoutineProvider).value;
+    if (active != null) return _RunningCard(active: active);
 
-    if (active != null) {
-      return AppCard(
-        borderColor: AppColors.accent,
-        onTap: () => context.push(Routes.workout),
-        child: Row(
-          children: [
-            const Icon(Icons.play_circle_fill, color: AppColors.accent),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Je workout loopt', style: theme.textTheme.titleSmall),
-                  Text(
-                    active.workout.name,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
-      );
-    }
+    final plan = ref.watch(todayPlanProvider);
+    return switch (plan.kind) {
+      TodayPlanKind.none => const _NoRoutinesCard(),
+      TodayPlanKind.rest => _RestCard(plan: plan),
+      _ => _PlanCard(plan: plan),
+    };
+  }
+}
 
-    if (suggested == null) {
-      return AppCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Workout van vandaag', style: theme.textTheme.titleSmall),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Je hebt nog geen routine. Maak er een, of start meteen een '
-              'lege workout.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
+class _RunningCard extends StatelessWidget {
+  const _RunningCard({required this.active});
+
+  final WorkoutDetail active;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      borderColor: AppColors.accent,
+      onTap: () => context.push(Routes.workout),
+      child: Row(
+        children: [
+          const Icon(Icons.play_circle_fill, color: AppColors.accent),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () async {
-                      await ref.read(workoutControllerProvider).startEmpty();
-                      if (context.mounted) context.push(Routes.workout);
-                    },
-                    child: const Text('Lege workout'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => context.go(Routes.train),
-                    child: const Text('Routine maken'),
+                Text('Je workout loopt', style: theme.textTheme.titleSmall),
+                Text(
+                  active.workout.name,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-      );
+          ),
+          const Icon(Icons.chevron_right),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoRoutinesCard extends ConsumerWidget {
+  const _NoRoutinesCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Nog geen routine', style: theme.textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Maak er een en plan hem op je trainingsdagen, of start meteen '
+            'een lege workout.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: () async {
+                    await ref.read(workoutControllerProvider).startEmpty();
+                    if (context.mounted) context.push(Routes.workout);
+                  },
+                  child: const Text('Lege workout'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => context.go(Routes.train),
+                  child: const Text('Routine maken'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A day your own schedule leaves empty.
+///
+/// It says so rather than reaching for something to offer: a rest day is an
+/// answer, and pushing a workout onto it would undo the plan you made. What it
+/// does say is when the next one is, and it leaves the door open.
+class _RestCard extends ConsumerWidget {
+  const _RestCard({required this.plan});
+
+  final TodayPlan plan;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.bedtime_outlined,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Rustdag', style: theme.textTheme.titleLarge),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _next(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => context.go(Routes.train),
+              child: const Text('Toch trainen'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _next() {
+    final weekday = plan.nextWeekday;
+    if (weekday == null || plan.nextRoutines.isEmpty) {
+      return 'Er staat verder niets in je week.';
     }
+    final names = [for (final routine in plan.nextRoutines) routine.name];
+    return '${Formatters.nextDayWords(plan.daysUntilNext!, weekday)}: ${names.join(', ')}';
+  }
+}
+
+/// One or more routines to start, whichever rung of the ladder they came from.
+class _PlanCard extends ConsumerWidget {
+  const _PlanCard({required this.plan});
+
+  final TodayPlan plan;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final lead = plan.lead!;
+    final others = plan.rest;
 
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Workout van vandaag',
+            _heading(plan.kind),
             style: theme.textTheme.labelMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(suggested.name, style: theme.textTheme.titleLarge),
+          Text(lead.routine.name, style: theme.textTheme.titleLarge),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            suggested.lastPerformedAt == null
-                ? 'Nog nooit gedaan'
-                : 'Laatst gedaan ${Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(suggested.lastPerformedAt!)).toLowerCase()}',
+            _subtitle(lead),
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: lead.doneToday
+                  ? AppColors.success
+                  : theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -335,25 +434,96 @@ class _TodayCard extends ConsumerWidget {
             width: double.infinity,
             height: 52,
             child: FilledButton.icon(
-              onPressed: () async {
-                await ref
-                    .read(workoutControllerProvider)
-                    .startFromRoutine(suggested.id);
-                if (context.mounted) context.push(Routes.workout);
-              },
+              onPressed: () => _start(context, ref, lead.routine.id),
               icon: const Icon(Icons.play_arrow),
-              label: const Text('Start workout'),
+              label: Text(lead.doneToday ? 'Nog een keer' : 'Start workout'),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Center(
             child: TextButton(
-              onPressed: () => context.push(Routes.routineDetail(suggested.id)),
+              onPressed: () =>
+                  context.push(Routes.routineDetail(lead.routine.id)),
               child: const Text('Bekijk de routine'),
             ),
           ),
+          if (others.isNotEmpty) ...[
+            const Divider(height: AppSpacing.lg),
+            Text(
+              plan.kind == TodayPlanKind.favourites
+                  ? 'Of een van deze'
+                  : 'Ook vandaag',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            for (final planned in others)
+              _OtherRoutineRow(
+                planned: planned,
+                onStart: () => _start(context, ref, planned.routine.id),
+              ),
+          ],
         ],
       ),
+    );
+  }
+
+  String _heading(TodayPlanKind kind) => switch (kind) {
+    TodayPlanKind.scheduled => 'Vandaag',
+    TodayPlanKind.allDone => 'Vandaag - alles gedaan',
+    TodayPlanKind.favourites => 'Je favorieten',
+    // Nothing planned and nothing starred, so the card says what is really
+    // going on rather than suggesting today had anything to do with it.
+    _ => 'Hier was je het langst niet mee bezig',
+  };
+
+  String _subtitle(PlannedRoutine planned) {
+    if (planned.doneToday) return 'Vandaag al gedaan';
+    final last = planned.routine.lastPerformedAt;
+    if (last == null) return 'Nog nooit gedaan';
+    final at = DateTime.fromMillisecondsSinceEpoch(last);
+    return 'Laatst gedaan ${Formatters.relativeDay(at).toLowerCase()}';
+  }
+
+  Future<void> _start(
+    BuildContext context,
+    WidgetRef ref,
+    String routineId,
+  ) async {
+    await ref.read(workoutControllerProvider).startFromRoutine(routineId);
+    if (context.mounted) context.push(Routes.workout);
+  }
+}
+
+class _OtherRoutineRow extends StatelessWidget {
+  const _OtherRoutineRow({required this.planned, required this.onStart});
+
+  final PlannedRoutine planned;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      onTap: () => context.push(Routes.routineDetail(planned.routine.id)),
+      title: Text(planned.routine.name),
+      subtitle: planned.doneToday
+          ? Text(
+              'Gedaan',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.success,
+              ),
+            )
+          : null,
+      trailing: planned.doneToday
+          ? const Icon(Icons.check_circle_outline, color: AppColors.success)
+          : IconButton(
+              tooltip: 'Starten',
+              onPressed: onStart,
+              icon: const Icon(Icons.play_arrow),
+            ),
     );
   }
 }

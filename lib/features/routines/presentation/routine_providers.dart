@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 
@@ -70,4 +71,14 @@ class RoutineActions {
 
   Future<void> reorder(List<String> orderedIds) =>
       _db.routinesDao.reorderRoutines(orderedIds);
+
+  /// The weekdays a routine is planned on, read fresh rather than from the
+  /// screen: the sheet that edits them is opened from a menu, and the routine
+  /// may have been replanned on another screen since this one was built.
+  Future<WeekdaySet> scheduledDays(String routineId) async => WeekdaySet(
+    (await _db.routinesDao.getRoutine(routineId))?.scheduledDays ?? 0,
+  );
+
+  Future<void> setScheduledDays(String routineId, WeekdaySet days) =>
+      _db.routinesDao.setScheduledDays(routineId, days);
 }

@@ -224,6 +224,15 @@ class RoutinesTable extends Table {
   BoolColumn get isFavourite =>
       boolean().named('is_favourite').withDefault(const Constant(false))();
 
+  /// The weekdays this routine is planned on, as a `WeekdaySet` mask.
+  ///
+  /// Zero means unplanned, which is what every routine was before a schedule
+  /// existed and what the dashboard falls back from. Deliberately not part of
+  /// `RoutineDraft`: a routine you receive over QR must not bring someone
+  /// else's Monday with it.
+  IntColumn get scheduledDays =>
+      integer().named('scheduled_days').withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

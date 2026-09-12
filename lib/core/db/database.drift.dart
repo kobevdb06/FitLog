@@ -3124,6 +3124,18 @@ class $RoutinesTableTable extends RoutinesTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _scheduledDaysMeta = const VerificationMeta(
+    'scheduledDays',
+  );
+  @override
+  late final GeneratedColumn<int> scheduledDays = GeneratedColumn<int>(
+    'scheduled_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3136,6 +3148,7 @@ class $RoutinesTableTable extends RoutinesTable
     lastPerformedAt,
     colorIndex,
     isFavourite,
+    scheduledDays,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3222,6 +3235,15 @@ class $RoutinesTableTable extends RoutinesTable
         ),
       );
     }
+    if (data.containsKey('scheduled_days')) {
+      context.handle(
+        _scheduledDaysMeta,
+        scheduledDays.isAcceptableOrUnknown(
+          data['scheduled_days']!,
+          _scheduledDaysMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3271,6 +3293,10 @@ class $RoutinesTableTable extends RoutinesTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_favourite'],
       )!,
+      scheduledDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}scheduled_days'],
+      )!,
     );
   }
 
@@ -3299,6 +3325,14 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
   /// you like; the launcher only has room for a few, so the ones you use most
   /// get those places.
   final bool isFavourite;
+
+  /// The weekdays this routine is planned on, as a `WeekdaySet` mask.
+  ///
+  /// Zero means unplanned, which is what every routine was before a schedule
+  /// existed and what the dashboard falls back from. Deliberately not part of
+  /// `RoutineDraft`: a routine you receive over QR must not bring someone
+  /// else's Monday with it.
+  final int scheduledDays;
   const RoutineRow({
     required this.id,
     required this.name,
@@ -3310,6 +3344,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     this.lastPerformedAt,
     this.colorIndex,
     required this.isFavourite,
+    required this.scheduledDays,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3332,6 +3367,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       map['color_index'] = Variable<int>(colorIndex);
     }
     map['is_favourite'] = Variable<bool>(isFavourite);
+    map['scheduled_days'] = Variable<int>(scheduledDays);
     return map;
   }
 
@@ -3355,6 +3391,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           ? const Value.absent()
           : Value(colorIndex),
       isFavourite: Value(isFavourite),
+      scheduledDays: Value(scheduledDays),
     );
   }
 
@@ -3374,6 +3411,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       lastPerformedAt: serializer.fromJson<int?>(json['lastPerformedAt']),
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       isFavourite: serializer.fromJson<bool>(json['isFavourite']),
+      scheduledDays: serializer.fromJson<int>(json['scheduledDays']),
     );
   }
   @override
@@ -3390,6 +3428,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       'lastPerformedAt': serializer.toJson<int?>(lastPerformedAt),
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'isFavourite': serializer.toJson<bool>(isFavourite),
+      'scheduledDays': serializer.toJson<int>(scheduledDays),
     };
   }
 
@@ -3404,6 +3443,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     Value<int?> lastPerformedAt = const Value.absent(),
     Value<int?> colorIndex = const Value.absent(),
     bool? isFavourite,
+    int? scheduledDays,
   }) => RoutineRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -3417,6 +3457,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
         : this.lastPerformedAt,
     colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
     isFavourite: isFavourite ?? this.isFavourite,
+    scheduledDays: scheduledDays ?? this.scheduledDays,
   );
   RoutineRow copyWithCompanion(RoutinesTableCompanion data) {
     return RoutineRow(
@@ -3436,6 +3477,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       isFavourite: data.isFavourite.present
           ? data.isFavourite.value
           : this.isFavourite,
+      scheduledDays: data.scheduledDays.present
+          ? data.scheduledDays.value
+          : this.scheduledDays,
     );
   }
 
@@ -3451,7 +3495,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           ..write('updatedAt: $updatedAt, ')
           ..write('lastPerformedAt: $lastPerformedAt, ')
           ..write('colorIndex: $colorIndex, ')
-          ..write('isFavourite: $isFavourite')
+          ..write('isFavourite: $isFavourite, ')
+          ..write('scheduledDays: $scheduledDays')
           ..write(')'))
         .toString();
   }
@@ -3468,6 +3513,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     lastPerformedAt,
     colorIndex,
     isFavourite,
+    scheduledDays,
   );
   @override
   bool operator ==(Object other) =>
@@ -3482,7 +3528,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           other.updatedAt == this.updatedAt &&
           other.lastPerformedAt == this.lastPerformedAt &&
           other.colorIndex == this.colorIndex &&
-          other.isFavourite == this.isFavourite);
+          other.isFavourite == this.isFavourite &&
+          other.scheduledDays == this.scheduledDays);
 }
 
 class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
@@ -3496,6 +3543,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
   final Value<int?> lastPerformedAt;
   final Value<int?> colorIndex;
   final Value<bool> isFavourite;
+  final Value<int> scheduledDays;
   final Value<int> rowid;
   const RoutinesTableCompanion({
     this.id = const Value.absent(),
@@ -3508,6 +3556,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.lastPerformedAt = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.isFavourite = const Value.absent(),
+    this.scheduledDays = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinesTableCompanion.insert({
@@ -3521,6 +3570,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.lastPerformedAt = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.isFavourite = const Value.absent(),
+    this.scheduledDays = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -3538,6 +3588,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Expression<int>? lastPerformedAt,
     Expression<int>? colorIndex,
     Expression<bool>? isFavourite,
+    Expression<int>? scheduledDays,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3551,6 +3602,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       if (lastPerformedAt != null) 'last_performed_at': lastPerformedAt,
       if (colorIndex != null) 'color_index': colorIndex,
       if (isFavourite != null) 'is_favourite': isFavourite,
+      if (scheduledDays != null) 'scheduled_days': scheduledDays,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3566,6 +3618,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Value<int?>? lastPerformedAt,
     Value<int?>? colorIndex,
     Value<bool>? isFavourite,
+    Value<int>? scheduledDays,
     Value<int>? rowid,
   }) {
     return RoutinesTableCompanion(
@@ -3579,6 +3632,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       lastPerformedAt: lastPerformedAt ?? this.lastPerformedAt,
       colorIndex: colorIndex ?? this.colorIndex,
       isFavourite: isFavourite ?? this.isFavourite,
+      scheduledDays: scheduledDays ?? this.scheduledDays,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3616,6 +3670,9 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     if (isFavourite.present) {
       map['is_favourite'] = Variable<bool>(isFavourite.value);
     }
+    if (scheduledDays.present) {
+      map['scheduled_days'] = Variable<int>(scheduledDays.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3635,6 +3692,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
           ..write('lastPerformedAt: $lastPerformedAt, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('isFavourite: $isFavourite, ')
+          ..write('scheduledDays: $scheduledDays, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10035,6 +10093,7 @@ typedef $$RoutinesTableTableCreateCompanionBuilder =
       Value<int?> lastPerformedAt,
       Value<int?> colorIndex,
       Value<bool> isFavourite,
+      Value<int> scheduledDays,
       Value<int> rowid,
     });
 typedef $$RoutinesTableTableUpdateCompanionBuilder =
@@ -10049,6 +10108,7 @@ typedef $$RoutinesTableTableUpdateCompanionBuilder =
       Value<int?> lastPerformedAt,
       Value<int?> colorIndex,
       Value<bool> isFavourite,
+      Value<int> scheduledDays,
       Value<int> rowid,
     });
 
@@ -10173,6 +10233,11 @@ class $$RoutinesTableTableFilterComposer
 
   ColumnFilters<bool> get isFavourite => $composableBuilder(
     column: $table.isFavourite,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get scheduledDays => $composableBuilder(
+    column: $table.scheduledDays,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10305,6 +10370,11 @@ class $$RoutinesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get scheduledDays => $composableBuilder(
+    column: $table.scheduledDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutineFoldersTableTableOrderingComposer get folderId {
     final $$RoutineFoldersTableTableOrderingComposer composer =
         $composerBuilder(
@@ -10369,6 +10439,11 @@ class $$RoutinesTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isFavourite => $composableBuilder(
     column: $table.isFavourite,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get scheduledDays => $composableBuilder(
+    column: $table.scheduledDays,
     builder: (column) => column,
   );
 
@@ -10490,6 +10565,7 @@ class $$RoutinesTableTableTableManager
                 Value<int?> lastPerformedAt = const Value.absent(),
                 Value<int?> colorIndex = const Value.absent(),
                 Value<bool> isFavourite = const Value.absent(),
+                Value<int> scheduledDays = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion(
                 id: id,
@@ -10502,6 +10578,7 @@ class $$RoutinesTableTableTableManager
                 lastPerformedAt: lastPerformedAt,
                 colorIndex: colorIndex,
                 isFavourite: isFavourite,
+                scheduledDays: scheduledDays,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10516,6 +10593,7 @@ class $$RoutinesTableTableTableManager
                 Value<int?> lastPerformedAt = const Value.absent(),
                 Value<int?> colorIndex = const Value.absent(),
                 Value<bool> isFavourite = const Value.absent(),
+                Value<int> scheduledDays = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion.insert(
                 id: id,
@@ -10528,6 +10606,7 @@ class $$RoutinesTableTableTableManager
                 lastPerformedAt: lastPerformedAt,
                 colorIndex: colorIndex,
                 isFavourite: isFavourite,
+                scheduledDays: scheduledDays,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

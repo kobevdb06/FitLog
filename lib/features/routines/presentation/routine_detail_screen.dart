@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
@@ -41,6 +42,11 @@ class RoutineDetailScreen extends ConsumerWidget {
                 value: 'edit',
                 icon: Icons.edit_outlined,
                 label: 'Bewerken',
+              ),
+              menuItem(
+                value: 'schedule',
+                icon: Icons.event_repeat_outlined,
+                label: 'Inplannen op dagen',
               ),
               menuItem(
                 value: 'move',
@@ -92,6 +98,10 @@ class RoutineDetailScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.only(bottom: 120),
             children: [
+              _ScheduleBand(
+                days: WeekdaySet(routine.routine.scheduledDays),
+                onTap: () => _schedule(context, ref),
+              ),
               if (routine.routine.notes != null &&
                   routine.routine.notes!.trim().isNotEmpty)
                 Padding(
@@ -160,6 +170,26 @@ class RoutineDetailScreen extends ConsumerWidget {
       }
       rethrow;
     }
+  }
+
+  /// Puts this routine on a set of weekdays, which is what the Start tab reads
+  /// to know what today is for.
+  Future<void> _schedule(BuildContext context, WidgetRef ref) async {
+    final actions = ref.read(routineActionsProvider);
+    final current = await actions.scheduledDays(routineId);
+    if (!context.mounted) return;
+
+    final chosen = await pickWeekdays(context, current: current);
+    if (chosen == null || chosen == current) return;
+
+    await actions.setScheduledDays(routineId, chosen);
+    if (!context.mounted) return;
+    showSnack(
+      context,
+      chosen.isEmpty
+          ? 'Niet meer ingepland'
+          : Formatters.scheduleSentence(chosen),
+    );
   }
 
   /// Moving a routine used to mean opening the whole editor. This is the same
@@ -251,6 +281,9 @@ class RoutineDetailScreen extends ConsumerWidget {
     switch (value) {
       case 'edit':
         context.push(Routes.routineEdit(routineId));
+      case 'schedule':
+        await _schedule(context, ref);
+
       case 'move':
         await _moveToFolder(context, ref, actions);
 
@@ -277,6 +310,54 @@ class RoutineDetailScreen extends ConsumerWidget {
         await actions.delete(routineId);
         if (context.mounted) context.pop();
     }
+  }
+}
+
+/// The line that says which days this routine is on, and opens the sheet.
+///
+/// Always there, also when nothing is planned: a schedule hidden behind a menu
+/// is a schedule nobody finds.
+class _ScheduleBand extends StatelessWidget {
+  const _ScheduleBand({required this.days, required this.onTap});
+
+  final WeekdaySet days;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        0,
+      ),
+      child: AppCard(
+        onTap: onTap,
+        child: Row(
+          children: [
+            Icon(
+              Icons.event_repeat_outlined,
+              size: 20,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                Formatters.scheduleSentence(days),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: days.isEmpty
+                      ? theme.colorScheme.onSurfaceVariant
+                      : null,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
+    );
   }
 }
 

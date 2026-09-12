@@ -34,47 +34,13 @@ import '../features/workout/presentation/active_workout_screen.dart';
 import '../features/workout/presentation/rest_timer_screen.dart';
 import '../features/workout/presentation/workout_summary_screen.dart';
 import 'app_shell.dart';
+import 'pages.dart';
 import 'tab_pager.dart';
 import 'routes.dart';
 
 part 'router.g.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
-
-/// A page that rises from the bottom and sinks back down.
-///
-/// For the screens you close with the chevron in the corner rather than a back
-/// arrow: the running session and the rest timer. They behave like something
-/// pulled up over the app, so they should move like it - the default zoom is
-/// for pages you navigate *into*, and against a chevron it reads as no
-/// animation at all.
-/// How long such a page takes to come up. Shared, because the shell has to
-/// know it: the running-session bar waits this long before showing itself, so
-/// it is never seen arriving in the gap the rising page has not covered yet.
-const Duration kSheetRise = Duration(milliseconds: 260);
-
-CustomTransitionPage<void> _risingPage(Widget child) {
-  return CustomTransitionPage<void>(
-    child: child,
-    transitionDuration: kSheetRise,
-    reverseTransitionDuration: const Duration(milliseconds: 220),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 1),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          ),
-        ),
-        child: child,
-      );
-    },
-  );
-}
 
 @Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
@@ -118,24 +84,27 @@ GoRouter router(Ref ref) {
     routes: [
       GoRoute(
         path: Routes.gate,
-        builder: (context, state) => const AppLoadingScreen(),
+        pageBuilder: (context, state) =>
+            appPage(state, const AppLoadingScreen()),
       ),
       GoRoute(
         path: Routes.failure,
-        builder: (context, state) => const StartupFailureScreen(),
+        pageBuilder: (context, state) =>
+            appPage(state, const StartupFailureScreen()),
       ),
       GoRoute(
         path: Routes.onboarding,
-        builder: (context, state) => const OnboardingFlow(),
+        pageBuilder: (context, state) => appPage(state, const OnboardingFlow()),
       ),
       GoRoute(
         path: Routes.lock,
-        builder: (context, state) => const LockScreen(),
+        pageBuilder: (context, state) => appPage(state, const LockScreen()),
         routes: [
           GoRoute(
             path: 'herstel',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => const RecoveryUnlockScreen(),
+            pageBuilder: (context, state) =>
+                appPage(state, const RecoveryUnlockScreen()),
           ),
         ],
       ),
@@ -145,13 +114,13 @@ GoRouter router(Ref ref) {
         path: Routes.workout,
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
-            _risingPage(const ActiveWorkoutScreen()),
+            risingPage(const ActiveWorkoutScreen()),
         routes: [
           GoRoute(
             path: 'rust',
             parentNavigatorKey: _rootKey,
             pageBuilder: (context, state) =>
-                _risingPage(const RestTimerScreen()),
+                risingPage(const RestTimerScreen()),
           ),
           GoRoute(
             path: ':id/samenvatting',
@@ -159,7 +128,7 @@ GoRouter router(Ref ref) {
             // The session it replaces came up from the bottom; the summary
             // taking its place with Android's zoom instead would be two
             // different motions in one step.
-            pageBuilder: (context, state) => _risingPage(
+            pageBuilder: (context, state) => risingPage(
               WorkoutSummaryScreen(workoutId: state.pathParameters['id']!),
             ),
           ),
@@ -168,18 +137,22 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: Routes.exercises,
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const ExerciseLibraryScreen(),
+        pageBuilder: (context, state) =>
+            appPage(state, const ExerciseLibraryScreen()),
         routes: [
           GoRoute(
             path: 'nieuw',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => const CustomExerciseScreen(),
+            pageBuilder: (context, state) =>
+                appPage(state, const CustomExerciseScreen()),
           ),
           GoRoute(
             path: ':id',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) =>
-                ExerciseDetailScreen(exerciseId: state.pathParameters['id']!),
+            pageBuilder: (context, state) => appPage(
+              state,
+              ExerciseDetailScreen(exerciseId: state.pathParameters['id']!),
+            ),
           ),
         ],
       ),
@@ -196,7 +169,8 @@ GoRouter router(Ref ref) {
             routes: [
               GoRoute(
                 path: Routes.dashboard,
-                builder: (context, state) => const DashboardScreen(),
+                pageBuilder: (context, state) =>
+                    appPage(state, const DashboardScreen()),
               ),
             ],
           ),
@@ -204,26 +178,36 @@ GoRouter router(Ref ref) {
             routes: [
               GoRoute(
                 path: Routes.train,
-                builder: (context, state) => const RoutinesScreen(),
+                pageBuilder: (context, state) =>
+                    appPage(state, const RoutinesScreen()),
                 routes: [
                   GoRoute(
                     path: 'routine/nieuw',
                     parentNavigatorKey: _rootKey,
-                    builder: (context, state) => RoutineEditorScreen(
-                      folderId: state.uri.queryParameters['map'],
+                    pageBuilder: (context, state) => appPage(
+                      state,
+                      RoutineEditorScreen(
+                        folderId: state.uri.queryParameters['map'],
+                      ),
                     ),
                   ),
                   GoRoute(
                     path: 'routine/:id',
-                    builder: (context, state) => RoutineDetailScreen(
-                      routineId: state.pathParameters['id']!,
+                    pageBuilder: (context, state) => appPage(
+                      state,
+                      RoutineDetailScreen(
+                        routineId: state.pathParameters['id']!,
+                      ),
                     ),
                     routes: [
                       GoRoute(
                         path: 'bewerken',
                         parentNavigatorKey: _rootKey,
-                        builder: (context, state) => RoutineEditorScreen(
-                          routineId: state.pathParameters['id'],
+                        pageBuilder: (context, state) => appPage(
+                          state,
+                          RoutineEditorScreen(
+                            routineId: state.pathParameters['id'],
+                          ),
                         ),
                       ),
                     ],
@@ -236,44 +220,55 @@ GoRouter router(Ref ref) {
             routes: [
               GoRoute(
                 path: Routes.progress,
-                builder: (context, state) => const ProgressScreen(),
+                pageBuilder: (context, state) =>
+                    appPage(state, const ProgressScreen()),
                 routes: [
                   GoRoute(
                     path: 'geschiedenis',
-                    builder: (context, state) => const HistoryScreen(),
+                    pageBuilder: (context, state) =>
+                        appPage(state, const HistoryScreen()),
                     routes: [
                       GoRoute(
                         path: ':id',
-                        builder: (context, state) => WorkoutDetailScreen(
-                          workoutId: state.pathParameters['id']!,
+                        pageBuilder: (context, state) => appPage(
+                          state,
+                          WorkoutDetailScreen(
+                            workoutId: state.pathParameters['id']!,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   GoRoute(
                     path: 'grafiek',
-                    builder: (context, state) => ExerciseChartScreen(
-                      exerciseId: state.uri.queryParameters['oefening'],
+                    pageBuilder: (context, state) => appPage(
+                      state,
+                      ExerciseChartScreen(
+                        exerciseId: state.uri.queryParameters['oefening'],
+                      ),
                     ),
                   ),
                   GoRoute(
                     path: 'metingen',
-                    builder: (context, state) => const MeasurementsScreen(),
+                    pageBuilder: (context, state) =>
+                        appPage(state, const MeasurementsScreen()),
                   ),
                   GoRoute(
                     path: 'fotos',
-                    builder: (context, state) => const PhotosScreen(),
+                    pageBuilder: (context, state) =>
+                        appPage(state, const PhotosScreen()),
                     routes: [
                       GoRoute(
                         path: 'vergelijken',
-                        builder: (context, state) =>
-                            const PhotoCompareScreen(),
+                        pageBuilder: (context, state) =>
+                            appPage(state, const PhotoCompareScreen()),
                       ),
                     ],
                   ),
                   GoRoute(
                     path: 'records',
-                    builder: (context, state) => const RecordsScreen(),
+                    pageBuilder: (context, state) =>
+                        appPage(state, const RecordsScreen()),
                   ),
                 ],
               ),
@@ -283,29 +278,33 @@ GoRouter router(Ref ref) {
             routes: [
               GoRoute(
                 path: Routes.profile,
-                builder: (context, state) => const ProfileScreen(),
+                pageBuilder: (context, state) =>
+                    appPage(state, const ProfileScreen()),
                 routes: [
                   GoRoute(
                     path: 'instellingen',
-                    builder: (context, state) => const SettingsScreen(),
+                    pageBuilder: (context, state) =>
+                        appPage(state, const SettingsScreen()),
                     routes: [
                       GoRoute(
                         path: 'workout',
-                        builder: (context, state) =>
-                            const WorkoutPreferencesScreen(),
+                        pageBuilder: (context, state) =>
+                            appPage(state, const WorkoutPreferencesScreen()),
                       ),
                       GoRoute(
                         path: 'beveiliging',
-                        builder: (context, state) =>
-                            const SecuritySettingsScreen(),
+                        pageBuilder: (context, state) =>
+                            appPage(state, const SecuritySettingsScreen()),
                       ),
                       GoRoute(
                         path: 'backup',
-                        builder: (context, state) => const BackupScreen(),
+                        pageBuilder: (context, state) =>
+                            appPage(state, const BackupScreen()),
                       ),
                       GoRoute(
                         path: 'over',
-                        builder: (context, state) => const AboutScreen(),
+                        pageBuilder: (context, state) =>
+                            appPage(state, const AboutScreen()),
                       ),
                     ],
                   ),

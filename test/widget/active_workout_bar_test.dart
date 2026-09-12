@@ -2,7 +2,7 @@ import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:fitlog/routing/app_shell.dart';
-import 'package:fitlog/routing/router.dart';
+import 'package:fitlog/routing/pages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

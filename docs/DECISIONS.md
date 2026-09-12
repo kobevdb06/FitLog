@@ -1159,3 +1159,34 @@ blijven.
 Wat dit niet meebrengt is het terugveeggebaar vanaf de rand. Dat zit aan
 `CupertinoPageRoute` vast, niet aan de animatie, en de rest van de app is
 Material. De beweging alleen is wat gevraagd werd.
+
+## 80. Elke route zegt zelf welke pagina hij gebruikt
+
+Hier lag de echte oorzaak, en hij was groter dan de animatie waarvoor ik hem
+zocht.
+
+go_router leidt af of dit een Material- of een Cupertino-app is door de
+widgetboom omhoog te kijken, en onthoudt wat het de eerste keer vindt. Hier
+landt die gok op "geen van beide", en dan valt hij terug op een pagina **zonder
+enige overgang** - voor de rest van de looptijd van de app. Elk scherm in
+FitLog verscheen en verdween dus ogenblikkelijk.
+
+Dat verklaart met terugwerkende kracht een eerdere melding: dat het pijltje
+omlaag op de lopende sessie "meteen terug gaat zonder animatie of niets". Dat
+was letterlijk waar. De schermen die ik daarna een eigen `CustomTransitionPage`
+gaf bewogen wél, en dat maakte het verschil des te zichtbaarder.
+
+Alle 27 gewone routes noemen nu hun eigen `MaterialPage`, met dezelfde velden
+die go_router zelf invulde - paginasleutel, naam, herstel-id - zodat er niets
+verandert behalve dat de gok weg is.
+
+Een test leest `router.dart` en faalt zodra er weer een route in staat die het
+aan de gok overlaat. Dat is de enige manier waarop dit terugkomt, en een
+animatie die er niet is valt bij het lezen van code niet op.
+
+## 81. De paginahelpers staan apart van de routetabel
+
+`appPage` en `risingPage` wonen in `routing/pages.dart`, niet tussen de routes.
+De schil leest `kSheetRise` daar ook uit. Een bestand dat alleen zegt "zo zien
+pagina's eruit en zo bewegen ze" is makkelijker te controleren dan hetzelfde
+verstopt boven een tabel van dertig routes.

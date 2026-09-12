@@ -8,7 +8,7 @@ import '../core/formatting/formatters.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../features/workout/presentation/workout_providers.dart';
-import 'router.dart';
+import 'pages.dart';
 import 'routes.dart';
 import 'tab_pager.dart';
 

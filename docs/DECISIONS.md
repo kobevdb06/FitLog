@@ -917,3 +917,42 @@ eigen knop is ondubbelzinnig en zichtbaar, en de rij blijft doen wat hij deed.
 
 In de bibliotheek zelf staat de knop er niet. Daar is de volledige
 oefeningpagina al één tik weg, en een tweede ingang zou alleen in de weg zitten.
+
+## 66. Corrigeren vraagt wat de oefening kent
+
+De bewerkdialoog in je geschiedenis vroeg altijd om gewicht en reps, wat de
+oefening ook was. Voor een plank betekende dat: je kon de tijd - het enige
+waarin hij gemeten wordt - helemaal niet corrigeren, en typte je toch iets in
+die twee vragen, dan verdween de gelogde tijd achter een gewicht dat niets
+betekent.
+
+De oorzaak was van mezelf. In 1.14 heb ik het *loggen* per oefeningtype gemaakt
+en het *corrigeren* laten staan. De dialoog loopt nu langs dezelfde
+`setColumnsFor`-kolommen als de settabel.
+
+Twee dingen die daarbij horen: `HistoryActions.updateSet` neemt nu per veld een
+`Value`, zodat een veld dat niet gevraagd werd ook niet geschreven wordt. En
+halverwege afbreken laat de hele set ongemoeid - een half doorgevoerde
+correctie is erger dan geen.
+
+## 67. Tijd en afstand tellen mee
+
+Een plank loggen kon sinds 1.14, maar liep dood: geen record, geen lijn, niets
+om te verslaan. Er zijn twee recordsoorten bij: **langste tijd** en **verste
+afstand**.
+
+Welke een set kan zetten hangt af van wat erin staat, niet van hoe de oefening
+heet. Een tijd geeft een langste hold. Een afstand geeft een verste afstand -
+en dan telt de tijd níét mee, want dezelfde afstand trager lopen is geen betere
+loop. Een gewichtshold (plate pinch) zet allebei: het gewicht én de tijd.
+
+De grafieken volgen nu de oefening, net als de settabel. Een plank krijgt één
+lijn (langste tijd), cardio krijgt afstand en tijd, en alles wat je tilt houdt
+de vier die het had. Vier lege grafieken tonen is erger dan er geen aanbieden:
+je kan er niet aan zien of "geen data" betekent dat je het nog niet deed of dat
+het niet bestaat voor deze oefening.
+
+De vier `switch`-en die een recordwaarde opmaken waren exhaustief zonder
+`default`. Daardoor wees de compiler precies de vier plekken aan die de nieuwe
+soorten moesten leren opmaken, in plaats van dat ze stilletjes als kilo's op
+het scherm waren gekomen.

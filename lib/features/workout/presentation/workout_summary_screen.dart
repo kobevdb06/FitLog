@@ -83,7 +83,8 @@ class WorkoutSummaryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(finishedWorkoutProvider(workoutId));
-    final records = ref.watch(workoutRecordsProvider(workoutId)).value ?? const [];
+    final records =
+        ref.watch(workoutRecordsProvider(workoutId)).value ?? const [];
     final formatters = ref.watch(formattersProvider);
 
     return Scaffold(
@@ -167,9 +168,8 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                     subtitle: Text(record.type.label),
                     trailing: Text(
                       _recordValue(record, formatters),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.record,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(color: AppColors.record),
                     ),
                   ),
               ],
@@ -189,8 +189,9 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                       spacing: AppSpacing.sm,
                       runSpacing: AppSpacing.xs,
                       children: [
-                        for (final muscle
-                            in muscleIntensity(workout).keys.toList()..sort())
+                        for (final muscle in muscleIntensity(
+                          workout,
+                        ).keys.toList()..sort())
                           Chip(
                             visualDensity: VisualDensity.compact,
                             avatar: CircleAvatar(
@@ -281,6 +282,10 @@ class WorkoutSummaryScreen extends ConsumerWidget {
         return formatters.weight(record.record.value);
       case PrType.maxSetVolume:
         return formatters.volume(record.record.value);
+      case PrType.maxDuration:
+        return Formatters.duration(record.record.value.round());
+      case PrType.maxDistance:
+        return formatters.distance(record.record.value);
     }
   }
 
@@ -329,9 +334,7 @@ class _NotesFieldState extends ConsumerState<_NotesField> {
       controller: _controller,
       maxLines: 4,
       textCapitalization: TextCapitalization.sentences,
-      decoration: const InputDecoration(
-        hintText: 'Hoe voelde het?',
-      ),
+      decoration: const InputDecoration(hintText: 'Hoe voelde het?'),
       onChanged: (value) => ref
           .read(databaseProvider)
           .workoutsDao
@@ -414,8 +417,7 @@ class _RecoveryCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final estimate in estimates)
-            RecoveryRow(estimate: estimate),
+          for (final estimate in estimates) RecoveryRow(estimate: estimate),
           const SizedBox(height: AppSpacing.sm),
           const RecoveryDisclaimer(),
         ],

@@ -100,8 +100,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
           switch (_sort) {
             case _Sort.recent:
               sorted.sort(
-                (a, b) =>
-                    b.record.achievedAt.compareTo(a.record.achievedAt),
+                (a, b) => b.record.achievedAt.compareTo(a.record.achievedAt),
               );
             case _Sort.exercise:
               sorted.sort(
@@ -121,10 +120,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
               return ListTile(
                 onTap: () =>
                     context.push(Routes.exerciseDetail(record.exercise.id)),
-                leading: ExerciseAvatar(
-                  exercise: record.exercise,
-                  size: 36,
-                ),
+                leading: ExerciseAvatar(exercise: record.exercise, size: 36),
                 title: Text(record.exercise.name),
                 subtitle: Text(
                   '${record.type.label} · '
@@ -132,9 +128,8 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                 ),
                 trailing: Text(
                   _value(record, formatters),
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppColors.record,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall
+                      ?.copyWith(color: AppColors.record),
                 ),
               );
             },
@@ -153,6 +148,10 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
       case PrType.maxWeight:
       case PrType.est1rm:
         return formatters.weight(record.record.value);
+      case PrType.maxDuration:
+        return Formatters.duration(record.record.value.round());
+      case PrType.maxDistance:
+        return formatters.distance(record.record.value);
     }
   }
 }

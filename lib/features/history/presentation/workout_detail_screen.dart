@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +16,7 @@ import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
+import '../../workout/domain/set_columns.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'history_providers.dart';
 import 'history_screen.dart';
@@ -212,7 +214,7 @@ class _ExerciseBlock extends ConsumerWidget {
                 number: i + 1,
                 formatters: formatters,
                 isRecord: recordSetIds.contains(detail.sets[i].id),
-                onEdit: () => _editSet(context, actions, detail.sets[i]),
+                onEdit: () => _editSet(context, actions, detail, i),
                 onDelete: () async {
                   final ok = await confirm(
                     context,
@@ -233,37 +235,100 @@ class _ExerciseBlock extends ConsumerWidget {
     );
   }
 
+  /// Correcting a logged set, asking for what the exercise is actually
+  /// measured in.
+  ///
+  /// It used to ask for kilograms and repetitions whatever the exercise, so
+  /// there was no way at all to fix the time of a plank - and typing anything
+  /// into those two questions hid the time that was logged behind a weight
+  /// that means nothing.
   Future<void> _editSet(
     BuildContext context,
     HistoryActions actions,
-    WorkoutSetRow row,
+    WorkoutExerciseDetail exercise,
+    int index,
   ) async {
-    final weight = await showKeypadSheet(
-      context: context,
-      kind: KeypadFieldKind.weight,
-      initialValue: KeypadValue.fromNumber(
-        row.weightKg == null ? null : formatters.toDisplayWeight(row.weightKg!),
-      ),
-      unitLabel: formatters.weightUnitLabel,
-      title: 'Gewicht',
+    final row = exercise.sets[index];
+    final columns = setColumnsFor(
+      exercise.category,
+      exercise.sets.map(setValues),
     );
-    if (weight == null || !context.mounted) return;
 
-    final reps = await showKeypadSheet(
-      context: context,
-      kind: KeypadFieldKind.reps,
-      initialValue: KeypadValue.fromNumber(row.reps, decimals: 0),
-      title: 'Reps',
-    );
-    if (reps == null) return;
+    var weightKg = const Value<double?>.absent();
+    var reps = const Value<int?>.absent();
+    var durationSeconds = const Value<int?>.absent();
+    var distanceM = const Value<double?>.absent();
+
+    for (final kind in columns) {
+      if (!context.mounted) return;
+      final result = await showKeypadSheet(
+        context: context,
+        kind: kind,
+        initialValue: switch (kind) {
+          KeypadFieldKind.weight => KeypadValue.fromNumber(
+            row.weightKg == null
+                ? null
+                : formatters.toDisplayWeight(row.weightKg!),
+          ),
+          KeypadFieldKind.reps => KeypadValue.fromNumber(row.reps, decimals: 0),
+          KeypadFieldKind.duration => KeypadValue.fromNumber(
+            row.durationSeconds,
+            decimals: 0,
+          ),
+          KeypadFieldKind.distance => KeypadValue.fromNumber(
+            row.distanceM == null
+                ? null
+                : formatters.toDisplayDistance(row.distanceM!),
+          ),
+          KeypadFieldKind.rpe => KeypadValue.fromNumber(row.rpe, decimals: 1),
+        },
+        unitLabel: switch (kind) {
+          KeypadFieldKind.weight => formatters.weightUnitLabel,
+          KeypadFieldKind.distance => formatters.distanceUnitLabel,
+          KeypadFieldKind.duration => 'sec',
+          _ => null,
+        },
+        title: switch (kind) {
+          KeypadFieldKind.weight => 'Gewicht',
+          KeypadFieldKind.reps => 'Reps',
+          KeypadFieldKind.duration => 'Tijd',
+          KeypadFieldKind.distance => 'Afstand',
+          KeypadFieldKind.rpe => 'RPE',
+        },
+      );
+      // Backing out of one question leaves the whole set as it was; a half
+      // finished correction is worse than none.
+      if (result == null) return;
+
+      switch (kind) {
+        case KeypadFieldKind.weight:
+          weightKg = Value(
+            result.number == null
+                ? null
+                : formatters.fromDisplayWeight(result.number!),
+          );
+        case KeypadFieldKind.reps:
+          reps = Value(result.intValue);
+        case KeypadFieldKind.duration:
+          durationSeconds = Value(result.intValue);
+        case KeypadFieldKind.distance:
+          distanceM = Value(
+            result.number == null
+                ? null
+                : formatters.fromDisplayDistance(result.number!),
+          );
+        case KeypadFieldKind.rpe:
+          break;
+      }
+    }
 
     await actions.updateSet(
       workoutId,
       row.id,
-      weightKg: weight.number == null
-          ? null
-          : formatters.fromDisplayWeight(weight.number!),
-      reps: reps.intValue,
+      weightKg: weightKg,
+      reps: reps,
+      durationSeconds: durationSeconds,
+      distanceM: distanceM,
     );
   }
 }

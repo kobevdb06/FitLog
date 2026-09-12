@@ -405,6 +405,8 @@ class WorkoutController {
             isCompleted: true,
             weightKg: finalWeight,
             reps: finalReps,
+            durationSeconds: finalDuration,
+            distanceM: finalDistance,
             achievedAt: now.millisecondsSinceEpoch,
           );
 

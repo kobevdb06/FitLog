@@ -25,7 +25,11 @@ class PrCandidate {
   String toString() => 'PrCandidate(${type.wire}, $value)';
 }
 
-/// The four record values a single set can produce.
+/// The record values a single set can produce.
+///
+/// Which ones depends on what the set holds, not on what the exercise is
+/// called: weight and repetitions give the four lifting records, a time gives
+/// the longest hold, a distance gives the furthest.
 ///
 /// Returns an empty list for sets that must not count: not completed, warm-up,
 /// or without usable numbers.
@@ -34,6 +38,8 @@ List<PrCandidate> prCandidatesForSet({
   required bool isCompleted,
   double? weightKg,
   int? reps,
+  int? durationSeconds,
+  double? distanceM,
 }) {
   if (!isCompleted) return const [];
   if (!setType.countsTowardsVolume) return const [];
@@ -57,6 +63,14 @@ List<PrCandidate> prCandidatesForSet({
     candidates.add(PrCandidate(PrType.maxSetVolume, volume));
   }
 
+  if (distanceM != null && distanceM > 0) {
+    candidates.add(PrCandidate(PrType.maxDistance, distanceM));
+  } else if (durationSeconds != null && durationSeconds > 0) {
+    // A longer hold is a better hold. A longer run is not a better run, which
+    // is why a set that carries a distance is judged on the distance instead.
+    candidates.add(PrCandidate(PrType.maxDuration, durationSeconds.toDouble()));
+  }
+
   return candidates;
 }
 
@@ -68,10 +82,12 @@ List<PrCandidate> newRecords({
   required List<PrCandidate> candidates,
   required Map<PrType, double> currentBests,
 }) {
-  return candidates.where((c) {
-    final best = currentBests[c.type];
-    return best == null || c.value > best;
-  }).toList(growable: false);
+  return candidates
+      .where((c) {
+        final best = currentBests[c.type];
+        return best == null || c.value > best;
+      })
+      .toList(growable: false);
 }
 
 /// Convenience wrapper combining both steps.
@@ -80,6 +96,8 @@ List<PrCandidate> detectRecordsForSet({
   required bool isCompleted,
   double? weightKg,
   int? reps,
+  int? durationSeconds,
+  double? distanceM,
   required Map<PrType, double> currentBests,
 }) {
   return newRecords(
@@ -88,6 +106,8 @@ List<PrCandidate> detectRecordsForSet({
       isCompleted: isCompleted,
       weightKg: weightKg,
       reps: reps,
+      durationSeconds: durationSeconds,
+      distanceM: distanceM,
     ),
     currentBests: currentBests,
   );

@@ -120,7 +120,10 @@ class ExerciseDetailScreen extends ConsumerWidget {
               children: [
                 _InfoTab(exercise: row),
                 _HistoryTab(exerciseId: exerciseId),
-                _ChartsTab(exerciseId: exerciseId),
+                _ChartsTab(
+                  exerciseId: exerciseId,
+                  category: ExerciseCategory.fromWire(row.category),
+                ),
                 _RecordsTab(exerciseId: exerciseId),
               ],
             ),
@@ -309,9 +312,10 @@ class _HistoryTab extends ConsumerWidget {
 }
 
 class _ChartsTab extends ConsumerStatefulWidget {
-  const _ChartsTab({required this.exerciseId});
+  const _ChartsTab({required this.exerciseId, required this.category});
 
   final String exerciseId;
+  final ExerciseCategory category;
 
   @override
   ConsumerState<_ChartsTab> createState() => _ChartsTabState();
@@ -339,9 +343,16 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
       );
     }
 
+    // Which lines make sense here follows the exercise: a plank has no
+    // one-rep max, a run has no volume in kilograms. If the exercise has since
+    // been re-typed the chosen metric may no longer be on offer, so fall back
+    // to the first rather than draw an empty chart.
+    final metrics = ExerciseMetric.forCategory(widget.category);
+    final metric = metrics.contains(_metric) ? _metric : metrics.first;
+
     final points = buildExerciseSeries(
       sessions: sessions,
-      metric: _metric,
+      metric: metric,
       range: _range,
     );
 
@@ -353,11 +364,11 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              for (final metric in ExerciseMetric.values) ...[
+              for (final option in metrics) ...[
                 ChoiceChip(
-                  label: Text(metric.label),
-                  selected: _metric == metric,
-                  onSelected: (_) => setState(() => _metric = metric),
+                  label: Text(option.label),
+                  selected: metric == option,
+                  onSelected: (_) => setState(() => _metric = option),
                 ),
                 const SizedBox(width: AppSpacing.sm),
               ],
@@ -377,11 +388,8 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
         TrendLineChart(
           points: points,
           height: 240,
-          valueLabel: (value) => switch (_metric) {
-            ExerciseMetric.totalReps => value.round().toString(),
-            ExerciseMetric.volume => formatters.volume(value),
-            _ => formatters.weightValue(value),
-          },
+          valueLabel: (value) =>
+              formatExerciseMetric(metric, value, formatters),
         ),
         if (points.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),
@@ -389,13 +397,14 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
             children: [
               Expanded(
                 child: StatTile(
-                  value: _format(points.last.value, formatters),
+                  value: _format(metric, points.last.value, formatters),
                   label: 'Laatste',
                 ),
               ),
               Expanded(
                 child: StatTile(
                   value: _format(
+                    metric,
                     points.map((p) => p.value).reduce((a, b) => a > b ? a : b),
                     formatters,
                   ),
@@ -413,11 +422,8 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
     );
   }
 
-  String _format(double value, Formatters formatters) => switch (_metric) {
-    ExerciseMetric.totalReps => '${value.round()}',
-    ExerciseMetric.volume => formatters.volume(value),
-    _ => formatters.weight(value),
-  };
+  String _format(ExerciseMetric metric, double value, Formatters formatters) =>
+      formatExerciseMetric(metric, value, formatters, withUnit: true);
 }
 
 class _RecordsTab extends ConsumerWidget {
@@ -480,6 +486,10 @@ class _RecordsTab extends ConsumerWidget {
       case PrType.maxWeight:
       case PrType.est1rm:
         return formatters.weight(record.value);
+      case PrType.maxDuration:
+        return Formatters.duration(record.value.round());
+      case PrType.maxDistance:
+        return formatters.distance(record.value);
     }
   }
 }

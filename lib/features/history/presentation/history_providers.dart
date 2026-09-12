@@ -63,17 +63,24 @@ class HistoryActions {
   }
 
   /// Changing a logged set recomputes the workout totals and the records.
+  ///
+  /// Every value is optional and an omitted one is left as it was, so
+  /// correcting the time of a plank cannot quietly put kilograms on it.
   Future<void> updateSet(
     String workoutId,
     String setId, {
-    double? weightKg,
-    int? reps,
+    Value<double?> weightKg = const Value.absent(),
+    Value<int?> reps = const Value.absent(),
+    Value<int?> durationSeconds = const Value.absent(),
+    Value<double?> distanceM = const Value.absent(),
     bool? isCompleted,
   }) async {
     await _db.workoutsDao.updateSet(
       setId,
-      weightKg: weightKg == null ? const Value.absent() : Value(weightKg),
-      reps: reps == null ? const Value.absent() : Value(reps),
+      weightKg: weightKg,
+      reps: reps,
+      durationSeconds: durationSeconds,
+      distanceM: distanceM,
       isCompleted: isCompleted == null
           ? const Value.absent()
           : Value(isCompleted),
@@ -94,7 +101,6 @@ class HistoryActions {
   Future<void> setNotes(String workoutId, String? notes) =>
       _db.workoutsDao.setWorkoutNotes(workoutId, notes);
 }
-
 
 /// Workouts that are on their way out but can still be brought back.
 ///

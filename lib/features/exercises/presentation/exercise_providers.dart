@@ -10,6 +10,7 @@ import '../../../core/app/app_controller.dart';
 import '../../../core/calc/one_rm.dart';
 import '../../../core/calc/volume.dart';
 import '../../../core/db/database.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/db/models.dart';
 import '../../../core/util/paths.dart';
 import '../../photos/data/photo_store.dart';
@@ -100,12 +101,55 @@ enum ExerciseMetric {
   oneRm('Geschatte 1RM'),
   volume('Volume per sessie'),
   bestSet('Beste set'),
-  totalReps('Totale reps');
+  totalReps('Totale reps'),
+
+  /// The longest single hold of the session.
+  longestHold('Langste tijd'),
+
+  /// The furthest covered in one set.
+  furthest('Verste afstand'),
+
+  /// Everything covered in the session together.
+  totalDistance('Totale afstand');
 
   const ExerciseMetric(this.label);
 
   final String label;
+
+  /// The metrics worth offering for [category].
+  ///
+  /// A plank has no one-rep max and a run has no volume in kilograms; showing
+  /// those would be four empty charts and no way to tell whether that means
+  /// "no data" or "not a thing".
+  static List<ExerciseMetric> forCategory(ExerciseCategory category) {
+    if (category.hasDistance) {
+      return const [furthest, totalDistance, longestHold];
+    }
+    if (category.hasDuration) return const [longestHold];
+    return const [oneRm, volume, bestSet, totalReps];
+  }
 }
+
+/// How a value on the chart of [metric] reads.
+///
+/// One place, because two screens draw the same chart and a number that reads
+/// as kilograms under one and as seconds under the other would be worse than
+/// either.
+String formatExerciseMetric(
+  ExerciseMetric metric,
+  double value,
+  Formatters formatters, {
+  bool withUnit = false,
+}) => switch (metric) {
+  ExerciseMetric.totalReps =>
+    withUnit ? '${value.round()} reps' : '${value.round()}',
+  ExerciseMetric.volume => formatters.volume(value),
+  ExerciseMetric.longestHold => Formatters.duration(value.round()),
+  ExerciseMetric.furthest ||
+  ExerciseMetric.totalDistance => formatters.distance(value),
+  ExerciseMetric.oneRm || ExerciseMetric.bestSet =>
+    withUnit ? formatters.weight(value) : formatters.weightValue(value),
+};
 
 /// The time span of the exercise chart.
 enum ChartRange {
@@ -138,8 +182,7 @@ List<ChartPoint> buildExerciseSeries({
     final working = session.sets
         .where(
           (s) =>
-              s.isCompleted &&
-              SetType.fromWire(s.setType).countsTowardsVolume,
+              s.isCompleted && SetType.fromWire(s.setType).countsTowardsVolume,
         )
         .toList();
     if (working.isEmpty) continue;
@@ -167,6 +210,22 @@ List<ChartPoint> buildExerciseSeries({
         value = working
             .fold<int>(0, (sum, s) => sum + (s.reps ?? 0))
             .toDouble();
+      case ExerciseMetric.longestHold:
+        for (final s in working) {
+          final seconds = s.durationSeconds;
+          if (seconds != null && (value == null || seconds > value)) {
+            value = seconds.toDouble();
+          }
+        }
+      case ExerciseMetric.furthest:
+        for (final s in working) {
+          final metres = s.distanceM;
+          if (metres != null && (value == null || metres > value)) {
+            value = metres;
+          }
+        }
+      case ExerciseMetric.totalDistance:
+        value = working.fold<double>(0, (sum, s) => sum + (s.distanceM ?? 0));
     }
 
     if (value != null && value > 0) {
@@ -292,10 +351,8 @@ class ExerciseEditor {
       );
       if (picked == null) return null;
 
-      return await PhotoStore(paths).import(
-        File(picked.path),
-        maxLongEdge: frameLongEdge,
-      );
+      return await PhotoStore(paths)
+          .import(File(picked.path), maxLongEdge: frameLongEdge);
     } finally {
       await recovery.forget();
     }

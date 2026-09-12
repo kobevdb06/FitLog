@@ -8,13 +8,15 @@ enum ExerciseCategory {
   machine('machine', 'Machine', hasWeight: true),
   cable('cable', 'Kabel', hasWeight: true),
   bodyweight('bodyweight', 'Lichaamsgewicht', hasWeight: false),
-  assistedBodyweight(
-    'assisted_bodyweight',
-    'Geassisteerd',
-    hasWeight: true,
-  ),
+  assistedBodyweight('assisted_bodyweight', 'Geassisteerd', hasWeight: true),
   duration('duration', 'Tijd', hasWeight: false, hasDuration: true),
-  cardio('cardio', 'Cardio', hasWeight: false, hasDuration: true, hasDistance: true);
+  cardio(
+    'cardio',
+    'Cardio',
+    hasWeight: false,
+    hasDuration: true,
+    hasDistance: true,
+  );
 
   const ExerciseCategory(
     this.wire,
@@ -147,7 +149,13 @@ enum PrType {
   maxWeight('max_weight', 'Zwaarste gewicht'),
   est1rm('est_1rm', 'Geschatte 1RM'),
   maxSetVolume('max_set_volume', 'Beste setvolume'),
-  maxReps('max_reps', 'Meeste reps');
+  maxReps('max_reps', 'Meeste reps'),
+
+  /// The longest you have held something: a plank, a hang, a carry.
+  maxDuration('max_duration', 'Langste tijd'),
+
+  /// The furthest you have covered in one go.
+  maxDistance('max_distance', 'Verste afstand');
 
   const PrType(this.wire, this.label);
 
@@ -258,7 +266,6 @@ enum DistanceUnit {
   static DistanceUnit fromWire(String value) =>
       values.firstWhere((e) => e.wire == value, orElse: () => DistanceUnit.km);
 }
-
 
 /// How a one-rep-max attempt ended.
 enum PrAttemptResult {

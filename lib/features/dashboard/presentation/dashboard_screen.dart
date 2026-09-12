@@ -46,10 +46,7 @@ class DashboardScreen extends ConsumerWidget {
                 AppSpacing.lg,
                 0,
               ),
-              child: _Greeting(
-                name: profile?.displayName,
-                streak: streak,
-              ),
+              child: _Greeting(name: profile?.displayName, streak: streak),
             ),
             const SizedBox(height: AppSpacing.lg),
             const Padding(
@@ -100,10 +97,7 @@ class DashboardScreen extends ConsumerWidget {
                   dense: true,
                   onTap: () =>
                       context.push(Routes.exerciseDetail(record.exercise.id)),
-                  leading: ExerciseAvatar(
-                    exercise: record.exercise,
-                    size: 32,
-                  ),
+                  leading: ExerciseAvatar(exercise: record.exercise, size: 32),
                   title: Text(record.exercise.name),
                   subtitle: Text(
                     '${record.type.label} · '
@@ -111,9 +105,8 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   trailing: Text(
                     _recordValue(record, formatters),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.record,
-                    ),
+                    style: Theme.of(context).textTheme.titleSmall
+                        ?.copyWith(color: AppColors.record),
                   ),
                 ),
             ],
@@ -130,9 +123,7 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    MiniBarChart(
-                      values: [for (final b in buckets) b.volumeKg],
-                    ),
+                    MiniBarChart(values: [for (final b in buckets) b.volumeKg]),
                     const SizedBox(height: AppSpacing.sm),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -143,18 +134,18 @@ class DashboardScreen extends ConsumerWidget {
                               : Formatters.dayMonth(buckets.first.weekStart),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
                         Text(
                           'nu',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
                       ],
@@ -178,6 +169,10 @@ class DashboardScreen extends ConsumerWidget {
       case PrType.maxWeight:
       case PrType.est1rm:
         return formatters.weight(record.record.value);
+      case PrType.maxDuration:
+        return Formatters.duration(record.record.value.round());
+      case PrType.maxDistance:
+        return formatters.distance(record.record.value);
     }
   }
 }
@@ -294,9 +289,7 @@ class _TodayCard extends ConsumerWidget {
                 Expanded(
                   child: FilledButton(
                     onPressed: () async {
-                      await ref
-                          .read(workoutControllerProvider)
-                          .startEmpty();
+                      await ref.read(workoutControllerProvider).startEmpty();
                       if (context.mounted) context.push(Routes.workout);
                     },
                     child: const Text('Lege workout'),
@@ -355,8 +348,7 @@ class _TodayCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           Center(
             child: TextButton(
-              onPressed: () =>
-                  context.push(Routes.routineDetail(suggested.id)),
+              onPressed: () => context.push(Routes.routineDetail(suggested.id)),
               child: const Text('Bekijk de routine'),
             ),
           ),
@@ -423,9 +415,9 @@ class _RecoveryBlock extends ConsumerWidget {
                             'en nog ${recovering.length - maxRows} andere',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                 ),
                           ),
                         ),

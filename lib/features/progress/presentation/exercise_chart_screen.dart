@@ -54,6 +54,16 @@ class _ExerciseChartScreenState extends ConsumerState<ExerciseChartScreen> {
         ? null
         : ref.watch(exerciseSessionsProvider(exerciseId)).value;
 
+    // The lines on offer follow the exercise: a plank has no one-rep max, a
+    // run has no volume in kilograms. Switching to another exercise can leave
+    // the chosen metric off the list, so fall back rather than draw nothing.
+    final metrics = ExerciseMetric.forCategory(
+      exercise == null
+          ? ExerciseCategory.barbell
+          : ExerciseCategory.fromWire(exercise.category),
+    );
+    final metric = metrics.contains(_metric) ? _metric : metrics.first;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Grafiek per oefening'),
@@ -89,11 +99,11 @@ class _ExerciseChartScreenState extends ConsumerState<ExerciseChartScreen> {
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
-                      for (final metric in ExerciseMetric.values) ...[
+                      for (final option in metrics) ...[
                         ChoiceChip(
-                          label: Text(metric.label),
-                          selected: _metric == metric,
-                          onSelected: (_) => setState(() => _metric = metric),
+                          label: Text(option.label),
+                          selected: metric == option,
+                          onSelected: (_) => setState(() => _metric = option),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                       ],
@@ -113,15 +123,12 @@ class _ExerciseChartScreenState extends ConsumerState<ExerciseChartScreen> {
                 TrendLineChart(
                   points: buildExerciseSeries(
                     sessions: sessions,
-                    metric: _metric,
+                    metric: metric,
                     range: _range,
                   ),
                   height: 260,
-                  valueLabel: (value) => switch (_metric) {
-                    ExerciseMetric.totalReps => value.round().toString(),
-                    ExerciseMetric.volume => formatters.volume(value),
-                    _ => formatters.weightValue(value),
-                  },
+                  valueLabel: (value) =>
+                      formatExerciseMetric(metric, value, formatters),
                 ),
               ],
             ),

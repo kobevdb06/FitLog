@@ -29,9 +29,7 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
     final rows = await (select(
       personalRecordsTable,
     )..where((t) => t.exerciseId.equals(exerciseId))).get();
-    return {
-      for (final r in rows) PrType.fromWire(r.recordType): r.value,
-    };
+    return {for (final r in rows) PrType.fromWire(r.recordType): r.value};
   }
 
   /// Checks a freshly completed set against the exercise's records and writes
@@ -43,6 +41,8 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
     required bool isCompleted,
     double? weightKg,
     int? reps,
+    int? durationSeconds,
+    double? distanceM,
     int? achievedAt,
   }) async {
     final bests = await currentBests(exerciseId);
@@ -51,6 +51,8 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
       isCompleted: isCompleted,
       weightKg: weightKg,
       reps: reps,
+      durationSeconds: durationSeconds,
+      distanceM: distanceM,
       currentBests: bests,
     );
     if (records.isEmpty) return const [];
@@ -88,12 +90,13 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
     final ids = exerciseIds.toSet();
     if (ids.isEmpty) return;
 
-    await (delete(personalRecordsTable)
-          ..where((t) => t.exerciseId.isIn(ids)))
-        .go();
+    await (delete(
+      personalRecordsTable,
+    )..where((t) => t.exerciseId.isIn(ids))).go();
 
     final rows = await customSelect(
       'SELECT ws.id AS set_id, ws.weight_kg AS weight_kg, ws.reps AS reps, '
+      'ws.duration_seconds AS duration_seconds, ws.distance_m AS distance_m, '
       'ws.set_type AS set_type, we.exercise_id AS exercise_id, '
       'COALESCE(ws.completed_at, w.started_at) AS achieved_at '
       'FROM workout_sets ws '
@@ -121,6 +124,7 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
   Future<void> rebuildAllRecords() async {
     final rows = await customSelect(
       'SELECT ws.id AS set_id, ws.weight_kg AS weight_kg, ws.reps AS reps, '
+      'ws.duration_seconds AS duration_seconds, ws.distance_m AS distance_m, '
       'ws.set_type AS set_type, ws.is_completed AS is_completed, '
       'we.exercise_id AS exercise_id, '
       'COALESCE(ws.completed_at, w.started_at) AS achieved_at '
@@ -153,6 +157,8 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
         isCompleted: true,
         weightKg: r.read<double?>('weight_kg'),
         reps: r.read<int?>('reps'),
+        durationSeconds: r.read<int?>('duration_seconds'),
+        distanceM: r.read<double?>('distance_m'),
       );
       if (candidates.isEmpty) continue;
 
@@ -188,10 +194,7 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
     });
   }
 
-  Stream<List<RecordWithExercise>> watchRecords({
-    PrType? type,
-    int? limit,
-  }) {
+  Stream<List<RecordWithExercise>> watchRecords({PrType? type, int? limit}) {
     final query = select(personalRecordsTable).join([
       innerJoin(
         exercisesTable,
@@ -342,15 +345,13 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
 
   // --- Progress photos ------------------------------------------------------
 
-  Stream<List<ProgressPhotoRow>> watchPhotos() =>
-      (select(progressPhotosTable)
-            ..orderBy([(t) => OrderingTerm.desc(t.takenAt)]))
-          .watch();
+  Stream<List<ProgressPhotoRow>> watchPhotos() => (select(
+    progressPhotosTable,
+  )..orderBy([(t) => OrderingTerm.desc(t.takenAt)])).watch();
 
-  Future<List<ProgressPhotoRow>> photos() =>
-      (select(progressPhotosTable)
-            ..orderBy([(t) => OrderingTerm.desc(t.takenAt)]))
-          .get();
+  Future<List<ProgressPhotoRow>> photos() => (select(
+    progressPhotosTable,
+  )..orderBy([(t) => OrderingTerm.desc(t.takenAt)])).get();
 
   Future<String> addPhoto({
     required String fileName,

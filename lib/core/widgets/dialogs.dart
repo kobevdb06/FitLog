@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../calc/rpe.dart';
 import '../db/enums.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -271,6 +272,72 @@ String exerciseCategoryDescription(ExerciseCategory category) {
   if (category.hasDuration) return 'Tijd';
   return 'Gewicht en herhalingen';
 }
+
+/// Asks how hard a set was, by asking what people can actually answer.
+///
+/// Not a number pad. "How heavy did that feel" has no anchor and nobody agrees
+/// what a 7 is; "how many more could you have done" is something you counted
+/// while you were doing it. The number stored is still the RPE, so nothing
+/// downstream has to know the question was phrased the other way round.
+///
+/// Everything at or below 6 is one choice on purpose. The difference between
+/// four reps in reserve and six is not something anyone can judge, and
+/// offering both invents data.
+Future<double?> pickRpe(BuildContext context, {required double? current}) {
+  return showAppSheet<double>(
+    context: context,
+    title: 'Hoeveel had je er nog gekund?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final (value, reserve, note) in kRpeChoices)
+          ListTile(
+            leading: SizedBox(
+              width: 34,
+              child: Text(
+                value == kMinUsableRpe ? '≤6' : '${value.round()}',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            title: Text(reserve),
+            subtitle: Text(note),
+            selected: current == value,
+            onTap: () => Navigator.of(context).pop(value),
+          ),
+        if (current != null) ...[
+          const Divider(height: 1),
+          ListTile(
+            leading: const SizedBox(
+              width: 34,
+              child: Icon(Icons.backspace_outlined, size: 18),
+            ),
+            title: const Text('Geen cijfer'),
+            onTap: () => Navigator.of(context).pop(kRpeCleared),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// What [pickRpe] returns when you choose to leave the set unscored. A plain
+/// null already means "you closed the sheet without choosing".
+const double kRpeCleared = -1;
+
+/// The choices, hardest first. The third field says what the effort is about
+/// and never what it feels like: people readily confuse heavy with painful,
+/// and a label that says "zwaar" invites them to score a sore elbow.
+const List<(double, String, String)> kRpeChoices = [
+  (10, 'Geen enkele meer', 'De laatste rep was de laatste'),
+  (9, 'Nog 1 rep', 'Eén in reserve'),
+  (8, 'Nog 2 reps', 'Twee in reserve'),
+  (7, 'Nog 3 reps', 'Drie in reserve'),
+  (kMinUsableRpe, 'Nog veel', 'Vier of meer - niet nader te schatten'),
+];
 
 /// The colour the SET column uses per type.
 Color setTypeColor(BuildContext context, SetType type) => switch (type) {

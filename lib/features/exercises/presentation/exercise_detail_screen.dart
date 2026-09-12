@@ -347,7 +347,7 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
     // one-rep max, a run has no volume in kilograms. If the exercise has since
     // been re-typed the chosen metric may no longer be on offer, so fall back
     // to the first rather than draw an empty chart.
-    final metrics = ExerciseMetric.forCategory(widget.category);
+    final metrics = ExerciseMetric.forSessions(widget.category, sessions);
     final metric = metrics.contains(_metric) ? _metric : metrics.first;
 
     final points = buildExerciseSeries(

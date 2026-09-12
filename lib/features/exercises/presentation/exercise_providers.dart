@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/one_rm.dart';
+import '../../../core/calc/rpe.dart';
 import '../../../core/calc/volume.dart';
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
@@ -110,7 +111,11 @@ enum ExerciseMetric {
   furthest('Verste afstand'),
 
   /// Everything covered in the session together.
-  totalDistance('Totale afstand');
+  totalDistance('Totale afstand'),
+
+  /// A maximum read off how hard the sets felt, rather than assumed from the
+  /// reps alone. Offered only where there is an RPE to read it from.
+  rpeOneRm('1RM via RPE');
 
   const ExerciseMetric(this.label);
 
@@ -121,6 +126,31 @@ enum ExerciseMetric {
   /// A plank has no one-rep max and a run has no volume in kilograms; showing
   /// those would be four empty charts and no way to tell whether that means
   /// "no data" or "not a thing".
+  /// The lines worth offering for this exercise *and* this history.
+  ///
+  /// [forCategory] answers from the exercise alone; the RPE line needs more
+  /// than that, because it depends on whether anything has been scored. An
+  /// empty chart cannot say whether that means "not yet" or "not a thing".
+  static List<ExerciseMetric> forSessions(
+    ExerciseCategory category,
+    Iterable<ExerciseSession> sessions,
+  ) {
+    final base = forCategory(category);
+    // Only where a weight on a bar means something: a plank has no maximum,
+    // and body-weight work has no absolute load to read a percentage off.
+    if (!category.hasWeight || !category.hasReps) return base;
+
+    final scored = sessions.any(
+      (session) => session.sets.any(
+        (s) =>
+            s.isCompleted &&
+            s.side == null &&
+            e1RmFromRpe(weightKg: s.weightKg, reps: s.reps, rpe: s.rpe) != null,
+      ),
+    );
+    return scored ? [...base, rpeOneRm] : base;
+  }
+
   static List<ExerciseMetric> forCategory(ExerciseCategory category) {
     if (category.hasDistance) {
       return const [furthest, totalDistance, longestHold];
@@ -147,7 +177,7 @@ String formatExerciseMetric(
   ExerciseMetric.longestHold => Formatters.duration(value.round()),
   ExerciseMetric.furthest ||
   ExerciseMetric.totalDistance => formatters.distance(value),
-  ExerciseMetric.oneRm || ExerciseMetric.bestSet =>
+  ExerciseMetric.oneRm || ExerciseMetric.bestSet || ExerciseMetric.rpeOneRm =>
     withUnit ? formatters.weight(value) : formatters.weightValue(value),
 };
 
@@ -226,6 +256,15 @@ List<ChartPoint> buildExerciseSeries({
         }
       case ExerciseMetric.totalDistance:
         value = working.fold<double>(0, (sum, s) => sum + (s.distanceM ?? 0));
+      case ExerciseMetric.rpeOneRm:
+        // One arm at a time is left out for the same reason the records leave
+        // it out: 15 kg in one hand is not a worse day than 30 in two, and
+        // letting it in would halve the estimate.
+        value = sessionE1Rm([
+          for (final s in working)
+            if (s.side == null)
+              ScoredSet(weightKg: s.weightKg, reps: s.reps, rpe: s.rpe),
+        ]);
     }
 
     if (value != null && value > 0) {

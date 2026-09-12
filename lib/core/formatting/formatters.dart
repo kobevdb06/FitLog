@@ -78,6 +78,13 @@ class Formatters {
     return '${weight(weightKg)} × $reps';
   }
 
+  /// `8` or `8,5` - never `8.0`, which reads as a measurement rather than a
+  /// judgement.
+  String rpeValue(double? rpe) {
+    if (rpe == null) return '-';
+    return _decimal.format(rpe);
+  }
+
   /// Large totals read better in tonnes.
   String volume(double kg) {
     final value = weightUnit == WeightUnit.kg ? kg : kgToLb(kg);

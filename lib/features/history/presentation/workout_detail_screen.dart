@@ -264,6 +264,15 @@ class _ExerciseBlock extends ConsumerWidget {
 
     for (final kind in columns) {
       if (!context.mounted) return;
+
+      // The RPE is chosen the same way it was logged, not typed on a pad.
+      if (kind == KeypadFieldKind.rpe) {
+        final picked = await pickRpe(context, current: row.rpe);
+        if (picked == null) return;
+        rpe = Value(picked == kRpeCleared ? null : picked);
+        continue;
+      }
+
       final result = await showKeypadSheet(
         context: context,
         kind: kind,
@@ -321,7 +330,8 @@ class _ExerciseBlock extends ConsumerWidget {
                 : formatters.fromDisplayDistance(result.number!),
           );
         case KeypadFieldKind.rpe:
-          rpe = Value(result.number);
+          // Handled above, before the pad is ever opened.
+          break;
       }
     }
 

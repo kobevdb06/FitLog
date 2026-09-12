@@ -57,10 +57,11 @@ class _ExerciseChartScreenState extends ConsumerState<ExerciseChartScreen> {
     // The lines on offer follow the exercise: a plank has no one-rep max, a
     // run has no volume in kilograms. Switching to another exercise can leave
     // the chosen metric off the list, so fall back rather than draw nothing.
-    final metrics = ExerciseMetric.forCategory(
+    final metrics = ExerciseMetric.forSessions(
       exercise == null
           ? ExerciseCategory.barbell
           : ExerciseCategory.fromWire(exercise.category),
+      sessions ?? const [],
     );
     final metric = metrics.contains(_metric) ? _metric : metrics.first;
 

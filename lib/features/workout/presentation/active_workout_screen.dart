@@ -94,6 +94,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   // --- Keypad ---------------------------------------------------------------
 
   void _focus(WorkoutSetRow row, KeypadFieldKind kind, Formatters formatters) {
+    // The RPE is chosen, not typed. A bare pad asks for a number on a scale
+    // nobody has been shown; the sheet asks how many reps were left, which is
+    // something you counted while you were doing it.
+    if (kind == KeypadFieldKind.rpe) {
+      unawaited(_askRpe(row));
+      return;
+    }
+
     setState(() {
       _target = _KeypadTarget(row.id, kind);
       _keypadValue = switch (kind) {
@@ -171,7 +179,10 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     final owner = _ownerOf(workout, target.setId);
     if (owner != null) {
-      final columns = setColumnsFor(owner.category, owner.sets.map(setValues));
+      // Only the fields you type into: the next key should not pop a sheet
+      // open halfway through a row.
+      final columns = setColumnsFor(owner.category, owner.sets.map(setValues))
+        ..remove(KeypadFieldKind.rpe);
       final at = columns.indexOf(target.kind);
       if (at >= 0 && at + 1 < columns.length) {
         final row = _findSet(workout, target.setId);
@@ -192,7 +203,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       final columns = setColumnsFor(
         next.owner.category,
         next.owner.sets.map(setValues),
-      );
+      )..remove(KeypadFieldKind.rpe);
       if (columns.isNotEmpty) {
         _focus(next.set, columns.first, formatters);
         return;
@@ -224,6 +235,21 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (exercise.sets.any((s) => s.id == setId)) return exercise;
     }
     return null;
+  }
+
+  Future<void> _askRpe(WorkoutSetRow row) async {
+    // The pad goes away first, or the sheet opens over it and leaves the old
+    // field looking active underneath.
+    setState(() => _target = null);
+
+    final picked = await pickRpe(context, current: row.rpe);
+    if (picked == null) return;
+    await ref
+        .read(workoutControllerProvider)
+        .updateSetValues(
+          row.id,
+          rpe: Value(picked == kRpeCleared ? null : picked),
+        );
   }
 
   /// Straight back to an empty set, whichever state it was in.
@@ -1290,7 +1316,7 @@ String? _cellValue(
         : Formatters.duration(row.durationSeconds!),
   KeypadFieldKind.distance =>
     row.distanceM == null ? null : formatters.distanceValue(row.distanceM),
-  KeypadFieldKind.rpe => row.rpe?.toString(),
+  KeypadFieldKind.rpe => row.rpe == null ? null : formatters.rpeValue(row.rpe),
 };
 
 /// How much room the previous column gets next to [columns].

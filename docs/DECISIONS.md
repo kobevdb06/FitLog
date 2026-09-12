@@ -1266,3 +1266,55 @@ bovenop te komen. Allebei beantwoorden ze dezelfde vraag. Ze vermenigvuldigen
 zou dezelfde indruk twee keer tellen; de RPE wint waar hij er is, want die is
 per set en per spier, terwijl de sessiebeoordeling een hele avond dekt waarin
 je benen zwaar waren en je armen een bijzaak.
+
+## 86. RPE wordt gekozen, niet getikt
+
+De invoer was een kaal cijferblok met het label "RPE": een getal op een schaal
+die je nooit is uitgelegd. Dat is de slechtst denkbare invoer voor het cijfer
+waar alle afgeleide berekeningen op leunen.
+
+De vraag is nu "hoeveel had je er nog gekund?" met vijf antwoorden. Dat is iets
+wat je telde terwijl je bezig was; "hoe zwaar voelde dat" is dat niet. Wat er
+opgeslagen wordt is nog steeds de RPE, dus niets stroomafwaarts hoeft te weten
+dat de vraag andersom gesteld werd.
+
+Alles op of onder 6 is bewust één keuze. Het verschil tussen vier en zes reps
+in reserve kan niemand inschatten; die twee apart aanbieden verzint data.
+
+De bijschriften gaan over inspanning en noemen nooit "zwaar" of "pijnlijk".
+Mensen halen die twee al door elkaar, en een label dat over zwaar spreekt
+nodigt uit om een zere elleboog te scoren.
+
+Eén ding dat de "volgende"-toets nu overslaat: RPE. Doorlopen naar een veld dat
+een blad opent in plaats van cijfers aanneemt, is halverwege een rij van modus
+wisselen.
+
+## 87. Een 1RM uit hoe de set voelde
+
+`estimatedOneRm` gebruikt Epley en gaat ervan uit dat élke set tot falen ging.
+Bijna geen enkele set doet dat, dus 100 kg voor 5 levert hetzelfde getal of het
+nu comfortabel was of je laatste rep. Dat is de reden dat die lijn heen en weer
+springt.
+
+`lib/core/calc/rpe.dart` leest in plaats daarvan een percentage van je maximum
+af uit de tabel van Tuchscherer. Als aparte grafieklijn, niet als vervanging:
+je hele bestaande geschiedenis heeft geen RPE, en aangepaste naast
+onaangepaste waarden in één lijn is gewoon fout. Ook bewust geen recordsoort -
+records zijn permanent en je eerste weken RPE zijn ongeijkt.
+
+Wat er buiten blijft, en waarom niet geklampt wordt: reps boven 12 en RPE onder
+6 vallen buiten de tabel. Daar de dichtstbijzijnde waarde pakken zou
+zelfverzekerd antwoorden waar de tabel niets te zeggen heeft. Dus geen
+schatting. Ook buiten: eenarmige sets, om dezelfde reden als bij de records, en
+lichaamsgewichtoefeningen, die geen absolute belasting hebben om een percentage
+van te nemen.
+
+Per sessie een **gewogen gemiddelde** van de bruikbare sets, niet de beste.
+Bij Epley zegt alleen de zwaarste set iets - een makkelijke set draagt geen
+informatie over een maximum. Hier is elke gescoorde set al een schatting van
+hetzelfde getal, dus luister je naar alle, en naar de betrouwbaarste het meest.
+Sets ver van falen en lange sets wegen minder, want daar schat men slechter.
+
+De lijn wordt pas aangeboden als er iets te tekenen valt. Vier lege grafieken
+tonen is erger dan er geen aanbieden: aan een lege grafiek zie je niet of dat
+"nog niet gedaan" of "bestaat niet" betekent.

@@ -1,5 +1,7 @@
 import 'package:fitlog/core/calc/recovery.dart';
-import 'package:fitlog/core/db/enums.dart';
+import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/models.dart';
+import 'package:fitlog/features/exercises/presentation/exercise_providers.dart';
 import 'package:fitlog/core/widgets/numeric_keypad.dart';
 import 'package:fitlog/features/workout/domain/set_columns.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +50,119 @@ void main() {
         setColumnsFor(ExerciseCategory.duration, [set()], trackRpe: true),
         [KeypadFieldKind.duration, KeypadFieldKind.rpe],
       );
+    });
+  });
+
+  group('the chart it unlocks', () {
+    ExerciseSession session(List<WorkoutSetRow> sets) => ExerciseSession(
+      workout: WorkoutRow(
+        id: 'w',
+        name: 'Push',
+        startedAt: DateTime(2026, 3, 1).millisecondsSinceEpoch,
+        totalVolumeKg: 0,
+        totalSets: 0,
+        durationSeconds: 0,
+      ),
+      workoutExercise: WorkoutExerciseRow(
+        id: 'we',
+        workoutId: 'w',
+        exerciseId: 'ex',
+        sortOrder: 0,
+        restSeconds: 90,
+        isUnilateral: false,
+        isPrAttempt: false,
+      ),
+      sets: sets,
+    );
+
+    WorkoutSetRow scored({
+      double? weightKg = 100,
+      int? reps = 5,
+      double? rpe,
+      String? side,
+      String setType = 'normal',
+    }) => WorkoutSetRow(
+      id: 's',
+      workoutExerciseId: 'we',
+      sortOrder: 0,
+      setType: setType,
+      weightKg: weightKg,
+      reps: reps,
+      rpe: rpe,
+      side: side,
+      isCompleted: true,
+      isSkipped: false,
+    );
+
+    test('is not offered before anything has been scored', () {
+      expect(
+        ExerciseMetric.forSessions(ExerciseCategory.barbell, [
+          session([scored()]),
+        ]),
+        isNot(contains(ExerciseMetric.rpeOneRm)),
+      );
+    });
+
+    test('appears once a usable set exists', () {
+      expect(
+        ExerciseMetric.forSessions(ExerciseCategory.barbell, [
+          session([scored(rpe: 8)]),
+        ]),
+        contains(ExerciseMetric.rpeOneRm),
+      );
+    });
+
+    test('never for a hold, which has no maximum to read', () {
+      expect(
+        ExerciseMetric.forSessions(ExerciseCategory.duration, [
+          session([scored(rpe: 8)]),
+        ]),
+        isNot(contains(ExerciseMetric.rpeOneRm)),
+      );
+    });
+
+    test('nor for body weight, which has no absolute load', () {
+      expect(
+        ExerciseMetric.forSessions(ExerciseCategory.bodyweight, [
+          session([scored(rpe: 8)]),
+        ]),
+        isNot(contains(ExerciseMetric.rpeOneRm)),
+      );
+    });
+
+    test('a one-armed set does not count towards it', () {
+      expect(
+        ExerciseMetric.forSessions(ExerciseCategory.barbell, [
+          session([scored(rpe: 8, side: 'left')]),
+        ]),
+        isNot(contains(ExerciseMetric.rpeOneRm)),
+      );
+    });
+
+    test('the line reads the estimate off the scored sets', () {
+      final points = buildExerciseSeries(
+        sessions: [
+          session([scored(rpe: 8)]),
+        ],
+        metric: ExerciseMetric.rpeOneRm,
+        range: ChartRange.year,
+        now: DateTime(2026, 3, 2),
+      );
+
+      expect(points.single.value, closeTo(123.3, 0.1));
+    });
+
+    test('a warm-up is left out of it', () {
+      final points = buildExerciseSeries(
+        sessions: [
+          session([scored(rpe: 8, setType: 'warmup')]),
+        ],
+        metric: ExerciseMetric.rpeOneRm,
+        range: ChartRange.year,
+        now: DateTime(2026, 3, 2),
+      );
+
+      expect(points, isEmpty);
     });
   });
 

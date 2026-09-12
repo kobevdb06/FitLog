@@ -453,6 +453,69 @@ void main() {
     });
   });
 
+  group('scoring a set', () {
+    Future<void> withRpeOn(WidgetTester tester) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(trackRpe: Value(true)),
+      );
+      await pumpScreen(tester);
+    }
+
+    testWidgets('the column asks how many reps were left, not for a number', (
+      tester,
+    ) async {
+      await withRpeOn(tester);
+
+      await tester.tap(find.text('-').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hoeveel had je er nog gekund?'), findsOneWidget);
+      expect(
+        find.byType(NumericKeypad),
+        findsNothing,
+        reason: 'geen cijferblok',
+      );
+    });
+
+    testWidgets('choosing two in reserve stores an eight', (tester) async {
+      await withRpeOn(tester);
+      await tester.tap(find.text('-').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Nog 2 reps'));
+      await settle(tester);
+
+      expect((await db.workoutsDao.getSet(setId))!.rpe, 8);
+    });
+
+    testWidgets('everything below six is one choice', (tester) async {
+      await withRpeOn(tester);
+      await tester.tap(find.text('-').last);
+      await tester.pumpAndSettle();
+
+      // Nobody can tell four reps in reserve from six, so there is no 5.
+      expect(find.text('Nog veel'), findsOneWidget);
+      expect(find.text('≤6'), findsOneWidget);
+
+      await tester.tap(find.text('Nog veel'));
+      await settle(tester);
+
+      expect((await db.workoutsDao.getSet(setId))!.rpe, 6);
+    });
+
+    testWidgets('and a score can be taken off again', (tester) async {
+      await db.workoutsDao.updateSet(setId, rpe: const Value(9));
+      await withRpeOn(tester);
+
+      await tester.tap(find.text('9'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Geen cijfer'));
+      await settle(tester);
+
+      expect((await db.workoutsDao.getSet(setId))!.rpe, isNull);
+    });
+  });
+
   group('the plate calculator from the pad', () {
     testWidgets('is offered on the weight of a barbell exercise', (
       tester,

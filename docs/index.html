@@ -101,7 +101,7 @@
   <p>
     Een logboek voor krachttraining: routines, sets, gewichten, records,
     voortgangsfoto's en een schatting van hoe lang elke spiergroep nodig heeft.
-    873 oefeningen zitten er al in, met een animatie van de uitvoering, en je
+    876 oefeningen zitten er al in, met een animatie van de uitvoering, en je
     kunt er zelf oefeningen bij maken met je eigen foto's.
   </p>
 
@@ -148,6 +148,44 @@
     de releasepagina laten volgen — die werkt de app dan zelf bij.
   </p>
 
+  <h2>Privacy</h2>
+  <div class="card">
+    <p>
+      <strong>De app verzamelt niets.</strong> Je routines, gewichten, foto's
+      en metingen staan versleuteld op je eigen toestel en gaan daar niet weg.
+      Er is geen account en geen server om ze naartoe te sturen, en het
+      installatiebestand bevat geen internetpermissie. Ik zie dus niets van wat
+      je logt — niet omdat ik het niet wil bekijken, maar omdat het nergens
+      naartoe kan.
+    </p>
+    <p>
+      <strong>Deze pagina zet geen cookies</strong> en laadt niets van
+      buitenaf: geen analytics, geen lettertypen van elders, geen
+      meetpixels. Daarom staat er ook geen cookiemelding — er valt niets toe te
+      staan of te weigeren.
+    </p>
+    <p>
+      Wat ik niet in de hand heb: deze pagina en het downloadbestand staan bij
+      GitHub, en GitHub houdt zoals elke webserver bij dat er een bezoek of een
+      download was, met het IP-adres erbij. Ik kan die gegevens niet inzien; ik
+      zie alleen hoe vaak een bestand in totaal is opgehaald. Wat GitHub
+      daarmee doet staat in hun eigen privacyverklaring.
+    </p>
+    <p>
+      Stuur je me een e-mail of open je een melding op GitHub, dan heb ik
+      uiteraard wél wat je me stuurt. Ik gebruik dat alleen om te antwoorden en
+      om de app te verbeteren, en geef het aan niemand door.
+    </p>
+  </div>
+
+  <h2>Iets gevonden, of een idee?</h2>
+  <p>
+    Meld het als <a id="issues" href="#" rel="noopener">melding op GitHub</a> —
+    dat is de snelste weg en anderen zien het antwoord ook. Liever niet in het
+    openbaar? Mail dan naar
+    <a href="mailto:kobe.vandenberk@gmail.com">kobe.vandenberk@gmail.com</a>.
+  </p>
+
   <footer>
     <p>
       <a id="source" href="#" rel="noopener">Broncode</a> ·
@@ -155,6 +193,10 @@
       MIT-licentie
     </p>
     <p>Gemaakt voor eigen gebruik, en daarna weggegeven.</p>
+    <p>
+      Kobe Van den Berk, België ·
+      <a href="mailto:kobe.vandenberk@gmail.com">kobe.vandenberk@gmail.com</a>
+    </p>
   </footer>
 </main>
 
@@ -184,10 +226,12 @@
     set("download", base + "/releases/latest/download/fitlog.apk");
     set("source", base);
     set("releases", base + "/releases");
+    set("issues", base + "/issues");
   } else {
     // Opened somewhere other than GitHub Pages - a local preview, most likely.
     // Say so instead of offering a button that does nothing.
     const button = document.getElementById("download");
+    document.getElementById("issues").removeAttribute("href");
     button.style.opacity = ".55";
     button.style.pointerEvents = "none";
     document.getElementById("meta").textContent =

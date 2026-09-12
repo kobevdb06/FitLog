@@ -208,6 +208,14 @@ class RoutinesTable extends Table {
   /// A position in `AppColors.routinePalette`, or null for no colour.
   IntColumn get colorIndex => integer().named('color_index').nullable()();
 
+  /// Starred by the user as one of the routines they actually do.
+  ///
+  /// What the home-screen shortcuts are picked from. You may star as many as
+  /// you like; the launcher only has room for a few, so the ones you use most
+  /// get those places.
+  BoolColumn get isFavourite =>
+      boolean().named('is_favourite').withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

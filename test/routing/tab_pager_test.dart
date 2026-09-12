@@ -1,5 +1,6 @@
 import 'package:fitlog/routing/tab_pager.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,8 +11,9 @@ import 'package:go_router/go_router.dart';
 /// navigators.
 void main() {
   /// A tab that counts how often it is built, so losing its state shows up.
-  Widget tab(String name, GlobalKey<_CounterState> key) =>
-      Scaffold(body: _Counter(key: key, name: name));
+  Widget tab(String name, GlobalKey<_CounterState> key) => Scaffold(
+    body: _Counter(key: key, name: name),
+  );
 
   late GlobalKey<_CounterState> firstKey;
   late GlobalKey<_CounterState> secondKey;
@@ -70,7 +72,9 @@ void main() {
   });
 
   Future<void> pump(WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      ProviderScope(child: MaterialApp.router(routerConfig: router)),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -185,6 +189,39 @@ void main() {
     // And swiping carries on from there rather than from where it was.
     await swipeBack(tester);
     expect(find.text('Twee'), findsOneWidget);
+  });
+
+  testWidgets('the position is reported as a fraction while you drag', (
+    tester,
+  ) async {
+    // What the navigation bar reads so its highlight can move with your
+    // finger instead of waiting for the page to land.
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final position = container.read(tabPositionProvider);
+    expect(position.value, 0);
+
+    // Halfway across, held there.
+    final drag = await tester.startGesture(
+      tester.getCenter(find.byType(PageView)),
+    );
+    await drag.moveBy(const Offset(-400, 0));
+    await tester.pump();
+
+    expect(position.value, greaterThan(0.4));
+    expect(position.value, lessThan(0.6), reason: 'nog niet aangekomen');
+
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(position.value, 1);
   });
 
   testWidgets('what scrolls sideways itself keeps the gesture', (tester) async {

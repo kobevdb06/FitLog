@@ -3054,6 +3054,21 @@ class $RoutinesTableTable extends RoutinesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isFavouriteMeta = const VerificationMeta(
+    'isFavourite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavourite = GeneratedColumn<bool>(
+    'is_favourite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favourite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3065,6 +3080,7 @@ class $RoutinesTableTable extends RoutinesTable
     updatedAt,
     lastPerformedAt,
     colorIndex,
+    isFavourite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3142,6 +3158,15 @@ class $RoutinesTableTable extends RoutinesTable
         colorIndex.isAcceptableOrUnknown(data['color_index']!, _colorIndexMeta),
       );
     }
+    if (data.containsKey('is_favourite')) {
+      context.handle(
+        _isFavouriteMeta,
+        isFavourite.isAcceptableOrUnknown(
+          data['is_favourite']!,
+          _isFavouriteMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3187,6 +3212,10 @@ class $RoutinesTableTable extends RoutinesTable
         DriftSqlType.int,
         data['${effectivePrefix}color_index'],
       ),
+      isFavourite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favourite'],
+      )!,
     );
   }
 
@@ -3208,6 +3237,13 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
 
   /// A position in `AppColors.routinePalette`, or null for no colour.
   final int? colorIndex;
+
+  /// Starred by the user as one of the routines they actually do.
+  ///
+  /// What the home-screen shortcuts are picked from. You may star as many as
+  /// you like; the launcher only has room for a few, so the ones you use most
+  /// get those places.
+  final bool isFavourite;
   const RoutineRow({
     required this.id,
     required this.name,
@@ -3218,6 +3254,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     required this.updatedAt,
     this.lastPerformedAt,
     this.colorIndex,
+    required this.isFavourite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3239,6 +3276,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     if (!nullToAbsent || colorIndex != null) {
       map['color_index'] = Variable<int>(colorIndex);
     }
+    map['is_favourite'] = Variable<bool>(isFavourite);
     return map;
   }
 
@@ -3261,6 +3299,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       colorIndex: colorIndex == null && nullToAbsent
           ? const Value.absent()
           : Value(colorIndex),
+      isFavourite: Value(isFavourite),
     );
   }
 
@@ -3279,6 +3318,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
       lastPerformedAt: serializer.fromJson<int?>(json['lastPerformedAt']),
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
+      isFavourite: serializer.fromJson<bool>(json['isFavourite']),
     );
   }
   @override
@@ -3294,6 +3334,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       'updatedAt': serializer.toJson<int>(updatedAt),
       'lastPerformedAt': serializer.toJson<int?>(lastPerformedAt),
       'colorIndex': serializer.toJson<int?>(colorIndex),
+      'isFavourite': serializer.toJson<bool>(isFavourite),
     };
   }
 
@@ -3307,6 +3348,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     int? updatedAt,
     Value<int?> lastPerformedAt = const Value.absent(),
     Value<int?> colorIndex = const Value.absent(),
+    bool? isFavourite,
   }) => RoutineRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -3319,6 +3361,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
         ? lastPerformedAt.value
         : this.lastPerformedAt,
     colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
+    isFavourite: isFavourite ?? this.isFavourite,
   );
   RoutineRow copyWithCompanion(RoutinesTableCompanion data) {
     return RoutineRow(
@@ -3335,6 +3378,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       colorIndex: data.colorIndex.present
           ? data.colorIndex.value
           : this.colorIndex,
+      isFavourite: data.isFavourite.present
+          ? data.isFavourite.value
+          : this.isFavourite,
     );
   }
 
@@ -3349,7 +3395,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('lastPerformedAt: $lastPerformedAt, ')
-          ..write('colorIndex: $colorIndex')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('isFavourite: $isFavourite')
           ..write(')'))
         .toString();
   }
@@ -3365,6 +3412,7 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     updatedAt,
     lastPerformedAt,
     colorIndex,
+    isFavourite,
   );
   @override
   bool operator ==(Object other) =>
@@ -3378,7 +3426,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.lastPerformedAt == this.lastPerformedAt &&
-          other.colorIndex == this.colorIndex);
+          other.colorIndex == this.colorIndex &&
+          other.isFavourite == this.isFavourite);
 }
 
 class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
@@ -3391,6 +3440,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
   final Value<int> updatedAt;
   final Value<int?> lastPerformedAt;
   final Value<int?> colorIndex;
+  final Value<bool> isFavourite;
   final Value<int> rowid;
   const RoutinesTableCompanion({
     this.id = const Value.absent(),
@@ -3402,6 +3452,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.updatedAt = const Value.absent(),
     this.lastPerformedAt = const Value.absent(),
     this.colorIndex = const Value.absent(),
+    this.isFavourite = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinesTableCompanion.insert({
@@ -3414,6 +3465,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     required int updatedAt,
     this.lastPerformedAt = const Value.absent(),
     this.colorIndex = const Value.absent(),
+    this.isFavourite = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -3430,6 +3482,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Expression<int>? updatedAt,
     Expression<int>? lastPerformedAt,
     Expression<int>? colorIndex,
+    Expression<bool>? isFavourite,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3442,6 +3495,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (lastPerformedAt != null) 'last_performed_at': lastPerformedAt,
       if (colorIndex != null) 'color_index': colorIndex,
+      if (isFavourite != null) 'is_favourite': isFavourite,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3456,6 +3510,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Value<int>? updatedAt,
     Value<int?>? lastPerformedAt,
     Value<int?>? colorIndex,
+    Value<bool>? isFavourite,
     Value<int>? rowid,
   }) {
     return RoutinesTableCompanion(
@@ -3468,6 +3523,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       updatedAt: updatedAt ?? this.updatedAt,
       lastPerformedAt: lastPerformedAt ?? this.lastPerformedAt,
       colorIndex: colorIndex ?? this.colorIndex,
+      isFavourite: isFavourite ?? this.isFavourite,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3502,6 +3558,9 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     if (colorIndex.present) {
       map['color_index'] = Variable<int>(colorIndex.value);
     }
+    if (isFavourite.present) {
+      map['is_favourite'] = Variable<bool>(isFavourite.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3520,6 +3579,7 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
           ..write('updatedAt: $updatedAt, ')
           ..write('lastPerformedAt: $lastPerformedAt, ')
           ..write('colorIndex: $colorIndex, ')
+          ..write('isFavourite: $isFavourite, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9900,6 +9960,7 @@ typedef $$RoutinesTableTableCreateCompanionBuilder =
       required int updatedAt,
       Value<int?> lastPerformedAt,
       Value<int?> colorIndex,
+      Value<bool> isFavourite,
       Value<int> rowid,
     });
 typedef $$RoutinesTableTableUpdateCompanionBuilder =
@@ -9913,6 +9974,7 @@ typedef $$RoutinesTableTableUpdateCompanionBuilder =
       Value<int> updatedAt,
       Value<int?> lastPerformedAt,
       Value<int?> colorIndex,
+      Value<bool> isFavourite,
       Value<int> rowid,
     });
 
@@ -10032,6 +10094,11 @@ class $$RoutinesTableTableFilterComposer
 
   ColumnFilters<int> get colorIndex => $composableBuilder(
     column: $table.colorIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFavourite => $composableBuilder(
+    column: $table.isFavourite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10159,6 +10226,11 @@ class $$RoutinesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFavourite => $composableBuilder(
+    column: $table.isFavourite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutineFoldersTableTableOrderingComposer get folderId {
     final $$RoutineFoldersTableTableOrderingComposer composer =
         $composerBuilder(
@@ -10218,6 +10290,11 @@ class $$RoutinesTableTableAnnotationComposer
 
   GeneratedColumn<int> get colorIndex => $composableBuilder(
     column: $table.colorIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isFavourite => $composableBuilder(
+    column: $table.isFavourite,
     builder: (column) => column,
   );
 
@@ -10338,6 +10415,7 @@ class $$RoutinesTableTableTableManager
                 Value<int> updatedAt = const Value.absent(),
                 Value<int?> lastPerformedAt = const Value.absent(),
                 Value<int?> colorIndex = const Value.absent(),
+                Value<bool> isFavourite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion(
                 id: id,
@@ -10349,6 +10427,7 @@ class $$RoutinesTableTableTableManager
                 updatedAt: updatedAt,
                 lastPerformedAt: lastPerformedAt,
                 colorIndex: colorIndex,
+                isFavourite: isFavourite,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10362,6 +10441,7 @@ class $$RoutinesTableTableTableManager
                 required int updatedAt,
                 Value<int?> lastPerformedAt = const Value.absent(),
                 Value<int?> colorIndex = const Value.absent(),
+                Value<bool> isFavourite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion.insert(
                 id: id,
@@ -10373,6 +10453,7 @@ class $$RoutinesTableTableTableManager
                 updatedAt: updatedAt,
                 lastPerformedAt: lastPerformedAt,
                 colorIndex: colorIndex,
+                isFavourite: isFavourite,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

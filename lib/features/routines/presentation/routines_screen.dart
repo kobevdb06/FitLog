@@ -13,6 +13,7 @@ import '../../../routing/routes.dart';
 import '../../share/presentation/import_routine_screen.dart';
 import '../../share/presentation/scan_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
+import 'favourite_star.dart';
 import 'routine_providers.dart';
 
 /// The Trainen tab: folders, routines, and the two ways to start a session.
@@ -69,9 +70,7 @@ class RoutinesScreen extends ConsumerWidget {
             );
           }
 
-          final loose = list
-              .where((r) => r.routine.folderId == null)
-              .toList();
+          final loose = list.where((r) => r.routine.folderId == null).toList();
 
           return ListView(
             padding: const EdgeInsets.only(bottom: 120),
@@ -239,13 +238,13 @@ class _FolderSection extends ConsumerWidget {
   }
 }
 
-class _RoutineTile extends StatelessWidget {
+class _RoutineTile extends ConsumerWidget {
   const _RoutineTile({required this.summary});
 
   final RoutineSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final routine = summary.routine;
     final last = routine.lastPerformedAt;
 
@@ -258,14 +257,19 @@ class _RoutineTile extends StatelessWidget {
           '${summary.exerciseCount} oefeningen',
           '${summary.setCount} sets',
           if (last != null)
-            Formatters.relativeDay(
-              DateTime.fromMillisecondsSinceEpoch(last),
-            ).toLowerCase()
+            Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(last))
+                .toLowerCase()
           else
             'nog niet gedaan',
         ].join(' · '),
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FavouriteStar(routine: routine),
+          const Icon(Icons.chevron_right),
+        ],
+      ),
     );
   }
 }

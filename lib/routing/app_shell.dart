@@ -9,9 +9,14 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../features/workout/presentation/workout_providers.dart';
 import 'routes.dart';
+import 'tab_pager.dart';
 
 /// The four-tab shell. A running workout gets a permanent bar above the
 /// navigation bar so it is never more than one tap away.
+/// How many tabs the bar has, so a half-finished swipe cannot round past the
+/// last one.
+const int _tabCount = 4;
+
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
@@ -26,34 +31,42 @@ class AppShell extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const _ActiveWorkoutBar(),
-          NavigationBar(
-            selectedIndex: shell.currentIndex,
-            onDestinationSelected: (index) => shell.goBranch(
-              index,
-              initialLocation: index == shell.currentIndex,
+          // The bar follows the pager rather than the router, so dragging a
+          // tab into view moves the highlight with you instead of leaving it
+          // behind until the page lands. Halfway across is where it goes over,
+          // and pull back before that and it never moved. Tapping is unchanged:
+          // the position jumps, and the bar plays its own short animation.
+          ValueListenableBuilder<double>(
+            valueListenable: ref.watch(tabPositionProvider),
+            builder: (context, position, _) => NavigationBar(
+              selectedIndex: position.round().clamp(0, _tabCount - 1),
+              onDestinationSelected: (index) => shell.goBranch(
+                index,
+                initialLocation: index == shell.currentIndex,
+              ),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: 'Start',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.fitness_center_outlined),
+                  selectedIcon: Icon(Icons.fitness_center),
+                  label: 'Trainen',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.insights_outlined),
+                  selectedIcon: Icon(Icons.insights),
+                  label: 'Voortgang',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline),
+                  selectedIcon: Icon(Icons.person),
+                  label: 'Profiel',
+                ),
+              ],
             ),
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Start',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.fitness_center_outlined),
-                selectedIcon: Icon(Icons.fitness_center),
-                label: 'Trainen',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.insights_outlined),
-                selectedIcon: Icon(Icons.insights),
-                label: 'Voortgang',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: 'Profiel',
-              ),
-            ],
           ),
         ],
       ),

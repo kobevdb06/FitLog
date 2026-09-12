@@ -11,6 +11,7 @@ mixin _$RoutinesDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.routineExercisesTable;
   $RoutineSetsTableTable get routineSetsTable =>
       attachedDatabase.routineSetsTable;
+  $WorkoutsTableTable get workoutsTable => attachedDatabase.workoutsTable;
   RoutinesDaoManager get managers => RoutinesDaoManager(this);
 }
 
@@ -39,4 +40,6 @@ class RoutinesDaoManager {
         _db.attachedDatabase,
         _db.routineSetsTable,
       );
+  $$WorkoutsTableTableTableManager get workoutsTable =>
+      $$WorkoutsTableTableTableManager(_db.attachedDatabase, _db.workoutsTable);
 }

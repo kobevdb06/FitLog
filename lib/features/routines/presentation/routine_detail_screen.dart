@@ -13,6 +13,7 @@ import '../../../core/widgets/exercise_avatar.dart';
 import '../../../routing/routes.dart';
 import '../../share/presentation/share_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
+import 'favourite_star.dart';
 import 'routine_providers.dart';
 
 /// One routine with its planned sets, and the button that turns it into a
@@ -31,6 +32,8 @@ class RoutineDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(detail.value?.routine.name ?? 'Routine'),
         actions: [
+          if (detail.value != null)
+            FavouriteStar(routine: detail.value!.routine),
           PopupMenuButton<String>(
             onSelected: (value) => _onMenu(context, ref, value),
             itemBuilder: (context) => const [
@@ -178,9 +181,9 @@ class RoutineDetailScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.create_new_folder_outlined),
             title: const Text('Nieuwe map...'),
-            onTap: () => Navigator.of(sheetContext).pop(
-              const _FolderChoice(null, createNew: true),
-            ),
+            onTap: () =>
+                Navigator.of(sheetContext)
+                    .pop(const _FolderChoice(null, createNew: true)),
           ),
         ],
       ),
@@ -328,8 +331,7 @@ class _ExerciseBlock extends StatelessWidget {
                       formatters.setSummary(
                         weightKg: detail.sets[i].targetWeightKg,
                         reps: detail.sets[i].targetReps,
-                        durationSeconds:
-                            detail.sets[i].targetDurationSeconds,
+                        durationSeconds: detail.sets[i].targetDurationSeconds,
                       ),
                       style: theme.textTheme.bodyMedium,
                     ),
@@ -342,7 +344,6 @@ class _ExerciseBlock extends StatelessWidget {
     );
   }
 }
-
 
 /// What the folder sheet hands back. A null id means the top level; the
 /// create flag means the user wants a folder that does not exist yet.

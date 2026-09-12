@@ -18,9 +18,27 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class TabPager extends StatefulWidget {
+part 'tab_pager.g.dart';
+
+/// Where the pager is between the tabs, as a fraction: 1.5 is halfway from the
+/// second to the third.
+///
+/// The navigation bar reads it so it can move with your finger instead of
+/// waiting for the page to land. Kept out of the router's own state on
+/// purpose: it changes on every frame of a drag, and nothing else should
+/// rebuild for that.
+@Riverpod(keepAlive: true)
+ValueNotifier<double> tabPosition(Ref ref) {
+  final position = ValueNotifier<double>(0);
+  ref.onDispose(position.dispose);
+  return position;
+}
+
+class TabPager extends ConsumerStatefulWidget {
   const TabPager({super.key, required this.shell, required this.branches});
 
   final StatefulNavigationShell shell;
@@ -29,13 +47,25 @@ class TabPager extends StatefulWidget {
   final List<Widget> branches;
 
   @override
-  State<TabPager> createState() => _TabPagerState();
+  ConsumerState<TabPager> createState() => _TabPagerState();
 }
 
-class _TabPagerState extends State<TabPager> {
+class _TabPagerState extends ConsumerState<TabPager> {
   late final PageController _controller = PageController(
     initialPage: widget.shell.currentIndex,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_reportPosition);
+  }
+
+  void _reportPosition() {
+    final page = _controller.page;
+    if (page == null) return;
+    ref.read(tabPositionProvider).value = page;
+  }
 
   @override
   void didUpdateWidget(TabPager oldWidget) {
@@ -54,6 +84,7 @@ class _TabPagerState extends State<TabPager> {
 
   @override
   void dispose() {
+    _controller.removeListener(_reportPosition);
     _controller.dispose();
     super.dispose();
   }

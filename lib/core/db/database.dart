@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -160,6 +160,11 @@ class AppDatabase extends _$AppDatabase {
           // yet, which is what the defaults say.
           await m.addColumn(routineSetsTable, routineSetsTable.targetDistanceM);
           await m.addColumn(exercisesTable, exercisesTable.categoryOverridden);
+        }
+        if (from < 14) {
+          // Starred routines, which the home-screen shortcuts are picked from.
+          // Additive: nothing was starred before the star existed.
+          await m.addColumn(routinesTable, routinesTable.isFavourite);
         }
       });
 

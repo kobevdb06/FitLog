@@ -66,6 +66,7 @@ class RoutineSetDraft {
     RoutineExercisesTable,
     RoutineSetsTable,
     ExercisesTable,
+    WorkoutsTable,
   ],
 )
 class RoutinesDao extends DatabaseAccessor<AppDatabase>
@@ -363,6 +364,58 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
     await (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
       RoutinesTableCompanion(lastPerformedAt: Value(at)),
     );
+  }
+
+  /// Stars a routine, or takes the star away.
+  Future<void> setFavourite(String routineId, {required bool favourite}) async {
+    await (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
+      RoutinesTableCompanion(isFavourite: Value(favourite)),
+    );
+  }
+
+  /// The starred routines, the ones you do most often first.
+  ///
+  /// You may star as many as you like, but the launcher only has room for a
+  /// few, so they are ranked by how many sessions you have actually started
+  /// from each - the honest measure of "my usual workout", and one the app
+  /// already has without asking. Ties go to the one done most recently, and
+  /// then to the order you put them in yourself.
+  Future<List<RoutineRow>> favouritesByUse({int limit = 3}) async {
+    final rows = await customSelect(
+      'SELECT r.id AS id, COUNT(w.id) AS uses '
+      'FROM routines r '
+      'LEFT JOIN workouts w ON w.routine_id = r.id AND w.ended_at IS NOT NULL '
+      'WHERE r.is_favourite = 1 '
+      'GROUP BY r.id '
+      'ORDER BY uses DESC, r.last_performed_at DESC, r.sort_order ASC '
+      'LIMIT ?',
+      variables: [Variable.withInt(limit)],
+      readsFrom: {routinesTable, workoutsTable},
+    ).get();
+    if (rows.isEmpty) return const [];
+
+    final ids = [for (final r in rows) r.read<String>('id')];
+    final found = await (select(
+      routinesTable,
+    )..where((t) => t.id.isIn(ids))).get();
+    // The IN query comes back in whatever order sqlite likes; the ranking is
+    // the point, so put them back the way they were asked for.
+    final byId = {for (final r in found) r.id: r};
+    return [
+      for (final id in ids)
+        if (byId[id] != null) byId[id]!,
+    ];
+  }
+
+  /// The same ranking, kept up to date.
+  ///
+  /// Watched rather than read once because both halves move on their own: you
+  /// star a routine, and every finished session changes the order underneath.
+  Stream<List<RoutineRow>> watchFavouritesByUse({int limit = 3}) {
+    return customSelect(
+      'SELECT COUNT(*) AS n FROM routines WHERE is_favourite = 1',
+      readsFrom: {routinesTable, workoutsTable},
+    ).watch().asyncMap((_) => favouritesByUse(limit: limit));
   }
 
   /// The routine to suggest on the dashboard: the one that has not been done

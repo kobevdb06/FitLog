@@ -956,3 +956,52 @@ De vier `switch`-en die een recordwaarde opmaken waren exhaustief zonder
 `default`. Daardoor wees de compiler precies de vier plekken aan die de nieuwe
 soorten moesten leren opmaken, in plaats van dat ze stilletjes als kilo's op
 het scherm waren gekomen.
+
+## 68. Een ster bepaalt wat op je startscherm komt
+
+Hou het app-icoon ingedrukt en je meest gedane routines staan er, klaar om te
+starten. Welke dat zijn kies je niet apart: je zet een ster op de routines die
+je echt doet, en het toestel neemt daaruit de drie die je het vaakst hebt
+gedaan.
+
+Dat aantal is Android, niet een keuze van mij: drie snelkoppelingen zijn
+gegarandeerd, meer mag op papier en verdwijnt in de praktijk. Sterren mag je er
+zoveel zetten als je wil; de volgorde erbinnen is het aantal sessies dat je
+vanuit die routine hebt afgerond. Dat is de eerlijke maat voor "mijn gewone
+workout" en de app heeft hem al, zonder ernaar te vragen. Gelijkspel gaat naar
+de laatst gedane.
+
+Een lopende sessie telt niet mee - die heb je nog niet gedaan.
+
+## 69. Een tik op een snelkoppeling wacht netjes
+
+Android geeft de tik door voordat de database open is, soms voordat je je
+pincode hebt ingetikt. Hij wordt dus alleen genoteerd en pas uitgevoerd zodra
+er iets is om mee uit te voeren.
+
+Twee dingen die hij nooit doet. Een lopende sessie wordt niet weggegooid: je
+komt in die sessie terecht, want dat is vrijwel zeker wat je bedoelde. En een
+routine die je gesterd en daarna verwijderd hebt doet stilletjes niets - een
+foutmelding over een snelkoppeling is erger dan er geen te krijgen.
+
+De platformlaag vangt alleen `MissingPluginException` en `PlatformException`:
+geen kanaal (een testmachine) en een launcher die weigert. Alles daarbuiten is
+een fout van mij en komt gewoon naar boven.
+
+## 70. De navigatiebalk beweegt mee met je vinger
+
+De balk las tot nu toe de router, en die hoort het pas als de pagina geland is.
+Je sleepte dus een tabblad in beeld terwijl de markering achterbleef, en dan
+sprong hij.
+
+Hij leest nu de positie van de pager: een breuk, waar 1,5 halverwege het tweede
+en het derde tabblad is. Halverwege gaat de markering over, en trek je terug
+voordat je daar bent dan is hij nooit verschoven.
+
+Het is de markering die verspringt, niet die meeglijdt. Meeglijden vraagt een
+eigen indicator in plaats van Material's `NavigationBar`, en dat is veel werk
+voor een paar pixels. Tikken verandert niet: de positie springt, en de balk
+speelt zijn eigen korte animatie af zoals altijd.
+
+Die breuk staat bewust buiten de routerstate: hij verandert elk frame van een
+sleepbeweging, en verder mag daar niets voor herbouwen.

@@ -85,7 +85,16 @@ class RoutineDetailScreen extends ConsumerWidget {
           );
         },
       ),
-      floatingActionButton: detail.value == null
+      // Present from the first frame, including while the routine is still
+      // being read. The button on the routines tab turns into this one as you
+      // go, and that only happens if there is something here to turn into -
+      // wait for the data and the arriving page simply covers it instead.
+      // Coming back always looked right because by then both buttons exist.
+      //
+      // Starting needs nothing but the id, which this screen was given, so
+      // showing it early promises nothing it cannot do.
+      floatingActionButton:
+          detail.hasError || (detail.hasValue && detail.value == null)
           ? null
           : FloatingActionButton.extended(
               onPressed: () => _start(context, ref),

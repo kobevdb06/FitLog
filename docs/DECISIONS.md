@@ -1190,3 +1190,23 @@ animatie die er niet is valt bij het lezen van code niet op.
 De schil leest `kSheetRise` daar ook uit. Een bestand dat alleen zegt "zo zien
 pagina's eruit en zo bewegen ze" is makkelijker te controleren dan hetzelfde
 verstopt boven een tabel van dertig routes.
+
+## 82. De knop moet er al zijn om in de andere te kunnen veranderen
+
+Het tabblad Trainen heeft "Routine toevoegen", een routine heeft "Start
+workout", allebei zwevend in dezelfde hoek. Flutter laat de ene dan in de
+andere overvloeien als je ertussen beweegt.
+
+Dat lukt alleen als ze allebei bestaan op het moment dat de beweging begint. De
+startknop wachtte tot de routine uit de database gelezen was, en tegen die tijd
+had de binnenkomende pagina de andere knop al bedekt. Terugkomen zag er altijd
+goed uit, want dan waren ze er allebei wel.
+
+Hij staat er nu vanaf het eerste frame, ook terwijl er nog geladen wordt.
+Starten heeft niets nodig behalve het id dat het scherm al had, dus vroeg tonen
+belooft niets wat hij niet kan. Alleen als de routine er echt niet is - verwijderd,
+of een fout - blijft hij weg, want dan valt er niets te starten.
+
+De test moest het laadmoment vasthouden met een stream die nooit iets geeft. In
+een test antwoordt de database sneller dan de eerste assertie, en de eerste
+versie van de test slaagde daardoor ook met de fout er nog in.

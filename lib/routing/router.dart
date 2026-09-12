@@ -48,10 +48,15 @@ final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 /// pulled up over the app, so they should move like it - the default zoom is
 /// for pages you navigate *into*, and against a chevron it reads as no
 /// animation at all.
+/// How long such a page takes to come up. Shared, because the shell has to
+/// know it: the running-session bar waits this long before showing itself, so
+/// it is never seen arriving in the gap the rising page has not covered yet.
+const Duration kSheetRise = Duration(milliseconds: 260);
+
 CustomTransitionPage<void> _risingPage(Widget child) {
   return CustomTransitionPage<void>(
     child: child,
-    transitionDuration: const Duration(milliseconds: 260),
+    transitionDuration: kSheetRise,
     reverseTransitionDuration: const Duration(milliseconds: 220),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return SlideTransition(

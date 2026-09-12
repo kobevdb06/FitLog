@@ -1084,3 +1084,28 @@ trekt, dus bewegen ze nu ook zo.
 De standaardovergang van Android is een zoom, bedoeld voor pagina's waar je
 naartoe navigeert. Tegenover een pijltje-omlaag leest die als helemaal geen
 animatie - wat precies de melding was.
+
+## 76. De blauwe balk komt laat en gaat vroeg
+
+Een sessie starten duwt haar eigen scherm omhoog over de schil. De blauwe balk
+verscheen precies op dat moment, onder dat scherm - en omdat het scherm van
+onderaf komt, is de strook waar die balk staat als laatste bedekt. Je zag hem
+dus in beeld ploffen in de kier die er nog was.
+
+Nu wacht hij tot dat scherm boven is. Tegen die tijd kan niemand hem zien
+aankomen.
+
+Stoppen is precies andersom: de balk gaat meteen, vóór het scherm wegzakt, dus
+de strook die daaronder tevoorschijn komt toont nooit nog een balk voor een
+sessie die er niet meer is.
+
+Twee gevallen die het in de gaten hield. Gooi je de sessie weg tijdens dat
+wachten, dan gaat de aankomst mee weg - anders zou er 260 ms later een balk
+verschijnen voor iets dat al weg was. En de eerste waarde die de stream ooit
+geeft is geen aankomst maar gewoon wat al waar was: open je de app op een
+lopende sessie, dan staat de balk er direct.
+
+De duur staat op één plek. De schil moet weten hoe lang dat scherm erover
+doet, dus `kSheetRise` woont bij de paginaovergang en wordt daar gelezen - twee
+losse getallen die toevallig gelijk moeten zijn, is een fout die pas opvalt als
+iemand er één verandert.

@@ -67,3 +67,6 @@ app.*.map.json
 *.keystore
 **/android/key.properties
 !**/android/key.properties.example
+
+# Built APKs staged for a release upload; never in the repository.
+dist/

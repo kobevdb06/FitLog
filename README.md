@@ -107,6 +107,16 @@ Een nieuwe versie de deur uit:
 4. Controleren wie ondertekend heeft (zie hierboven).
 5. Het bestand hernoemen naar **`fitlog.apk`** en als asset aan een nieuwe
    GitHub-release hangen, met de versie als tag.
+6. Voor je uploadt: controleren dat het bestand ook echt de nieuwe versie is.
+
+   ```bash
+   aapt2 dump badging build/app/outputs/flutter-apk/fitlog.apk | head -1
+   ```
+
+   Die `fitlog.apk` blijft na een build staan en wordt door de volgende build
+   niet overschreven - alleen `app-release.apk` wel. Wie stap 5 overslaat
+   uploadt dus de vorige versie, en daar merk je niets van: de release krijgt
+   de juiste tag en de verkeerde inhoud.
 
 Die naam moet elke keer dezelfde zijn: de downloadknop wijst naar
 `releases/latest/download/fitlog.apk`, en Obtainium herkent de app eraan.

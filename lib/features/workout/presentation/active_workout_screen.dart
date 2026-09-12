@@ -362,6 +362,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
 
     final id = workout.workout.id;
+    _leaving = true;
     await ref
         .read(workoutControllerProvider)
         .finish(id, discardPending: discard);
@@ -379,11 +380,30 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       destructive: true,
     );
     if (!ok) return;
-    await ref.read(workoutControllerProvider).cancel(workout.workout.id);
+
+    // Leave first, delete after. Waiting for the database put a pause between
+    // the dialog closing and the page moving - two animations with a gap of
+    // unknown length in the middle, which is what reads as stuttering. The
+    // delete does not need this screen, and the controller outlives it.
+    final controller = ref.read(workoutControllerProvider);
+    final id = workout.workout.id;
+    _leaving = true;
     if (mounted) context.pop();
+    await controller.cancel(id);
   }
 
   // --- Build ----------------------------------------------------------------
+
+  /// The session as it last looked, and whether we are on our way out.
+  ///
+  /// Finishing or throwing a session away empties the provider before this
+  /// screen has left. Without these the screen swaps to its "no session"
+  /// state first and slides that away instead - a flash of the wrong thing,
+  /// right at the moment the page starts moving, which is exactly where the
+  /// eye is. Pressing the chevron never showed it, because nothing changes in
+  /// the database there.
+  WorkoutDetail? _lastSeen;
+  bool _leaving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +415,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) => Scaffold(body: Center(child: Text('$error'))),
-      data: (workout) {
+      data: (live) {
+        if (live != null) _lastSeen = live;
+        // On the way out, keep showing what was there until the page is gone.
+        final workout = live ?? (_leaving ? _lastSeen : null);
+
         if (workout == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Workout')),

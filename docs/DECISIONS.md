@@ -1109,3 +1109,33 @@ De duur staat op één plek. De schil moet weten hoe lang dat scherm erover
 doet, dus `kSheetRise` woont bij de paginaovergang en wordt daar gelezen - twee
 losse getallen die toevallig gelijk moeten zijn, is een fout die pas opvalt als
 iemand er één verandert.
+
+## 77. Weggaan gaat eerst, opruimen daarna
+
+Een sessie weggooien wachtte op de database en navigeerde daarna pas. Tussen
+het sluiten van de bevestigingsdialoog en het bewegen van de pagina zat dus een
+pauze van onbekende lengte - twee animaties met een gat ertussen, en dat is wat
+als hakkelen leest. Het pijltje in de hoek had dat nooit, want daar gebeurt
+niets in de database.
+
+Nu vertrekt de pagina meteen en wordt er tijdens het wegschuiven opgeruimd. De
+controller leeft langer dan het scherm, dus het verwijderen loopt netjes door
+nadat het scherm weg is.
+
+Daarmee wordt wél iets anders waar: de sessie verdwijnt uit de provider terwijl
+het scherm nog in beeld schuift. De vertrekkende pagina bouwt dan opnieuw op en
+zou "Geen lopende workout" tonen - een flits van het verkeerde ding, precies
+waar je naar kijkt. Daarom houdt het scherm vast hoe de sessie er het laatst
+uitzag zolang het aan het vertrekken is.
+
+Die flits kostte moeite om vast te leggen. De eerste test slaagde ook zónder de
+bewaking, omdat de pagina in die test geen tijd nodig had om te vertrekken en
+het venster er dus niet was. Met een echte vertrekanimatie in de test faalt hij
+op frame 0. Een test die niet kan falen bewijst niets, en deze bewees eerst
+niets.
+
+## 78. De samenvatting komt op dezelfde manier binnen
+
+De sessie kwam van onderaf; de samenvatting nam haar plaats in met de zoom van
+Android. Twee verschillende bewegingen in één stap, en de tweede begint voordat
+de eerste is uitgewerkt. Nu rijst de samenvatting net zo.

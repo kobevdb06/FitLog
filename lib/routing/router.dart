@@ -156,8 +156,11 @@ GoRouter router(Ref ref) {
           GoRoute(
             path: ':id/samenvatting',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => WorkoutSummaryScreen(
-              workoutId: state.pathParameters['id']!,
+            // The session it replaces came up from the bottom; the summary
+            // taking its place with Android's zoom instead would be two
+            // different motions in one step.
+            pageBuilder: (context, state) => _risingPage(
+              WorkoutSummaryScreen(workoutId: state.pathParameters['id']!),
             ),
           ),
         ],

@@ -36,12 +36,34 @@ class RoutineDetailScreen extends ConsumerWidget {
             FavouriteStar(routine: detail.value!.routine),
           PopupMenuButton<String>(
             onSelected: (value) => _onMenu(context, ref, value),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'edit', child: Text('Bewerken')),
-              PopupMenuItem(value: 'move', child: Text('Verplaatsen naar map')),
-              PopupMenuItem(value: 'share', child: Text('Delen via QR')),
-              PopupMenuItem(value: 'duplicate', child: Text('Dupliceren')),
-              PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
+            itemBuilder: (context) => [
+              menuItem(
+                value: 'edit',
+                icon: Icons.edit_outlined,
+                label: 'Bewerken',
+              ),
+              menuItem(
+                value: 'move',
+                icon: Icons.drive_file_move_outline,
+                label: 'Verplaatsen naar map',
+              ),
+              menuItem(
+                value: 'share',
+                icon: Icons.qr_code_2,
+                label: 'Delen via QR',
+              ),
+              menuItem(
+                value: 'duplicate',
+                icon: Icons.copy_all_outlined,
+                label: 'Dupliceren',
+              ),
+              const PopupMenuDivider(),
+              menuItem(
+                value: 'delete',
+                icon: Icons.delete_outline,
+                label: 'Verwijderen',
+                destructive: true,
+              ),
             ],
           ),
         ],

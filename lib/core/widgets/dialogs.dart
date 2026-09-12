@@ -273,6 +273,50 @@ String exerciseCategoryDescription(ExerciseCategory category) {
   return 'Gewicht en herhalingen';
 }
 
+/// One line in an overflow menu.
+///
+/// Every menu in the app is built from this, so they are the same height and
+/// line up the same way. The icon is not decoration: a list of ten sentences
+/// all starting with a verb is read word by word, and a column of icons is
+/// read at a glance.
+PopupMenuItem<T> menuItem<T>({
+  required T value,
+  required IconData icon,
+  required String label,
+  bool destructive = false,
+}) {
+  return PopupMenuItem<T>(
+    value: value,
+    height: 44,
+    child: Builder(
+      builder: (context) {
+        final colour = destructive
+            ? AppColors.danger
+            : Theme.of(context).colorScheme.onSurface;
+        return Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: destructive
+                  ? AppColors.danger
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: colour),
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
 /// Asks how hard a set was, by asking what people can actually answer.
 ///
 /// Not a number pad. "How heavy did that feel" has no anchor and nobody agrees

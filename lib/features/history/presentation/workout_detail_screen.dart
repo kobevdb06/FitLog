@@ -41,10 +41,24 @@ class WorkoutDetailScreen extends ConsumerWidget {
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) => _onMenu(context, ref, value),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'repeat', child: Text('Opnieuw doen')),
-              PopupMenuItem(value: 'rename', child: Text('Naam wijzigen')),
-              PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
+            itemBuilder: (context) => [
+              menuItem(
+                value: 'repeat',
+                icon: Icons.replay,
+                label: 'Opnieuw doen',
+              ),
+              menuItem(
+                value: 'rename',
+                icon: Icons.edit_outlined,
+                label: 'Naam wijzigen',
+              ),
+              const PopupMenuDivider(),
+              menuItem(
+                value: 'delete',
+                icon: Icons.delete_outline,
+                label: 'Verwijderen',
+                destructive: true,
+              ),
             ],
           ),
         ],

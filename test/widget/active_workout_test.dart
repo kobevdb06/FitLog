@@ -4,6 +4,7 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/workout/presentation/active_workout_screen.dart';
 import 'package:fitlog/features/workout/presentation/rest_timer_bar.dart';
+import 'package:fitlog/features/workout/presentation/workout_summary_screen.dart';
 import 'package:fitlog/core/widgets/numeric_keypad.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +84,31 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     return container;
+  }
+
+  /// The summary of the session that setUp started, once it is finished.
+  ///
+  /// On a tall view on purpose: the summary is a list, so a question below the
+  /// fold is never built and "not found" would prove nothing.
+  Future<void> pumpSummary(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1100, 3600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await db.workoutsDao.finishWorkout(workoutId, discardPending: false);
+    final container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        secretStoreProvider.overrideWithValue(InMemorySecretStore()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      wrapWithContainer(container, WorkoutSummaryScreen(workoutId: workoutId)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
   }
 
   testWidgets('the session shows its exercise and set row', (tester) async {
@@ -514,6 +540,97 @@ void main() {
 
       expect((await db.workoutsDao.getSet(setId))!.rpe, isNull);
     });
+  });
+
+  group('room for the previous column', () {
+    testWidgets('the RPE column takes a sliver, not an equal share', (
+      tester,
+    ) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(trackRpe: Value(true)),
+      );
+      await pumpScreen(tester);
+
+      final rpe = tester.getSize(
+        find
+            .ancestor(of: find.text('RPE'), matching: find.byType(SizedBox))
+            .first,
+      );
+      final reps = tester.getSize(
+        find
+            .ancestor(of: find.text('REPS'), matching: find.byType(Expanded))
+            .first,
+      );
+
+      expect(rpe.width, kRpeColumnWidth);
+      expect(
+        rpe.width,
+        lessThan(reps.width),
+        reason: 'een 8 heeft minder plek nodig dan 102,5',
+      );
+    });
+
+    testWidgets('so the previous column keeps its width with RPE on', (
+      tester,
+    ) async {
+      double previousWidth() => tester
+          .getSize(
+            find
+                .ancestor(
+                  of: find.text('VORIGE'),
+                  matching: find.byType(Expanded),
+                )
+                .first,
+          )
+          .width;
+
+      await pumpScreen(tester);
+      final without = previousWidth();
+
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(trackRpe: Value(true)),
+      );
+      await settle(tester);
+      final with_ = previousWidth();
+
+      // It used to lose a third of its width to the new column and start
+      // cutting off what you did last time.
+      expect(with_, greaterThan(without * 0.9));
+    });
+
+    testWidgets('and the RPE cell suggests nothing from last time', (
+      tester,
+    ) async {
+      // How hard a set felt is about this set. Showing last session's number
+      // in grey would look like a value that ticking the set off would use,
+      // and nothing uses it.
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(trackRpe: Value(true)),
+      );
+      await pumpScreen(tester);
+
+      expect(find.text('RPE'), findsOneWidget);
+      expect((await db.workoutsDao.getSet(setId))!.rpe, isNull);
+    });
+  });
+
+  testWidgets('with RPE on, the summary stops asking how heavy it was', (
+    tester,
+  ) async {
+    // Both questions ask the same thing, and the recovery estimate listens to
+    // the per-set answer. Asking anyway would be asking twice and using one.
+    await db.settingsDao.updateSettings(
+      const AppSettingsTableCompanion(trackRpe: Value(true)),
+    );
+    await pumpSummary(tester);
+
+    expect(find.text('HOE ZWAAR WAS HET?'), findsNothing);
+  });
+
+  testWidgets('without it, the question is still there', (tester) async {
+    await pumpSummary(tester);
+
+    expect(find.text('HOE ZWAAR WAS HET?'), findsOneWidget);
   });
 
   group('the plate calculator from the pad', () {

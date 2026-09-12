@@ -103,6 +103,22 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: outline, space: 1, thickness: 1),
+      // The overflow menus were the one surface still wearing Material's
+      // defaults: square-ish, tinted a colour nothing else in the app uses,
+      // and spaced for a tablet. They are cards like every other raised thing
+      // here, and they sit closer together.
+      popupMenuTheme: PopupMenuThemeData(
+        color: surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.35),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          side: BorderSide(color: outline),
+        ),
+        labelTextStyle: WidgetStatePropertyAll(text.bodyMedium),
+        iconColor: onSurfaceMuted,
+      ),
       listTileTheme: ListTileThemeData(
         iconColor: onSurfaceMuted,
         titleTextStyle: text.bodyLarge,

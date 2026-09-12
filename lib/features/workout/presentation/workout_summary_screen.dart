@@ -205,27 +205,34 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SectionHeader(
-                'Hoe zwaar was het?',
-                padding: EdgeInsets.only(
-                  top: AppSpacing.xl,
-                  bottom: AppSpacing.xs,
+              // Not asked when you are already scoring sets. Both questions
+              // are "how hard was that", and the per-set answer is the one the
+              // recovery estimate listens to - see lib/core/calc/recovery.dart,
+              // where an RPE replaces this rating rather than stacking with it.
+              // Asking anyway would be asking twice and using one.
+              if (!(ref.watch(settingsProvider).value?.trackRpe ?? false)) ...[
+                const SectionHeader(
+                  'Hoe zwaar was het?',
+                  padding: EdgeInsets.only(
+                    top: AppSpacing.xl,
+                    bottom: AppSpacing.xs,
+                  ),
                 ),
-              ),
-              Text(
-                'Het enige aan een sessie dat de app niet kan meten. Je '
-                'antwoord verschuift de hersteltijd hieronder.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                Text(
+                  'Het enige aan een sessie dat de app niet kan meten. Je '
+                  'antwoord verschuift de hersteltijd hieronder.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _EffortPicker(
-                workoutId: workoutId,
-                initial: PerceivedEffort.fromWire(
-                  workout.workout.perceivedEffort,
+                const SizedBox(height: AppSpacing.sm),
+                _EffortPicker(
+                  workoutId: workoutId,
+                  initial: PerceivedEffort.fromWire(
+                    workout.workout.perceivedEffort,
+                  ),
                 ),
-              ),
+              ],
               const SectionHeader(
                 'Herstel',
                 padding: EdgeInsets.only(

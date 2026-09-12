@@ -1318,3 +1318,44 @@ Sets ver van falen en lange sets wegen minder, want daar schat men slechter.
 De lijn wordt pas aangeboden als er iets te tekenen valt. Vier lege grafieken
 tonen is erger dan er geen aanbieden: aan een lege grafiek zie je niet of dat
 "nog niet gedaan" of "bestaat niet" betekent.
+
+## 88. Niet elke kolom is even breed
+
+De RPE-kolom kreeg evenveel ruimte als KG en REPS, en die ruimte ging van de
+VORIGE-kolom af - tot die "100 kg ..." toonde in plaats van wat je vorige keer
+deed, het enige waar die kolom voor bestaat.
+
+Een RPE is één of twee tekens en nooit meer; een gewicht kan er vier zijn. Dus
+krijgt RPE een vaste 46 pixels en verdelen de andere de rest. Daarmee heeft
+VORIGE met RPE aan ongeveer evenveel ruimte als zonder.
+
+En de RPE-cel toont niets meer uit je vorige sessie. Dat grijze cijfer zag
+eruit als een waarde die je zou overnemen door de set af te vinken - en
+`completeSet` neemt gewicht, reps, tijd en afstand over, maar geen RPE. Precies
+dezelfde leugen die de grijze gewichten ooit waren, voordat die wél gebruikt
+gingen worden. Hoe zwaar een set voelde gaat bovendien over díe set, niet over
+de vorige.
+
+## 89. De overloopmenu's zijn kaarten geworden
+
+Ze droegen als enige oppervlak nog de standaardstijl van Material: bijna
+vierkant, getint in een kleur die verder nergens in de app voorkomt, en
+uitgespreid alsof er een tablet onder lag.
+
+Nu staan ze in het thema, één keer, met dezelfde rand en ronding als elke
+andere verhoogde kaart. De regels zitten dichter op elkaar en hebben een
+pictogram. Dat pictogram is geen versiering: tien regels die allemaal met een
+werkwoord beginnen lees je woord voor woord, een kolom pictogrammen lees je in
+één blik.
+
+Verwijderen staat overal onder een scheidingslijn en in rood - het is de enige
+regel in die menu's die je niet zomaar ongedaan maakt.
+
+## 90. Twee keer dezelfde vraag stellen en er één gebruiken
+
+Zet je RPE aan, dan vervalt "Hoe zwaar was het?" in de samenvatting.
+
+Allebei vragen ze hetzelfde, en de herstelschatting luistert naar het cijfer
+per set: in `lib/core/calc/recovery.dart` vervángt een RPE die beoordeling in
+plaats van er bovenop te komen. Ze allebei blijven vragen betekent dus twee
+keer vragen en er één gebruiken.

@@ -99,10 +99,11 @@ class ExerciseDetailScreen extends ConsumerWidget {
                   onSelected: (value) {
                     if (value == 'category') _changeCategory(context, ref, row);
                   },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
+                  itemBuilder: (context) => [
+                    menuItem(
                       value: 'category',
-                      child: Text('Type wijzigen'),
+                      icon: Icons.tune,
+                      label: 'Type wijzigen',
                     ),
                   ],
                 ),

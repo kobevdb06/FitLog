@@ -540,10 +540,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                   onSelected: (value) {
                     if (value == 'cancel') _cancel(workout);
                   },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
+                  itemBuilder: (context) => [
+                    menuItem(
                       value: 'cancel',
-                      child: Text('Workout weggooien'),
+                      icon: Icons.delete_outline,
+                      label: 'Workout weggooien',
+                      destructive: true,
                     ),
                   ],
                 ),
@@ -1170,68 +1172,84 @@ class _CardHeader extends ConsumerWidget {
           PopupMenuButton<String>(
             onSelected: onMenu,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              menuItem(
                 value: 'rest',
-                child: Text('Rusttimer instellen'),
+                icon: Icons.timer_outlined,
+                label: 'Rusttimer instellen',
               ),
-              PopupMenuItem(
+              menuItem(
                 value: 'skip',
-                child: Text(
-                  detail.sets.any((s) => !s.isCompleted && !s.isSkipped)
-                      ? 'Oefening overslaan'
-                      : 'Oefening toch doen',
-                ),
+                icon: Icons.next_plan_outlined,
+                label: detail.sets.any((s) => !s.isCompleted && !s.isSkipped)
+                    ? 'Oefening overslaan'
+                    : 'Oefening toch doen',
               ),
-              PopupMenuItem(
+              menuItem(
                 value: 'unilateral',
-                child: Text(
-                  detail.workoutExercise.isUnilateral
-                      ? 'Terug naar twee handen'
-                      : 'Eén arm per keer',
-                ),
+                icon: Icons.back_hand_outlined,
+                label: detail.workoutExercise.isUnilateral
+                    ? 'Terug naar twee handen'
+                    : 'Eén arm per keer',
               ),
-              const PopupMenuItem(
+              menuItem(
                 value: 'fill',
-                child: Text('Rest invullen als deze set'),
+                icon: Icons.content_copy_outlined,
+                label: 'Rest invullen als deze set',
               ),
-              const PopupMenuItem(value: 'note', child: Text('Notitie')),
-              const PopupMenuItem(
+              menuItem(
+                value: 'note',
+                icon: Icons.sticky_note_2_outlined,
+                label: 'Notitie',
+              ),
+              menuItem(
                 value: 'plates',
-                child: Text('Schijvenberekening'),
+                icon: Icons.donut_large_outlined,
+                label: 'Schijvenberekening',
               ),
-              const PopupMenuItem(
+              menuItem(
                 value: 'warmup',
-                child: Text('Warming-up berekenen'),
+                icon: Icons.stairs_outlined,
+                label: 'Warming-up berekenen',
               ),
-              const PopupMenuItem(
+              menuItem(
                 value: 'replace',
-                child: Text('Oefening vervangen'),
+                icon: Icons.swap_horiz,
+                label: 'Oefening vervangen',
               ),
-              PopupMenuItem(
+              menuItem(
                 value: 'superset',
-                child: Text(
-                  group == null ? 'Superset maken' : 'Superset opheffen',
-                ),
+                icon: Icons.link,
+                label: group == null ? 'Superset maken' : 'Superset opheffen',
               ),
               if (isPrAttempt) ...[
-                const PopupMenuItem(
+                menuItem(
                   value: 'pr_failed',
-                  child: Text('Poging niet gelukt'),
+                  icon: Icons.close,
+                  label: 'Poging niet gelukt',
                 ),
-                const PopupMenuItem(
+                menuItem(
                   value: 'pr_abandon',
-                  child: Text('Poging afbreken'),
+                  icon: Icons.stop_circle_outlined,
+                  label: 'Poging afbreken',
                 ),
-                const PopupMenuItem(
+                menuItem(
                   value: 'pr_clear',
-                  child: Text('Terug naar gewone oefening'),
+                  icon: Icons.undo,
+                  label: 'Terug naar gewone oefening',
                 ),
               ] else
-                const PopupMenuItem(
+                menuItem(
                   value: 'pr_start',
-                  child: Text('Omzetten naar PR-poging'),
+                  icon: Icons.emoji_events_outlined,
+                  label: 'Omzetten naar PR-poging',
                 ),
-              const PopupMenuItem(value: 'remove', child: Text('Verwijderen')),
+              const PopupMenuDivider(),
+              menuItem(
+                value: 'remove',
+                icon: Icons.delete_outline,
+                label: 'Verwijderen',
+                destructive: true,
+              ),
             ],
           ),
         ],
@@ -1323,7 +1341,19 @@ String? _cellValue(
 ///
 /// Three value columns and a wide history do not both fit on a phone, and the
 /// numbers you are typing matter more than the ones from last time.
-int previousFlex(List<KeypadFieldKind> columns) => columns.length > 2 ? 2 : 3;
+int previousFlex(List<KeypadFieldKind> columns) =>
+    columns.where(isWideColumn).length > 2 ? 2 : 3;
+
+/// Whether a column needs a share of the row or a fixed sliver of it.
+///
+/// An RPE is one or two characters and never more; a weight can be four. Giving
+/// them the same width took room away from the previous column until it could
+/// no longer show what you did last time, which is the one thing that column
+/// is for.
+bool isWideColumn(KeypadFieldKind kind) => kind != KeypadFieldKind.rpe;
+
+/// Wide enough for "10", and for a thumb.
+const double kRpeColumnWidth = 46;
 
 class _ColumnHeaders extends StatelessWidget {
   const _ColumnHeaders({required this.formatters, required this.columns});
@@ -1347,14 +1377,24 @@ class _ColumnHeaders extends StatelessWidget {
             child: Text('VORIGE', style: style, textAlign: TextAlign.center),
           ),
           for (final kind in columns)
-            Expanded(
-              flex: 2,
-              child: Text(
-                columnLabel(kind, formatters),
-                style: style,
-                textAlign: TextAlign.center,
+            if (isWideColumn(kind))
+              Expanded(
+                flex: 2,
+                child: Text(
+                  columnLabel(kind, formatters),
+                  style: style,
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              SizedBox(
+                width: kRpeColumnWidth,
+                child: Text(
+                  columnLabel(kind, formatters),
+                  style: style,
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
           SizedBox(
             width: AppSpacing.setCheckbox,
             child: Icon(
@@ -1524,19 +1564,32 @@ class SetRow extends StatelessWidget {
               ),
             ),
             for (final kind in columns)
-              Expanded(
-                flex: 2,
-                child: _Cell(
-                  text: _cellValue(kind, row, formatters),
-                  // Nothing to suggest from a set that was skipped: there are
-                  // no numbers in it to copy.
-                  placeholder: previous == null || previous!.isSkipped
-                      ? '-'
-                      : _cellValue(kind, previous!, formatters) ?? '-',
-                  active: activeKind == kind,
-                  onTap: () => onFocus(kind),
+              if (isWideColumn(kind))
+                Expanded(
+                  flex: 2,
+                  child: _Cell(
+                    text: _cellValue(kind, row, formatters),
+                    // Nothing to suggest from a set that was skipped: there
+                    // are no numbers in it to copy.
+                    placeholder: previous == null || previous!.isSkipped
+                        ? '-'
+                        : _cellValue(kind, previous!, formatters) ?? '-',
+                    active: activeKind == kind,
+                    onTap: () => onFocus(kind),
+                  ),
+                )
+              else
+                SizedBox(
+                  width: kRpeColumnWidth,
+                  child: _Cell(
+                    text: _cellValue(kind, row, formatters),
+                    // No suggestion from last time here: how hard a set felt
+                    // is about this set, not about the one before it.
+                    placeholder: '-',
+                    active: activeKind == kind,
+                    onTap: () => onFocus(kind),
+                  ),
                 ),
-              ),
             _CheckBox(
               completed: row.isCompleted,
               skipped: row.isSkipped,

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLog — hoe het werkt</title>
+<meta name="description" content="Wat je moet weten over je gegevens, welke handelingen je niet ziet, en wat waar zit in FitLog.">
+<meta name="color-scheme" content="dark light">
+<style>
+  :root {
+    --bg: #101216;
+    --surface: #181b21;
+    --line: #262a32;
+    --text: #e8eaee;
+    --muted: #9aa1ad;
+    --accent: #3d7dff;
+    --accent-dim: #2a5cbf;
+    --warn: #f5a623;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+  h1 { font-size: 1.9rem; margin: .5rem 0 .25rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.2rem; margin: 3rem 0 .5rem; }
+  h3 { font-size: 1rem; margin: 1.75rem 0 .4rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); }
+  ul { padding-left: 1.15rem; margin: 0 0 1rem; }
+  li { margin-bottom: .45rem; }
+  code { font-size: .9em; }
+
+  .version { color: var(--muted); font-size: .875rem; margin: 0 0 2rem; }
+  .back { display: inline-block; margin-bottom: 1.5rem; font-size: .9rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: .9rem;
+    padding: 1.15rem 1.15rem .15rem;
+    margin-bottom: 1.25rem;
+  }
+  .card p:last-child { margin-bottom: 1rem; }
+  .card.warn { border-color: var(--warn); }
+  .card.warn h3 { margin-top: 0; color: var(--warn); }
+
+  /* The gestures: what you do on the left, what happens on the right. */
+  .gestures { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+  .gestures th {
+    text-align: left;
+    font-size: .8rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 0 .75rem .5rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .gestures td {
+    padding: .6rem .75rem .6rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .gestures td:first-child { white-space: nowrap; font-weight: 600; }
+  .gestures caption {
+    caption-side: top;
+    text-align: left;
+    color: var(--muted);
+    font-size: .875rem;
+    padding-bottom: .75rem;
+  }
+  /* Narrow screens: two columns of nowrap text do not fit, so stack them. */
+  @media (max-width: 34rem) {
+    .gestures, .gestures tbody, .gestures tr, .gestures td { display: block; }
+    .gestures thead { display: none; }
+    .gestures tr { border-bottom: 1px solid var(--line); padding: .6rem 0; }
+    .gestures td { border: 0; padding: 0; }
+    .gestures td:first-child { white-space: normal; }
+    .gestures td:last-child { color: var(--muted); }
+  }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .875rem;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #ffffff; --surface: #f5f6f8; --line: #e2e5ea;
+      --text: #14161a; --muted: #5c6470; --warn: #a16207;
+    }
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">&larr; Terug naar de downloadpagina</a>
+
+  <h1>Hoe FitLog werkt</h1>
+  <p class="version">Beschrijft versie 1.17. Komt iets hieronder niet overeen
+    met wat je op je scherm ziet, dan loopt deze pagina achter — de app is
+    leidend.</p>
+
+  <p>
+    Het meeste in FitLog wijst zichzelf: je tikt op een routine en je ziet een
+    routine. Deze pagina gaat over de twee dingen die dat niet doen — wat er
+    met je gegevens gebeurt, en de handelingen die je niet kunt zien.
+  </p>
+
+  <h2>Je gegevens</h2>
+
+  <div class="card warn">
+    <h3>Lees dit voordat je begint te loggen</h3>
+    <p>
+      Je database is versleuteld en staat alleen op je telefoon. Er is geen
+      server met een kopie en geen "wachtwoord vergeten"-mail, want er is
+      niemand om die te sturen.
+    </p>
+    <p>
+      Heb je een pincode ingesteld, dan betekent dat: <strong>vergeet je die
+      en heb je je herstelzin niet, dan is alles weg.</strong> Niet "moeilijk
+      terug te halen" — onmogelijk, ook voor mij.
+    </p>
+  </div>
+
+  <h3>De herstelzin</h3>
+  <p>
+    Bij het instellen krijg je twaalf woorden, of je nu een pincode zet of
+    niet. Die zijn de enige andere sleutel tot je database. Schrijf ze op papier en leg dat ergens waar je het
+    terugvindt; een schermfoto op hetzelfde toestel helpt je niet als je dat
+    toestel kwijt bent.
+  </p>
+  <p>
+    Bij het invoeren maakt het niet uit of je hoofdletters gebruikt of hoeveel
+    spaties je zet — de app haalt dat er zelf uit. De volgorde van de woorden
+    maakt wél uit.
+  </p>
+
+  <h3>Back-ups</h3>
+  <p>
+    Onder <strong>Instellingen &rarr; Back-up en export</strong> maak je een
+    <code>.fitlog</code>-bestand: je hele database plus je voortgangsfoto's,
+    versleuteld met een zin die jij kiest. Dat bestand kan je bewaren waar je
+    wil. Zonder die zin is het onleesbaar, ook voor wie het bestand in handen
+    krijgt.
+  </p>
+  <p>
+    Terugzetten vervangt alles wat er op dat moment in de app staat. Een
+    herstel van een groot bestand duurt even; laat het scherm aan staan tot het
+    klaar is.
+  </p>
+  <p>
+    Er staat ook een export naar CSV. Die is niet versleuteld en bedoeld om je
+    cijfers in een rekenblad te bekijken — niet als back-up, want foto's en
+    instellingen gaan er niet in mee.
+  </p>
+
+  <h3>Pincode en vergrendelen</h3>
+  <p>
+    Een pincode is aan te raden maar niet verplicht. Sla je hem over, dan
+    opent FitLog meteen: je sleutel blijft beschermd door de Keystore van je
+    toestel, maar wie je ontgrendelde telefoon vasthoudt ziet je trainingen.
+    Je kunt hem later alsnog aanzetten.
+  </p>
+  <p>
+    Met een pincode sluit de app zichzelf af nadat je hem hebt weggelegd. Hoe
+    snel bepaal je onder <strong>Instellingen &rarr; Beveiliging</strong>:
+    meteen, na 1, 5 of 15 minuten, of nooit. Je vingerafdruk is daarbij een
+    snelkoppeling naast je pincode, geen vervanging — je pincode blijft altijd
+    werken.
+  </p>
+
+  <h3>Wat de app níét doet</h3>
+  <p>
+    Het installatiebestand bevat geen internettoegang. Er gaat dus niets naar
+    buiten: geen analytics, geen crashrapporten, geen reclame. Verwijder je de
+    app, dan is je data weg — daar is geen kopie van.
+  </p>
+
+  <h2>Handelingen die je niet ziet</h2>
+  <p>
+    Een paar dingen zitten achter een gebaar in plaats van achter een knop.
+    Dit is de volledige lijst.
+  </p>
+
+  <table class="gestures">
+    <caption>Tijdens een workout</caption>
+    <thead>
+      <tr><th>Wat je doet</th><th>Wat er gebeurt</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Tik op het vinkje</td>
+        <td>Set afgevinkt. Nog eens tikken geeft een rood kruis: die set heb
+          je bewust overgeslagen. Een derde tik maakt hem weer leeg.</td>
+      </tr>
+      <tr>
+        <td>Hou het vinkje ingedrukt</td>
+        <td>Meteen terug naar leeg, vanuit een vinkje of een kruis.</td>
+      </tr>
+      <tr>
+        <td>Tik op de kolom VORIGE</td>
+        <td>Vult de rij met wat je vorige keer deed. Je vinkt daarna zelf af,
+          zodat je het eerst kunt bijstellen.</td>
+      </tr>
+      <tr>
+        <td>Tik op het setnummer</td>
+        <td>Kies het type: warming-up, dropset of tot falen.</td>
+      </tr>
+      <tr>
+        <td>Veeg een set naar links</td>
+        <td>Set verwijderd.</td>
+      </tr>
+      <tr>
+        <td>Tik op de naam van de oefening</td>
+        <td>Toont de uitvoering met de bewegende afbeelding, zonder je sessie
+          te verlaten.</td>
+      </tr>
+      <tr>
+        <td>Veeg het streepje boven het toetsenblok omlaag</td>
+        <td>Toetsenblok weg. De terugknop doet hetzelfde.</td>
+      </tr>
+      <tr>
+        <td>Sleep aan het greepje links van een oefening</td>
+        <td>Verplaatst de oefening binnen je sessie.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="gestures">
+    <caption>Elders</caption>
+    <thead>
+      <tr><th>Wat je doet</th><th>Wat er gebeurt</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Veeg zijwaarts op een tabblad</td>
+        <td>Naar het volgende of vorige tabblad.</td>
+      </tr>
+      <tr>
+        <td>Tik op de ster bij een routine</td>
+        <td>Favoriet. Hou daarna het app-icoon op je startscherm ingedrukt:
+          je drie meest gedane favorieten staan er, klaar om te starten.</td>
+      </tr>
+      <tr>
+        <td>Tik op de ⓘ bij het kiezen van een oefening</td>
+        <td>Toont de oefening zonder je selectie kwijt te raken.</td>
+      </tr>
+      <tr>
+        <td>Veeg een sessie in je geschiedenis naar links</td>
+        <td>Verwijderd, met een paar seconden om het terug te nemen.</td>
+      </tr>
+      <tr>
+        <td>Hou een set in je geschiedenis ingedrukt</td>
+        <td>Die set verwijderen. Gewoon tikken verbetert hem.</td>
+      </tr>
+      <tr>
+        <td>Hou een voortgangsfoto ingedrukt</td>
+        <td>Foto verwijderen.</td>
+      </tr>
+      <tr>
+        <td>Tik op een dag in de kalender</td>
+        <td>Toont alleen de sessies van die dag.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Wat waar zit</h2>
+
+  <h3>Start</h3>
+  <p>
+    Je week in cijfers, je laatste records, en een voorstel voor wat je vandaag
+    zou kunnen doen — de routine die het langst geleden is. Loopt er een
+    sessie, dan staat er een blauwe balk om er meteen in terug te springen.
+  </p>
+
+  <h3>Trainen</h3>
+  <p>
+    Je routines, eventueel in mappen. Een routine is een sjabloon: welke
+    oefeningen, hoeveel sets, en optioneel een doel per set. Een routine delen
+    met iemand gaat via een QR-code die de ander scant — er komt geen dienst
+    aan te pas.
+  </p>
+  <p>
+    Tijdens een sessie vraagt elke oefening waarin ze gemeten wordt: kilo's en
+    herhalingen voor wat je tilt, tijd voor een plank, afstand en tijd voor
+    cardio. Klopt dat niet voor een oefening, dan pas je het type aan via het
+    ⋮-menu op de oefeningpagina; die keuze blijft van jou, ook als ik de
+    catalogus later corrigeer.
+  </p>
+  <p>
+    Een oefening kan je met één arm tegelijk doen. Links en rechts worden dan
+    apart bijgehouden en hebben elk hun eigen geschiedenis, want wat je met één
+    hand tilt zegt niets over twee.
+  </p>
+
+  <h3>Voortgang</h3>
+  <p>
+    Je geschiedenis met een kalender, grafieken per oefening, je records, je
+    lichaamsmetingen en je voortgangsfoto's. De grafieken volgen de oefening:
+    voor wat je tilt zijn dat 1RM, volume, beste set en totale reps; voor een
+    plank je langste tijd; voor cardio afstand.
+  </p>
+  <p>
+    Er staat ook een herstelschatting: hoe lang elke spiergroep vermoedelijk
+    nodig heeft, gerekend vanaf je laatste sessie en hoe zwaar je die zelf
+    beoordeelde. Het is een schatting op basis van jouw eigen cijfers, geen
+    medisch advies.
+  </p>
+
+  <h3>Profiel</h3>
+  <p>
+    Instellingen: eenheden, rusttijden, hoeveel warming-upsets een nieuwe
+    oefening krijgt, de stang en schijven voor de schijvenberekening,
+    beveiliging, back-ups en de oefeningencatalogus.
+  </p>
+
+  <h2>Iets onduidelijk?</h2>
+  <p>
+    Vraag het via een <a id="issues" href="#" rel="noopener">melding op
+    GitHub</a>, of mail naar
+    <a href="mailto:kobe.vandenberk@gmail.com">kobe.vandenberk@gmail.com</a>.
+    Staat er iets op deze pagina dat niet klopt met de app, dan is dat een
+    fout van mij en hoor ik het graag.
+  </p>
+
+  <footer>
+    <p>
+      <a href="./">Downloadpagina</a> ·
+      <a id="source" href="#" rel="noopener">Broncode</a> ·
+      MIT-licentie
+    </p>
+    <p>Kobe Vandenberk, België</p>
+  </footer>
+</main>
+
+<script>
+  // Same trick as the download page: work out the repository from this page's
+  // own address, so the links keep working if the site ever moves.
+  const REPO = (function () {
+    const host = location.hostname.split(".");
+    const path = location.pathname.split("/").filter(Boolean);
+    if (host.length > 2 && host[1] === "github" && path.length) {
+      return host[0] + "/" + path[0];
+    }
+    return null;
+  })();
+
+  if (REPO) {
+    const base = "https://github.com/" + REPO;
+    document.getElementById("issues").href = base + "/issues";
+    document.getElementById("source").href = base;
+  } else {
+    // A local preview: a link that goes nowhere is worse than plain text.
+    for (const id of ["issues", "source"]) {
+      document.getElementById(id).removeAttribute("href");
+    }
+  }
+</script>
+</body>
+</html>

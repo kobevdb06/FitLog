@@ -306,6 +306,87 @@ void main() {
     );
   });
 
+  testWidgets('tapping the exercise name shows it without leaving the '
+      'workout', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.text('Barbell Bench Press'));
+    await tester.pumpAndSettle();
+
+    // The sheet, over the session - not the four-tab exercise page.
+    expect(find.text('Records en grafieken'), findsOneWidget);
+    expect(find.byType(SetRow), findsOneWidget, reason: 'de sessie staat er nog');
+  });
+
+  group('tapping the previous column', () {
+    /// A finished session of the bench press to compare against.
+    Future<void> lastTime({double weightKg = 80, int reps = 8}) async {
+      await db
+          .into(db.workoutsTable)
+          .insert(
+            WorkoutsTableCompanion.insert(
+              id: 'w-old',
+              name: 'Push',
+              startedAt: 1000,
+              endedAt: const Value(2000),
+            ),
+          );
+      await db
+          .into(db.workoutExercisesTable)
+          .insert(
+            WorkoutExercisesTableCompanion.insert(
+              id: 'we-old',
+              workoutId: 'w-old',
+              exerciseId: 'ex-bench',
+              sortOrder: 0,
+            ),
+          );
+      await db
+          .into(db.workoutSetsTable)
+          .insert(
+            WorkoutSetsTableCompanion.insert(
+              id: 's-old',
+              workoutExerciseId: 'we-old',
+              sortOrder: 0,
+              weightKg: Value(weightKg),
+              reps: Value(reps),
+              isCompleted: const Value(true),
+            ),
+          );
+    }
+
+    testWidgets('puts those numbers in the row', (tester) async {
+      await lastTime();
+      // Start this set empty, so the copy is the only thing that could fill it.
+      await db.workoutsDao.updateSet(
+        setId,
+        weightKg: const Value(null),
+        reps: const Value(null),
+      );
+      await pumpScreen(tester);
+
+      await tester.tap(find.text('80 kg × 8'));
+      await settle(tester);
+
+      final stored = await db.workoutsDao.getSet(setId);
+      expect(stored!.weightKg, 80);
+      expect(stored.reps, 8);
+      expect(stored.isCompleted, isFalse, reason: 'invullen is niet afvinken');
+    });
+
+    testWidgets('does nothing when there is nothing to take', (tester) async {
+      await pumpScreen(tester);
+
+      await tester.tap(find.text('-').first);
+      await settle(tester);
+
+      // Untouched: the set still holds what it held.
+      final stored = await db.workoutsDao.getSet(setId);
+      expect(stored!.weightKg, 100);
+      expect(stored.reps, 5);
+    });
+  });
+
   testWidgets('tapping a weight cell opens the custom keypad, not the '
       'system keyboard', (tester) async {
     await pumpScreen(tester);

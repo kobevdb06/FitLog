@@ -1005,3 +1005,34 @@ speelt zijn eigen korte animatie af zoals altijd.
 
 Die breuk staat bewust buiten de routerstate: hij verandert elk frame van een
 sleepbeweging, en verder mag daar niets voor herbouwen.
+
+## 71. De snelle blik hoort ook in de sessie
+
+Het ⓘ-blad met de bewegende afbeelding en de uitvoering bestond alleen in de
+oefeningkiezer. Tikte je tijdens een workout op de naam van een oefening, dan
+kreeg je de volledige oefeningpagina: vier tabbladen met records, grafieken en
+geschiedenis, en dan de weg terug zoeken.
+
+Midden in een set wil je de foto en de uitvoering, niet je 1RM-verloop. Diezelfde
+blad opent nu over de sessie heen. Onderin staat één regel naar de volledige
+pagina voor wanneer je die wél wil - in de kiezer staat die er bewust niet,
+want daar zou weglopen je selectie kosten.
+
+## 72. De VORIGE-kolom doet nu iets
+
+Hij stond er alleen maar te staan. Je las 80 kg × 8, en typte die 80 over om er
+82,5 van te maken - terwijl het getal voor je neus stond.
+
+Aantikken vult de rij. Geen knop: het blijft gewone tekst, want de kolom is in
+de eerste plaats om naar te kíjken en een knop zou dat drukker maken dan nodig.
+Aantikken vult alleen in; afvinken doe je zelf, want meestal wil je het getal
+eerst nog bijstellen.
+
+Alleen de kolommen die de oefening toont worden geschreven. Een verborgen
+waarde overzetten zou erger zijn dan nutteloos: een opgeslagen gewicht laat de
+gewichtskolom verschijnen, dus een vergeten kilogram op een plank zou die plank
+een kolom geven die er niet hoort.
+
+Is er niets te halen - geen vorige sessie, of een set die je toen oversloeg -
+dan is er ook niets aan te tikken. Een tik die niets doet is erger dan geen
+tik.

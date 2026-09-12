@@ -7,6 +7,7 @@ import '../../../core/calc/set_numbering.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../../core/widgets/numeric_keypad.dart';
 import '../../../core/util/notification_service.dart';
 import '../domain/pr_ramp.dart';
 import '../domain/set_columns.dart';
@@ -329,6 +330,35 @@ class WorkoutController {
     String workoutExerciseId,
     List<({double weightKg, int reps})> warmups,
   ) => _db.workoutsDao.prependWarmupSets(workoutExerciseId, warmups);
+
+  /// Copies last session's numbers into a set, ready to be adjusted.
+  ///
+  /// Only the [columns] the exercise actually shows are written. Writing a
+  /// hidden value would be worse than useless: a stored weight makes the
+  /// weight column appear, so copying a forgotten kilogram onto a plank would
+  /// give the plank a column it has no business having.
+  Future<void> copyPreviousInto(
+    String setId,
+    WorkoutSetRow previous,
+    List<KeypadFieldKind> columns,
+  ) async {
+    await _db.workoutsDao.updateSet(
+      setId,
+      weightKg: columns.contains(KeypadFieldKind.weight)
+          ? Value(previous.weightKg)
+          : const Value.absent(),
+      reps: columns.contains(KeypadFieldKind.reps)
+          ? Value(previous.reps)
+          : const Value.absent(),
+      durationSeconds: columns.contains(KeypadFieldKind.duration)
+          ? Value(previous.durationSeconds)
+          : const Value.absent(),
+      distanceM: columns.contains(KeypadFieldKind.distance)
+          ? Value(previous.distanceM)
+          : const Value.absent(),
+    );
+    await _recalculate();
+  }
 
   /// Checks a set off: writes the values, runs the personal record check and
   /// reports how long the rest should be.

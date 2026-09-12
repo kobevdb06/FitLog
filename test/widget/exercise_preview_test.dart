@@ -122,6 +122,17 @@ void main() {
     expect(find.textContaining('toevoegen'), findsNothing);
   });
 
+  testWidgets('the way on to the full page is only offered where asked', (
+    tester,
+  ) async {
+    await pumpPicker(tester);
+    await tester.tap(find.byIcon(Icons.info_outline));
+    await tester.pumpAndSettle();
+
+    // Not in the picker: leaving the list would lose what you had selected.
+    expect(find.text('Records en grafieken'), findsNothing);
+  });
+
   testWidgets('tapping the row still picks it', (tester) async {
     await pumpPicker(tester);
 

@@ -21,6 +21,7 @@ import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
+import '../../exercises/presentation/exercise_preview_sheet.dart';
 import '../domain/set_columns.dart';
 import 'plate_calculator_sheet.dart';
 import 'pr_attempt_card.dart';
@@ -703,6 +704,15 @@ class _ExerciseCard extends ConsumerWidget {
                             onFocus: (kind) => onFocus(detail.sets[i], kind),
                             onToggle: () => onToggle(detail.sets[i]),
                             onReset: () => onReset(detail.sets[i]),
+                            onCopyPrevious: _copyPreviousAction(
+                              ref,
+                              detail.sets[i],
+                              _previousFor(
+                                previousBySide[labels[i].side],
+                                labels[i],
+                              ),
+                              columns,
+                            ),
                             onDelete: () => ref
                                 .read(workoutControllerProvider)
                                 .deleteSet(detail.sets[i].id),
@@ -730,6 +740,20 @@ class _ExerciseCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// What tapping the previous column does, or null when there is nothing
+  /// there worth taking: no previous set, or one you skipped.
+  VoidCallback? _copyPreviousAction(
+    WidgetRef ref,
+    WorkoutSetRow row,
+    WorkoutSetRow? previous,
+    List<KeypadFieldKind> columns,
+  ) {
+    if (previous == null || previous.isSkipped) return null;
+    return () => ref
+        .read(workoutControllerProvider)
+        .copyPreviousInto(row.id, previous, columns);
   }
 
   /// The matching working set from the previous session, or null.
@@ -920,7 +944,7 @@ class _ExerciseCard extends ConsumerWidget {
   }
 }
 
-class _CardHeader extends StatelessWidget {
+class _CardHeader extends ConsumerWidget {
   const _CardHeader({
     required this.detail,
     required this.index,
@@ -938,7 +962,7 @@ class _CardHeader extends StatelessWidget {
   bool get isPrAttempt => detail.workoutExercise.isPrAttempt;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -965,8 +989,17 @@ class _CardHeader extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: InkWell(
-              onTap: () =>
-                  context.push(Routes.exerciseDetail(detail.exercise.id)),
+              // Mid-set you want the picture and the cue, not four tabs of
+              // records and charts with a way back to find. The full page is
+              // one more tap from inside the sheet for when you do want it.
+              onTap: () => showExercisePreview(
+                context,
+                exercise: detail.exercise,
+                manifest: ref.read(exerciseImagesProvider).value,
+                paths: ref.read(appPathsProvider).value,
+                onOpenFull: () =>
+                    context.push(Routes.exerciseDetail(detail.exercise.id)),
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Row(
@@ -1213,6 +1246,7 @@ class SetRow extends StatelessWidget {
     required this.onFocus,
     required this.onToggle,
     required this.onReset,
+    required this.onCopyPrevious,
     required this.onDelete,
     required this.onSetType,
   });
@@ -1232,6 +1266,10 @@ class SetRow extends StatelessWidget {
 
   /// Long press on the check box: back to an empty set in one gesture.
   final VoidCallback onReset;
+
+  /// Tapping the previous column: takes last session's numbers into this row.
+  /// Null when there is nothing there to take.
+  final VoidCallback? onCopyPrevious;
 
   final VoidCallback onDelete;
   final ValueChanged<SetType> onSetType;
@@ -1311,25 +1349,37 @@ class SetRow extends StatelessWidget {
             ),
             Expanded(
               flex: previousFlex(columns),
-              child: Text(
-                previous == null
-                    ? '-'
-                    : previous!.isSkipped
-                    // Last time you left this one out on purpose. A dash would
-                    // read as "no data"; this says which of the two it is.
-                    ? 'Geskipt'
-                    : formatters.setSummary(
-                        weightKg: previous!.weightKg,
-                        reps: previous!.reps,
-                        durationSeconds: previous!.durationSeconds,
-                        distanceM: previous!.distanceM,
-                      ),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              // Plain text, but tapping it puts those numbers in the row -
+              // otherwise last session sits there being unreachable while you
+              // type it over by hand. No button styling: it has to stay
+              // readable at a glance, which is what it is mostly for.
+              child: InkWell(
+                onTap: onCopyPrevious,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    previous == null
+                        ? '-'
+                        : previous!.isSkipped
+                        // Last time you left this one out on purpose. A dash
+                        // would read as "no data"; this says which of the two
+                        // it is.
+                        ? 'Geskipt'
+                        : formatters.setSummary(
+                            weightKg: previous!.weightKg,
+                            reps: previous!.reps,
+                            durationSeconds: previous!.durationSeconds,
+                            distanceM: previous!.distanceM,
+                          ),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             for (final kind in columns)

@@ -22,12 +22,17 @@ Future<void> showExercisePreview(
   required ExerciseRow exercise,
   required ExerciseImageManifest? manifest,
   required AppPaths? paths,
+  VoidCallback? onOpenFull,
 }) {
   return showAppSheet<void>(
     context: context,
     title: exercise.name,
-    builder: (context) =>
-        _Preview(exercise: exercise, manifest: manifest, paths: paths),
+    builder: (context) => _Preview(
+      exercise: exercise,
+      manifest: manifest,
+      paths: paths,
+      onOpenFull: onOpenFull,
+    ),
   );
 }
 
@@ -36,11 +41,17 @@ class _Preview extends StatelessWidget {
     required this.exercise,
     required this.manifest,
     required this.paths,
+    this.onOpenFull,
   });
 
   final ExerciseRow exercise;
   final ExerciseImageManifest? manifest;
   final AppPaths? paths;
+
+  /// Offered where the full exercise page is still worth reaching - during a
+  /// workout, say. Left off in the picker, where leaving the list would lose
+  /// what you had selected.
+  final VoidCallback? onOpenFull;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +105,20 @@ class _Preview extends StatelessWidget {
             Text('Uitvoering', style: theme.textTheme.titleSmall),
             const SizedBox(height: AppSpacing.xs),
             Text(instructions, style: theme.textTheme.bodyMedium),
+          ],
+          if (onOpenFull != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onOpenFull!();
+                },
+                icon: const Icon(Icons.open_in_new, size: 18),
+                label: const Text('Records en grafieken'),
+              ),
+            ),
           ],
         ],
       ),

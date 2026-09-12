@@ -41,6 +41,36 @@ part 'router.g.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
+/// A page that rises from the bottom and sinks back down.
+///
+/// For the screens you close with the chevron in the corner rather than a back
+/// arrow: the running session and the rest timer. They behave like something
+/// pulled up over the app, so they should move like it - the default zoom is
+/// for pages you navigate *into*, and against a chevron it reads as no
+/// animation at all.
+CustomTransitionPage<void> _risingPage(Widget child) {
+  return CustomTransitionPage<void>(
+    child: child,
+    transitionDuration: const Duration(milliseconds: 260),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 1),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        ),
+        child: child,
+      );
+    },
+  );
+}
+
 @Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
   final refresh = ValueNotifier<AppState>(const AppLoading());
@@ -109,12 +139,14 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: Routes.workout,
         parentNavigatorKey: _rootKey,
-        builder: (context, state) => const ActiveWorkoutScreen(),
+        pageBuilder: (context, state) =>
+            _risingPage(const ActiveWorkoutScreen()),
         routes: [
           GoRoute(
             path: 'rust',
             parentNavigatorKey: _rootKey,
-            builder: (context, state) => const RestTimerScreen(),
+            pageBuilder: (context, state) =>
+                _risingPage(const RestTimerScreen()),
           ),
           GoRoute(
             path: ':id/samenvatting',

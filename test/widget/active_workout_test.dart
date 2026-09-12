@@ -387,6 +387,68 @@ void main() {
     });
   });
 
+  group('the keypad arriving and leaving', () {
+    testWidgets('it slides in rather than appearing', (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pump();
+
+      // A frame in, it is on its way but not yet in place.
+      await tester.pump(const Duration(milliseconds: 60));
+      final moving = tester.widget<SlideTransition>(
+        find
+            .ancestor(
+              of: find.byType(NumericKeypad),
+              matching: find.byType(SlideTransition),
+            )
+            .first,
+      );
+      expect(moving.position.value.dy, greaterThan(0));
+      expect(moving.position.value.dy, lessThan(1));
+
+      await tester.pumpAndSettle();
+      final settled = tester.widget<SlideTransition>(
+        find
+            .ancestor(
+              of: find.byType(NumericKeypad),
+              matching: find.byType(SlideTransition),
+            )
+            .first,
+      );
+      expect(settled.position.value.dy, 0, reason: 'aangekomen');
+    });
+
+    testWidgets('a flick down on the handle puts it away', (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+
+      await tester.fling(
+        find.bySemanticsLabel('Toetsenblok sluiten'),
+        const Offset(0, 200),
+        800,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NumericKeypad), findsNothing);
+    });
+
+    testWidgets('a flick up on the handle does not', (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+
+      await tester.fling(
+        find.bySemanticsLabel('Toetsenblok sluiten'),
+        const Offset(0, -200),
+        800,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NumericKeypad), findsOneWidget);
+    });
+  });
+
   group('going back with the keypad up', () {
     testWidgets('puts the keypad away instead of leaving the session', (
       tester,

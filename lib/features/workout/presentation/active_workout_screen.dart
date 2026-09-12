@@ -540,30 +540,58 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       ),
                     ],
                   ),
-            bottomNavigationBar: _target != null
-                ? NumericKeypad(
-                    value: _keypadValue,
-                    kind: _target!.kind,
-                    unitLabel: switch (_target!.kind) {
-                      KeypadFieldKind.weight => formatters.weightUnitLabel,
-                      KeypadFieldKind.distance => formatters.distanceUnitLabel,
-                      KeypadFieldKind.duration => 'sec',
-                      _ => null,
-                    },
-                    steps:
-                        _target!.kind == KeypadFieldKind.weight &&
-                            formatters.weightUnit == WeightUnit.lb
-                        ? const [2.5, 5, 10]
-                        : null,
-                    feedback: _feedback(settings),
-                    onChanged: (value) {
-                      setState(() => _keypadValue = value);
-                      _writeKeypadValue(value, formatters);
-                    },
-                    onNext: () => _moveToNextField(workout, formatters),
-                    onDone: () => setState(() => _target = null),
-                  )
-                : const RestTimerBar(),
+            // The pad rises and sinks instead of appearing and vanishing.
+            // Its height is animated as well as its position: the bar it
+            // replaces is much shorter, and without that the body would jump
+            // by three hundred pixels the moment the slide starts.
+            bottomNavigationBar: AnimatedSize(
+              duration: kKeypadSlide,
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: AnimatedSwitcher(
+                duration: kKeypadSlide,
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                // Only ever the one that is arriving: the two panels are
+                // different heights, and letting them overlap makes the box
+                // jump to whichever is taller for the length of the animation.
+                layoutBuilder: (current, previous) =>
+                    current ?? const SizedBox.shrink(),
+                transitionBuilder: (child, animation) => SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+                child: _target != null
+                    ? NumericKeypad(
+                        key: const ValueKey('keypad'),
+                        value: _keypadValue,
+                        kind: _target!.kind,
+                        unitLabel: switch (_target!.kind) {
+                          KeypadFieldKind.weight => formatters.weightUnitLabel,
+                          KeypadFieldKind.distance =>
+                            formatters.distanceUnitLabel,
+                          KeypadFieldKind.duration => 'sec',
+                          _ => null,
+                        },
+                        steps:
+                            _target!.kind == KeypadFieldKind.weight &&
+                                formatters.weightUnit == WeightUnit.lb
+                            ? const [2.5, 5, 10]
+                            : null,
+                        feedback: _feedback(settings),
+                        onChanged: (value) {
+                          setState(() => _keypadValue = value);
+                          _writeKeypadValue(value, formatters);
+                        },
+                        onNext: () => _moveToNextField(workout, formatters),
+                        onDone: () => setState(() => _target = null),
+                      )
+                    : const RestTimerBar(key: ValueKey('rest')),
+              ),
+            ),
           ),
         );
       },
@@ -1240,6 +1268,10 @@ class _ColumnHeaders extends StatelessWidget {
     );
   }
 }
+
+/// How long the keypad takes to rise or sink. Short enough not to be in the
+/// way between two sets, long enough to read as a movement.
+const Duration kKeypadSlide = Duration(milliseconds: 220);
 
 /// One row of the set table. Exported so the widget test can drive it.
 class SetRow extends StatelessWidget {

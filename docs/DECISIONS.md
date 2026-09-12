@@ -1050,3 +1050,37 @@ Geen extra sluitknop erbij. Het blauwe vinkje rechtsonder sluit de keypad al -
 de waarden worden bij elke toets al weggeschreven, dus dat vinkje is niets
 anders dan "klaar". Een derde manier zou de vraag "wat doet welke knop dan"
 alleen maar oproepen.
+
+## 74. De keypad komt op en gaat weer onder
+
+Hij verscheen en verdween in één frame. Nu schuift hij op en neer, met een
+sleepgreep bovenaan zoals elk ander blad in de app - en een veeg omlaag legt
+hem weg, zonder dat je een klein knopje in de hoek hoeft te raken.
+
+Niet de hoogte alleen en niet de positie alleen: allebei. De rusttimerbalk die
+de keypad vervangt is veel lager, dus zonder de hoogte mee te animeren springt
+het scherm op het moment dat de beweging begint - en dan is de animatie erger
+dan geen.
+
+De `AnimatedSwitcher` toont alleen het paneel dat aankomt. Ze overlappen laten
+zou de doos voor de duur van de beweging op de hoogte van de langste zetten, en
+dat is precies de sprong die we wilden wegwerken.
+
+De veeg werkt alleen naar beneden. Omhoog vegen zou hier niets kunnen
+betekenen - er is geen groter toetsenblok om uit te trekken - en er toch iets
+mee doen voelt als een misser.
+
+Wat de keypad níét wordt, is een echt `showModalBottomSheet`. Zo'n blad dimt
+wat erachter ligt en vangt alle tikken op, terwijl je juist blijft tikken op de
+setrijen erachter om van veld te wisselen. Hij ziet eruit als een blad en
+beweegt als een blad, maar hij blokkeert niets.
+
+## 75. Schermen met een pijltje omlaag komen ook van onderaf
+
+De lopende sessie en de rusttimer sluit je met een pijltje omlaag in de hoek,
+niet met een terugpijl. Ze gedragen zich als iets dat je over de app heen
+trekt, dus bewegen ze nu ook zo.
+
+De standaardovergang van Android is een zoom, bedoeld voor pagina's waar je
+naartoe navigeert. Tegenover een pijltje-omlaag leest die als helemaal geen
+animatie - wat precies de melding was.

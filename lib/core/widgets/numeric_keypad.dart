@@ -88,6 +88,7 @@ class NumericKeypad extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _DragHandle(onDismiss: onDone),
               _Header(
                 title: title ?? kind.label,
                 value: value,
@@ -167,6 +168,47 @@ class _Header extends StatelessWidget {
           icon: const Icon(Icons.backspace_outlined),
         ),
       ],
+    );
+  }
+}
+
+/// The bar at the top of the pad: something to hold on to, and a way to push
+/// the pad back down.
+///
+/// The same handle every bottom sheet in the app has, and the same gesture.
+/// The tick in the corner does the same thing, but it is a small target in the
+/// far corner and this one is a whole edge you do not have to aim at.
+class _DragHandle extends StatelessWidget {
+  const _DragHandle({required this.onDismiss});
+
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      // Downwards only. Flicking up would mean nothing here - there is no
+      // bigger pad to pull out - and acting on it would feel like a misfire.
+      onVerticalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) > 120) onDismiss();
+      },
+      child: Semantics(
+        label: 'Toetsenblok sluiten',
+        button: true,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+          child: Center(
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

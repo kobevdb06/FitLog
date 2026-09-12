@@ -171,10 +171,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     final owner = _ownerOf(workout, target.setId);
     if (owner != null) {
-      final columns = setColumnsFor(
-        owner.category,
-        owner.sets.map(setValues),
-      );
+      final columns = setColumnsFor(owner.category, owner.sets.map(setValues));
       final at = columns.indexOf(target.kind);
       if (at >= 0 && at + 1 < columns.length) {
         final row = _findSet(workout, target.setId);
@@ -418,144 +415,156 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
             )
             .inSeconds;
 
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.keyboard_arrow_down),
-              tooltip: 'Verbergen',
-              onPressed: () => context.pop(),
-            ),
-            title: InkWell(
-              onTap: () async {
-                final name = await promptForText(
-                  context,
-                  title: 'Naam van de workout',
-                  initialValue: workout.workout.name,
-                );
-                if (name == null || name.trim().isEmpty) return;
-                await ref
-                    .read(workoutControllerProvider)
-                    .rename(workout.workout.id, name.trim());
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    workout.workout.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    Formatters.duration(elapsed),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+        return PopScope(
+          // With the keypad up, going back means "put that away" - it is the
+          // thing in front of you. Without this the gesture walked straight
+          // out of the running session, which is a long way from what was
+          // asked for and easy to do by accident while logging.
+          canPop: _target == null,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            setState(() => _target = null);
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.keyboard_arrow_down),
+                tooltip: 'Verbergen',
+                onPressed: () => context.pop(),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => _finish(workout),
-                child: const Text('Klaar'),
-              ),
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'cancel') _cancel(workout);
+              title: InkWell(
+                onTap: () async {
+                  final name = await promptForText(
+                    context,
+                    title: 'Naam van de workout',
+                    initialValue: workout.workout.name,
+                  );
+                  if (name == null || name.trim().isEmpty) return;
+                  await ref
+                      .read(workoutControllerProvider)
+                      .rename(workout.workout.id, name.trim());
                 },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(
-                    value: 'cancel',
-                    child: Text('Workout weggooien'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          body: workout.exercises.isEmpty
-              ? EmptyState(
-                  icon: Icons.add_circle_outline,
-                  title: 'Nog geen oefeningen',
-                  message: 'Voeg de eerste oefening toe en begin te loggen.',
-                  actionLabel: 'Oefening toevoegen',
-                  onAction: () => _addExercises(workout),
-                )
-              // A sliver list rather than a ReorderableListView so the
-              // "add exercise" button can sit under it without becoming one of
-              // the draggable items.
-              : CustomScrollView(
-                  slivers: [
-                    SliverReorderableList(
-                      itemCount: workout.exercises.length,
-                      onReorderItem: (from, to) => _reorder(workout, from, to),
-                      itemBuilder: (context, index) {
-                        final exercise = workout.exercises[index];
-                        return Padding(
-                          key: ValueKey(exercise.workoutExercise.id),
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.md,
-                            AppSpacing.sm,
-                            AppSpacing.md,
-                            AppSpacing.sm,
-                          ),
-                          child: _ExerciseCard(
-                            workout: workout,
-                            detail: exercise,
-                            index: index,
-                            formatters: formatters,
-                            settings: settings,
-                            activeTarget: _target,
-                            onFocus: (row, kind) =>
-                                _focus(row, kind, formatters),
-                            onToggle: (row) => _toggleSet(row, settings),
-                            onReset: (row) => _resetSet(row, settings),
-                          ),
-                        );
-                      },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      workout.workout.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                          AppSpacing.lg,
-                          32,
-                        ),
-                        child: OutlinedButton.icon(
-                          onPressed: () => _addExercises(workout),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Oefening toevoegen'),
-                        ),
+                    Text(
+                      Formatters.duration(elapsed),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
-          bottomNavigationBar: _target != null
-              ? NumericKeypad(
-                  value: _keypadValue,
-                  kind: _target!.kind,
-                  unitLabel: switch (_target!.kind) {
-                    KeypadFieldKind.weight => formatters.weightUnitLabel,
-                    KeypadFieldKind.distance => formatters.distanceUnitLabel,
-                    KeypadFieldKind.duration => 'sec',
-                    _ => null,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => _finish(workout),
+                  child: const Text('Klaar'),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'cancel') _cancel(workout);
                   },
-                  steps:
-                      _target!.kind == KeypadFieldKind.weight &&
-                          formatters.weightUnit == WeightUnit.lb
-                      ? const [2.5, 5, 10]
-                      : null,
-                  feedback: _feedback(settings),
-                  onChanged: (value) {
-                    setState(() => _keypadValue = value);
-                    _writeKeypadValue(value, formatters);
-                  },
-                  onNext: () => _moveToNextField(workout, formatters),
-                  onDone: () => setState(() => _target = null),
-                )
-              : const RestTimerBar(),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'cancel',
+                      child: Text('Workout weggooien'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            body: workout.exercises.isEmpty
+                ? EmptyState(
+                    icon: Icons.add_circle_outline,
+                    title: 'Nog geen oefeningen',
+                    message: 'Voeg de eerste oefening toe en begin te loggen.',
+                    actionLabel: 'Oefening toevoegen',
+                    onAction: () => _addExercises(workout),
+                  )
+                // A sliver list rather than a ReorderableListView so the
+                // "add exercise" button can sit under it without becoming one of
+                // the draggable items.
+                : CustomScrollView(
+                    slivers: [
+                      SliverReorderableList(
+                        itemCount: workout.exercises.length,
+                        onReorderItem: (from, to) =>
+                            _reorder(workout, from, to),
+                        itemBuilder: (context, index) {
+                          final exercise = workout.exercises[index];
+                          return Padding(
+                            key: ValueKey(exercise.workoutExercise.id),
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.md,
+                              AppSpacing.sm,
+                              AppSpacing.md,
+                              AppSpacing.sm,
+                            ),
+                            child: _ExerciseCard(
+                              workout: workout,
+                              detail: exercise,
+                              index: index,
+                              formatters: formatters,
+                              settings: settings,
+                              activeTarget: _target,
+                              onFocus: (row, kind) =>
+                                  _focus(row, kind, formatters),
+                              onToggle: (row) => _toggleSet(row, settings),
+                              onReset: (row) => _resetSet(row, settings),
+                            ),
+                          );
+                        },
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                            32,
+                          ),
+                          child: OutlinedButton.icon(
+                            onPressed: () => _addExercises(workout),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Oefening toevoegen'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+            bottomNavigationBar: _target != null
+                ? NumericKeypad(
+                    value: _keypadValue,
+                    kind: _target!.kind,
+                    unitLabel: switch (_target!.kind) {
+                      KeypadFieldKind.weight => formatters.weightUnitLabel,
+                      KeypadFieldKind.distance => formatters.distanceUnitLabel,
+                      KeypadFieldKind.duration => 'sec',
+                      _ => null,
+                    },
+                    steps:
+                        _target!.kind == KeypadFieldKind.weight &&
+                            formatters.weightUnit == WeightUnit.lb
+                        ? const [2.5, 5, 10]
+                        : null,
+                    feedback: _feedback(settings),
+                    onChanged: (value) {
+                      setState(() => _keypadValue = value);
+                      _writeKeypadValue(value, formatters);
+                    },
+                    onNext: () => _moveToNextField(workout, formatters),
+                    onDone: () => setState(() => _target = null),
+                  )
+                : const RestTimerBar(),
+          ),
         );
       },
     );

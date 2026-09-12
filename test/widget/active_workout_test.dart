@@ -387,6 +387,41 @@ void main() {
     });
   });
 
+  group('going back with the keypad up', () {
+    testWidgets('puts the keypad away instead of leaving the session', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+      expect(find.byType(NumericKeypad), findsOneWidget);
+
+      // What the Android back button and the back gesture both come in as.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NumericKeypad), findsNothing);
+      expect(
+        find.byType(SetRow),
+        findsOneWidget,
+        reason: 'de sessie staat er nog',
+      );
+    });
+
+    testWidgets('and leaves it once the keypad is gone', (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      // Second time: nothing in front of it any more, so back means back.
+      final handled = await tester.binding.handlePopRoute();
+
+      expect(handled, isFalse, reason: 'het scherm houdt hem niet meer tegen');
+    });
+  });
+
   testWidgets('tapping a weight cell opens the custom keypad, not the '
       'system keyboard', (tester) async {
     await pumpScreen(tester);

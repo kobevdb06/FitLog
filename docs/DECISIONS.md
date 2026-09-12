@@ -1036,3 +1036,17 @@ een kolom geven die er niet hoort.
 Is er niets te halen - geen vorige sessie, of een set die je toen oversloeg -
 dan is er ook niets aan te tikken. Een tik die niets doet is erger dan geen
 tik.
+
+## 73. Terug met de keypad open sluit de keypad
+
+De Android-terugknop en het terugveeggebaar liepen met de keypad in beeld
+rechtstreeks de lopende sessie uit. Dat is ver van wat er gevraagd werd, en
+makkelijk per ongeluk te doen terwijl je aan het loggen bent.
+
+De keypad is het ding dat vóór je staat, dus terug betekent: leg dat weg. Een
+tweede keer terug doet weer wat het altijd deed.
+
+Geen extra sluitknop erbij. Het blauwe vinkje rechtsonder sluit de keypad al -
+de waarden worden bij elke toets al weggeschreven, dus dat vinkje is niets
+anders dan "klaar". Een derde manier zou de vraag "wat doet welke knop dan"
+alleen maar oproepen.

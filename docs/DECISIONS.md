@@ -882,3 +882,38 @@ terecht. De stream achter de lopende sessie keek alleen naar `workouts`,
 Zonder deze regel kwam een typewijziging pas door bij de eerstvolgende
 schrijfactie op een van de andere drie tabellen - dus meestal pas nadat je iets
 anders had aangeraakt. Precies het soort bug dat je niet vindt door te kijken.
+
+## 64. Zoeken vindt ook het materiaal en het type
+
+Typ "barbell" en je krijgt alles wat je met een halterstang doet, niet alleen
+wat het woord toevallig in zijn naam heeft.
+
+De term wordt tegen drie dingen gehouden: de naam, het opgeslagen materiaal
+(Nederlands: "halterstang", "kabel") en het type (Engels opgeslagen: `barbell`,
+`cable`, `duration`). Dat laatste ook tegen het Nederlandse label dat de
+filterchips tonen, zodat "tijd" de oefeningen op tijd vindt.
+
+Twee namen voor hetzelfde is hier geen slordigheid maar de reden dat het werkt:
+de gebruiker weet niet of hij "barbell" of "halterstang" moet typen, en met
+allebei de kanten erin hoeft hij dat ook niet te weten.
+
+De filterchips blijven bestaan. Zoeken is voor als je weet wat je zoekt;
+filteren is voor als je aan het rondkijken bent.
+
+## 65. Een snelle blik terwijl je een routine bouwt
+
+Bij het kiezen van oefeningen kon je alleen aan- of afvinken. Welke van de vier
+"row"-varianten je voor je had, zei de naam niet.
+
+Elke rij heeft in de kiezer nu een ⓘ-knop: naam, bewegende afbeelding,
+spiergroepen en uitvoering, in een blad over de lijst heen. Geen records, geen
+grafieken, geen geschiedenis - je bent aan het kiezen, niet aan het studeren,
+en alles meer is weer een scherm om van terug te komen.
+
+De vraag was om op de *naam* te kunnen drukken. Dat heb ik niet gedaan, en dat
+is een afweging waard: de naam is precies wat je aantikt als je een oefening
+wíl kiezen. Dan zou de meest voorkomende handeling de zeldzame openen. Een
+eigen knop is ondubbelzinnig en zichtbaar, en de rij blijft doen wat hij deed.
+
+In de bibliotheek zelf staat de knop er niet. Daar is de volledige
+oefeningpagina al één tik weg, en een tweede ingang zou alleen in de weg zitten.

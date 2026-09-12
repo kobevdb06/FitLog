@@ -11,6 +11,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/exercise_image.dart';
 import '../../../routing/routes.dart';
 import 'custom_exercise_screen.dart';
+import 'exercise_preview_sheet.dart';
 import 'exercise_providers.dart';
 
 /// The exercise catalogue.
@@ -55,8 +56,7 @@ class ExerciseLibraryScreen extends ConsumerStatefulWidget {
       _ExerciseLibraryScreenState();
 }
 
-class _ExerciseLibraryScreenState
-    extends ConsumerState<ExerciseLibraryScreen> {
+class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
   final _searchController = TextEditingController();
   final _selected = <String>{};
   bool _showFilters = false;
@@ -74,6 +74,20 @@ class _ExerciseLibraryScreenState
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// A quick look without leaving the picker.
+  void _preview(
+    ExerciseRow exercise,
+    ExerciseImageManifest? manifest,
+    AppPaths? paths,
+  ) {
+    showExercisePreview(
+      context,
+      exercise: exercise,
+      manifest: manifest,
+      paths: paths,
+    );
   }
 
   void _onTapExercise(ExerciseRow exercise) {
@@ -187,8 +201,7 @@ class _ExerciseLibraryScreenState
             return EmptyState(
               icon: Icons.search_off,
               title: 'Niets gevonden',
-              message:
-                  'Geen oefening past bij deze zoekopdracht of filters.',
+              message: 'Geen oefening past bij deze zoekopdracht of filters.',
               actionLabel: 'Filters wissen',
               onAction: () {
                 _searchController.clear();
@@ -212,6 +225,7 @@ class _ExerciseLibraryScreenState
                     selected: _selected.contains(exercise.id),
                     selectable: widget.selectionMode,
                     onTap: () => _onTapExercise(exercise),
+                    onPreview: () => _preview(exercise, images, paths),
                   ),
                 const SectionHeader('Alle oefeningen'),
               ],
@@ -223,6 +237,7 @@ class _ExerciseLibraryScreenState
                   selected: _selected.contains(exercise.id),
                   selectable: widget.selectionMode,
                   onTap: () => _onTapExercise(exercise),
+                  onPreview: () => _preview(exercise, images, paths),
                 ),
             ],
           );
@@ -230,8 +245,7 @@ class _ExerciseLibraryScreenState
       ),
       floatingActionButton: widget.selectionMode && _selected.isNotEmpty
           ? FloatingActionButton.extended(
-              onPressed: () =>
-                  Navigator.of(context).pop(_selected.toList()),
+              onPressed: () => Navigator.of(context).pop(_selected.toList()),
               icon: const Icon(Icons.check),
               label: Text('${_selected.length} toevoegen'),
             )
@@ -248,8 +262,7 @@ class _FilterChips extends ConsumerWidget {
     final filter = ref.watch(exerciseFilterControllerProvider);
     final notifier = ref.read(exerciseFilterControllerProvider.notifier);
     final muscles = ref.watch(muscleOptionsProvider).value ?? const [];
-    final equipment =
-        ref.watch(equipmentOptionsProvider).value ?? const [];
+    final equipment = ref.watch(equipmentOptionsProvider).value ?? const [];
 
     return SizedBox(
       height: 104,
@@ -316,6 +329,7 @@ class _ExerciseTile extends StatelessWidget {
     required this.selected,
     required this.selectable,
     required this.onTap,
+    required this.onPreview,
   });
 
   final ExerciseRow exercise;
@@ -324,6 +338,10 @@ class _ExerciseTile extends StatelessWidget {
   final bool selected;
   final bool selectable;
   final VoidCallback onTap;
+
+  /// Opens the quick look. Only offered while picking: browsing the library,
+  /// the whole page is already one tap away.
+  final VoidCallback onPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -343,9 +361,22 @@ class _ExerciseTile extends StatelessWidget {
         ].join(' · '),
       ),
       trailing: selectable
-          ? Icon(
-              selected ? Icons.check_circle : Icons.circle_outlined,
-              color: selected ? Theme.of(context).colorScheme.primary : null,
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Bekijk de oefening',
+                  onPressed: onPreview,
+                  icon: const Icon(Icons.info_outline),
+                  visualDensity: VisualDensity.compact,
+                ),
+                Icon(
+                  selected ? Icons.check_circle : Icons.circle_outlined,
+                  color: selected
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+              ],
             )
           : (exercise.isCustom
                 ? const Chip(

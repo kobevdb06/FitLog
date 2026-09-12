@@ -76,7 +76,27 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     final term = filter.query.trim();
     if (term.isNotEmpty) {
       final pattern = '%${term.replaceAll('%', r'\%')}%';
-      q.where((t) => t.name.like(pattern));
+
+      // Looking for the kit is looking for the exercise: "barbell" should
+      // bring up everything you do with one, not only what happens to carry
+      // the word in its name. The equipment is stored in Dutch and the type in
+      // English, so the term is tried against the stored equipment, the stored
+      // type, and the Dutch label the filter chips show for that type.
+      final lower = term.toLowerCase();
+      final categories = ExerciseCategory.values
+          .where(
+            (c) =>
+                c.wire.contains(lower) || c.label.toLowerCase().contains(lower),
+          )
+          .map((c) => c.wire)
+          .toSet();
+
+      q.where((t) {
+        final matches = t.name.like(pattern) | t.equipment.like(pattern);
+        return categories.isEmpty
+            ? matches
+            : matches | t.category.isIn(categories);
+      });
     }
     if (filter.muscles.isNotEmpty) {
       // The primary muscle is the one people filter on; secondary muscles are

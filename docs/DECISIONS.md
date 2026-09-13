@@ -1798,3 +1798,34 @@ meten of het hielp. Wat wel te bewijzen valt is een verandering die het werk
 buiten de animatie legt in plaats van het goedkoper maakt - dan hoort het aantal
 te trage frames tijdens de overgang naar nul te gaan, en dat is een verschil dat
 boven de ruis uitkomt.
+
+## 113. De lijst wacht tot de pagina stilstaat
+
+Het bouwen van de oefeningenlijst kost op de telefoon 36 tot 44 ms, en een
+frame is 16,7 ms. Gebeurt dat terwijl de pagina naar binnen schuift, dan gaan er
+twee frames van de overgang verloren - elke keer opnieuw.
+
+`_AfterTheSlide` wacht op `ModalRoute.of(context)?.animation` en bouwt de lijst
+pas als die klaar is. Niets wordt goedkoper; het gebeurt alleen niet meer
+terwijl er iets beweegt. De balken boven- en onderaan staan er vanaf het eerste
+frame, alleen de lijst komt na.
+
+Alleen voorwaarts. Dezelfde animatie loopt achteruit als je de pagina verlaat,
+en de lijst dan leeghalen zou een flits van niets zijn. En zonder route - in een
+widgettest, of ingebed in een ander scherm - is er geen animatie om op te
+wachten en verschijnt de lijst meteen; wachten zou daar eeuwig duren.
+
+Gemeten op de telefoon, vier herhalingen met vier oefeningen, alleen de frames
+van de overgang zelf:
+
+| | frames te traag | ergste build |
+|---|---|---|
+| zonder | 2, 2, 2, 2 | 35,8 / 40,8 / 44,4 / 38,0 ms |
+| met    | 0, 0, 0, 0 |  7,6 /  9,5 / 12,0 /  6,3 ms |
+
+Vier van de vier keer nul. Dit is precies het soort verschil dat wél boven de
+ruis uitkomt, en het is waarom deze aanpak gekozen is boven het goedkoper maken
+van de build: dat laatste bleek niet aantoonbaar (zie 111).
+
+De prijs is zichtbaar: de oefeningen verschijnen een fractie na de rest van het
+scherm.

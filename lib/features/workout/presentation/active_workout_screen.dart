@@ -567,56 +567,58 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 // A sliver list rather than a ReorderableListView so the
                 // "add exercise" button can sit under it without becoming one of
                 // the draggable items.
-                : CustomScrollView(
-                    slivers: [
-                      SliverReorderableList(
-                        itemCount: workout.exercises.length,
-                        onReorderItem: (from, to) =>
-                            _reorder(workout, from, to),
-                        itemBuilder: (context, index) {
-                          final exercise = workout.exercises[index];
-                          return Padding(
-                            key: ValueKey(exercise.workoutExercise.id),
+                : _AfterTheSlide(
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverReorderableList(
+                          itemCount: workout.exercises.length,
+                          onReorderItem: (from, to) =>
+                              _reorder(workout, from, to),
+                          itemBuilder: (context, index) {
+                            final exercise = workout.exercises[index];
+                            return Padding(
+                              key: ValueKey(exercise.workoutExercise.id),
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.md,
+                                AppSpacing.sm,
+                                AppSpacing.md,
+                                AppSpacing.sm,
+                              ),
+                              child: _ExerciseCard(
+                                workout: workout,
+                                detail: exercise,
+                                index: index,
+                                formatters: formatters,
+                                settings: settings,
+                                previous: previous,
+                                trackRpe: trackRpe,
+                                recordSetIds: recordSetIds,
+                                activeTarget: _target,
+                                onFocus: (row, kind) =>
+                                    _focus(row, kind, formatters),
+                                onToggle: (row) => _toggleSet(row, settings),
+                                onReset: (row) => _resetSet(row, settings),
+                              ),
+                            );
+                          },
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
                             padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.md,
-                              AppSpacing.sm,
-                              AppSpacing.md,
-                              AppSpacing.sm,
+                              AppSpacing.lg,
+                              AppSpacing.lg,
+                              AppSpacing.lg,
+                              32,
                             ),
-                            child: _ExerciseCard(
-                              workout: workout,
-                              detail: exercise,
-                              index: index,
-                              formatters: formatters,
-                              settings: settings,
-                              previous: previous,
-                              trackRpe: trackRpe,
-                              recordSetIds: recordSetIds,
-                              activeTarget: _target,
-                              onFocus: (row, kind) =>
-                                  _focus(row, kind, formatters),
-                              onToggle: (row) => _toggleSet(row, settings),
-                              onReset: (row) => _resetSet(row, settings),
+                            child: OutlinedButton.icon(
+                              onPressed: () => _addExercises(workout),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Oefening toevoegen'),
                             ),
-                          );
-                        },
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.lg,
-                            AppSpacing.lg,
-                            AppSpacing.lg,
-                            32,
-                          ),
-                          child: OutlinedButton.icon(
-                            onPressed: () => _addExercises(workout),
-                            icon: const Icon(Icons.add),
-                            label: const Text('Oefening toevoegen'),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
             // The pad rises and sinks instead of appearing and vanishing.
             // Its height is animated as well as its position: the bar it
@@ -696,6 +698,61 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 }
 
 // --- Exercise card ----------------------------------------------------------
+
+/// Holds a heavy subtree back until the page has finished sliding in.
+///
+/// The list of exercises costs 40 to 55 ms to build on a phone, and a frame is
+/// 16,7 ms. Built while the page is still moving, that is three or four frames
+/// of the transition gone - which is exactly what the stutter is. Nothing here
+/// makes it cheaper; it just stops happening while something is animating.
+///
+/// Outside a route - a widget test, or a screen embedded somewhere - there is
+/// no animation to wait for and the child is built straight away.
+class _AfterTheSlide extends StatefulWidget {
+  const _AfterTheSlide({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_AfterTheSlide> createState() => _AfterTheSlideState();
+}
+
+class _AfterTheSlideState extends State<_AfterTheSlide> {
+  bool _settled = false;
+  Animation<double>? _watching;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_settled) return;
+
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation == null || animation.isCompleted) {
+      _settled = true;
+      return;
+    }
+    if (identical(animation, _watching)) return;
+    _watching?.removeStatusListener(_onStatus);
+    _watching = animation..addStatusListener(_onStatus);
+  }
+
+  void _onStatus(AnimationStatus status) {
+    // Only ever forwards. Leaving the page runs the same animation backwards,
+    // and blanking the list on the way out would be a flash of nothing.
+    if (status != AnimationStatus.completed || _settled || !mounted) return;
+    setState(() => _settled = true);
+  }
+
+  @override
+  void dispose() {
+    _watching?.removeStatusListener(_onStatus);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _settled ? widget.child : const SizedBox.shrink();
+}
 
 /// How long you have been at it, ticking once a second.
 ///

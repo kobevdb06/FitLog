@@ -149,6 +149,8 @@ void main() {
 
     // --- de overgang naar de workout --------------------------------------
     final voorOpenen = frames.length;
+    Map<String, Object> overgang = const {'frames': 0};
+    Map<String, Object> daarna = const {'frames': 0};
     if (spoor) {
       // Elke widget die gebouwd wordt komt als eigen gebeurtenis in de
       // tijdlijn te staan. Alleen aanzetten wanneer we willen weten waar de
@@ -164,6 +166,8 @@ void main() {
         );
         await rust(tester, 3);
       }, reportKey: 'tijdlijn');
+      overgang = samenvatting(voorOpenen);
+      daarna = const {'frames': 0};
       debugProfileBuildsEnabled = false;
     } else {
       unawaited(
@@ -173,7 +177,17 @@ void main() {
           ),
         ),
       );
+      // De overgang zelf duurt ongeveer 300 ms. Het venster blijft daar net
+      // onder, want alles wat erna komt is per definitie niet wat er hapert -
+      // en anders telt de uitgestelde build mee als een gevallen frame van de
+      // animatie.
+      for (var i = 0; i < 17; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      overgang = samenvatting(voorOpenen);
+      final naOvergang = frames.length;
       await rust(tester, 3);
+      daarna = samenvatting(naOvergang);
     }
     final openen = samenvatting(voorOpenen);
 
@@ -200,6 +214,8 @@ void main() {
 
     return {
       'oefeningen': aantal,
+      'overgang': overgang,
+      'daarna': daarna,
       'openen': openen,
       'setAfvinken': vinken,
       'stilstaan': stil,
@@ -223,7 +239,11 @@ void main() {
       // Eén regel per meting: logcat kapt een lange regel af, en dan mist de
       // helft van de metingen zonder dat je het ziet.
       // ignore: avoid_print
-      print('METING ${jsonEncode(uitslag["openen"])}');
+      print(
+        'METING n=${uitslag["oefeningen"]} '
+        'overgang=${jsonEncode(uitslag["overgang"])} '
+        'daarna=${jsonEncode(uitslag["daarna"])}',
+      );
       await rust(tester, 1);
     }
 

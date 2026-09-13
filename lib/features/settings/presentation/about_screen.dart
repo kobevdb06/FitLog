@@ -8,7 +8,7 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   /// Kept in step with `version:` in pubspec.yaml.
-  static const String appVersion = '1.18.0';
+  static const String appVersion = '1.19.0';
 
   @override
   Widget build(BuildContext context) {
@@ -51,10 +51,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SectionHeader(
             'Waar je gegevens staan',
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom: AppSpacing.sm,
-            ),
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
           ),
           Text(
             'Alles staat in een SQLCipher-database op dit toestel. De sleutel '
@@ -66,10 +63,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SectionHeader(
             'Oefeningen',
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom: AppSpacing.sm,
-            ),
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
           ),
           Text(
             'De catalogus komt uit free-exercise-db '
@@ -93,8 +87,7 @@ class AboutScreen extends StatelessWidget {
               context: context,
               applicationName: 'FitLog',
               applicationVersion: appVersion,
-              applicationLegalese:
-                  'Oefeningen: free-exercise-db (Unlicense).',
+              applicationLegalese: 'Oefeningen: free-exercise-db (Unlicense).',
             ),
             icon: const Icon(Icons.description_outlined),
             label: const Text('Licenties van gebruikte pakketten'),

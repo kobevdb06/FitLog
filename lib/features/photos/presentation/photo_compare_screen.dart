@@ -1,3 +1,11 @@
+/// The photographs you picked, next to each other.
+///
+/// It used to pick for you - oldest against newest - and let you swap either
+/// half from a dropdown. That made it easy to put a front against a back and
+/// read "0 dagen ertussen, 0 kg" off it. You choose them in the grid now, so
+/// what is on screen is what you asked for.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,44 +16,30 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
-import '../../../core/widgets/dialogs.dart';
 import '../domain/photo_grouping.dart';
 import 'photo_providers.dart';
 import 'photo_viewer_screen.dart';
+import 'photo_wipe.dart';
 
-/// Two photos side by side with their dates and the weight difference.
+/// How a pair is laid out. Three or more are always a row.
+enum _Layout { sideBySide, wipe }
+
 class PhotoCompareScreen extends ConsumerStatefulWidget {
-  const PhotoCompareScreen({super.key});
+  const PhotoCompareScreen({super.key, required this.photoIds});
+
+  final List<String> photoIds;
 
   @override
   ConsumerState<PhotoCompareScreen> createState() => _PhotoCompareScreenState();
 }
 
 class _PhotoCompareScreenState extends ConsumerState<PhotoCompareScreen> {
-  PhotoPose? _pose;
-  String? _leftId;
-  String? _rightId;
-
-  ProgressPhotoRow? _find(List<ProgressPhotoRow> photos, String? id) {
-    for (final photo in photos) {
-      if (photo.id == id) return photo;
-    }
-    return null;
-  }
+  _Layout _layout = _Layout.sideBySide;
 
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(progressPhotosProvider).value ?? const [];
     final paths = ref.watch(appPathsProvider).value;
-
-    // The pose is the comparison, not one of its halves: a front against a
-    // back has nothing to say, and the screen used to let you build exactly
-    // that - two photos of the same morning, "0 dagen ertussen, 0 kg".
-    final pose = _pose ?? mostComparablePose(all);
-    final photos = [
-      for (final photo in all)
-        if (PhotoPose.fromWire(photo.pose) == pose) photo,
-    ];
 
     if (paths == null) {
       return Scaffold(
@@ -54,160 +48,216 @@ class _PhotoCompareScreenState extends ConsumerState<PhotoCompareScreen> {
       );
     }
 
-    if (all.length < 2) {
+    final chosen = chosenPhotos(all: all, ids: widget.photoIds);
+
+    if (chosen.length < 2) {
       return Scaffold(
         appBar: AppBar(title: const Text('Vergelijken')),
         body: const EmptyState(
           icon: Icons.compare_arrows,
           title: 'Te weinig foto\'s',
-          message: 'Je hebt minstens twee foto\'s nodig om te vergelijken.',
+          message: 'Kies er minstens twee in het raster om te vergelijken.',
         ),
       );
     }
 
-    // Oldest against newest of this pose, which is what people are after.
-    final left =
-        _find(photos, _leftId) ?? (photos.isEmpty ? null : photos.last);
-    final right =
-        _find(photos, _rightId) ?? (photos.isEmpty ? null : photos.first);
+    final pair = chosen.length == 2;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Vergelijken')),
-      body: Column(
-        children: [
-          _PoseBar(
-            pose: pose,
-            counts: photosPerPose(all),
-            onChanged: (picked) => setState(() {
-              _pose = picked;
-              // The chosen moments belonged to the old pose.
-              _leftId = null;
-              _rightId = null;
-            }),
-          ),
-          if (left == null || right == null || photos.length < 2)
-            Expanded(
-              child: EmptyState(
-                icon: Icons.compare_arrows,
-                title: 'Te weinig van deze pose',
-                message:
-                    'Je hebt twee foto\'s van dezelfde pose nodig. Van '
-                    '${pose.label.toLowerCase()} heb je er '
-                    '${photos.length}.',
-              ),
-            )
-          else ...[
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _Side(
-                      photo: left,
-                      photos: photos,
-                      paths: paths,
-                      onChanged: (id) => setState(() => _leftId = id),
-                    ),
-                  ),
-                  const VerticalDivider(width: 1),
-                  Expanded(
-                    child: _Side(
-                      photo: right,
-                      photos: photos,
-                      paths: paths,
-                      onChanged: (id) => setState(() => _rightId = id),
-                    ),
-                  ),
-                ],
+      appBar: AppBar(
+        title: const Text('Vergelijken'),
+        actions: [
+          // Only for a pair: a seam between three pictures is not a thing.
+          if (pair)
+            IconButton(
+              tooltip: _layout == _Layout.wipe
+                  ? 'Naast elkaar'
+                  : 'Over elkaar schuiven',
+              onPressed: () => setState(() {
+                _layout = _layout == _Layout.wipe
+                    ? _Layout.sideBySide
+                    : _Layout.wipe;
+              }),
+              icon: Icon(
+                _layout == _Layout.wipe
+                    ? Icons.view_column_outlined
+                    : Icons.compare_outlined,
               ),
             ),
-            _Difference(left: left, right: right),
-          ],
+        ],
+      ),
+      body: Column(
+        children: [
+          if (mixedPoses(chosen)) _MixedPoseNote(photos: chosen),
+          Expanded(
+            child: pair && _layout == _Layout.wipe
+                ? _Wipe(photos: chosen, paths: paths)
+                : _Row(photos: chosen, paths: paths),
+          ),
+          _Difference(left: chosen.first, right: chosen.last),
         ],
       ),
     );
   }
 }
 
-/// Which pose you are comparing, and how many you have of each.
-class _PoseBar extends StatelessWidget {
-  const _PoseBar({
-    required this.pose,
-    required this.counts,
-    required this.onChanged,
-  });
+/// Said once, at the top, and never enforced.
+///
+/// A front against a back says little, but it is your comparison. The app used
+/// to build that for you, which is a different thing from letting you.
+class _MixedPoseNote extends StatelessWidget {
+  const _MixedPoseNote({required this.photos});
 
-  final PhotoPose pose;
-  final Map<PhotoPose, int> counts;
-  final ValueChanged<PhotoPose> onChanged;
+  final List<ProgressPhotoRow> photos;
 
   @override
   Widget build(BuildContext context) {
+    final poses = {
+      for (final photo in photos) PhotoPose.fromWire(photo.pose).label,
+    };
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
         AppSpacing.sm,
+        AppSpacing.lg,
+        0,
       ),
-      // A Row clipped the third chip off the right edge of a phone. A Wrap
-      // moves one down instead of hiding it, whatever the screen width or the
-      // reader's text size.
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
+      child: Row(
         children: [
-          for (final option in PhotoPose.values)
-            ChoiceChip(
-              selected: option == pose,
-              onSelected: (_) => onChanged(option),
-              visualDensity: VisualDensity.compact,
-              labelStyle: Theme.of(context).textTheme.bodyMedium,
-              // The count is the honest part: it says in advance which poses
-              // there is anything to compare.
-              label: Text('${option.label} (${counts[option] ?? 0})'),
+          Icon(
+            Icons.info_outline,
+            size: 16,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Je vergelijkt ${poses.join(' met ')}.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
+          ),
         ],
       ),
     );
   }
 }
 
-/// One half of the comparison: the picture, and which moment it is.
+/// Two or more, in the order they were taken.
 ///
-/// The pose is not repeated here - the bar above the two halves says it once,
-/// and it is the same for both by definition.
-class _Side extends StatelessWidget {
-  const _Side({
-    required this.photo,
-    required this.photos,
-    required this.paths,
-    required this.onChanged,
-  });
+/// Past two it scrolls sideways rather than dividing the width further: four
+/// photographs squeezed into one screen are four postage stamps, and a
+/// comparison you cannot see is not one.
+class _Row extends StatelessWidget {
+  const _Row({required this.photos, required this.paths});
 
-  final ProgressPhotoRow photo;
   final List<ProgressPhotoRow> photos;
   final AppPaths paths;
-  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final pair = photos.length <= 2;
+    // Two and a bit on screen, so the edge of the next one says there is more.
+    final columns = pair ? photos.length : 2.4;
+    final width = MediaQuery.of(context).size.width / columns;
+
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      physics: pair ? const NeverScrollableScrollPhysics() : null,
+      itemCount: photos.length,
+      separatorBuilder: (context, index) => const VerticalDivider(width: 1),
+      itemBuilder: (context, index) => SizedBox(
+        width: width,
+        child: _Side(photo: photos[index], paths: paths),
+      ),
+    );
+  }
+}
+
+class _Wipe extends StatelessWidget {
+  const _Wipe({required this.photos, required this.paths});
+
+  final List<ProgressPhotoRow> photos;
+  final AppPaths paths;
+
+  @override
+  Widget build(BuildContext context) {
+    final left = photos.first;
+    final right = photos.last;
+
+    return Column(
+      children: [
+        Expanded(
+          child: PhotoWipe(
+            left: paths.photoFile(left.fileName),
+            right: paths.photoFile(right.fileName),
+            onTapLeft: () => _open(context, left),
+            onTapRight: () => _open(context, right),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_dateOf(left), style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                _dateOf(right),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _dateOf(ProgressPhotoRow photo) =>
+      Formatters.date(DateTime.fromMillisecondsSinceEpoch(photo.takenAt));
+
+  void _open(BuildContext context, ProgressPhotoRow photo) {
+    PhotoViewerScreen.open(
+      context,
+      file: paths.photoFile(photo.fileName),
+      title: '${PhotoPose.fromWire(photo.pose).label} · ${_dateOf(photo)}',
+    );
+  }
+}
+
+/// One picture and the day it was taken.
+class _Side extends StatelessWidget {
+  const _Side({required this.photo, required this.paths});
+
+  final ProgressPhotoRow photo;
+  final AppPaths paths;
+
+  @override
+  Widget build(BuildContext context) {
+    final takenAt = DateTime.fromMillisecondsSinceEpoch(photo.takenAt);
+    final file = paths.photoFile(photo.fileName);
+
     return Column(
       children: [
         Expanded(
           // Whole, not filled. Cover looked tidier and quietly cut the sides
-          // off: half a screen is a narrow window on a portrait photo, and if
-          // you are not standing dead centre you can end up comparing two
-          // walls. A tap opens the picture on its own, where there is room.
+          // off: a column this narrow is a small window on a portrait photo,
+          // and off-centre subjects went with the crop.
           child: GestureDetector(
             onTap: () => PhotoViewerScreen.open(
               context,
-              file: paths.photoFile(photo.fileName),
+              file: file,
               title:
                   '${PhotoPose.fromWire(photo.pose).label} · '
-                  '${Formatters.date(DateTime.fromMillisecondsSinceEpoch(photo.takenAt))}',
+                  '${Formatters.date(takenAt)}',
             ),
             child: Image.file(
-              paths.photoFile(photo.fileName),
+              file,
               fit: BoxFit.contain,
               width: double.infinity,
               errorBuilder: (context, error, stack) =>
@@ -215,31 +265,11 @@ class _Side extends StatelessWidget {
             ),
           ),
         ),
-        InkWell(
-          onTap: () async {
-            final picked = await pickPhoto(
-              context,
-              current: photo.id,
-              photos: photos,
-              fileFor: paths.photoFile,
-            );
-            if (picked != null) onChanged(picked);
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    Formatters.date(
-                      DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
-                    ),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-                const Icon(Icons.expand_more, size: 18),
-              ],
-            ),
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Text(
+            Formatters.date(takenAt),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
       ],

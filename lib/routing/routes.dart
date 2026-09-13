@@ -38,6 +38,13 @@ abstract final class Routes {
   static const measurements = '/voortgang/metingen';
   static const photos = '/voortgang/fotos';
   static const photoCompare = '/voortgang/fotos/vergelijken';
+
+  /// Which pictures to put next to each other, as ids in the address.
+  ///
+  /// In the query rather than handed over as an object, so the screen survives
+  /// Android rebuilding the app underneath it with the same comparison open.
+  static String photoCompareOf(Iterable<String> photoIds) =>
+      '$photoCompare?fotos=${photoIds.join(',')}';
   static const records = '/voortgang/records';
 
   // Profile and settings

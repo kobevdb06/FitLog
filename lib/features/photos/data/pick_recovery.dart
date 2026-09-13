@@ -85,11 +85,10 @@ class PickRecovery {
     switch (pick.kind) {
       case PickKind.progressPhoto:
         final pose = PhotoPose.fromWire(pick.ref ?? '');
-        await PhotoLibrary(db: db, store: PhotoStore(paths)).importPhoto(
-          source: file,
-          pose: pose,
-          takenAt: DateTime.now(),
-        );
+        await PhotoLibrary(
+          db: db,
+          store: PhotoStore(paths),
+        ).importPhoto(source: file, pose: pose, takenAt: DateTime.now());
         return PickRecoveryOutcome.recovered;
 
       case PickKind.exerciseFrame:

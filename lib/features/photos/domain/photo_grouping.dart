@@ -90,3 +90,42 @@ PhotoPose mostComparablePose(Iterable<ProgressPhotoRow> photos) {
   }
   return best;
 }
+
+/// How many photographs a comparison holds at most.
+///
+/// Above this each one is a postage stamp and the comparison stops being one;
+/// scrolling the grid is better at that point.
+const int kMaxComparedPhotos = 4;
+
+/// The chosen photographs, oldest first, without the ones that are gone.
+///
+/// The ids travel in the address, so they can name a photo that has since been
+/// deleted - and their order is the order you tapped, which is not the order
+/// the pictures were taken in. Both are sorted out here rather than on screen.
+List<ProgressPhotoRow> chosenPhotos({
+  required Iterable<ProgressPhotoRow> all,
+  required Iterable<String> ids,
+}) {
+  final byId = {for (final photo in all) photo.id: photo};
+  final chosen = [
+    for (final id in ids)
+      if (byId[id] != null) byId[id]!,
+  ];
+  chosen.sort((a, b) => a.takenAt.compareTo(b.takenAt));
+  return chosen;
+}
+
+/// Whether the selection holds more than one pose.
+bool mixedPoses(Iterable<ProgressPhotoRow> photos) =>
+    {for (final photo in photos) photo.pose}.length > 1;
+
+/// What the grid ticks before you have chosen anything yourself: the two most
+/// recent of the pose you have most of, which is the comparison people want.
+List<String> defaultComparison(List<ProgressPhotoRow> newestFirst) {
+  final pose = mostComparablePose(newestFirst);
+  final ofPose = [
+    for (final photo in newestFirst)
+      if (PhotoPose.fromWire(photo.pose) == pose) photo,
+  ];
+  return [for (final photo in ofPose.take(2)) photo.id];
+}

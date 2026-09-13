@@ -12,30 +12,97 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../data/photo_store.dart';
+import '../../../core/theme/app_colors.dart';
 import '../domain/photo_grouping.dart';
 import 'photo_detail_sheet.dart';
 import 'photo_providers.dart';
 
-/// Progress photos, grouped per month.
-class PhotosScreen extends ConsumerWidget {
+/// Progress photos, grouped by month and day.
+class PhotosScreen extends ConsumerStatefulWidget {
   const PhotosScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PhotosScreen> createState() => _PhotosScreenState();
+}
+
+class _PhotosScreenState extends ConsumerState<PhotosScreen> {
+  /// Which photographs are ticked, or null when you are not choosing.
+  ///
+  /// A set rather than a flag plus a list: the tiles ask "am I in it" far more
+  /// often than anything asks for the order, and the order is the order they
+  /// were taken, which the comparison works out for itself.
+  Set<String>? _chosen;
+
+  bool get _choosing => _chosen != null;
+
+  void _startChoosing(List<ProgressPhotoRow> newestFirst) {
+    // Not from nothing: the two most recent of the pose you have most of is
+    // the comparison people are after, and it is the one this screen used to
+    // make for you. You can still untick either.
+    setState(() => _chosen = defaultComparison(newestFirst).toSet());
+  }
+
+  void _toggle(String id) {
+    final chosen = _chosen;
+    if (chosen == null) return;
+
+    if (chosen.contains(id)) {
+      setState(() => chosen.remove(id));
+      return;
+    }
+    if (chosen.length >= kMaxComparedPhotos) {
+      showSnack(context, 'Hoogstens $kMaxComparedPhotos foto\'s tegelijk.');
+      return;
+    }
+    setState(() => chosen.add(id));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final photos = ref.watch(progressPhotosProvider);
     final paths = ref.watch(appPathsProvider).value;
+    final list = photos.value ?? const [];
+    final chosen = _chosen;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Voortgangsfoto\'s'),
+        title: Text(_choosing ? 'Kies foto\'s' : 'Voortgangsfoto\'s'),
+        leading: _choosing
+            ? IconButton(
+                tooltip: 'Stoppen met kiezen',
+                onPressed: () => setState(() => _chosen = null),
+                icon: const Icon(Icons.close),
+              )
+            : null,
         actions: [
-          IconButton(
-            tooltip: 'Vergelijken',
-            onPressed: () => context.push(Routes.photoCompare),
-            icon: const Icon(Icons.compare_arrows),
-          ),
+          if (!_choosing && list.length >= 2)
+            IconButton(
+              tooltip: 'Vergelijken',
+              onPressed: () => _startChoosing(list),
+              icon: const Icon(Icons.compare_arrows),
+            ),
         ],
       ),
+      bottomNavigationBar: chosen == null
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: FilledButton.icon(
+                  // Below two there is nothing to compare, and a button that
+                  // explains why it did nothing is worse than one you can see
+                  // is not ready.
+                  onPressed: chosen.length < 2
+                      ? null
+                      : () {
+                          setState(() => _chosen = null);
+                          context.push(Routes.photoCompareOf(chosen));
+                        },
+                  icon: const Icon(Icons.compare_arrows),
+                  label: Text('Vergelijk (${chosen.length})'),
+                ),
+              ),
+            ),
       body: photos.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('$error')),
@@ -79,8 +146,15 @@ class PhotosScreen extends ConsumerWidget {
                             crossAxisSpacing: AppSpacing.sm,
                             childAspectRatio: 0.72,
                           ),
-                      itemBuilder: (context, index) =>
-                          _PhotoTile(photo: day.photos[index], paths: paths),
+                      itemBuilder: (context, index) {
+                        final photo = day.photos[index];
+                        return _PhotoTile(
+                          photo: photo,
+                          paths: paths,
+                          chosen: chosen?.contains(photo.id),
+                          onChoose: () => _toggle(photo.id),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -187,33 +261,57 @@ class _DayHeader extends StatelessWidget {
 }
 
 class _PhotoTile extends ConsumerWidget {
-  const _PhotoTile({required this.photo, required this.paths});
+  const _PhotoTile({
+    required this.photo,
+    required this.paths,
+    required this.chosen,
+    required this.onChoose,
+  });
 
   final ProgressPhotoRow photo;
   final AppPaths paths;
 
+  /// Null while you are not choosing, which is also when a tap opens the photo
+  /// and a long press offers to delete it.
+  final bool? chosen;
+  final VoidCallback onChoose;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final file = paths.photoFile(photo.fileName);
+    final choosing = chosen != null;
 
     return GestureDetector(
-      onTap: () => showPhotoDetail(
-        context,
-        photoId: photo.id,
-        takenAt: DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
-      ),
-      onLongPress: () async {
-        final ok = await confirm(
-          context,
-          title: 'Foto verwijderen?',
-          message: 'De foto wordt van je toestel verwijderd.',
-          confirmLabel: 'Verwijderen',
-          destructive: true,
-        );
-        if (ok) await ref.read(photoActionsProvider).delete(photo);
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      onTap: choosing
+          ? onChoose
+          : () => showPhotoDetail(
+              context,
+              photoId: photo.id,
+              takenAt: DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
+            ),
+      // Deleting stays on the long press it has always been on, and steps
+      // aside entirely while you are choosing: one tick away from a
+      // confirmation you did not ask for is too close.
+      onLongPress: choosing
+          ? null
+          : () async {
+              final ok = await confirm(
+                context,
+                title: 'Foto verwijderen?',
+                message: 'De foto wordt van je toestel verwijderd.',
+                confirmLabel: 'Verwijderen',
+                destructive: true,
+              );
+              if (ok) await ref.read(photoActionsProvider).delete(photo);
+            },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: (chosen ?? false)
+              ? Border.all(color: AppColors.accent, width: 3)
+              : null,
+        ),
+        clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -224,6 +322,20 @@ class _PhotoTile extends ConsumerWidget {
               errorBuilder: (context, error, stack) =>
                   const MissingPhotoPlaceholder(),
             ),
+            if (choosing)
+              Container(
+                color: Colors.black.withValues(alpha: chosen! ? 0.0 : 0.45),
+              ),
+            if (choosing)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Icon(
+                  chosen! ? Icons.check_circle : Icons.radio_button_unchecked,
+                  size: 22,
+                  color: chosen! ? AppColors.accent : Colors.white,
+                ),
+              ),
             Positioned(
               left: 0,
               right: 0,

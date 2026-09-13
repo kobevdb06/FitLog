@@ -1614,3 +1614,40 @@ zijkanten eraf - een halve telefoonbreedte is een smal raampje op een staande
 foto, en sta je niet precies in het midden, dan vergelijk je twee muren. Nu is
 het `contain`: de hele foto, kleiner. En een tik erop opent hem apart, waar wel
 ruimte is.
+
+## 106. Je kiest de foto's zelf
+
+De posebalk is weg. Hij bestond om te voorkomen dat de app je een voorkant
+tegen een achterkant liet zetten - maar dat probleem was dat de app die
+combinatie *voorstelde*, niet dat je hem kon maken.
+
+Nu ga je vanuit het raster in keuzestand: tegels krijgen een vinkje, onderaan
+staat "Vergelijk (n)". Het begint niet leeg - de twee nieuwste van de pose waar
+je er het meest van hebt staan al aan, precies de vergelijking die het scherm
+vroeger voor je maakte. Alleen is het nu een startpunt in plaats van het enige
+antwoord.
+
+Kies je poses door elkaar, dan zegt het scherm dat bovenaan en verder niets.
+Jouw vergelijking, jouw keuze.
+
+Het maximum is vier. Daarboven is elke foto een postzegel en is het geen
+vergelijking meer; dan kan je beter door het raster scrollen. Bij drie of vier
+scrollt de rij zijwaarts in plaats van de breedte verder te delen.
+
+Lang indrukken blijft verwijderen, ook al zit verwijderen nu ook in Bewerken.
+Je hebt er spiergeheugen voor. Tijdens het kiezen doet het gebaar niets: één
+vinkje naast een bevestiging om te verwijderen is te dichtbij.
+
+De gekozen ids staan in het adres (`?fotos=...`), niet in een meegegeven
+object. Android mag de app onder je vandaan opnieuw opbouwen; met een object
+was de vergelijking dan weg.
+
+## 107. Twee staande foto's naast elkaar blijven klein
+
+Ook zonder bijsnijden. Daarom is er bij precies twee foto's een tweede
+weergave: beide op volle breedte over elkaar, met een naad die je versleept.
+Geen halvering en geen bijsnijden - maar het werkt alleen als de twee vanaf
+ongeveer dezelfde plek genomen zijn, en dat kan de app niet weten. Dus is het
+een knop en geen automatische keuze.
+
+Bij drie of meer is er geen knop: een naad tussen drie foto's bestaat niet.

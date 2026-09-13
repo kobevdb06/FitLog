@@ -4,6 +4,7 @@ import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/photos/presentation/photo_compare_screen.dart';
+import 'package:fitlog/features/photos/presentation/photo_wipe.dart';
 import 'package:fitlog/features/photos/presentation/photos_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,6 +52,14 @@ void main() {
     takenAt: at,
     note: note,
   );
+
+  /// The tile a tick or a circle sits on.
+  ///
+  /// The mark itself is drawn on top and handles nothing; the tap belongs to
+  /// the tile underneath it, and aiming at the mark makes the test warn that
+  /// it hit something else.
+  Finder tileOf(Finder mark) =>
+      find.ancestor(of: mark, matching: find.byType(GestureDetector)).first;
 
   Future<void> pump(WidgetTester tester, Widget screen) async {
     tester.view.physicalSize = const Size(1100, 2400);
@@ -111,38 +120,113 @@ void main() {
     });
   });
 
-  group('comparing', () {
-    testWidgets('is a pose, not two arbitrary pictures', (tester) async {
-      // A front against a back has nothing to say, and the screen used to let
-      // you build exactly that.
-      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
-      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
-      await pump(tester, const PhotoCompareScreen());
-
-      expect(find.text('Voorkant (2)'), findsOneWidget);
-      expect(find.text('Achterkant (0)'), findsOneWidget);
-      expect(find.text('1 sep 2026'), findsOneWidget);
-      expect(find.text('13 sep 2026'), findsOneWidget);
-    });
-
-    testWidgets('opens on the pose you have most of', (tester) async {
-      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.back);
-      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.back);
-      await photo(at: DateTime(2026, 9, 7), pose: PhotoPose.front);
-      await pump(tester, const PhotoCompareScreen());
-
-      expect(find.text('Te weinig van deze pose'), findsNothing);
-      expect(find.text('7 sep 2026'), findsNothing);
-    });
-
-    testWidgets('shows each photo whole, never cut down to fit', (
+  group('choosing what to compare', () {
+    testWidgets('starts from the two newest of your usual pose', (
       tester,
     ) async {
-      // Half a screen is a narrow window on a portrait photo: filling it cuts
-      // the sides off, and off-centre subjects disappear with them.
+      // The screen used to make exactly this comparison for you. Now it is a
+      // starting point you can change rather than the only answer.
+      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
+      await photo(at: DateTime(2026, 9, 7), pose: PhotoPose.front);
+      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
+      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.back);
+      await pump(tester, const PhotosScreen());
+
+      await tester.tap(find.byIcon(Icons.compare_arrows));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kies foto\'s'), findsOneWidget);
+      expect(find.text('Vergelijk (2)'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
+    });
+
+    testWidgets('a tap adds one and a second tap takes it away', (
+      tester,
+    ) async {
       await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
       await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
-      await pump(tester, const PhotoCompareScreen());
+      await photo(at: DateTime(2026, 9, 7), pose: PhotoPose.back);
+      await pump(tester, const PhotosScreen());
+
+      await tester.tap(find.byIcon(Icons.compare_arrows));
+      await tester.pumpAndSettle();
+
+      await tester.tap(tileOf(find.byIcon(Icons.radio_button_unchecked)));
+      await tester.pumpAndSettle();
+      expect(find.text('Vergelijk (3)'), findsOneWidget);
+
+      await tester.tap(tileOf(find.byIcon(Icons.check_circle).first));
+      await tester.pumpAndSettle();
+      expect(find.text('Vergelijk (2)'), findsOneWidget);
+    });
+
+    testWidgets('and stops at four', (tester) async {
+      // Beyond four each picture is a postage stamp and the comparison stops
+      // being one.
+      // One day, so all six tiles are on screen and every tap can land.
+      for (var hour = 8; hour < 14; hour++) {
+        await photo(at: DateTime(2026, 9, 7, hour), pose: PhotoPose.front);
+      }
+      await pump(tester, const PhotosScreen());
+
+      await tester.tap(find.byIcon(Icons.compare_arrows));
+      await tester.pumpAndSettle();
+
+      // Two are ticked already, so four more taps try to make it six.
+      for (var extra = 0; extra < 4; extra++) {
+        await tester.tap(tileOf(find.byIcon(Icons.radio_button_unchecked)));
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('Vergelijk (4)'), findsOneWidget);
+      expect(find.text('Hoogstens 4 foto\'s tegelijk.'), findsOneWidget);
+    });
+
+    testWidgets('leaving the choosing puts the photo back on a tap', (
+      tester,
+    ) async {
+      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
+      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
+      await pump(tester, const PhotosScreen());
+
+      await tester.tap(find.byIcon(Icons.compare_arrows));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vergelijk (2)'), findsNothing);
+      await tester.tap(tileOf(find.text('Voorkant').first));
+      await tester.pumpAndSettle();
+      expect(find.text('Bewerken'), findsOneWidget);
+    });
+  });
+
+  group('the comparison itself', () {
+    Future<void> compare(WidgetTester tester, List<String> ids) =>
+        pump(tester, PhotoCompareScreen(photoIds: ids));
+
+    testWidgets('shows the ones you picked, oldest first', (tester) async {
+      // The ids arrive in the order you tapped them; the pictures belong in
+      // the order they were taken.
+      final newest = await photo(at: DateTime(2026, 9, 13));
+      final oldest = await photo(at: DateTime(2026, 9, 1));
+
+      await compare(tester, [newest, oldest]);
+
+      expect(
+        tester.getTopLeft(find.text('1 sep 2026')).dx,
+        lessThan(tester.getTopLeft(find.text('13 sep 2026')).dx),
+      );
+      expect(find.text('12'), findsOneWidget);
+    });
+
+    testWidgets('whole, never cut down to fit', (tester) async {
+      // Half a screen is a narrow window on a portrait photo: filling it cuts
+      // the sides off, and off-centre subjects disappear with them.
+      final a = await photo(at: DateTime(2026, 9, 1));
+      final b = await photo(at: DateTime(2026, 9, 13));
+
+      await compare(tester, [a, b]);
 
       final images = tester.widgetList<Image>(find.byType(Image));
       expect(images, hasLength(2));
@@ -151,41 +235,75 @@ void main() {
       }
     });
 
-    testWidgets('and every option fits on a narrow screen', (tester) async {
-      // A Row clipped the third pose off the right edge of a phone.
-      tester.view.physicalSize = const Size(360, 780);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
+    testWidgets('an id of a photo that is gone is simply not there', (
+      tester,
+    ) async {
+      final a = await photo(at: DateTime(2026, 9, 1));
+      final b = await photo(at: DateTime(2026, 9, 13));
 
-      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
-      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
+      await compare(tester, [a, 'weg', b]);
 
-      await tester.pumpWidget(
-        wrapWithContainer(container, const PhotoCompareScreen()),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(tester.takeException(), isNull);
-      for (final label in ['Voorkant (2)', 'Zijkant (0)', 'Achterkant (0)']) {
-        final box = tester.getRect(find.text(label));
-        expect(
-          box.right,
-          lessThanOrEqualTo(360),
-          reason: '$label valt van het scherm',
-        );
-      }
+      expect(find.byType(Image), findsNWidgets(2));
     });
 
-    testWidgets('and says so when a pose has too few', (tester) async {
-      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
-      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
-      await pump(tester, const PhotoCompareScreen());
+    testWidgets('and one photo is not a comparison', (tester) async {
+      final a = await photo(at: DateTime(2026, 9, 1));
 
-      await tester.tap(find.text('Zijkant (0)'));
+      await compare(tester, [a]);
+
+      expect(find.text('Te weinig foto\'s'), findsOneWidget);
+    });
+
+    testWidgets('mixed poses are said out loud, not refused', (tester) async {
+      final front = await photo(at: DateTime(2026, 9, 1));
+      final back = await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.back);
+
+      await compare(tester, [front, back]);
+
+      expect(
+        find.text('Je vergelijkt Voorkant met Achterkant.'),
+        findsOneWidget,
+      );
+      expect(find.byType(Image), findsNWidgets(2));
+    });
+
+    testWidgets('the same pose twice says nothing', (tester) async {
+      final a = await photo(at: DateTime(2026, 9, 1));
+      final b = await photo(at: DateTime(2026, 9, 13));
+
+      await compare(tester, [a, b]);
+
+      expect(find.textContaining('Je vergelijkt'), findsNothing);
+    });
+  });
+
+  group('the wipe', () {
+    testWidgets('is offered for a pair and swaps the layout', (tester) async {
+      final a = await photo(at: DateTime(2026, 9, 1));
+      final b = await photo(at: DateTime(2026, 9, 13));
+
+      await pump(tester, PhotoCompareScreen(photoIds: [a, b]));
+      expect(find.byType(PhotoWipe), findsNothing);
+
+      await tester.tap(find.byTooltip('Over elkaar schuiven'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Te weinig van deze pose'), findsOneWidget);
+      expect(find.byType(PhotoWipe), findsOneWidget);
+      // Both pictures in one frame, each on the full width.
+      expect(find.byType(Image), findsNWidgets(2));
+    });
+
+    testWidgets('and not for three, where there is no seam to drag', (
+      tester,
+    ) async {
+      final a = await photo(at: DateTime(2026, 9, 1));
+      final b = await photo(at: DateTime(2026, 9, 7));
+      final c = await photo(at: DateTime(2026, 9, 13));
+
+      await pump(tester, PhotoCompareScreen(photoIds: [a, b, c]));
+
+      expect(find.byTooltip('Over elkaar schuiven'), findsNothing);
+      expect(find.byType(Image), findsNWidgets(3));
     });
   });
 }

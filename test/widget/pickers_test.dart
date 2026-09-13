@@ -5,7 +5,6 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/core/widgets/dialogs.dart';
 import 'package:fitlog/core/widgets/common.dart';
-import 'package:fitlog/features/photos/presentation/photo_compare_screen.dart';
 import 'package:fitlog/features/routines/presentation/routine_editor_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -158,34 +157,8 @@ void main() {
     });
   });
 
-  group('the photo under a comparison', () {
-    setUp(() async {
-      // The same pose twice: comparing is per pose now, so two different ones
-      // would leave the screen with nothing to put side by side.
-      for (final (id, day, pose) in [
-        ('ph-1', 1, 'front'),
-        ('ph-2', 8, 'front'),
-      ]) {
-        await db.recordsDao.addPhoto(
-          fileName: '$id.jpg',
-          pose: PhotoPose.fromWire(pose),
-          takenAt: DateTime(2026, 3, day),
-        );
-      }
-    });
-
-    testWidgets('is chosen from a sheet, not a dropdown', (tester) async {
-      await pump(tester, const PhotoCompareScreen());
-
-      expect(find.byType(DropdownButton<Object?>), findsNothing);
-
-      await tester.tap(find.byIcon(Icons.expand_more).first);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Welke foto?'), findsOneWidget);
-      // Two photos, and each line carries the picture itself.
-      expect(find.byType(Image), findsWidgets);
-      expect(find.text('1 mrt 2026'), findsWidgets);
-    });
-  });
+  // The comparison screen used to carry a dropdown under each photo. It has
+  // no picker at all now - you choose the pictures in the grid - so what was
+  // tested here lives in photos_test.dart, and no_dropdowns_test.dart still
+  // guards the shape of the whole of lib/.
 }

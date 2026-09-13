@@ -261,8 +261,15 @@ GoRouter router(Ref ref) {
                     routes: [
                       GoRoute(
                         path: 'vergelijken',
-                        pageBuilder: (context, state) =>
-                            appPage(state, const PhotoCompareScreen()),
+                        pageBuilder: (context, state) => appPage(
+                          state,
+                          PhotoCompareScreen(
+                            photoIds: (state.uri.queryParameters['fotos'] ?? '')
+                                .split(',')
+                                .where((id) => id.isNotEmpty)
+                                .toList(),
+                          ),
+                        ),
                       ),
                     ],
                   ),

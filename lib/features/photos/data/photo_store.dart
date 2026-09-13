@@ -60,7 +60,10 @@ class PhotoStore {
   /// exercise frame is never shown larger than a card and asks for less.
   Future<String> import(File source, {int? maxLongEdge}) async {
     final bytes = await source.readAsBytes();
-    final processed = await _process(bytes, maxLongEdge ?? PhotoStore.maxLongEdge);
+    final processed = await _process(
+      bytes,
+      maxLongEdge ?? PhotoStore.maxLongEdge,
+    );
 
     final dir = await paths.ensurePhotosDirectory();
     final fileName = '${_uuid.v4()}.jpg';

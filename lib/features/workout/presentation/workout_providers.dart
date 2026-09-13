@@ -31,36 +31,36 @@ SetValues setValues(WorkoutSetRow row) => (
   rpe: row.rpe,
 );
 
-/// What the same exercise looked like last time, keyed by exercise and side.
+/// What every exercise in the running session looked like last time.
 ///
-/// [side] is null for the last time it was done with both hands, and a side
-/// for the last time it was done one at a time. The two are separate
-/// histories: switching the exercise over swaps which one the column shows.
+/// One provider for the whole session rather than two per exercise per side.
+/// The old pair each awaited the running workout itself while needing nothing
+/// from it but the id, so every set you ticked off re-ran six queries about a
+/// session that cannot have changed - and rebuilt the screen once per answer.
+///
+/// [lineUp] is what it is really keyed on: adding an exercise mid-session has
+/// to bring its history along, and nothing else about the session can change
+/// what came before it.
 @riverpod
-Future<List<WorkoutSetRow>> previousSets(
+Future<PreviousSession> previousSession(
   Ref ref,
-  String exerciseId, [
-  SetSide? side,
-]) async {
-  final db = ref.watch(databaseProvider);
-  final active = await ref.watch(activeWorkoutProvider.future);
-  return db.workoutsDao.previousSetsFor(
-    exerciseId,
-    excludingWorkoutId: active?.workout.id,
-    side: side,
-  );
+  String workoutId,
+  String lineUp,
+) {
+  if (lineUp.isEmpty) return Future.value(PreviousSession.empty);
+  return ref.watch(databaseProvider).workoutsDao.previousSessionFor(workoutId);
 }
 
-/// The note from the previous session, shown as a grey placeholder.
-@riverpod
-Future<String?> previousNote(Ref ref, String exerciseId) async {
-  final db = ref.watch(databaseProvider);
-  final active = await ref.watch(activeWorkoutProvider.future);
-  return db.workoutsDao.previousNoteFor(
-    exerciseId,
-    excludingWorkoutId: active?.workout.id,
-  );
-}
+/// Which exercises are in a session and how each is being done.
+///
+/// The key the history is cached under. Two sessions of the same exercises in
+/// the same order have the same history, so ticking off a set leaves it alone -
+/// which is the whole point: nothing you do during a session can change what
+/// the session before it looked like.
+String lineUpOf(WorkoutDetail workout) => [
+  for (final e in workout.exercises)
+    '${e.exercise.id}:${e.workoutExercise.isUnilateral}',
+].join(',');
 
 /// The set ids in this workout that produced a personal record.
 @riverpod

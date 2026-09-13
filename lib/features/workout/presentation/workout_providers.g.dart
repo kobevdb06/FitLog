@@ -58,72 +58,85 @@ final class ActiveWorkoutProvider
 
 String _$activeWorkoutHash() => r'5b6903ee8bfb1d6308d47351b30e6023c4423125';
 
-/// What the same exercise looked like last time, keyed by exercise and side.
+/// What every exercise in the running session looked like last time.
 ///
-/// [side] is null for the last time it was done with both hands, and a side
-/// for the last time it was done one at a time. The two are separate
-/// histories: switching the exercise over swaps which one the column shows.
-
-@ProviderFor(previousSets)
-final previousSetsProvider = PreviousSetsFamily._();
-
-/// What the same exercise looked like last time, keyed by exercise and side.
+/// One provider for the whole session rather than two per exercise per side.
+/// The old pair each awaited the running workout itself while needing nothing
+/// from it but the id, so every set you ticked off re-ran six queries about a
+/// session that cannot have changed - and rebuilt the screen once per answer.
 ///
-/// [side] is null for the last time it was done with both hands, and a side
-/// for the last time it was done one at a time. The two are separate
-/// histories: switching the exercise over swaps which one the column shows.
+/// [lineUp] is what it is really keyed on: adding an exercise mid-session has
+/// to bring its history along, and nothing else about the session can change
+/// what came before it.
 
-final class PreviousSetsProvider
+@ProviderFor(previousSession)
+final previousSessionProvider = PreviousSessionFamily._();
+
+/// What every exercise in the running session looked like last time.
+///
+/// One provider for the whole session rather than two per exercise per side.
+/// The old pair each awaited the running workout itself while needing nothing
+/// from it but the id, so every set you ticked off re-ran six queries about a
+/// session that cannot have changed - and rebuilt the screen once per answer.
+///
+/// [lineUp] is what it is really keyed on: adding an exercise mid-session has
+/// to bring its history along, and nothing else about the session can change
+/// what came before it.
+
+final class PreviousSessionProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<WorkoutSetRow>>,
-          List<WorkoutSetRow>,
-          FutureOr<List<WorkoutSetRow>>
+          AsyncValue<PreviousSession>,
+          PreviousSession,
+          FutureOr<PreviousSession>
         >
-    with
-        $FutureModifier<List<WorkoutSetRow>>,
-        $FutureProvider<List<WorkoutSetRow>> {
-  /// What the same exercise looked like last time, keyed by exercise and side.
+    with $FutureModifier<PreviousSession>, $FutureProvider<PreviousSession> {
+  /// What every exercise in the running session looked like last time.
   ///
-  /// [side] is null for the last time it was done with both hands, and a side
-  /// for the last time it was done one at a time. The two are separate
-  /// histories: switching the exercise over swaps which one the column shows.
-  PreviousSetsProvider._({
-    required PreviousSetsFamily super.from,
-    required (String, SetSide?) super.argument,
+  /// One provider for the whole session rather than two per exercise per side.
+  /// The old pair each awaited the running workout itself while needing nothing
+  /// from it but the id, so every set you ticked off re-ran six queries about a
+  /// session that cannot have changed - and rebuilt the screen once per answer.
+  ///
+  /// [lineUp] is what it is really keyed on: adding an exercise mid-session has
+  /// to bring its history along, and nothing else about the session can change
+  /// what came before it.
+  PreviousSessionProvider._({
+    required PreviousSessionFamily super.from,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
-         name: r'previousSetsProvider',
+         name: r'previousSessionProvider',
          isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$previousSetsHash();
+  String debugGetCreateSourceHash() => _$previousSessionHash();
 
   @override
   String toString() {
-    return r'previousSetsProvider'
+    return r'previousSessionProvider'
         ''
         '$argument';
   }
 
   @$internal
   @override
-  $FutureProviderElement<List<WorkoutSetRow>> $createElement(
+  $FutureProviderElement<PreviousSession> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<List<WorkoutSetRow>> create(Ref ref) {
-    final argument = this.argument as (String, SetSide?);
-    return previousSets(ref, argument.$1, argument.$2);
+  FutureOr<PreviousSession> create(Ref ref) {
+    final argument = this.argument as (String, String);
+    return previousSession(ref, argument.$1, argument.$2);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is PreviousSetsProvider && other.argument == argument;
+    return other is PreviousSessionProvider && other.argument == argument;
   }
 
   @override
@@ -132,118 +145,47 @@ final class PreviousSetsProvider
   }
 }
 
-String _$previousSetsHash() => r'be1e2d478949fb324a1f879741ba1920a6aa4172';
+String _$previousSessionHash() => r'9d2c29449962a08972ee8114de82c962ae2229fe';
 
-/// What the same exercise looked like last time, keyed by exercise and side.
+/// What every exercise in the running session looked like last time.
 ///
-/// [side] is null for the last time it was done with both hands, and a side
-/// for the last time it was done one at a time. The two are separate
-/// histories: switching the exercise over swaps which one the column shows.
+/// One provider for the whole session rather than two per exercise per side.
+/// The old pair each awaited the running workout itself while needing nothing
+/// from it but the id, so every set you ticked off re-ran six queries about a
+/// session that cannot have changed - and rebuilt the screen once per answer.
+///
+/// [lineUp] is what it is really keyed on: adding an exercise mid-session has
+/// to bring its history along, and nothing else about the session can change
+/// what came before it.
 
-final class PreviousSetsFamily extends $Family
+final class PreviousSessionFamily extends $Family
     with
-        $FunctionalFamilyOverride<
-          FutureOr<List<WorkoutSetRow>>,
-          (String, SetSide?)
-        > {
-  PreviousSetsFamily._()
+        $FunctionalFamilyOverride<FutureOr<PreviousSession>, (String, String)> {
+  PreviousSessionFamily._()
     : super(
         retry: null,
-        name: r'previousSetsProvider',
+        name: r'previousSessionProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  /// What the same exercise looked like last time, keyed by exercise and side.
+  /// What every exercise in the running session looked like last time.
   ///
-  /// [side] is null for the last time it was done with both hands, and a side
-  /// for the last time it was done one at a time. The two are separate
-  /// histories: switching the exercise over swaps which one the column shows.
+  /// One provider for the whole session rather than two per exercise per side.
+  /// The old pair each awaited the running workout itself while needing nothing
+  /// from it but the id, so every set you ticked off re-ran six queries about a
+  /// session that cannot have changed - and rebuilt the screen once per answer.
+  ///
+  /// [lineUp] is what it is really keyed on: adding an exercise mid-session has
+  /// to bring its history along, and nothing else about the session can change
+  /// what came before it.
 
-  PreviousSetsProvider call(String exerciseId, [SetSide? side]) =>
-      PreviousSetsProvider._(argument: (exerciseId, side), from: this);
-
-  @override
-  String toString() => r'previousSetsProvider';
-}
-
-/// The note from the previous session, shown as a grey placeholder.
-
-@ProviderFor(previousNote)
-final previousNoteProvider = PreviousNoteFamily._();
-
-/// The note from the previous session, shown as a grey placeholder.
-
-final class PreviousNoteProvider
-    extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
-    with $FutureModifier<String?>, $FutureProvider<String?> {
-  /// The note from the previous session, shown as a grey placeholder.
-  PreviousNoteProvider._({
-    required PreviousNoteFamily super.from,
-    required String super.argument,
-  }) : super(
-         retry: null,
-         name: r'previousNoteProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+  PreviousSessionProvider call(String workoutId, String lineUp) =>
+      PreviousSessionProvider._(argument: (workoutId, lineUp), from: this);
 
   @override
-  String debugGetCreateSourceHash() => _$previousNoteHash();
-
-  @override
-  String toString() {
-    return r'previousNoteProvider'
-        ''
-        '($argument)';
-  }
-
-  @$internal
-  @override
-  $FutureProviderElement<String?> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<String?> create(Ref ref) {
-    final argument = this.argument as String;
-    return previousNote(ref, argument);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is PreviousNoteProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
-  }
-}
-
-String _$previousNoteHash() => r'494fabe451dba3efaf155b722928172cfebbd551';
-
-/// The note from the previous session, shown as a grey placeholder.
-
-final class PreviousNoteFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<String?>, String> {
-  PreviousNoteFamily._()
-    : super(
-        retry: null,
-        name: r'previousNoteProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  /// The note from the previous session, shown as a grey placeholder.
-
-  PreviousNoteProvider call(String exerciseId) =>
-      PreviousNoteProvider._(argument: exerciseId, from: this);
-
-  @override
-  String toString() => r'previousNoteProvider';
+  String toString() => r'previousSessionProvider';
 }
 
 /// The set ids in this workout that produced a personal record.

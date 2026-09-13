@@ -784,6 +784,48 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  /// What every exercise in [workoutId] looked like the last time you did it.
+  ///
+  /// One call instead of two per exercise per side. The screen used to ask for
+  /// each of them separately, so a session with three exercises started seven
+  /// queries that finished at seven different moments - and rebuilt the whole
+  /// screen at each of them, in the middle of the page transition.
+  Future<PreviousSession> previousSessionFor(String workoutId) async {
+    final exercises = await (select(
+      workoutExercisesTable,
+    )..where((t) => t.workoutId.equals(workoutId))).get();
+
+    final sets = <PreviousKey, List<WorkoutSetRow>>{};
+    final notes = <String, String>{};
+
+    for (final exercise in exercises) {
+      // One hand at a time is two histories; both hands is one. Asking for the
+      // sides an exercise is not being done with would be work for nothing.
+      final sides = exercise.isUnilateral
+          ? const <SetSide?>[SetSide.left, SetSide.right]
+          : const <SetSide?>[null];
+
+      for (final side in sides) {
+        sets[(
+          exerciseId: exercise.exerciseId,
+          side: side,
+        )] = await previousSetsFor(
+          exercise.exerciseId,
+          excludingWorkoutId: workoutId,
+          side: side,
+        );
+      }
+
+      final note = await previousNoteFor(
+        exercise.exerciseId,
+        excludingWorkoutId: workoutId,
+      );
+      if (note != null) notes[exercise.exerciseId] = note;
+    }
+
+    return PreviousSession(sets: sets, notes: notes);
+  }
+
   /// Marks every set of an exercise that is still open as skipped, or clears
   /// those marks again.
   ///

@@ -189,3 +189,28 @@ class LifetimeStats {
   /// 1 = Monday .. 7 = Sunday, or null when there is no data yet.
   final int? busiestWeekday;
 }
+
+/// One exercise and, when it is done one hand at a time, which hand.
+typedef PreviousKey = ({String exerciseId, SetSide? side});
+
+/// What every exercise in a session looked like the last time round.
+///
+/// Loaded in one go and keyed by exercise, so the screen asks once instead of
+/// twice per exercise per side.
+class PreviousSession {
+  const PreviousSession({required this.sets, required this.notes});
+
+  static const PreviousSession empty = PreviousSession(sets: {}, notes: {});
+
+  final Map<PreviousKey, List<WorkoutSetRow>> sets;
+
+  /// Only the exercises you actually wrote something about last time.
+  final Map<String, String> notes;
+
+  /// Null rather than empty when that exercise has no history at all: the
+  /// column shows a dash for the first, and nothing at all for the second.
+  List<WorkoutSetRow>? setsFor(String exerciseId, SetSide? side) =>
+      sets[(exerciseId: exerciseId, side: side)];
+
+  String? noteFor(String exerciseId) => notes[exerciseId];
+}

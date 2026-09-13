@@ -1651,3 +1651,50 @@ ongeveer dezelfde plek genomen zijn, en dat kan de app niet weten. Dus is het
 een knop en geen automatische keuze.
 
 Bij drie of meer is er geen knop: een naad tussen drie foto's bestaat niet.
+
+## 108. Het workoutscherm bouwde zichzelf te vaak opnieuw
+
+Gemeten op het toestel, niet geraden: elke volledige build van dit scherm kost
+17 tot 27 ms, en je budget is 16,7 ms per frame. Eén herbouw op het verkeerde
+moment is genoeg om een animatie te laten haperen. Er waren er meer dan één.
+
+**De vorige sessie.** `previousSets` en `previousNote` waren twee providers per
+oefening per kant, en allebei deden ze `await ref.watch(activeWorkoutProvider
+.future)` terwijl ze er alleen het id uit nodig hadden. Elke set die je afvinkte
+draaide dus zes query's naar een sessie die onmogelijk veranderd kan zijn, en
+elk antwoord bouwde het scherm opnieuw op.
+
+Nu is het één `previousSession` voor de hele sessie, gesleuteld op welke
+oefeningen erin zitten en hoe ze gedaan worden. Die bezetting is het enige dat
+de geschiedenis kan veranderen: een oefening toevoegen moet haar verleden
+meebrengen, en verder kan niets tijdens een sessie iets aan de vorige sessie
+veranderen. Het is een string en geen lijst, want een lijst is nooit gelijk aan
+de volgende lijst.
+
+Gemeten effect: de builds bij het binnenkomen gingen van 14-31 ms naar 7-10 ms.
+
+**De klok.** `Timer.periodic(1 seconde)` riep `setState(() {})` aan op het hele
+scherm, en het enige dat veranderde was één regel tekst met de verstreken tijd.
+Elke seconde werden dus alle zichtbare oefeningen en al hun setregels opnieuw
+opgebouwd voor een klok - 17 tot 27 ms per seconde, de hele sessie lang, met
+één kans op drie dat het midden in een paginaovergang valt. De klok heeft nu
+haar eigen widget met haar eigen timer.
+
+**Wat de kaarten niet meer doen.** Ze keken zelf naar vier tot vijf providers.
+Nu krijgen ze alles doorgegeven. Een kaart die zelf kijkt is een kaart die op
+haar eigen moment herbouwt, en er zijn er net zoveel als je oefeningen hebt.
+
+## 109. Over meten
+
+Twee instrumenten die ik onderweg heb weggegooid, opgeschreven zodat ik ze niet
+opnieuw pak:
+
+`dumpsys gfxinfo` en Choreographer meten de Android-viewpijplijn. Flutter tekent
+naar zijn eigen Surface, dus die tellers rapporteren nul terwijl de app zichtbaar
+hapert.
+
+`debugPrint` is gesmoord: regels worden gebufferd en in bursts weggeschreven. De
+duur die je zelf met een `Stopwatch` meet klopt, maar de tijdstempels in het
+logboek zeggen niets over wanneer iets gebeurde. Ik heb daar een keer een
+conclusie op gebaseerd die ik niet kon trekken. Wie het clusteren van gebeurte-
+nissen wil meten moet ze in het proces verzamelen en in één keer wegschrijven.

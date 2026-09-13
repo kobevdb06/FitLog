@@ -59,7 +59,6 @@ class ActiveWorkoutScreen extends ConsumerStatefulWidget {
 }
 
 class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
-  Timer? _ticker;
   _KeypadTarget? _target;
   KeypadValue _keypadValue = const KeypadValue.empty();
 
@@ -69,9 +68,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
     // The screen stays on for the whole session. A device without the plugin
     // (or a test environment) must not take the screen down with it.
     unawaited(WakelockPlus.enable().catchError((Object _) {}));
@@ -81,7 +77,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   @override
   void dispose() {
-    _ticker?.cancel();
     unawaited(WakelockPlus.disable().catchError((Object _) {}));
     _appController.workoutInProgress = false;
     super.dispose();
@@ -454,6 +449,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final workoutAsync = ref.watch(activeWorkoutProvider);
     final formatters = ref.watch(formattersProvider);
     final settings = ref.watch(settingsProvider).value;
+    final trackRpe = settings?.trackRpe ?? false;
 
     return workoutAsync.when(
       loading: () =>
@@ -477,11 +473,25 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           );
         }
 
-        final elapsed = DateTime.now()
-            .difference(
-              DateTime.fromMillisecondsSinceEpoch(workout.workout.startedAt),
-            )
-            .inSeconds;
+        // Which sets in this session earned a record. One answer for the whole
+        // screen; every card used to ask for the same one separately.
+        final recordSetIds =
+            ref.watch(workoutRecordSetIdsProvider(workout.workout.id)).value ??
+            const <String>{};
+
+        // Asked for once, here, instead of twice per exercise per side down in
+        // the cards. Seven answers arriving at seven moments meant seven
+        // rebuilds of everything, right while the page was still sliding in.
+        final previous =
+            ref
+                .watch(
+                  previousSessionProvider(
+                    workout.workout.id,
+                    lineUpOf(workout),
+                  ),
+                )
+                .value ??
+            PreviousSession.empty;
 
         return PopScope(
           // With the keypad up, going back means "put that away" - it is the
@@ -522,12 +532,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      Formatters.duration(elapsed),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                    _ElapsedLabel(startedAt: workout.workout.startedAt),
                   ],
                 ),
               ),
@@ -584,6 +589,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                               index: index,
                               formatters: formatters,
                               settings: settings,
+                              previous: previous,
+                              trackRpe: trackRpe,
+                              recordSetIds: recordSetIds,
                               activeTarget: _target,
                               onFocus: (row, kind) =>
                                   _focus(row, kind, formatters),
@@ -689,6 +697,54 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
 // --- Exercise card ----------------------------------------------------------
 
+/// How long you have been at it, ticking once a second.
+///
+/// Its own widget with its own timer, because the screen used to rebuild
+/// entirely for this: every second, every visible exercise and every set row
+/// was built again so that one line of text could change. That is 17 to 27 ms
+/// of work per second while you are logging, and a one in three chance of
+/// landing in the middle of a page transition.
+class _ElapsedLabel extends StatefulWidget {
+  const _ElapsedLabel({required this.startedAt});
+
+  /// Unix millis.
+  final int startedAt;
+
+  @override
+  State<_ElapsedLabel> createState() => _ElapsedLabelState();
+}
+
+class _ElapsedLabelState extends State<_ElapsedLabel> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final elapsed = DateTime.now()
+        .difference(DateTime.fromMillisecondsSinceEpoch(widget.startedAt))
+        .inSeconds;
+
+    return Text(
+      Formatters.duration(elapsed),
+      style: Theme.of(context).textTheme.bodySmall
+          ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+    );
+  }
+}
+
 class _ExerciseCard extends ConsumerWidget {
   const _ExerciseCard({
     required this.workout,
@@ -696,6 +752,9 @@ class _ExerciseCard extends ConsumerWidget {
     required this.index,
     required this.formatters,
     required this.settings,
+    required this.previous,
+    required this.trackRpe,
+    required this.recordSetIds,
     required this.activeTarget,
     required this.onFocus,
     required this.onToggle,
@@ -709,6 +768,14 @@ class _ExerciseCard extends ConsumerWidget {
   final int index;
   final Formatters formatters;
   final AppSettingsRow? settings;
+
+  /// Handed down rather than watched. A card that watches is a card that
+  /// rebuilds on its own schedule, and there are as many of them as you have
+  /// exercises.
+  final PreviousSession previous;
+  final bool trackRpe;
+  final Set<String> recordSetIds;
+
   final _KeypadTarget? activeTarget;
   final void Function(WorkoutSetRow, KeypadFieldKind) onFocus;
   final void Function(WorkoutSetRow) onToggle;
@@ -728,21 +795,16 @@ class _ExerciseCard extends ConsumerWidget {
         : const <SetSide?>[null];
     final previousBySide = <SetSide?, List<WorkoutSetRow>?>{
       for (final side in sides)
-        side: ref.watch(previousSetsProvider(detail.exercise.id, side)).value,
+        side: previous.setsFor(detail.exercise.id, side),
     };
-    final previousNote = ref
-        .watch(previousNoteProvider(detail.exercise.id))
-        .value;
-    final recordSetIds =
-        ref.watch(workoutRecordSetIdsProvider(workout.workout.id)).value ??
-        const <String>{};
+    final previousNote = previous.noteFor(detail.exercise.id);
 
     // Which value columns make sense here: weight and reps for anything you
     // load, a time for a plank, a distance and a time for a run.
     final columns = setColumnsFor(
       detail.category,
       detail.sets.map(setValues),
-      trackRpe: ref.watch(settingsProvider).value?.trackRpe ?? false,
+      trackRpe: trackRpe,
     );
 
     // Numbering is derived from the current types and sides, so switching one

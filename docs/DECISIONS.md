@@ -1599,3 +1599,18 @@ aanbieden.
 
 Dat kost één ding: twee verschillende poses naast elkaar kan niet meer. Dat is
 de bedoeling.
+
+## 105. De posebalk liep van het scherm, en de foto's waren gesnoeid
+
+Twee dingen die pas op een telefoon zichtbaar werden.
+
+De drie posekeuzes stonden in een `Row` en die knipte de derde af tegen de
+rechterrand. Nu is het een `Wrap`: past het niet, dan zakt er een naar de
+volgende regel in plaats van te verdwijnen. Dat blijft ook kloppen bij een
+grotere tekstgrootte, wat een `Row` nooit doet.
+
+De foto's stonden op `BoxFit.cover`. Dat oogt netter en snijdt stilletjes de
+zijkanten eraf - een halve telefoonbreedte is een smal raampje op een staande
+foto, en sta je niet precies in het midden, dan vergelijk je twee muren. Nu is
+het `contain`: de hele foto, kleiner. En een tik erop opent hem apart, waar wel
+ruimte is.

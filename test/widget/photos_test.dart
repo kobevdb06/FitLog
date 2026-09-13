@@ -135,6 +135,48 @@ void main() {
       expect(find.text('7 sep 2026'), findsNothing);
     });
 
+    testWidgets('shows each photo whole, never cut down to fit', (
+      tester,
+    ) async {
+      // Half a screen is a narrow window on a portrait photo: filling it cuts
+      // the sides off, and off-centre subjects disappear with them.
+      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
+      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
+      await pump(tester, const PhotoCompareScreen());
+
+      final images = tester.widgetList<Image>(find.byType(Image));
+      expect(images, hasLength(2));
+      for (final image in images) {
+        expect(image.fit, BoxFit.contain);
+      }
+    });
+
+    testWidgets('and every option fits on a narrow screen', (tester) async {
+      // A Row clipped the third pose off the right edge of a phone.
+      tester.view.physicalSize = const Size(360, 780);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
+      await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);
+
+      await tester.pumpWidget(
+        wrapWithContainer(container, const PhotoCompareScreen()),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      for (final label in ['Voorkant (2)', 'Zijkant (0)', 'Achterkant (0)']) {
+        final box = tester.getRect(find.text(label));
+        expect(
+          box.right,
+          lessThanOrEqualTo(360),
+          reason: '$label valt van het scherm',
+        );
+      }
+    });
+
     testWidgets('and says so when a pose has too few', (tester) async {
       await photo(at: DateTime(2026, 9, 1), pose: PhotoPose.front);
       await photo(at: DateTime(2026, 9, 13), pose: PhotoPose.front);

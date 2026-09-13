@@ -11,6 +11,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../domain/photo_grouping.dart';
 import 'photo_providers.dart';
+import 'photo_viewer_screen.dart';
 
 /// Two photos side by side with their dates and the weight difference.
 class PhotoCompareScreen extends ConsumerStatefulWidget {
@@ -148,18 +149,22 @@ class _PoseBar extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.sm,
       ),
-      child: Row(
+      // A Row clipped the third chip off the right edge of a phone. A Wrap
+      // moves one down instead of hiding it, whatever the screen width or the
+      // reader's text size.
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
         children: [
           for (final option in PhotoPose.values)
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.sm),
-              child: ChoiceChip(
-                selected: option == pose,
-                onSelected: (_) => onChanged(option),
-                // The count is the honest part: it says in advance which poses
-                // there is anything to compare.
-                label: Text('${option.label} (${counts[option] ?? 0})'),
-              ),
+            ChoiceChip(
+              selected: option == pose,
+              onSelected: (_) => onChanged(option),
+              visualDensity: VisualDensity.compact,
+              labelStyle: Theme.of(context).textTheme.bodyMedium,
+              // The count is the honest part: it says in advance which poses
+              // there is anything to compare.
+              label: Text('${option.label} (${counts[option] ?? 0})'),
             ),
         ],
       ),
@@ -189,12 +194,25 @@ class _Side extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-          child: Image.file(
-            paths.photoFile(photo.fileName),
-            fit: BoxFit.cover,
-            width: double.infinity,
-            errorBuilder: (context, error, stack) =>
-                const MissingPhotoPlaceholder(),
+          // Whole, not filled. Cover looked tidier and quietly cut the sides
+          // off: half a screen is a narrow window on a portrait photo, and if
+          // you are not standing dead centre you can end up comparing two
+          // walls. A tap opens the picture on its own, where there is room.
+          child: GestureDetector(
+            onTap: () => PhotoViewerScreen.open(
+              context,
+              file: paths.photoFile(photo.fileName),
+              title:
+                  '${PhotoPose.fromWire(photo.pose).label} · '
+                  '${Formatters.date(DateTime.fromMillisecondsSinceEpoch(photo.takenAt))}',
+            ),
+            child: Image.file(
+              paths.photoFile(photo.fileName),
+              fit: BoxFit.contain,
+              width: double.infinity,
+              errorBuilder: (context, error, stack) =>
+                  const MissingPhotoPlaceholder(),
+            ),
           ),
         ),
         InkWell(

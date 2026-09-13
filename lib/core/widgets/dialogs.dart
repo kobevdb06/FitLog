@@ -6,6 +6,7 @@ import '../db/enums.dart';
 import '../formatting/formatters.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'common.dart';
 
 /// Yes/no confirmation. Returns true only when the user actually confirms.
 Future<bool> confirm(
@@ -258,6 +259,7 @@ Future<ExerciseCategory?> pickExerciseCategory(
       children: [
         for (final category in ExerciseCategory.values)
           ListTile(
+            leading: Icon(exerciseCategoryIcon(category)),
             title: Text(category.label),
             subtitle: Text(exerciseCategoryDescription(category)),
             selected: category == current,
@@ -298,6 +300,54 @@ Future<MeasurementType?> pickMeasurementType(
             ),
             selected: type == current,
             onTap: () => Navigator.of(context).pop(type),
+          ),
+      ],
+    ),
+  );
+}
+
+/// A picture for each kind of exercise.
+///
+/// Material has exactly one gym glyph and it is a dumbbell, so only half of
+/// these are portraits of the equipment. The rest say what the thing does -
+/// something that holds you up, a clock, a runner - which is what you are
+/// choosing between anyway.
+IconData exerciseCategoryIcon(ExerciseCategory category) => switch (category) {
+  // A bar with weight spaced along it, which is as close as this set gets.
+  ExerciseCategory.barbell => Icons.linear_scale,
+  ExerciseCategory.dumbbell => Icons.fitness_center,
+  ExerciseCategory.machine => Icons.precision_manufacturing,
+  ExerciseCategory.cable => Icons.cable,
+  ExerciseCategory.bodyweight => Icons.sports_gymnastics,
+  ExerciseCategory.assistedBodyweight => Icons.support,
+  ExerciseCategory.duration => Icons.timer_outlined,
+  ExerciseCategory.cardio => Icons.directions_run,
+};
+
+/// Which muscle an exercise works hardest.
+///
+/// The names come from the catalogue rather than from an enum, so there is no
+/// drawing to put next to them - but the app already gives every muscle a
+/// colour and two letters, on every exercise row there is. The same mark here
+/// means the thing you pick looks like the thing you will see afterwards.
+Future<String?> pickMuscle(
+  BuildContext context, {
+  required String? current,
+  required List<String> muscles,
+  String title = 'Welke spier werkt het hardst?',
+}) {
+  return showAppSheet<String>(
+    context: context,
+    title: title,
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final muscle in muscles)
+          ListTile(
+            leading: MuscleAvatar(muscle: muscle, size: 32),
+            title: Text(muscle),
+            selected: muscle == current,
+            onTap: () => Navigator.of(context).pop(muscle),
           ),
       ],
     ),

@@ -10,6 +10,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
+import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
@@ -194,7 +195,9 @@ Future<void> showAddMeasurementSheet(
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
-              InkWell(
+              PickerField(
+                label: 'Type',
+                text: selected.label,
                 onTap: () async {
                   final picked = await pickMeasurementType(
                     context,
@@ -210,20 +213,6 @@ Future<void> showAddMeasurementSheet(
                     value = const KeypadValue.empty();
                   });
                 },
-                child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Type'),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          selected.label,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      const Icon(Icons.expand_more, size: 20),
-                    ],
-                  ),
-                ),
               ),
               const SizedBox(height: AppSpacing.md),
               InkWell(

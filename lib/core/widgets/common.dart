@@ -179,9 +179,7 @@ class AppCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            border: Border.all(
-              color: borderColor ?? theme.colorScheme.outline,
-            ),
+            border: Border.all(color: borderColor ?? theme.colorScheme.outline),
           ),
           padding: padding,
           child: child,
@@ -230,6 +228,55 @@ class MuscleAvatar extends StatelessWidget {
           color: color,
           fontWeight: FontWeight.w700,
           fontSize: size * 0.34,
+        ),
+      ),
+    );
+  }
+}
+
+/// A form field that opens a sheet instead of typing into it.
+///
+/// Shaped like the text fields around it so the form reads as one thing, and
+/// carrying the same mark the choice will have everywhere else once it is made.
+class PickerField extends StatelessWidget {
+  const PickerField({
+    super.key,
+    required this.label,
+    required this.text,
+    required this.onTap,
+    this.leading,
+    this.muted = false,
+  });
+
+  final String label;
+  final String text;
+  final VoidCallback onTap;
+  final Widget? leading;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: InputDecorator(
+        decoration: InputDecoration(labelText: label),
+        child: Row(
+          children: [
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: AppSpacing.md),
+            ],
+            Expanded(
+              child: Text(
+                text,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: muted ? theme.colorScheme.onSurfaceVariant : null,
+                ),
+              ),
+            ),
+            const Icon(Icons.expand_more, size: 20),
+          ],
         ),
       ),
     );

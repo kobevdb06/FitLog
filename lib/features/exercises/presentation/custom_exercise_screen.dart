@@ -208,9 +208,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         title: Text(
           widget.exerciseId == null ? 'Eigen oefening' : 'Oefening bewerken',
         ),
-        actions: [
-          TextButton(onPressed: _save, child: const Text('Opslaan')),
-        ],
+        actions: [TextButton(onPressed: _save, child: const Text('Opslaan'))],
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -221,35 +219,38 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
             decoration: const InputDecoration(labelText: 'Naam'),
           ),
           const SizedBox(height: AppSpacing.lg),
-          DropdownButtonFormField<ExerciseCategory>(
-            initialValue: _category,
-            decoration: const InputDecoration(labelText: 'Categorie'),
-            items: [
-              for (final c in ExerciseCategory.values)
-                DropdownMenuItem(value: c, child: Text(c.label)),
-            ],
-            onChanged: (value) {
-              if (value != null) setState(() => _category = value);
+          PickerField(
+            label: 'Categorie',
+            leading: Icon(exerciseCategoryIcon(_category)),
+            text: _category.label,
+            onTap: () async {
+              final picked = await pickExerciseCategory(
+                context,
+                current: _category,
+              );
+              if (picked != null) setState(() => _category = picked);
             },
           ),
           const SizedBox(height: AppSpacing.lg),
-          DropdownButtonFormField<String>(
-            initialValue: _primaryMuscle,
-            decoration: const InputDecoration(
-              labelText: 'Primaire spiergroep',
-            ),
-            items: [
-              for (final m in muscles)
-                DropdownMenuItem(value: m, child: Text(m)),
-            ],
-            onChanged: (value) => setState(() => _primaryMuscle = value),
+          PickerField(
+            label: 'Primaire spiergroep',
+            leading: _primaryMuscle == null
+                ? null
+                : MuscleAvatar(muscle: _primaryMuscle, size: 28),
+            text: _primaryMuscle ?? 'Kies een spiergroep',
+            muted: _primaryMuscle == null,
+            onTap: () async {
+              final picked = await pickMuscle(
+                context,
+                current: _primaryMuscle,
+                muscles: muscles,
+              );
+              if (picked != null) setState(() => _primaryMuscle = picked);
+            },
           ),
           const SectionHeader(
             'Secundaire spiergroepen',
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom: AppSpacing.sm,
-            ),
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
           ),
           Wrap(
             spacing: AppSpacing.sm,
@@ -286,10 +287,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
           ),
           const SectionHeader(
             'Uitvoering in beeld',
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom: AppSpacing.xs,
-            ),
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.xs),
           ),
           Text(
             'Twee foto\'s - de start- en de eindpositie - lopen af als een '

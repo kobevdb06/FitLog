@@ -1483,4 +1483,23 @@ Er staan er nog vijf elders: het type en de spiergroep van een eigen oefening,
 je geslacht bij de eerste start, de map in de routine-editor, en de fotokiezer
 bij het vergelijken. Die zijn hier bewust niet meegenomen - er is om deze
 gevraagd - maar ze staan er nog, en dit is de plek waar dat opgeschreven
-hoort.
+hoort. (De eerste twee zijn intussen wel gedaan, zie 99.)
+
+## 99. Een eigen oefening kiest nu met plaatjes
+
+Categorie en primaire spiergroep waren de laatste twee dropdowns die je
+tegenkomt als je iets nieuws maakt. Nu zijn het dezelfde velden met dezelfde
+sheets als elders, via een gedeelde `PickerField` die ook de metingensheet
+gebruikt - anders stonden er drie bijna-gelijke velden in drie bestanden.
+
+Bij de categorie staat een pictogram. Material heeft precies één sportglyph en
+dat is een dumbbell, dus de helft is geen portret van het materiaal maar zegt
+wat het ding doet: iets dat je ondersteunt, een klok, een loper. De barbell
+krijgt `linear_scale` - een staaf met gewicht erlangs, wat het dichtst in de
+buurt komt.
+
+Bij de spiergroep kan dat niet: die namen komen uit de catalogus, niet uit een
+enum, dus er is geen tekening om naast te zetten. Wel heeft elke spier in deze
+app al een kleur en twee letters - `MuscleAvatar`, te zien op elke oefeningrij.
+Dezelfde markering in de kiezer betekent dat wat je kiest eruitziet als wat je
+daarna overal terugziet.

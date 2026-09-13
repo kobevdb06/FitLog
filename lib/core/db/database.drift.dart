@@ -2805,6 +2805,440 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
   }
 }
 
+class $CustomMusclesTableTable extends CustomMusclesTable
+    with TableInfo<$CustomMusclesTableTable, CustomMuscleRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomMusclesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [name, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_muscles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomMuscleRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {name};
+  @override
+  CustomMuscleRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomMuscleRow(
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomMusclesTableTable createAlias(String alias) {
+    return $CustomMusclesTableTable(attachedDatabase, alias);
+  }
+}
+
+class CustomMuscleRow extends DataClass implements Insertable<CustomMuscleRow> {
+  /// Lower case, because that is the key every other table joins on.
+  final String name;
+  final int createdAt;
+  const CustomMuscleRow({required this.name, required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  CustomMusclesTableCompanion toCompanion(bool nullToAbsent) {
+    return CustomMusclesTableCompanion(
+      name: Value(name),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory CustomMuscleRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomMuscleRow(
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  CustomMuscleRow copyWith({String? name, int? createdAt}) => CustomMuscleRow(
+    name: name ?? this.name,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  CustomMuscleRow copyWithCompanion(CustomMusclesTableCompanion data) {
+    return CustomMuscleRow(
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomMuscleRow(')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(name, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomMuscleRow &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt);
+}
+
+class CustomMusclesTableCompanion extends UpdateCompanion<CustomMuscleRow> {
+  final Value<String> name;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const CustomMusclesTableCompanion({
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomMusclesTableCompanion.insert({
+    required String name,
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : name = Value(name),
+       createdAt = Value(createdAt);
+  static Insertable<CustomMuscleRow> custom({
+    Expression<String>? name,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomMusclesTableCompanion copyWith({
+    Value<String>? name,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return CustomMusclesTableCompanion(
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomMusclesTableCompanion(')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CustomEquipmentTableTable extends CustomEquipmentTable
+    with TableInfo<$CustomEquipmentTableTable, CustomEquipmentRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomEquipmentTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [name, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_equipment';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomEquipmentRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {name};
+  @override
+  CustomEquipmentRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomEquipmentRow(
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomEquipmentTableTable createAlias(String alias) {
+    return $CustomEquipmentTableTable(attachedDatabase, alias);
+  }
+}
+
+class CustomEquipmentRow extends DataClass
+    implements Insertable<CustomEquipmentRow> {
+  final String name;
+  final int createdAt;
+  const CustomEquipmentRow({required this.name, required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  CustomEquipmentTableCompanion toCompanion(bool nullToAbsent) {
+    return CustomEquipmentTableCompanion(
+      name: Value(name),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory CustomEquipmentRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomEquipmentRow(
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  CustomEquipmentRow copyWith({String? name, int? createdAt}) =>
+      CustomEquipmentRow(
+        name: name ?? this.name,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  CustomEquipmentRow copyWithCompanion(CustomEquipmentTableCompanion data) {
+    return CustomEquipmentRow(
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomEquipmentRow(')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(name, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomEquipmentRow &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt);
+}
+
+class CustomEquipmentTableCompanion
+    extends UpdateCompanion<CustomEquipmentRow> {
+  final Value<String> name;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const CustomEquipmentTableCompanion({
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomEquipmentTableCompanion.insert({
+    required String name,
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : name = Value(name),
+       createdAt = Value(createdAt);
+  static Insertable<CustomEquipmentRow> custom({
+    Expression<String>? name,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomEquipmentTableCompanion copyWith({
+    Value<String>? name,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return CustomEquipmentTableCompanion(
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomEquipmentTableCompanion(')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $RoutineFoldersTableTable extends RoutineFoldersTable
     with TableInfo<$RoutineFoldersTableTable, RoutineFolderRow> {
   @override
@@ -8202,6 +8636,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $ExercisesTableTable exercisesTable = $ExercisesTableTable(this);
+  late final $CustomMusclesTableTable customMusclesTable =
+      $CustomMusclesTableTable(this);
+  late final $CustomEquipmentTableTable customEquipmentTable =
+      $CustomEquipmentTableTable(this);
   late final $RoutineFoldersTableTable routineFoldersTable =
       $RoutineFoldersTableTable(this);
   late final $RoutinesTableTable routinesTable = $RoutinesTableTable(this);
@@ -8271,6 +8709,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userProfileTable,
     appSettingsTable,
     exercisesTable,
+    customMusclesTable,
+    customEquipmentTable,
     routineFoldersTable,
     routinesTable,
     routineExercisesTable,
@@ -9947,6 +10387,321 @@ typedef $$ExercisesTableTableProcessedTableManager =
         bool workoutExercisesTableRefs,
         bool personalRecordsTableRefs,
       })
+    >;
+typedef $$CustomMusclesTableTableCreateCompanionBuilder =
+    CustomMusclesTableCompanion Function({
+      required String name,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$CustomMusclesTableTableUpdateCompanionBuilder =
+    CustomMusclesTableCompanion Function({
+      Value<String> name,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$CustomMusclesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomMusclesTableTable> {
+  $$CustomMusclesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CustomMusclesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomMusclesTableTable> {
+  $$CustomMusclesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomMusclesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomMusclesTableTable> {
+  $$CustomMusclesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$CustomMusclesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomMusclesTableTable,
+          CustomMuscleRow,
+          $$CustomMusclesTableTableFilterComposer,
+          $$CustomMusclesTableTableOrderingComposer,
+          $$CustomMusclesTableTableAnnotationComposer,
+          $$CustomMusclesTableTableCreateCompanionBuilder,
+          $$CustomMusclesTableTableUpdateCompanionBuilder,
+          (
+            CustomMuscleRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CustomMusclesTableTable,
+              CustomMuscleRow
+            >,
+          ),
+          CustomMuscleRow,
+          PrefetchHooks Function()
+        > {
+  $$CustomMusclesTableTableTableManager(
+    _$AppDatabase db,
+    $CustomMusclesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomMusclesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomMusclesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomMusclesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> name = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomMusclesTableCompanion(
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String name,
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CustomMusclesTableCompanion.insert(
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CustomMusclesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomMusclesTableTable,
+      CustomMuscleRow,
+      $$CustomMusclesTableTableFilterComposer,
+      $$CustomMusclesTableTableOrderingComposer,
+      $$CustomMusclesTableTableAnnotationComposer,
+      $$CustomMusclesTableTableCreateCompanionBuilder,
+      $$CustomMusclesTableTableUpdateCompanionBuilder,
+      (
+        CustomMuscleRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CustomMusclesTableTable,
+          CustomMuscleRow
+        >,
+      ),
+      CustomMuscleRow,
+      PrefetchHooks Function()
+    >;
+typedef $$CustomEquipmentTableTableCreateCompanionBuilder =
+    CustomEquipmentTableCompanion Function({
+      required String name,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$CustomEquipmentTableTableUpdateCompanionBuilder =
+    CustomEquipmentTableCompanion Function({
+      Value<String> name,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$CustomEquipmentTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomEquipmentTableTable> {
+  $$CustomEquipmentTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CustomEquipmentTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomEquipmentTableTable> {
+  $$CustomEquipmentTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomEquipmentTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomEquipmentTableTable> {
+  $$CustomEquipmentTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$CustomEquipmentTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomEquipmentTableTable,
+          CustomEquipmentRow,
+          $$CustomEquipmentTableTableFilterComposer,
+          $$CustomEquipmentTableTableOrderingComposer,
+          $$CustomEquipmentTableTableAnnotationComposer,
+          $$CustomEquipmentTableTableCreateCompanionBuilder,
+          $$CustomEquipmentTableTableUpdateCompanionBuilder,
+          (
+            CustomEquipmentRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CustomEquipmentTableTable,
+              CustomEquipmentRow
+            >,
+          ),
+          CustomEquipmentRow,
+          PrefetchHooks Function()
+        > {
+  $$CustomEquipmentTableTableTableManager(
+    _$AppDatabase db,
+    $CustomEquipmentTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomEquipmentTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomEquipmentTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CustomEquipmentTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> name = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomEquipmentTableCompanion(
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String name,
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CustomEquipmentTableCompanion.insert(
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CustomEquipmentTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomEquipmentTableTable,
+      CustomEquipmentRow,
+      $$CustomEquipmentTableTableFilterComposer,
+      $$CustomEquipmentTableTableOrderingComposer,
+      $$CustomEquipmentTableTableAnnotationComposer,
+      $$CustomEquipmentTableTableCreateCompanionBuilder,
+      $$CustomEquipmentTableTableUpdateCompanionBuilder,
+      (
+        CustomEquipmentRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CustomEquipmentTableTable,
+          CustomEquipmentRow
+        >,
+      ),
+      CustomEquipmentRow,
+      PrefetchHooks Function()
     >;
 typedef $$RoutineFoldersTableTableCreateCompanionBuilder =
     RoutineFoldersTableCompanion Function({
@@ -14768,6 +15523,10 @@ class $AppDatabaseManager {
       $$AppSettingsTableTableTableManager(_db, _db.appSettingsTable);
   $$ExercisesTableTableTableManager get exercisesTable =>
       $$ExercisesTableTableTableManager(_db, _db.exercisesTable);
+  $$CustomMusclesTableTableTableManager get customMusclesTable =>
+      $$CustomMusclesTableTableTableManager(_db, _db.customMusclesTable);
+  $$CustomEquipmentTableTableTableManager get customEquipmentTable =>
+      $$CustomEquipmentTableTableTableManager(_db, _db.customEquipmentTable);
   $$RoutineFoldersTableTableTableManager get routineFoldersTable =>
       $$RoutineFoldersTableTableTableManager(_db, _db.routineFoldersTable);
   $$RoutinesTableTableTableManager get routinesTable =>

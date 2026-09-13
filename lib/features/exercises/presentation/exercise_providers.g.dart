@@ -187,17 +187,25 @@ final class ExerciseByIdFamily extends $Family
   String toString() => r'exerciseByIdProvider';
 }
 
+/// Watched rather than read once: adding a muscle group from the picker has to
+/// show up in the list you are looking at.
+
 @ProviderFor(muscleOptions)
 final muscleOptionsProvider = MuscleOptionsProvider._();
+
+/// Watched rather than read once: adding a muscle group from the picker has to
+/// show up in the list you are looking at.
 
 final class MuscleOptionsProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<String>>,
           List<String>,
-          FutureOr<List<String>>
+          Stream<List<String>>
         >
-    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
+    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+  /// Watched rather than read once: adding a muscle group from the picker has to
+  /// show up in the list you are looking at.
   MuscleOptionsProvider._()
     : super(
         from: null,
@@ -214,17 +222,17 @@ final class MuscleOptionsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<String>> $createElement(
+  $StreamProviderElement<List<String>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<String>> create(Ref ref) {
+  Stream<List<String>> create(Ref ref) {
     return muscleOptions(ref);
   }
 }
 
-String _$muscleOptionsHash() => r'd076395016fabe3ebfe786f57a19c1c1fd3ecd80';
+String _$muscleOptionsHash() => r'86995b5746f17e839909c0a2314a1ddc6d131fd8';
 
 @ProviderFor(equipmentOptions)
 final equipmentOptionsProvider = EquipmentOptionsProvider._();
@@ -234,9 +242,9 @@ final class EquipmentOptionsProvider
         $FunctionalProvider<
           AsyncValue<List<String>>,
           List<String>,
-          FutureOr<List<String>>
+          Stream<List<String>>
         >
-    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
+    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
   EquipmentOptionsProvider._()
     : super(
         from: null,
@@ -253,17 +261,104 @@ final class EquipmentOptionsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<String>> $createElement(
+  $StreamProviderElement<List<String>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<String>> create(Ref ref) {
+  Stream<List<String>> create(Ref ref) {
     return equipmentOptions(ref);
   }
 }
 
-String _$equipmentOptionsHash() => r'd706572e45ad9105b103751a7fd33cb5f4c7f396';
+String _$equipmentOptionsHash() => r'fcb1a682c38df20c4579f558dd97c224c183257d';
+
+/// Only the ones you added yourself, for the screen that manages them.
+
+@ProviderFor(customMuscles)
+final customMusclesProvider = CustomMusclesProvider._();
+
+/// Only the ones you added yourself, for the screen that manages them.
+
+final class CustomMusclesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CustomMuscleRow>>,
+          List<CustomMuscleRow>,
+          Stream<List<CustomMuscleRow>>
+        >
+    with
+        $FutureModifier<List<CustomMuscleRow>>,
+        $StreamProvider<List<CustomMuscleRow>> {
+  /// Only the ones you added yourself, for the screen that manages them.
+  CustomMusclesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'customMusclesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$customMusclesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CustomMuscleRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CustomMuscleRow>> create(Ref ref) {
+    return customMuscles(ref);
+  }
+}
+
+String _$customMusclesHash() => r'ef2871f5a716b6edcb3e0864d90f394eb16104df';
+
+@ProviderFor(customEquipment)
+final customEquipmentProvider = CustomEquipmentProvider._();
+
+final class CustomEquipmentProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CustomEquipmentRow>>,
+          List<CustomEquipmentRow>,
+          Stream<List<CustomEquipmentRow>>
+        >
+    with
+        $FutureModifier<List<CustomEquipmentRow>>,
+        $StreamProvider<List<CustomEquipmentRow>> {
+  CustomEquipmentProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'customEquipmentProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$customEquipmentHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CustomEquipmentRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CustomEquipmentRow>> create(Ref ref) {
+    return customEquipment(ref);
+  }
+}
+
+String _$customEquipmentHash() => r'c694ab2b81a376569953dfb47b4e3a47df6cbeec';
 
 /// The exercises used most recently, shown at the top of the picker.
 

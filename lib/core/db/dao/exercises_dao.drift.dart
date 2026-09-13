@@ -10,6 +10,10 @@ mixin _$ExercisesDaoMixin on DatabaseAccessor<AppDatabase> {
   $WorkoutsTableTable get workoutsTable => attachedDatabase.workoutsTable;
   $WorkoutExercisesTableTable get workoutExercisesTable =>
       attachedDatabase.workoutExercisesTable;
+  $CustomMusclesTableTable get customMusclesTable =>
+      attachedDatabase.customMusclesTable;
+  $CustomEquipmentTableTable get customEquipmentTable =>
+      attachedDatabase.customEquipmentTable;
   ExercisesDaoManager get managers => ExercisesDaoManager(this);
 }
 
@@ -34,5 +38,15 @@ class ExercisesDaoManager {
       $$WorkoutExercisesTableTableTableManager(
         _db.attachedDatabase,
         _db.workoutExercisesTable,
+      );
+  $$CustomMusclesTableTableTableManager get customMusclesTable =>
+      $$CustomMusclesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.customMusclesTable,
+      );
+  $$CustomEquipmentTableTableTableManager get customEquipmentTable =>
+      $$CustomEquipmentTableTableTableManager(
+        _db.attachedDatabase,
+        _db.customEquipmentTable,
       );
 }

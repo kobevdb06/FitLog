@@ -37,6 +37,15 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push(Routes.settingsWorkout),
           ),
           ListTile(
+            leading: const Icon(Icons.category_outlined),
+            title: const Text('Eigen spieren en materiaal'),
+            subtitle: const Text(
+              'Spiergroepen en materiaal die niet in de app zitten',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.settingsCatalogue),
+          ),
+          ListTile(
             leading: const Icon(Icons.lock_outline),
             title: const Text('Beveiliging'),
             subtitle: const Text(

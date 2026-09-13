@@ -33,7 +33,7 @@ class CustomExerciseScreen extends ConsumerStatefulWidget {
 
 class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   final _nameController = TextEditingController();
-  final _equipmentController = TextEditingController();
+  String? _equipment;
   final _notesController = TextEditingController();
 
   String? _primaryMuscle;
@@ -56,7 +56,6 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _equipmentController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -65,7 +64,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     if (_loaded) return;
     _loaded = true;
     _nameController.text = row.name;
-    _equipmentController.text = row.equipment ?? '';
+    _equipment = row.equipment;
     _notesController.text = row.instructions ?? '';
     _primaryMuscle = row.primaryMuscle;
     _secondaryMuscles.addAll(decodeSecondaryMuscles(row.secondaryMuscles));
@@ -139,6 +138,45 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     }
   }
 
+  Future<void> _pickEquipment(List<String> options) async {
+    final picked = await pickEquipment(
+      context,
+      current: _equipment,
+      equipment: options,
+      onAddNew: () => _addEquipment(context),
+    );
+    if (picked == null) return;
+    setState(() => _equipment = picked.name);
+  }
+
+  /// Adds it and picks it in one go: you only open this because the one you
+  /// need is not on the list.
+  Future<void> _addMuscle(BuildContext context) async {
+    final name = await promptForText(
+      context,
+      title: 'Spiergroep toevoegen',
+      hintText: 'bijvoorbeeld serratus',
+    );
+    final trimmed = name?.trim().toLowerCase();
+    if (trimmed == null || trimmed.isEmpty) return;
+
+    await ref.read(databaseProvider).exercisesDao.addCustomMuscle(trimmed);
+    if (mounted) setState(() => _primaryMuscle = trimmed);
+  }
+
+  Future<void> _addEquipment(BuildContext context) async {
+    final name = await promptForText(
+      context,
+      title: 'Materiaal toevoegen',
+      hintText: 'bijvoorbeeld ringen',
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+
+    await ref.read(databaseProvider).exercisesDao.addCustomEquipment(trimmed);
+    if (mounted) setState(() => _equipment = trimmed);
+  }
+
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -152,7 +190,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     }
 
     final editor = ref.read(exerciseEditorProvider);
-    final equipment = _equipmentController.text.trim();
+    final equipment = _equipment?.trim() ?? '';
 
     String id;
     if (widget.exerciseId == null) {
@@ -194,6 +232,8 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     final muscles = ref.watch(muscleOptionsProvider).value ?? const [];
+    final equipmentOptions =
+        ref.watch(equipmentOptionsProvider).value ?? const [];
     final paths = ref.watch(appPathsProvider).value;
 
     if (widget.exerciseId != null) {
@@ -244,6 +284,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
                 context,
                 current: _primaryMuscle,
                 muscles: muscles,
+                onAddNew: () => _addMuscle(context),
               );
               if (picked != null) setState(() => _primaryMuscle = picked);
             },
@@ -269,12 +310,14 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          TextField(
-            controller: _equipmentController,
-            decoration: const InputDecoration(
-              labelText: 'Materiaal',
-              hintText: 'bijvoorbeeld halterstang',
+          PickerField(
+            label: 'Materiaal',
+            leading: Icon(
+              _equipment == null ? Icons.block : Icons.fitness_center_outlined,
             ),
+            text: _equipment ?? 'Geen materiaal',
+            muted: _equipment == null,
+            onTap: () => _pickEquipment(equipmentOptions),
           ),
           const SizedBox(height: AppSpacing.lg),
           TextField(

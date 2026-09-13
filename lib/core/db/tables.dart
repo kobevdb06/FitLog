@@ -143,6 +143,38 @@ class AppSettingsTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// A muscle group the user added themselves.
+///
+/// Kept apart from the exercises because it has to survive without one: you
+/// add "serratus" to be able to pick it, and the exercise that uses it comes
+/// after. Deriving the list from the catalogue alone - which is what the
+/// pickers used to do - means a group vanishes the moment nothing uses it.
+@DataClassName('CustomMuscleRow')
+class CustomMusclesTable extends Table {
+  @override
+  String get tableName => 'custom_muscles';
+
+  /// Lower case, because that is the key every other table joins on.
+  TextColumn get name => text()();
+  IntColumn get createdAt => integer().named('created_at')();
+
+  @override
+  Set<Column> get primaryKey => {name};
+}
+
+/// Kit the user added themselves, for the same reason.
+@DataClassName('CustomEquipmentRow')
+class CustomEquipmentTable extends Table {
+  @override
+  String get tableName => 'custom_equipment';
+
+  TextColumn get name => text()();
+  IntColumn get createdAt => integer().named('created_at')();
+
+  @override
+  Set<Column> get primaryKey => {name};
+}
+
 @DataClassName('ExerciseRow')
 class ExercisesTable extends Table {
   @override

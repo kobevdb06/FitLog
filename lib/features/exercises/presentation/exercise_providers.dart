@@ -63,13 +63,24 @@ Stream<List<ExerciseRow>> filteredExercises(Ref ref) {
 Stream<ExerciseRow?> exerciseById(Ref ref, String id) =>
     ref.watch(databaseProvider).exercisesDao.watchById(id);
 
+/// Watched rather than read once: adding a muscle group from the picker has to
+/// show up in the list you are looking at.
 @riverpod
-Future<List<String>> muscleOptions(Ref ref) =>
-    ref.watch(databaseProvider).exercisesDao.distinctPrimaryMuscles();
+Stream<List<String>> muscleOptions(Ref ref) =>
+    ref.watch(databaseProvider).exercisesDao.watchPrimaryMuscles();
 
 @riverpod
-Future<List<String>> equipmentOptions(Ref ref) =>
-    ref.watch(databaseProvider).exercisesDao.distinctEquipment();
+Stream<List<String>> equipmentOptions(Ref ref) =>
+    ref.watch(databaseProvider).exercisesDao.watchEquipment();
+
+/// Only the ones you added yourself, for the screen that manages them.
+@riverpod
+Stream<List<CustomMuscleRow>> customMuscles(Ref ref) =>
+    ref.watch(databaseProvider).exercisesDao.watchCustomMuscles();
+
+@riverpod
+Stream<List<CustomEquipmentRow>> customEquipment(Ref ref) =>
+    ref.watch(databaseProvider).exercisesDao.watchCustomEquipment();
 
 /// The exercises used most recently, shown at the top of the picker.
 @riverpod

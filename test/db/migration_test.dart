@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 18);
+    expect(raw.select('PRAGMA user_version').first.values.first, 19);
     raw.close();
   });
 
@@ -234,7 +234,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 18);
+    expect(db.schemaVersion, 19);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

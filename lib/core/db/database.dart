@@ -23,6 +23,8 @@ part 'database.drift.dart';
     UserProfileTable,
     AppSettingsTable,
     ExercisesTable,
+    CustomMusclesTable,
+    CustomEquipmentTable,
     RoutineFoldersTable,
     RoutinesTable,
     RoutineExercisesTable,
@@ -40,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -189,6 +191,13 @@ class AppDatabase extends _$AppDatabase {
           // says what is true of every picture taken before you could point at
           // one: nobody knows what was done that day.
           await m.addColumn(progressPhotosTable, progressPhotosTable.workoutId);
+        }
+        if (from < 19) {
+          // Muscle groups and kit the user adds themselves. New and empty:
+          // until now the pickers offered only what the catalogue happened to
+          // contain, which is exactly what these are here to widen.
+          await m.createTable(customMusclesTable);
+          await m.createTable(customEquipmentTable);
         }
       });
 

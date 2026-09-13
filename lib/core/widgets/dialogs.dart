@@ -337,6 +337,7 @@ Future<String?> pickMuscle(
   required String? current,
   required List<String> muscles,
   String title = 'Welke spier werkt het hardst?',
+  VoidCallback? onAddNew,
 }) {
   return showAppSheet<String>(
     context: context,
@@ -351,6 +352,64 @@ Future<String?> pickMuscle(
             selected: muscle == current,
             onTap: () => Navigator.of(context).pop(muscle),
           ),
+        // Right here rather than only in the settings: you notice a group is
+        // missing while you are making the exercise that needs it.
+        if (onAddNew != null) ...[
+          const Divider(height: 1),
+          ListTile(
+            leading: const SizedBox(width: 32, child: Icon(Icons.add)),
+            title: const Text('Nieuwe spiergroep'),
+            onTap: () {
+              Navigator.of(context).pop();
+              onAddNew();
+            },
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// Which kit an exercise needs, or none at all.
+Future<({String? name})?> pickEquipment(
+  BuildContext context, {
+  required String? current,
+  required List<String> equipment,
+  VoidCallback? onAddNew,
+}) {
+  return showAppSheet<({String? name})>(
+    context: context,
+    title: 'Waarmee doe je deze oefening?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          leading: const SizedBox(width: 32, child: Icon(Icons.block)),
+          title: const Text('Geen materiaal'),
+          selected: current == null,
+          onTap: () => Navigator.of(context).pop((name: null)),
+        ),
+        for (final kit in equipment)
+          ListTile(
+            leading: const SizedBox(
+              width: 32,
+              child: Icon(Icons.fitness_center_outlined),
+            ),
+            title: Text(kit),
+            selected: kit == current,
+            onTap: () => Navigator.of(context).pop((name: kit)),
+          ),
+        if (onAddNew != null) ...[
+          const Divider(height: 1),
+          ListTile(
+            leading: const SizedBox(width: 32, child: Icon(Icons.add)),
+            title: const Text('Nieuw materiaal'),
+            onTap: () {
+              Navigator.of(context).pop();
+              onAddNew();
+            },
+          ),
+        ],
       ],
     ),
   );

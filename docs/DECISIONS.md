@@ -1861,3 +1861,42 @@ Er staat nu "Opnieuw beginnen" naast, in rood, met dezelfde twee bevestigingen
 als het wissen in de instellingen: eerst een vraag, dan het woord WISSEN
 uittypen. Ook als opnieuw proberen niet eens aangeboden wordt, want juist dan is
 er geen andere weg.
+
+## 116. Spiergroepen en materiaal die de app niet kende
+
+De kiezers boden alleen wat de meegeleverde catalogus toevallig bevatte:
+`distinctPrimaryMuscles()` is een `SELECT DISTINCT` over de oefeningen. Een
+spiergroep die nergens in voorkwam kon je dus niet kiezen, en eentje die je
+zelf verzon bij een oefening verdween weer zodra die oefening gearchiveerd werd.
+
+Nu is het de vereniging van twee bronnen: wat de catalogus gebruikt plus twee
+kleine tabellen met wat je zelf toevoegt (schema v19). Die laatste blijven
+bestaan zonder dat iets ze gebruikt - dat is precies waar ze voor zijn.
+
+Weghalen mag alleen als niets het meer gebruikt. Een oefening die naar een naam
+wijst die verder nergens bestaat is erger dan een lijst met één regel te veel.
+
+Toevoegen kan ook vanuit de kiezer zelf, niet alleen via de instellingen: je
+merkt dat er iets ontbreekt terwijl je de oefening aan het maken bent die het
+nodig heeft.
+
+## 117. Een eigen spiergroep is niet grijs
+
+`AppColors.forMuscle` gaf alles wat niet in de vaste lijst stond dezelfde grijze
+kleur - dezelfde die "geen spier" betekent. Met eigen spiergroepen erbij zouden
+die allemaal op elkaar en op niets lijken.
+
+De naam kiest nu zelf een kleur: een simpele som over de lettertekens, modulo
+een palet. Dezelfde naam geeft overal en altijd dezelfde kleur.
+
+Bewust niet `hashCode`: Dart belooft niet dat die tussen twee keer starten
+hetzelfde is, en een spier die van kleur verschiet als je de app heropent is
+slechter dan grijs.
+
+Het palet is dat van de routines mín het grijs, want daar landen zou precies de
+verwarring opleveren die dit moest oplossen.
+
+Wat een eigen spiergroep niet krijgt: een plek op het lichaamsmodel, want dat
+tekent vaste vormen. En de herstelschatting rekent met de standaardwaarde van
+48 uur. Allebei staan ze in het scherm zelf, zodat je het weet voor je er een
+toevoegt in plaats van erna.

@@ -90,6 +90,40 @@ abstract final class AppColors {
     'nek': Color(0xFF8A8F98),
   };
 
-  static Color forMuscle(String? muscle) =>
-      muscleColors[muscle?.toLowerCase()] ?? const Color(0xFF8A8F98);
+  /// The colour a muscle group is drawn in, everywhere.
+  ///
+  /// A group the user added has no entry above, and grey for all of them would
+  /// make them indistinguishable from each other and from "unknown". So the
+  /// name picks one: same name, same colour, on every screen and between runs.
+  ///
+  /// Deliberately not `hashCode` - Dart makes no promise that it is the same
+  /// from one run to the next, and a muscle that changes colour when you
+  /// reopen the app is worse than grey.
+  static Color forMuscle(String? muscle) {
+    final key = muscle?.toLowerCase();
+    if (key == null || key.isEmpty) return const Color(0xFF8A8F98);
+
+    final known = muscleColors[key];
+    if (known != null) return known;
+
+    var sum = 0;
+    for (final unit in key.codeUnits) {
+      sum = (sum * 31 + unit) % 0x7FFFFFFF;
+    }
+    return _ownMuscleColours[sum % _ownMuscleColours.length];
+  }
+
+  /// What a muscle group of your own is drawn in.
+  ///
+  /// The routine palette without its grey: grey is what the app uses for "no
+  /// muscle", and a group that lands on it would read as nothing at all.
+  static const _ownMuscleColours = <Color>[
+    Color(0xFF3D7DFF),
+    Color(0xFF00A9A5),
+    Color(0xFF3BA55D),
+    Color(0xFFB07D2B),
+    Color(0xFFE0629B),
+    Color(0xFF7C5CFF),
+    Color(0xFFE5484D),
+  ];
 }

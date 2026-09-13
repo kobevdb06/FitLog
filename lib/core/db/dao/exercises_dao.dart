@@ -48,7 +48,15 @@ class ExerciseFilter {
   }
 }
 
-@DriftAccessor(tables: [ExercisesTable, WorkoutExercisesTable, WorkoutsTable])
+@DriftAccessor(
+  tables: [
+    ExercisesTable,
+    WorkoutExercisesTable,
+    WorkoutsTable,
+    CustomMusclesTable,
+    CustomEquipmentTable,
+  ],
+)
 class ExercisesDao extends DatabaseAccessor<AppDatabase>
     with _$ExercisesDaoMixin {
   ExercisesDao(super.db);
@@ -144,22 +152,122 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Distinct values present in the catalogue, used to build the filter chips.
+  /// Every muscle group you can pick: the ones the catalogue uses plus the
+  /// ones you added yourself.
+  ///
+  /// The union, not one or the other. A group you added stays on the list
+  /// before any exercise uses it and after the last one stops; a group the
+  /// catalogue uses is there whether or not you ever wrote it down.
   Future<List<String>> distinctPrimaryMuscles() async {
     final rows = await customSelect(
-      'SELECT DISTINCT primary_muscle AS m FROM exercises '
-      'WHERE is_archived = 0 ORDER BY m',
-      readsFrom: {exercisesTable},
+      'SELECT m FROM ('
+      '  SELECT DISTINCT primary_muscle AS m FROM exercises '
+      '  WHERE is_archived = 0'
+      '  UNION SELECT name AS m FROM custom_muscles'
+      ') ORDER BY m',
+      readsFrom: {exercisesTable, customMusclesTable},
     ).get();
     return rows.map((r) => r.read<String>('m')).toList();
   }
 
+  /// The same for kit.
   Future<List<String>> distinctEquipment() async {
     final rows = await customSelect(
-      'SELECT DISTINCT equipment AS e FROM exercises '
-      'WHERE is_archived = 0 AND equipment IS NOT NULL ORDER BY e',
-      readsFrom: {exercisesTable},
+      'SELECT e FROM ('
+      '  SELECT DISTINCT equipment AS e FROM exercises '
+      '  WHERE is_archived = 0 AND equipment IS NOT NULL'
+      '  UNION SELECT name AS e FROM custom_equipment'
+      ') ORDER BY e',
+      readsFrom: {exercisesTable, customEquipmentTable},
     ).get();
     return rows.map((r) => r.read<String>('e')).toList();
+  }
+
+  Stream<List<String>> watchPrimaryMuscles() => customSelect(
+    'SELECT m FROM ('
+    '  SELECT DISTINCT primary_muscle AS m FROM exercises '
+    '  WHERE is_archived = 0'
+    '  UNION SELECT name AS m FROM custom_muscles'
+    ') ORDER BY m',
+    readsFrom: {exercisesTable, customMusclesTable},
+  ).watch().map((rows) => [for (final r in rows) r.read<String>('m')]);
+
+  Stream<List<String>> watchEquipment() => customSelect(
+    'SELECT e FROM ('
+    '  SELECT DISTINCT equipment AS e FROM exercises '
+    '  WHERE is_archived = 0 AND equipment IS NOT NULL'
+    '  UNION SELECT name AS e FROM custom_equipment'
+    ') ORDER BY e',
+    readsFrom: {exercisesTable, customEquipmentTable},
+  ).watch().map((rows) => [for (final r in rows) r.read<String>('e')]);
+
+  /// Adds a muscle group of your own. Lower case, because that is the key the
+  /// colours, the recovery estimate and every exercise row join on.
+  Future<void> addCustomMuscle(String name) async {
+    final trimmed = name.trim().toLowerCase();
+    if (trimmed.isEmpty) return;
+    await into(customMusclesTable).insertOnConflictUpdate(
+      CustomMusclesTableCompanion.insert(
+        name: trimmed,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  Future<void> addCustomEquipment(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    await into(customEquipmentTable).insertOnConflictUpdate(
+      CustomEquipmentTableCompanion.insert(
+        name: trimmed,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  Future<void> removeCustomMuscle(String name) async {
+    await (delete(customMusclesTable)..where((t) => t.name.equals(name))).go();
+  }
+
+  Future<void> removeCustomEquipment(String name) async {
+    await (delete(
+      customEquipmentTable,
+    )..where((t) => t.name.equals(name))).go();
+  }
+
+  /// Which of your own entries are still only yours, and which the catalogue
+  /// has since taken over.
+  Stream<List<CustomMuscleRow>> watchCustomMuscles() => (select(
+    customMusclesTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
+
+  Stream<List<CustomEquipmentRow>> watchCustomEquipment() => (select(
+    customEquipmentTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
+
+  /// How many exercises use a muscle group, primary or secondary.
+  ///
+  /// Removing one that is in use would leave those exercises pointing at a
+  /// name nothing else knows.
+  Future<int> exercisesUsingMuscle(String name) async {
+    final rows = await customSelect(
+      'SELECT COUNT(*) AS n FROM exercises '
+      'WHERE is_archived = 0 AND (primary_muscle = ? '
+      "OR secondary_muscles LIKE '%\"' || ? || '\"%')",
+      variables: [Variable.withString(name), Variable.withString(name)],
+      readsFrom: {exercisesTable},
+    ).getSingle();
+    return rows.read<int>('n');
+  }
+
+  Future<int> exercisesUsingEquipment(String name) async {
+    final rows = await customSelect(
+      'SELECT COUNT(*) AS n FROM exercises '
+      'WHERE is_archived = 0 AND equipment = ?',
+      variables: [Variable.withString(name)],
+      readsFrom: {exercisesTable},
+    ).getSingle();
+    return rows.read<int>('n');
   }
 
   /// The exercises used most recently, newest first.

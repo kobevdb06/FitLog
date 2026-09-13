@@ -596,13 +596,12 @@ class _RecoveryShowStep extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: words.length,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: AppSpacing.sm,
-                      crossAxisSpacing: AppSpacing.sm,
-                      childAspectRatio: 4.2,
-                    ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: AppSpacing.sm,
+                  crossAxisSpacing: AppSpacing.sm,
+                  childAspectRatio: 4.2,
+                ),
                 itemBuilder: (context, index) => Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md,
@@ -686,10 +685,7 @@ class _RecoveryVerifyStep extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text(
-                'Even controleren',
-                style: theme.textTheme.titleMedium,
-              ),
+              Text('Even controleren', style: theme.textTheme.titleMedium),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Typ deze drie woorden over van je briefje.',
@@ -754,10 +750,7 @@ class _BiometricStep extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Sneller ontgrendelen',
-            style: theme.textTheme.titleLarge,
-          ),
+          Text('Sneller ontgrendelen', style: theme.textTheme.titleLarge),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Dit toestel ondersteunt biometrie. Zet je dat aan, dan volstaat '
@@ -870,9 +863,7 @@ class _ProfileStep extends StatelessWidget {
                   if (picked != null) onBirthDate(picked);
                 },
                 child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Geboortedatum',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Geboortedatum'),
                   child: Text(
                     birthDate == null
                         ? 'Niet ingevuld'
@@ -882,14 +873,14 @@ class _ProfileStep extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<Sex>(
-                initialValue: sex,
-                decoration: const InputDecoration(labelText: 'Geslacht'),
-                items: [
-                  for (final s in Sex.values)
-                    DropdownMenuItem(value: s, child: Text(s.label)),
-                ],
-                onChanged: onSex,
+              PickerField(
+                label: 'Geslacht',
+                text: sex?.label ?? 'Niet ingevuld',
+                muted: sex == null,
+                onTap: () async {
+                  final picked = await pickSex(context, current: sex);
+                  if (picked != null) onSex(picked);
+                },
               ),
               const SizedBox(height: AppSpacing.md),
               Row(

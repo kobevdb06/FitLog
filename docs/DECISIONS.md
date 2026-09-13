@@ -1483,7 +1483,7 @@ Er staan er nog vijf elders: het type en de spiergroep van een eigen oefening,
 je geslacht bij de eerste start, de map in de routine-editor, en de fotokiezer
 bij het vergelijken. Die zijn hier bewust niet meegenomen - er is om deze
 gevraagd - maar ze staan er nog, en dit is de plek waar dat opgeschreven
-hoort. (De eerste twee zijn intussen wel gedaan, zie 99.)
+hoort. (Ze zijn intussen allemaal gedaan, zie 99 en 100.)
 
 ## 99. Een eigen oefening kiest nu met plaatjes
 
@@ -1503,3 +1503,28 @@ enum, dus er is geen tekening om naast te zetten. Wel heeft elke spier in deze
 app al een kleur en twee letters - `MuscleAvatar`, te zien op elke oefeningrij.
 Dezelfde markering in de kiezer betekent dat wat je kiest eruitziet als wat je
 daarna overal terugziet.
+
+## 100. En nu is er echt geen dropdown meer
+
+De laatste drie: je geslacht bij de eerste start, de map in de routine-editor,
+en de fotokiezer bij het vergelijken. Alle drie dezelfde `PickerField` met
+dezelfde sheet eronder.
+
+Twee dingen kwamen er anders uit dan de rest.
+
+De map moest een wrapper terugkrijgen in plaats van een `String?`. "Geen map"
+is een antwoord, de sheet wegklikken is dat niet, en allebei zijn ze null. Met
+een kale `String?` kon de editor die twee niet uit elkaar houden en kon je een
+routine nooit meer uit een map halen. De test daarvoor faalt ook echt als je
+`pop()` in plaats van `pop((id: null))` schrijft.
+
+De fotokiezer kreeg geen `PickerField` maar een compacte regel onder de foto -
+een omkaderd formulierveld is te zwaar voor iets dat onder een afbeelding
+hangt. In de sheet staat wel een miniatuur per regel. Een datum en een houding
+vertellen je niet welke foto je gaat krijgen, en dat scherm bestaat om ernaar
+te kijken.
+
+Er staat nu ook een test die heel `lib/` afgaat op `DropdownButton`. Ze kwamen
+één voor één terug en elke keer zag dat er los onschuldig uit; dit zegt het één
+keer, voor alle schermen tegelijk - ook die waar je een hele flow voor moet
+doorlopen om er te komen.

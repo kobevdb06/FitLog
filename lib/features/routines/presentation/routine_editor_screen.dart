@@ -495,15 +495,31 @@ class _Header extends StatelessWidget {
           ColourPicker(selected: colorIndex, onChanged: onColour),
           if (folders.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<String?>(
-              initialValue: folderId,
-              decoration: const InputDecoration(labelText: 'Map'),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('Geen map')),
-                for (final f in folders)
-                  DropdownMenuItem(value: f.id, child: Text(f.name)),
-              ],
-              onChanged: onFolder,
+            PickerField(
+              label: 'Map',
+              leading: Icon(
+                folders.any((f) => f.id == folderId)
+                    ? Icons.folder_outlined
+                    : Icons.folder_off_outlined,
+              ),
+              // An id that is not in the list is a folder that was deleted
+              // while this editor was open; the routines in it moved to the
+              // top level, so that is what this says rather than throwing.
+              text:
+                  folders
+                      .where((f) => f.id == folderId)
+                      .map((f) => f.name)
+                      .firstOrNull ??
+                  'Geen map',
+              muted: !folders.any((f) => f.id == folderId),
+              onTap: () async {
+                final picked = await pickFolder(
+                  context,
+                  current: folderId,
+                  folders: folders,
+                );
+                if (picked != null) onFolder(picked.id);
+              },
             ),
           ],
         ],

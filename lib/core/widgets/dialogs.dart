@@ -1,8 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../calc/rpe.dart';
 import '../calc/schedule.dart';
-import '../db/enums.dart';
+import '../db/database.dart';
 import '../formatting/formatters.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -348,6 +350,106 @@ Future<String?> pickMuscle(
             title: Text(muscle),
             selected: muscle == current,
             onTap: () => Navigator.of(context).pop(muscle),
+          ),
+      ],
+    ),
+  );
+}
+
+/// One of the four answers, or none of them.
+Future<Sex?> pickSex(BuildContext context, {required Sex? current}) {
+  return showAppSheet<Sex>(
+    context: context,
+    title: 'Geslacht',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final sex in Sex.values)
+          ListTile(
+            title: Text(sex.label),
+            selected: sex == current,
+            onTap: () => Navigator.of(context).pop(sex),
+          ),
+      ],
+    ),
+  );
+}
+
+/// Which folder a routine sits in, or none at all.
+///
+/// The top level is a real answer rather than the absence of one, so it is the
+/// first line of the sheet instead of a way to back out of it. That is also why
+/// this returns a wrapper: a plain null is what you get when you close the
+/// sheet without choosing, and "no folder" has to be distinguishable from it.
+Future<({String? id})?> pickFolder(
+  BuildContext context, {
+  required String? current,
+  required List<RoutineFolderRow> folders,
+}) {
+  return showAppSheet<({String? id})>(
+    context: context,
+    title: 'In welke map?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.folder_off_outlined),
+          title: const Text('Geen map'),
+          selected: current == null,
+          onTap: () => Navigator.of(context).pop((id: null)),
+        ),
+        for (final folder in folders)
+          ListTile(
+            leading: const Icon(Icons.folder_outlined),
+            title: Text(folder.name),
+            selected: folder.id == current,
+            onTap: () => Navigator.of(context).pop((id: folder.id)),
+          ),
+      ],
+    ),
+  );
+}
+
+/// Which photo to put in this half of the comparison.
+///
+/// With a thumbnail on every line, because a date and a pose do not tell you
+/// which picture you are about to get - and the whole screen is about looking
+/// at them.
+Future<String?> pickPhoto(
+  BuildContext context, {
+  required String current,
+  required List<ProgressPhotoRow> photos,
+  required File Function(String fileName) fileFor,
+}) {
+  return showAppSheet<String>(
+    context: context,
+    title: 'Welke foto?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final photo in photos)
+          ListTile(
+            leading: SizedBox(
+              width: 40,
+              height: 52,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                child: Image.file(
+                  fileFor(photo.fileName),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stack) =>
+                      const MissingPhotoPlaceholder(compact: true),
+                ),
+              ),
+            ),
+            title: Text(
+              Formatters.date(
+                DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
+              ),
+            ),
+            subtitle: Text(PhotoPose.fromWire(photo.pose).label),
+            selected: photo.id == current,
+            onTap: () => Navigator.of(context).pop(photo.id),
           ),
       ],
     ),

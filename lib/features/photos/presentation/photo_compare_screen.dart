@@ -8,6 +8,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import 'photo_providers.dart';
 
 /// Two photos side by side with their dates and the weight difference.
@@ -15,8 +16,7 @@ class PhotoCompareScreen extends ConsumerStatefulWidget {
   const PhotoCompareScreen({super.key});
 
   @override
-  ConsumerState<PhotoCompareScreen> createState() =>
-      _PhotoCompareScreenState();
+  ConsumerState<PhotoCompareScreen> createState() => _PhotoCompareScreenState();
 }
 
 class _PhotoCompareScreenState extends ConsumerState<PhotoCompareScreen> {
@@ -114,26 +114,30 @@ class _Side extends StatelessWidget {
                 const MissingPhotoPlaceholder(),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: DropdownButton<String>(
-            isExpanded: true,
-            value: photo.id,
-            underline: const SizedBox.shrink(),
-            items: [
-              for (final p in photos)
-                DropdownMenuItem(
-                  value: p.id,
+        InkWell(
+          onTap: () async {
+            final picked = await pickPhoto(
+              context,
+              current: photo.id,
+              photos: photos,
+              fileFor: paths.photoFile,
+            );
+            if (picked != null) onChanged(picked);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Expanded(
                   child: Text(
-                    '${Formatters.date(DateTime.fromMillisecondsSinceEpoch(p.takenAt))}'
-                    ' · ${PhotoPose.fromWire(p.pose).label}',
+                    '${Formatters.date(DateTime.fromMillisecondsSinceEpoch(photo.takenAt))}'
+                    ' · ${PhotoPose.fromWire(photo.pose).label}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
-            ],
-            onChanged: (value) {
-              if (value != null) onChanged(value);
-            },
+                const Icon(Icons.expand_more, size: 18),
+              ],
+            ),
           ),
         ),
       ],
@@ -154,21 +158,14 @@ class _Difference extends ConsumerWidget {
 
     return FutureBuilder<List<BodyMeasurementRow?>>(
       future: Future.wait([
-        dao.weightNearest(
-          DateTime.fromMillisecondsSinceEpoch(left.takenAt),
-        ),
-        dao.weightNearest(
-          DateTime.fromMillisecondsSinceEpoch(right.takenAt),
-        ),
+        dao.weightNearest(DateTime.fromMillisecondsSinceEpoch(left.takenAt)),
+        dao.weightNearest(DateTime.fromMillisecondsSinceEpoch(right.takenAt)),
       ]),
       builder: (context, snapshot) {
-        final days =
-            DateTime.fromMillisecondsSinceEpoch(right.takenAt)
-                .difference(
-                  DateTime.fromMillisecondsSinceEpoch(left.takenAt),
-                )
-                .inDays
-                .abs();
+        final days = DateTime.fromMillisecondsSinceEpoch(right.takenAt)
+            .difference(DateTime.fromMillisecondsSinceEpoch(left.takenAt))
+            .inDays
+            .abs();
 
         final a = snapshot.data?[0];
         final b = snapshot.data?[1];
@@ -184,8 +181,7 @@ class _Difference extends ConsumerWidget {
                 StatTile(value: '$days', label: 'Dagen ertussen'),
                 if (delta != null)
                   StatTile(
-                    value:
-                        '${delta > 0 ? '+' : ''}${formatters.weight(delta)}',
+                    value: '${delta > 0 ? '+' : ''}${formatters.weight(delta)}',
                     label: 'Gewichtsverschil',
                     emphasis: true,
                   ),

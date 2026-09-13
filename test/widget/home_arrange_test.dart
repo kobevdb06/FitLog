@@ -189,6 +189,39 @@ void main() {
     expect(find.text('DEZE WEEK'), findsOneWidget);
   });
 
+  testWidgets('and the blocks fit a phone at full width too', (tester) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await db.settingsDao.updateSettings(
+      AppSettingsTableCompanion(
+        homeLayout: Value(
+          encodeHomeLayout(
+            defaultHomeLayout.withVisible(HomeBlock.favourites, visible: true),
+          ),
+        ),
+      ),
+    );
+
+    container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
+        scheduledRoutinesProvider.overrideWith((ref) => Stream.value(const [])),
+        favouriteRoutinesProvider.overrideWith((ref) => Stream.value(const [])),
+        suggestedRoutineProvider.overrideWith((ref) async => null),
+      ],
+    );
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const DashboardScreen()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Instellingen can send you here to arrange', (tester) async {
     await pump(tester);
     expect(find.text('Indelen'), findsNothing);

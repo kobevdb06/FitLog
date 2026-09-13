@@ -1764,3 +1764,37 @@ Wat op de emulator wél elke keer over het budget gaat is de allereerste keer da
 het scherm getoond wordt: 24 tot 27 ms build. Alles daarna is er ruim onder. Op
 een telefoon is dat ruwweg het dubbele, en dat is precies één hapering per keer
 dat je de app opent en je eerste workout start.
+
+## 112. Gemeten op de telefoon zelf, en wat dat leerde
+
+Hetzelfde harnas, ander toestel: `flutter drive ... -d <telefoon> --profile`.
+Dat installeert tijdelijk een profielbuild over de release heen, wat alleen kan
+als beide met dezelfde sleutel ondertekend zijn - anders weigert Android, en de
+app verwijderen zou de database meenemen.
+
+| oefeningen | frames te traag (van 12) | ergste build |
+|---|---|---|
+| 0 | 1 | 18,3 ms |
+| 1 | 1 | 44,2 ms |
+| 4 | 3 | 53,3 ms |
+| 8 | 4 | 54,3 ms |
+
+Drie tot vier van de twaalf frames van de overgang vallen weg. Dat is wat er te
+zien is. De emulator liet daar één van de honderdacht zien: vijf keer sneller,
+en dus geen vervanging voor de echte hardware.
+
+De tijdlijn op de telefoon wijst niet naar onze widgets. Grootste posten:
+afval ophalen (`ConcurrentMark` 68 ms, `Scavenge` 48 ms), Vulkan-pijplijnen
+aanmaken (41 ms) en de glyph-atlas (23 ms) - dat laatste twee zijn eenmalige
+grafische kosten. `ActiveWorkoutScreen` zelf staat op 12 ms over drie builds.
+
+En de belangrijkste les: **de ruis is even groot als het signaal.** Drie
+identieke metingen met één oefening gaven 39,5 / 18,4 / 32,9 ms. Op de emulator
+was het niet beter. Een winst van vijf milliseconden is in deze opstelling niet
+aan te tonen, hoe vaak je ook meet.
+
+Dat sluit een hele aanpak uit: stukje bij beetje optimaliseren en per stap
+meten of het hielp. Wat wel te bewijzen valt is een verandering die het werk
+buiten de animatie legt in plaats van het goedkoper maakt - dan hoort het aantal
+te trage frames tijdens de overgang naar nul te gaan, en dat is een verschil dat
+boven de ruis uitkomt.

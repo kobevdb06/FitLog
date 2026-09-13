@@ -1733,3 +1733,34 @@ Twee kosten die los van elkaar staan: een vaste koude start van ongeveer 24 ms
 de allereerste keer dat het scherm getoond wordt, en daarbovenop zo'n 1,5 ms
 per oefening. Op een telefoon is dat ruwweg het dubbele, wat overeenkomt met de
 17 tot 27 ms die daar gemeten is.
+
+## 111. Een dubbele layout die alleen een superset nodig had
+
+Elke oefeningkaart zat in een `IntrinsicHeight`. Dat legt de hele inhoud van de
+kaart twee keer door de layout - de kop, de notitie, elke setregel - en het was
+er alleen voor het gekleurde streepje links van een superset, dat er bij de
+meeste mensen nooit is.
+
+Nu krijgt een kaart zonder streepje ook de `Row` niet meer. Dat moest samen: die
+`Row` staat op `CrossAxisAlignment.stretch` en haalt zijn hoogte uit de
+`IntrinsicHeight`. Alleen die laatste weghalen geeft een `Row` met onbegrensde
+hoogte. In profielmodus staan asserties uit, dus dat leek in eerste instantie
+een prachtige versnelling - het was een kapotte layout. De widgettest die erbij
+hoort ving het meteen.
+
+**Eerlijk over de winst: die heb ik niet kunnen meten.** Tien metingen met en
+tien zonder, op de emulator, met vier oefeningen:
+
+| | mediaan build | frames te traag |
+|---|---|---|
+| zonder | 9,0 ms | 1 van 108 |
+| met    | 8,5 ms | 2 van 108 |
+
+Dat valt binnen de ruis. De wijziging blijft omdat ze aantoonbaar minder werk
+doet en het `IntrinsicHeight` nu staat waar het nodig is, niet omdat ze het
+haperen oplost.
+
+Wat op de emulator wél elke keer over het budget gaat is de allereerste keer dat
+het scherm getoond wordt: 24 tot 27 ms build. Alles daarna is er ruim onder. Op
+een telefoon is dat ruwweg het dubbele, en dat is precies één hapering per keer
+dat je de app opent en je eerste workout start.

@@ -815,109 +815,106 @@ class _ExerciseCard extends ConsumerWidget {
         (SetType.fromWire(s.setType), SetSide.fromWire(s.side)),
     ]);
 
+    // The body of the card. Pulled out so that the stripe down the left of a
+    // superset can be wrapped around it without everything else paying for it.
+    final inhoud = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (detail.workoutExercise.isPrAttempt)
+          PrAttemptHeader(detail: detail, formatters: formatters),
+        _CardHeader(
+          detail: detail,
+          index: index,
+          groupColor: groupColor,
+          group: group,
+          onMenu: (value) => _onMenu(context, ref, value),
+        ),
+        _NoteField(
+          detail: detail,
+          previousNote: previousNote,
+          onChanged: (note) => ref
+              .read(workoutControllerProvider)
+              .setExerciseNote(detail.workoutExercise.id, note),
+        ),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          child: Column(
+            children: [
+              _ColumnHeaders(formatters: formatters, columns: columns),
+              for (var i = 0; i < detail.sets.length; i++)
+                SetRow(
+                  key: ValueKey(detail.sets[i].id),
+                  row: detail.sets[i],
+                  label: labels[i],
+                  previous: _previousFor(
+                    previousBySide[labels[i].side],
+                    labels[i],
+                  ),
+                  columns: columns,
+                  formatters: formatters,
+                  isRecord: recordSetIds.contains(detail.sets[i].id),
+                  activeKind: activeTarget?.setId == detail.sets[i].id
+                      ? activeTarget!.kind
+                      : null,
+                  onFocus: (kind) => onFocus(detail.sets[i], kind),
+                  onToggle: () => onToggle(detail.sets[i]),
+                  onReset: () => onReset(detail.sets[i]),
+                  onCopyPrevious: _copyPreviousAction(
+                    ref,
+                    detail.sets[i],
+                    _previousFor(previousBySide[labels[i].side], labels[i]),
+                    columns,
+                  ),
+                  onDelete: () => ref
+                      .read(workoutControllerProvider)
+                      .deleteSet(detail.sets[i].id),
+                  onSetType: (type) => ref
+                      .read(workoutControllerProvider)
+                      .setSetType(detail.sets[i].id, type),
+                ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => ref
+                      .read(workoutControllerProvider)
+                      .addSet(detail.workoutExercise.id),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Set toevoegen'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    // IntrinsicHeight lays the whole card out a second time - the header, the
+    // note, every set row - and it is only needed so the superset stripe has a
+    // height to stretch to. A card without a stripe has nothing to stretch and
+    // does not need the Row either, so it gets neither.
     return AppCard(
       padding: EdgeInsets.zero,
       borderColor: groupColor,
-      // IntrinsicHeight gives the superset stripe a height to stretch to; a
-      // stretching Row inside a scroll view has none of its own.
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (groupColor != null)
-              Container(
-                width: 4,
-                decoration: BoxDecoration(
-                  color: groupColor,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(AppSpacing.radiusLg),
-                  ),
-                ),
-              ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: groupColor == null
+          ? inhoud
+          : IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (detail.workoutExercise.isPrAttempt)
-                    PrAttemptHeader(detail: detail, formatters: formatters),
-                  _CardHeader(
-                    detail: detail,
-                    index: index,
-                    groupColor: groupColor,
-                    group: group,
-                    onMenu: (value) => _onMenu(context, ref, value),
-                  ),
-                  _NoteField(
-                    detail: detail,
-                    previousNote: previousNote,
-                    onChanged: (note) => ref
-                        .read(workoutControllerProvider)
-                        .setExerciseNote(detail.workoutExercise.id, note),
-                  ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                    ),
-                    child: Column(
-                      children: [
-                        _ColumnHeaders(
-                          formatters: formatters,
-                          columns: columns,
-                        ),
-                        for (var i = 0; i < detail.sets.length; i++)
-                          SetRow(
-                            key: ValueKey(detail.sets[i].id),
-                            row: detail.sets[i],
-                            label: labels[i],
-                            previous: _previousFor(
-                              previousBySide[labels[i].side],
-                              labels[i],
-                            ),
-                            columns: columns,
-                            formatters: formatters,
-                            isRecord: recordSetIds.contains(detail.sets[i].id),
-                            activeKind: activeTarget?.setId == detail.sets[i].id
-                                ? activeTarget!.kind
-                                : null,
-                            onFocus: (kind) => onFocus(detail.sets[i], kind),
-                            onToggle: () => onToggle(detail.sets[i]),
-                            onReset: () => onReset(detail.sets[i]),
-                            onCopyPrevious: _copyPreviousAction(
-                              ref,
-                              detail.sets[i],
-                              _previousFor(
-                                previousBySide[labels[i].side],
-                                labels[i],
-                              ),
-                              columns,
-                            ),
-                            onDelete: () => ref
-                                .read(workoutControllerProvider)
-                                .deleteSet(detail.sets[i].id),
-                            onSetType: (type) => ref
-                                .read(workoutControllerProvider)
-                                .setSetType(detail.sets[i].id, type),
-                          ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            onPressed: () => ref
-                                .read(workoutControllerProvider)
-                                .addSet(detail.workoutExercise.id),
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Set toevoegen'),
-                          ),
-                        ),
-                      ],
+                  Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: groupColor,
+                      borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(AppSpacing.radiusLg),
+                      ),
                     ),
                   ),
+                  Expanded(child: inhoud),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 

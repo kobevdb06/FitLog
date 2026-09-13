@@ -63,7 +63,11 @@ void main() {
     }
   }
 
-  Future<Map<String, Object>> meetMet(WidgetTester tester, int aantal) async {
+  Future<Map<String, Object>> meetMet(
+    WidgetTester tester,
+    int aantal, {
+    bool spoor = false,
+  }) async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
     for (var i = 0; i < aantal; i++) {
@@ -145,14 +149,32 @@ void main() {
 
     // --- de overgang naar de workout --------------------------------------
     final voorOpenen = frames.length;
-    unawaited(
-      navigator.currentState!.push(
-        MaterialPageRoute<void>(
-          builder: (context) => const ActiveWorkoutScreen(),
+    if (spoor) {
+      // Elke widget die gebouwd wordt komt als eigen gebeurtenis in de
+      // tijdlijn te staan. Alleen aanzetten wanneer we willen weten waar de
+      // tijd heen gaat: het kost zelf ook wat.
+      debugProfileBuildsEnabled = true;
+      await binding.traceAction(() async {
+        unawaited(
+          navigator.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (context) => const ActiveWorkoutScreen(),
+            ),
+          ),
+        );
+        await rust(tester, 3);
+      }, reportKey: 'tijdlijn');
+      debugProfileBuildsEnabled = false;
+    } else {
+      unawaited(
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (context) => const ActiveWorkoutScreen(),
+          ),
         ),
-      ),
-    );
-    await rust(tester, 3);
+      );
+      await rust(tester, 3);
+    }
     final openen = samenvatting(voorOpenen);
 
     // --- een set afvinken --------------------------------------------------
@@ -190,15 +212,23 @@ void main() {
     SchedulerBinding.instance.addTimingsCallback(frames.addAll);
 
     final uitslagen = <Object>[];
-    for (final aantal in [4, 0, 1, 4, 8]) {
-      // De eerste meting is een opwarmronde: de allereerste keer dat een
-      // scherm getoond wordt betaalt het voor van alles dat daarna warm is.
-      uitslagen.add(await meetMet(tester, aantal));
+    // De eerste meting is een opwarmronde: de allereerste keer dat een scherm
+    // getoond wordt betaalt het voor van alles dat daarna warm is. Juist die
+    // ronde wordt gevolgd, want daar zit de kost die we zoeken.
+    uitslagen.add(await meetMet(tester, 4));
+    await rust(tester, 1);
+    for (final aantal in [0, 1, 4, 8]) {
+      final uitslag = await meetMet(tester, aantal);
+      uitslagen.add(uitslag);
+      // Eén regel per meting: logcat kapt een lange regel af, en dan mist de
+      // helft van de metingen zonder dat je het ziet.
+      // ignore: avoid_print
+      print('METING ${jsonEncode(uitslag["openen"])}');
       await rust(tester, 1);
     }
 
     // ignore: avoid_print
     print('UITSLAG ${jsonEncode(uitslagen)}');
-    binding.reportData = {'metingen': uitslagen};
+    binding.reportData = {...?binding.reportData, 'metingen': uitslagen};
   });
 }

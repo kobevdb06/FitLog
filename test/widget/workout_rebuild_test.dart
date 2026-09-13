@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/providers/core_providers.dart';
@@ -21,6 +22,7 @@ void main() {
 
   late AppDatabase db;
   late ProviderContainer container;
+  late String workoutId;
 
   setUp(() async {
     db = createTestDatabase();
@@ -38,11 +40,11 @@ void main() {
             ),
           );
     }
-    final id = await db.workoutsDao.startWorkout(
+    workoutId = await db.workoutsDao.startWorkout(
       name: 'Chest day',
       defaultRestSeconds: 90,
     );
-    await db.workoutsDao.addExercises(id, [
+    await db.workoutsDao.addExercises(workoutId, [
       'ex-0',
       'ex-1',
       'ex-2',
@@ -100,6 +102,33 @@ void main() {
       isTrue,
       reason: 'de oefeningen horen niet mee te bouwen voor een klok',
     );
+  });
+
+  group('measuring the card twice', () {
+    testWidgets('is not done when there is nothing to stretch', (tester) async {
+      // IntrinsicHeight lays the whole card out a second time - the header,
+      // the note, every set row. That is a third of a frame's budget per card,
+      // and almost no session has a superset in it.
+      await pump(tester);
+
+      expect(find.byType(IntrinsicHeight), findsNothing);
+    });
+
+    testWidgets('and is done for the stripe down a superset', (tester) async {
+      final detail = (await db.workoutsDao.getWorkoutDetail(workoutId))!;
+      for (final exercise in detail.exercises.take(2)) {
+        await db.workoutsDao.updateWorkoutExercise(
+          exercise.workoutExercise.id,
+          supersetGroup: const Value(0),
+        );
+      }
+
+      await pump(tester);
+
+      // The stripe has to reach from top to bottom, and a stretching Row in a
+      // scroll view has no height of its own to reach across.
+      expect(find.byType(IntrinsicHeight), findsNWidgets(2));
+    });
   });
 
   testWidgets('and neither does five of them', (tester) async {

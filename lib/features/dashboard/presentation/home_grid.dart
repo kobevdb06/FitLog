@@ -180,6 +180,10 @@ class _Arrangeable extends StatelessWidget {
             ),
             childWhenDragging: Opacity(opacity: 0.25, child: frozen),
             child: Stack(
+              // The row hands a pair of blocks one height between them; a
+              // Stack loosens what it passes on unless told otherwise, which
+              // left the shorter of the two short while you arranged it.
+              fit: StackFit.passthrough,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: kCrossRoom),

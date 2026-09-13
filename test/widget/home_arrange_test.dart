@@ -133,7 +133,12 @@ void main() {
     // Ragged pairs are what gives a grid of widgets away as a list that
     // happens to wrap.
     var layout = defaultHomeLayout;
-    for (final block in [HomeBlock.week, HomeBlock.volume]) {
+    for (final block in [
+      HomeBlock.week,
+      HomeBlock.recovery,
+      HomeBlock.records,
+      HomeBlock.volume,
+    ]) {
       layout = layout.withSize(block, HomeBlockSize.small);
     }
     await db.settingsDao.updateSettings(
@@ -146,6 +151,18 @@ void main() {
 
     expect(volume.top, closeTo(week.top, 0.5));
     expect(volume.height, closeTo(week.height, 0.5));
+
+    // And while you are arranging them, where each block sits in a Stack of
+    // its own. Sizes, not rectangles: an arranging block leans, and the
+    // bounding box of a leaning card is taller than the card.
+    await arrange(tester);
+
+    // Herstel has nothing to show, so it only has a place on the grid while
+    // you are arranging - beside Deze week, and as tall.
+    final weekEditing = tester.getSize(cardOf(tester, 'DEZE WEEK'));
+    final recoveryEditing = tester.getSize(cardOf(tester, 'HERSTEL'));
+
+    expect(recoveryEditing.height, closeTo(weekEditing.height, 0.5));
   });
 
   testWidgets('the cross does not sit on top of the name', (tester) async {

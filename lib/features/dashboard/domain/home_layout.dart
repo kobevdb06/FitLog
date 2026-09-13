@@ -51,9 +51,26 @@ enum HomeBlock {
   bool get onByDefault => this != HomeBlock.favourites;
 }
 
-/// The order and the on/off state of every block.
+/// How much room a block takes.
+///
+/// Two sizes and no more. A phone is narrow enough that a third would be hard
+/// to tell from one of the other two, and every block has to know how to draw
+/// itself at every size it can be given.
+enum HomeBlockSize {
+  /// The full width of the screen.
+  wide,
+
+  /// Half of it, so two sit side by side.
+  small,
+}
+
+/// The order, the on/off state and the size of every block.
 class HomeLayout {
-  const HomeLayout({required this.blocks, required this.hidden});
+  const HomeLayout({
+    required this.blocks,
+    required this.hidden,
+    this.small = const {},
+  });
 
   /// Every block, in the order they appear, whether shown or not. Keeping the
   /// hidden ones in place means switching one back on returns it to where it
@@ -61,6 +78,11 @@ class HomeLayout {
   final List<HomeBlock> blocks;
 
   final Set<HomeBlock> hidden;
+
+  /// The blocks that take half the width. Absent means full width, which is
+  /// what every layout written before sizes existed reads as - so nobody's
+  /// screen changes shape until they say so.
+  final Set<HomeBlock> small;
 
   /// What the dashboard actually builds.
   List<HomeBlock> get visible => [
@@ -70,15 +92,47 @@ class HomeLayout {
 
   bool shows(HomeBlock block) => !hidden.contains(block);
 
+  HomeBlockSize sizeOf(HomeBlock block) =>
+      small.contains(block) ? HomeBlockSize.small : HomeBlockSize.wide;
+
   HomeLayout withVisible(HomeBlock block, {required bool visible}) =>
       HomeLayout(
         blocks: blocks,
+        small: small,
         hidden: {
           for (final other in hidden)
             if (other != block) other,
           if (!visible) block,
         },
       );
+
+  HomeLayout withSize(HomeBlock block, HomeBlockSize size) => HomeLayout(
+    blocks: blocks,
+    hidden: hidden,
+    small: {
+      for (final other in small)
+        if (other != block) other,
+      if (size == HomeBlockSize.small) block,
+    },
+  );
+
+  /// The size a block does not currently have.
+  HomeLayout resized(HomeBlock block) => withSize(
+    block,
+    sizeOf(block) == HomeBlockSize.wide
+        ? HomeBlockSize.small
+        : HomeBlockSize.wide,
+  );
+
+  /// Puts [block] where [onto] currently is, which is what a drag means.
+  HomeLayout movedOnto(HomeBlock block, HomeBlock onto) {
+    if (block == onto) return this;
+    final order = [...blocks]..remove(block);
+    final at = order.indexOf(onto);
+    if (at < 0) return this;
+    order.insert(at, block);
+    return HomeLayout(blocks: order, hidden: hidden, small: small);
+  }
 
   /// Moves the block at [from] to [to], where [to] is its index in the list
   /// the block has already left - which is what `onReorderItem` hands over.
@@ -87,7 +141,7 @@ class HomeLayout {
     final moved = [...blocks];
     final block = moved.removeAt(from);
     moved.insert(to.clamp(0, moved.length), block);
-    return HomeLayout(blocks: moved, hidden: hidden);
+    return HomeLayout(blocks: moved, hidden: hidden, small: small);
   }
 }
 
@@ -135,7 +189,13 @@ HomeLayout parseHomeLayout(String? stored) {
     if (!block.onByDefault) hidden.add(block);
   }
 
-  return HomeLayout(blocks: order, hidden: hidden);
+  final small = <HomeBlock>{};
+  for (final entry in _stringList(decoded['small'])) {
+    final block = HomeBlock.fromWire(entry);
+    if (block != null) small.add(block);
+  }
+
+  return HomeLayout(blocks: order, hidden: hidden, small: small);
 }
 
 String encodeHomeLayout(HomeLayout layout) => jsonEncode({
@@ -143,6 +203,10 @@ String encodeHomeLayout(HomeLayout layout) => jsonEncode({
   'hidden': [
     for (final block in layout.blocks)
       if (layout.hidden.contains(block)) block.wire,
+  ],
+  'small': [
+    for (final block in layout.blocks)
+      if (layout.small.contains(block)) block.wire,
   ],
 });
 

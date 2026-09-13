@@ -1900,3 +1900,42 @@ Wat een eigen spiergroep niet krijgt: een plek op het lichaamsmodel, want dat
 tekent vaste vormen. En de herstelschatting rekent met de standaardwaarde van
 48 uur. Allebei staan ze in het scherm zelf, zodat je het weet voor je er een
 toevoegt in plaats van erna.
+
+## 118. Het startscherm indeel je op het startscherm
+
+De indeling zat in een instellingenscherm: een lijst met schakelaars waar je de
+tekst "Deze week" boven de tekst "Herstel" sleepte en pas daarna zag wat dat
+opleverde. Je deelde iets in dat je niet kon zien.
+
+Nu houd je een blok vast op Start zelf - hetzelfde gebaar als op je
+telefoonstartscherm. De blokken gaan schuin staan, je sleept ze op hun plek en
+je ziet het resultaat terwijl je bezig bent, want het zijn de echte blokken.
+
+Twee maten: breed is de volle breedte, klein de helft, en twee kleine passen
+naast elkaar. Tikken wisselt. Meer maten zouden op een telefoon nauwelijks van
+elkaar te onderscheiden zijn, en elk blok moet elke maat kunnen tekenen.
+
+Want dat is de andere helft: een klein blok is niet hetzelfde blok
+uitgeknepen. "Deze week" laat breed drie cijfers zien en klein alleen je
+volume; "Herstel" wordt "3 spieren herstellen"; bij "Volume" vallen de datums
+onder de grafiek weg omdat die op halve breedte over elkaar zouden vallen.
+
+De kop van een blok is verhuisd van een `SectionHeader` over de hele breedte
+naar een regel binnen de kaart. Dat moest wel: twee blokken naast elkaar kunnen
+hun naam niet boven zich delen.
+
+Een blok dat je wegklikt heeft geen plek meer op het raster om het vandaan te
+slepen, dus verborgen blokken wachten als chips bovenin, in de balk waar de
+begroeting stond.
+
+De opgeslagen indeling kreeg er één lijst bij: `small`. Een indeling van voor
+de maten kent die sleutel niet en leest als alles breed - precies hoe het
+scherm er stond. Niemands scherm verandert van vorm door een update.
+
+## 119. Een kruisje dat buiten zijn blok hangt kan je niet aanraken
+
+De wegklikknop stond op `top: -6, left: -6`, half buiten de kaart. Dat ziet er
+goed uit en werkt niet: een `Stack` doet geen hit-test buiten zijn eigen grenzen,
+dus de bovenste hoek van die knop was dood. De widgettest zag het meteen - een
+tik die "miste" terwijl hij toevallig nog wel iets raakte - en nu staat het
+kruisje binnen de kaart.

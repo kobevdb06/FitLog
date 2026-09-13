@@ -82,6 +82,103 @@ void main() {
     });
   });
 
+  group('hoe groot een blok staat', () {
+    test('alles begint op volle breedte', () {
+      for (final block in HomeBlock.values) {
+        expect(defaultHomeLayout.sizeOf(block), HomeBlockSize.wide);
+      }
+    });
+
+    test('een indeling van voor de maten leest als alles breed', () {
+      // Niemands scherm mag van vorm veranderen door een update.
+      final oud = jsonEncode({
+        'order': ['vandaag', 'deze-week'],
+        'hidden': <String>[],
+      });
+
+      expect(parseHomeLayout(oud).sizeOf(HomeBlock.week), HomeBlockSize.wide);
+    });
+
+    test('klein maken en weer breed', () {
+      final klein = defaultHomeLayout.withSize(
+        HomeBlock.week,
+        HomeBlockSize.small,
+      );
+      expect(klein.sizeOf(HomeBlock.week), HomeBlockSize.small);
+      expect(klein.sizeOf(HomeBlock.volume), HomeBlockSize.wide);
+
+      final breed = klein.withSize(HomeBlock.week, HomeBlockSize.wide);
+      expect(breed.sizeOf(HomeBlock.week), HomeBlockSize.wide);
+    });
+
+    test('tikken wisselt heen en weer', () {
+      final een = defaultHomeLayout.resized(HomeBlock.week);
+      expect(een.sizeOf(HomeBlock.week), HomeBlockSize.small);
+      expect(
+        een.resized(HomeBlock.week).sizeOf(HomeBlock.week),
+        HomeBlockSize.wide,
+      );
+    });
+
+    test('en de maat overleeft opschrijven en teruglezen', () {
+      final layout = defaultHomeLayout
+          .withSize(HomeBlock.week, HomeBlockSize.small)
+          .withSize(HomeBlock.recovery, HomeBlockSize.small);
+
+      final terug = parseHomeLayout(encodeHomeLayout(layout));
+
+      expect(terug.sizeOf(HomeBlock.week), HomeBlockSize.small);
+      expect(terug.sizeOf(HomeBlock.recovery), HomeBlockSize.small);
+      expect(terug.sizeOf(HomeBlock.volume), HomeBlockSize.wide);
+    });
+
+    test('de maat raakt de volgorde niet, en andersom ook niet', () {
+      final layout = defaultHomeLayout
+          .withSize(HomeBlock.volume, HomeBlockSize.small)
+          .reordered(0, 3);
+
+      expect(layout.sizeOf(HomeBlock.volume), HomeBlockSize.small);
+      expect(layout.blocks.toSet(), HomeBlock.values.toSet());
+    });
+
+    test('en verbergen ook niet', () {
+      final layout = defaultHomeLayout
+          .withSize(HomeBlock.week, HomeBlockSize.small)
+          .withVisible(HomeBlock.week, visible: false)
+          .withVisible(HomeBlock.week, visible: true);
+
+      expect(layout.sizeOf(HomeBlock.week), HomeBlockSize.small);
+    });
+  });
+
+  group('een blok ergens anders neerzetten', () {
+    test('komt op de plek van het blok waar je het op laat vallen', () {
+      final layout = defaultHomeLayout.movedOnto(
+        HomeBlock.volume,
+        HomeBlock.today,
+      );
+
+      expect(layout.blocks.first, HomeBlock.volume);
+      expect(layout.blocks[1], HomeBlock.today);
+      expect(layout.blocks.toSet(), HomeBlock.values.toSet());
+    });
+
+    test('op zichzelf laten vallen verandert niets', () {
+      expect(
+        defaultHomeLayout.movedOnto(HomeBlock.week, HomeBlock.week).blocks,
+        defaultHomeLayout.blocks,
+      );
+    });
+
+    test('en de maten gaan mee', () {
+      final layout = defaultHomeLayout
+          .withSize(HomeBlock.volume, HomeBlockSize.small)
+          .movedOnto(HomeBlock.volume, HomeBlock.today);
+
+      expect(layout.sizeOf(HomeBlock.volume), HomeBlockSize.small);
+    });
+  });
+
   group('a stored value that cannot be trusted', () {
     test('nonsense falls back rather than throwing', () {
       expect(parseHomeLayout('dit is geen json').visible.isNotEmpty, isTrue);

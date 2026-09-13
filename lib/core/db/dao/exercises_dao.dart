@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../database.dart';
+import '../models.dart';
 
 part 'exercises_dao.drift.dart';
 
@@ -11,6 +12,7 @@ class ExerciseFilter {
     this.muscles = const {},
     this.equipment = const {},
     this.categories = const {},
+    this.customCategories = const {},
     this.customOnly = false,
     this.includeArchived = false,
   });
@@ -19,6 +21,10 @@ class ExerciseFilter {
   final Set<String> muscles;
   final Set<String> equipment;
   final Set<String> categories;
+
+  /// Categories the user named themselves, matched on the exercise's own
+  /// label rather than on the built-in category underneath it.
+  final Set<String> customCategories;
   final bool customOnly;
   final bool includeArchived;
 
@@ -27,6 +33,7 @@ class ExerciseFilter {
       muscles.isEmpty &&
       equipment.isEmpty &&
       categories.isEmpty &&
+      customCategories.isEmpty &&
       !customOnly;
 
   ExerciseFilter copyWith({
@@ -34,6 +41,7 @@ class ExerciseFilter {
     Set<String>? muscles,
     Set<String>? equipment,
     Set<String>? categories,
+    Set<String>? customCategories,
     bool? customOnly,
     bool? includeArchived,
   }) {
@@ -42,6 +50,7 @@ class ExerciseFilter {
       muscles: muscles ?? this.muscles,
       equipment: equipment ?? this.equipment,
       categories: categories ?? this.categories,
+      customCategories: customCategories ?? this.customCategories,
       customOnly: customOnly ?? this.customOnly,
       includeArchived: includeArchived ?? this.includeArchived,
     );
@@ -55,6 +64,7 @@ class ExerciseFilter {
     WorkoutsTable,
     CustomMusclesTable,
     CustomEquipmentTable,
+    CustomCategoriesTable,
   ],
 )
 class ExercisesDao extends DatabaseAccessor<AppDatabase>
@@ -100,7 +110,10 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
           .toSet();
 
       q.where((t) {
-        final matches = t.name.like(pattern) | t.equipment.like(pattern);
+        final matches =
+            t.name.like(pattern) |
+            t.equipment.like(pattern) |
+            t.customCategory.like(pattern);
         return categories.isEmpty
             ? matches
             : matches | t.category.isIn(categories);
@@ -122,6 +135,9 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     }
     if (filter.categories.isNotEmpty) {
       q.where((t) => t.category.isIn(filter.categories));
+    }
+    if (filter.customCategories.isNotEmpty) {
+      q.where((t) => t.customCategory.isIn(filter.customCategories));
     }
     if (filter.customOnly) {
       q.where((t) => t.isCustom.equals(true));
@@ -225,6 +241,25 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// A category of the user's own, and the built-in one it counts as.
+  Future<void> addCustomCategory(String name, String base) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    await into(customCategoriesTable).insertOnConflictUpdate(
+      CustomCategoriesTableCompanion.insert(
+        name: trimmed,
+        base: base,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  Future<void> removeCustomCategory(String name) async {
+    await (delete(
+      customCategoriesTable,
+    )..where((t) => t.name.equals(name))).go();
+  }
+
   Future<void> removeCustomMuscle(String name) async {
     await (delete(customMusclesTable)..where((t) => t.name.equals(name))).go();
   }
@@ -245,6 +280,14 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     customEquipmentTable,
   )..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
 
+  Stream<List<CustomCategoryRow>> watchCustomCategories() => (select(
+    customCategoriesTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.name)])).watch();
+
+  Future<List<CustomCategoryRow>> customCategories() => (select(
+    customCategoriesTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.name)])).get();
+
   /// How many exercises use a muscle group, primary or secondary.
   ///
   /// Removing one that is in use would leave those exercises pointing at a
@@ -264,6 +307,16 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     final rows = await customSelect(
       'SELECT COUNT(*) AS n FROM exercises '
       'WHERE is_archived = 0 AND equipment = ?',
+      variables: [Variable.withString(name)],
+      readsFrom: {exercisesTable},
+    ).getSingle();
+    return rows.read<int>('n');
+  }
+
+  Future<int> exercisesUsingCategory(String name) async {
+    final rows = await customSelect(
+      'SELECT COUNT(*) AS n FROM exercises '
+      'WHERE is_archived = 0 AND custom_category = ?',
       variables: [Variable.withString(name)],
       readsFrom: {exercisesTable},
     ).getSingle();
@@ -337,10 +390,11 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
   /// bundled type is wrong there is no other way to put it right, and waiting
   /// for a new version of the app is not one. The mark keeps a later catalogue
   /// correction from quietly undoing the choice.
-  Future<void> setCategory(String id, ExerciseCategory category) async {
+  Future<void> setCategory(String id, CategoryChoice category) async {
     await (update(exercisesTable)..where((t) => t.id.equals(id))).write(
       ExercisesTableCompanion(
-        category: Value(category.wire),
+        category: Value(category.base.wire),
+        customCategory: Value(category.name),
         categoryOverridden: const Value(true),
       ),
     );

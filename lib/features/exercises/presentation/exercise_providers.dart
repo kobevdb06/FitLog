@@ -48,6 +48,15 @@ class ExerciseFilterController extends _$ExerciseFilterController {
     state = state.copyWith(categories: next);
   }
 
+  /// A category of the user's own is matched on its own name, not on the
+  /// built-in category underneath it: picking "Slee" should not drag in every
+  /// other exercise that happens to be logged the same way.
+  void toggleCustomCategory(String name) {
+    final next = Set<String>.from(state.customCategories);
+    next.contains(name) ? next.remove(name) : next.add(name);
+    state = state.copyWith(customCategories: next);
+  }
+
   void setCustomOnly(bool value) => state = state.copyWith(customOnly: value);
 
   void clear() => state = const ExerciseFilter();
@@ -81,6 +90,24 @@ Stream<List<CustomMuscleRow>> customMuscles(Ref ref) =>
 @riverpod
 Stream<List<CustomEquipmentRow>> customEquipment(Ref ref) =>
     ref.watch(databaseProvider).exercisesDao.watchCustomEquipment();
+
+@riverpod
+Stream<List<CustomCategoryRow>> customCategories(Ref ref) =>
+    ref.watch(databaseProvider).exercisesDao.watchCustomCategories();
+
+/// The categories you can pick from: the built-in eight plus your own.
+@riverpod
+Stream<List<CategoryChoice>> categoryOptions(Ref ref) => ref
+    .watch(databaseProvider)
+    .exercisesDao
+    .watchCustomCategories()
+    .map(
+      (rows) => [
+        for (final category in ExerciseCategory.values)
+          CategoryChoice(category),
+        for (final row in rows) CategoryChoice.of(row.base, row.name),
+      ],
+    );
 
 /// The exercises used most recently, shown at the top of the picker.
 @riverpod
@@ -304,7 +331,7 @@ class ExerciseEditor {
     required String name,
     required String primaryMuscle,
     required List<String> secondaryMuscles,
-    required ExerciseCategory category,
+    required CategoryChoice category,
     String? equipment,
     String? instructions,
     String? startImageFile,
@@ -321,7 +348,8 @@ class ExerciseEditor {
             primaryMuscle: primaryMuscle,
             secondaryMuscles: Value(jsonEncode(secondaryMuscles)),
             equipment: Value(equipment),
-            category: category.wire,
+            category: category.base.wire,
+            customCategory: Value(category.name),
             instructions: Value(
               instructions == null || instructions.trim().isEmpty
                   ? null
@@ -341,7 +369,7 @@ class ExerciseEditor {
     required String name,
     required String primaryMuscle,
     required List<String> secondaryMuscles,
-    required ExerciseCategory category,
+    required CategoryChoice category,
     String? equipment,
     String? instructions,
     String? startImageFile,
@@ -357,7 +385,8 @@ class ExerciseEditor {
             primaryMuscle: Value(primaryMuscle),
             secondaryMuscles: Value(jsonEncode(secondaryMuscles)),
             equipment: Value(equipment),
-            category: Value(category.wire),
+            category: Value(category.base.wire),
+            customCategory: Value(category.name),
             instructions: Value(
               instructions == null || instructions.trim().isEmpty
                   ? null

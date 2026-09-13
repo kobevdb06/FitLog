@@ -45,9 +45,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.category_outlined),
-            title: const Text('Eigen spieren en materiaal'),
+            title: const Text('Eigen keuzelijsten'),
             subtitle: const Text(
-              'Spiergroepen en materiaal die niet in de app zitten',
+              'Spiergroepen, materiaal en categorieën toevoegen',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.settingsCatalogue),

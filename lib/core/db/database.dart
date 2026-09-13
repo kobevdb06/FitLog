@@ -25,6 +25,7 @@ part 'database.drift.dart';
     ExercisesTable,
     CustomMusclesTable,
     CustomEquipmentTable,
+    CustomCategoriesTable,
     RoutineFoldersTable,
     RoutinesTable,
     RoutineExercisesTable,
@@ -42,7 +43,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -198,6 +199,13 @@ class AppDatabase extends _$AppDatabase {
           // contain, which is exactly what these are here to widen.
           await m.createTable(customMusclesTable);
           await m.createTable(customEquipmentTable);
+        }
+        if (from < 20) {
+          // Categories of the user's own. Additive: the new column is null
+          // for every exercise that exists, which means "this exercise is
+          // simply its category", exactly as before.
+          await m.createTable(customCategoriesTable);
+          await m.addColumn(exercisesTable, exercisesTable.customCategory);
         }
       });
 

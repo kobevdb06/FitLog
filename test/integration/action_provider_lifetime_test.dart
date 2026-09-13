@@ -1,5 +1,6 @@
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/models.dart';
 import 'package:fitlog/features/exercises/presentation/exercise_providers.dart';
 import 'package:fitlog/features/history/presentation/history_providers.dart';
 import 'package:fitlog/features/photos/presentation/photo_providers.dart';
@@ -119,7 +120,7 @@ void main() {
       name: 'Eigen oefening',
       primaryMuscle: 'borst',
       secondaryMuscles: const [],
-      category: ExerciseCategory.barbell,
+      category: const CategoryChoice(ExerciseCategory.barbell),
     );
 
     await letTheUserThink();

@@ -1,4 +1,4 @@
-/// Muscle groups and kit the app did not come with.
+/// Muscle groups, kit and categories the app did not come with.
 ///
 /// The pickers used to offer only what the bundled catalogue happened to
 /// contain, so a group nothing used could not be chosen at all - and one you
@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/db/enums.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
@@ -22,9 +23,10 @@ class CatalogueSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final muscles = ref.watch(customMusclesProvider).value ?? const [];
     final equipment = ref.watch(customEquipmentProvider).value ?? const [];
+    final categories = ref.watch(customCategoriesProvider).value ?? const [];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Eigen spieren en materiaal')),
+      appBar: AppBar(title: const Text('Eigen keuzelijsten')),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         children: [
@@ -88,6 +90,51 @@ class CatalogueSettingsScreen extends ConsumerWidget {
               label: const Text('Materiaal toevoegen'),
             ),
           ),
+          const SectionHeader('Categorieën'),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
+            child: InfoBanner(
+              icon: Icons.straighten,
+              message:
+                  'Een categorie bepaalt wat een set van je vraagt: gewicht, '
+                  'herhalingen, tijd of afstand. Een eigen categorie kiest '
+                  'daarvoor een van de acht ingebouwde, en krijgt jouw naam.',
+            ),
+          ),
+          if (categories.isEmpty)
+            const _Leeg('Nog geen eigen categorieën.')
+          else
+            for (final category in categories)
+              ListTile(
+                leading: Icon(
+                  exerciseCategoryIcon(
+                    ExerciseCategory.fromWire(category.base),
+                  ),
+                ),
+                title: Text(category.name),
+                subtitle: Text(
+                  'Rekent als '
+                  '${ExerciseCategory.fromWire(category.base).label.toLowerCase()}',
+                ),
+                trailing: IconButton(
+                  tooltip: 'Verwijderen',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _removeCategory(context, ref, category.name),
+                ),
+              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: OutlinedButton.icon(
+              onPressed: () => _addCategory(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Categorie toevoegen'),
+            ),
+          ),
         ],
       ),
     );
@@ -111,6 +158,55 @@ class CatalogueSettingsScreen extends ConsumerWidget {
     );
     if (name == null || name.trim().isEmpty) return;
     await ref.read(databaseProvider).exercisesDao.addCustomEquipment(name);
+  }
+
+  /// Two questions, because a category is two things: what you call it, and
+  /// what it counts as. The second one decides which columns a set of that
+  /// exercise has, so it cannot be guessed.
+  Future<void> _addCategory(BuildContext context, WidgetRef ref) async {
+    final name = await promptForText(
+      context,
+      title: 'Categorie toevoegen',
+      hintText: 'bijvoorbeeld slee',
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty || !context.mounted) return;
+
+    final base = await pickCategoryBase(context);
+    if (base == null) return;
+
+    await ref
+        .read(databaseProvider)
+        .exercisesDao
+        .addCustomCategory(trimmed, base.wire);
+  }
+
+  Future<void> _removeCategory(
+    BuildContext context,
+    WidgetRef ref,
+    String name,
+  ) async {
+    final dao = ref.read(databaseProvider).exercisesDao;
+    final inUse = await dao.exercisesUsingCategory(name);
+    if (!context.mounted) return;
+
+    if (inUse > 0) {
+      showSnack(
+        context,
+        '$name wordt nog door $inUse '
+        '${inUse == 1 ? 'oefening' : 'oefeningen'} gebruikt.',
+      );
+      return;
+    }
+
+    final ok = await confirm(
+      context,
+      title: '$name verwijderen?',
+      message: 'De categorie verdwijnt uit de keuzelijsten.',
+      confirmLabel: 'Verwijderen',
+      destructive: true,
+    );
+    if (ok) await dao.removeCustomCategory(name);
   }
 
   /// Refused while something still uses it: an exercise pointing at a name

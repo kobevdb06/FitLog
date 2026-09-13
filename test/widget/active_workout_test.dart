@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/models.dart';
 import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/workout/presentation/active_workout_screen.dart';
 import 'package:fitlog/features/workout/presentation/rest_timer_bar.dart';
@@ -320,7 +321,10 @@ void main() {
     expect(find.text('TIJD'), findsNothing);
 
     // The same call the "Type wijzigen" menu makes.
-    await db.exercisesDao.setCategory('ex-bench', ExerciseCategory.duration);
+    await db.exercisesDao.setCategory(
+      'ex-bench',
+      const CategoryChoice(ExerciseCategory.duration),
+    );
     await settle(tester);
 
     expect(find.text('TIJD'), findsOneWidget);
@@ -654,7 +658,10 @@ void main() {
 
     testWidgets('and not where there is no bar to load', (tester) async {
       // A dumbbell has no bar to take off the total.
-      await db.exercisesDao.setCategory('ex-bench', ExerciseCategory.dumbbell);
+      await db.exercisesDao.setCategory(
+        'ex-bench',
+        const CategoryChoice(ExerciseCategory.dumbbell),
+      );
       await pumpScreen(tester);
       await tester.tap(find.text('100').first);
       await tester.pumpAndSettle();

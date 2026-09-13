@@ -175,6 +175,27 @@ class CustomEquipmentTable extends Table {
   Set<Column> get primaryKey => {name};
 }
 
+/// A name of your own for a way of training.
+///
+/// The eight built-in categories are not a list of names, they are a list of
+/// behaviours: each one decides which columns a set has. So an added category
+/// cannot invent a new one - it borrows one. [base] is the built-in category
+/// it counts as; the name is yours.
+@DataClassName('CustomCategoryRow')
+class CustomCategoriesTable extends Table {
+  @override
+  String get tableName => 'custom_categories';
+
+  TextColumn get name => text()();
+
+  /// The wire value of the [ExerciseCategory] this one is measured as.
+  TextColumn get base => text()();
+  IntColumn get createdAt => integer().named('created_at')();
+
+  @override
+  Set<Column> get primaryKey => {name};
+}
+
 @DataClassName('ExerciseRow')
 class ExercisesTable extends Table {
   @override
@@ -189,8 +210,16 @@ class ExercisesTable extends Table {
       text().named('secondary_muscles').withDefault(const Constant('[]'))();
   TextColumn get equipment => text().nullable()();
 
-  /// One of [ExerciseCategory].
+  /// One of [ExerciseCategory]. Always set, also for an exercise that carries
+  /// a category of the user's own: that name is a label on top of one of
+  /// these, and everything that reasons about sets reads this column.
   TextColumn get category => text()();
+
+  /// The name of the user's own category, if they picked one.
+  ///
+  /// Null means the exercise simply is its [category]. A name here changes
+  /// nothing about how the exercise is logged - only what it is called.
+  TextColumn get customCategory => text().named('custom_category').nullable()();
   TextColumn get instructions => text().nullable()();
   TextColumn get imageAsset => text().named('image_asset').nullable()();
 

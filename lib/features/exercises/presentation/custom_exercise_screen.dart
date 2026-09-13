@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/db/models.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
@@ -38,7 +39,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
 
   String? _primaryMuscle;
   final Set<String> _secondaryMuscles = {};
-  ExerciseCategory _category = ExerciseCategory.barbell;
+  CategoryChoice _category = const CategoryChoice(ExerciseCategory.barbell);
 
   /// The two frames, as file names in the photo directory.
   String? _startImage;
@@ -68,7 +69,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     _notesController.text = row.instructions ?? '';
     _primaryMuscle = row.primaryMuscle;
     _secondaryMuscles.addAll(decodeSecondaryMuscles(row.secondaryMuscles));
-    _category = ExerciseCategory.fromWire(row.category);
+    _category = row.categoryChoice;
     _startImage = row.startImageFile;
     _endImage = row.endImageFile;
   }
@@ -164,6 +165,30 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     if (mounted) setState(() => _primaryMuscle = trimmed);
   }
 
+  /// Adds a category of your own and picks it, from inside the picker.
+  ///
+  /// Two questions rather than one: a name, and which of the built-in
+  /// categories it counts as. The second one is not decoration - it decides
+  /// what a set of this exercise will ask you for.
+  Future<void> _addCategory(BuildContext context) async {
+    final name = await promptForText(
+      context,
+      title: 'Categorie toevoegen',
+      hintText: 'bijvoorbeeld slee',
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty || !context.mounted) return;
+
+    final base = await pickCategoryBase(context);
+    if (base == null) return;
+
+    await ref
+        .read(databaseProvider)
+        .exercisesDao
+        .addCustomCategory(trimmed, base.wire);
+    if (mounted) setState(() => _category = CategoryChoice(base, trimmed));
+  }
+
   Future<void> _addEquipment(BuildContext context) async {
     final name = await promptForText(
       context,
@@ -234,6 +259,9 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     final muscles = ref.watch(muscleOptionsProvider).value ?? const [];
     final equipmentOptions =
         ref.watch(equipmentOptionsProvider).value ?? const [];
+    final categories =
+        ref.watch(categoryOptionsProvider).value ??
+        [for (final c in ExerciseCategory.values) CategoryChoice(c)];
     final paths = ref.watch(appPathsProvider).value;
 
     if (widget.exerciseId != null) {
@@ -261,12 +289,14 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
           const SizedBox(height: AppSpacing.lg),
           PickerField(
             label: 'Categorie',
-            leading: Icon(exerciseCategoryIcon(_category)),
+            leading: Icon(exerciseCategoryIcon(_category.base)),
             text: _category.label,
             onTap: () async {
               final picked = await pickExerciseCategory(
                 context,
                 current: _category,
+                options: categories,
+                onAddNew: () => _addCategory(context),
               );
               if (picked != null) setState(() => _category = picked);
             },

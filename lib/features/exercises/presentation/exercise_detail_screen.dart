@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
@@ -16,6 +17,12 @@ import '../../../routing/routes.dart';
 import '../../workout/presentation/pr_attempt_screen.dart';
 import 'custom_exercise_screen.dart';
 import 'exercise_providers.dart';
+
+/// The eight the app comes with, for the moment the list of your own has not
+/// arrived yet.
+final _builtInCategories = [
+  for (final category in ExerciseCategory.values) CategoryChoice(category),
+];
 
 /// Info, history, charts and records for one exercise.
 class ExerciseDetailScreen extends ConsumerWidget {
@@ -34,8 +41,12 @@ class ExerciseDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     ExerciseRow row,
   ) async {
-    final current = ExerciseCategory.fromWire(row.category);
-    final picked = await pickExerciseCategory(context, current: current);
+    final current = row.categoryChoice;
+    final picked = await pickExerciseCategory(
+      context,
+      current: current,
+      options: ref.read(categoryOptionsProvider).value ?? _builtInCategories,
+    );
     if (picked == null || picked == current) return;
 
     await ref.read(databaseProvider).exercisesDao.setCategory(row.id, picked);
@@ -43,7 +54,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
     showSnack(
       context,
       '${row.name} wordt nu gelogd in '
-      '${exerciseCategoryDescription(picked).toLowerCase()}',
+      '${exerciseCategoryDescription(picked.base).toLowerCase()}',
     );
   }
 
@@ -151,7 +162,6 @@ class _InfoTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final category = ExerciseCategory.fromWire(exercise.category);
     final secondary = decodeSecondaryMuscles(exercise.secondaryMuscles);
     final images = ref.watch(exerciseImagesProvider).value;
     final paths = ref.watch(appPathsProvider).value;
@@ -177,7 +187,7 @@ class _InfoTab extends ConsumerWidget {
                   Text(exercise.name, style: theme.textTheme.titleMedium),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    '${category.label}'
+                    '${exercise.categoryLabel}'
                     '${exercise.equipment == null ? '' : ' · ${exercise.equipment}'}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,

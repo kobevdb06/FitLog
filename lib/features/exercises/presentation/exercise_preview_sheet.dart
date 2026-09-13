@@ -10,6 +10,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../core/db/database.dart';
+import '../../../core/db/models.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
@@ -56,7 +57,6 @@ class _Preview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final category = ExerciseCategory.fromWire(exercise.category);
     final instructions = exercise.instructions?.trim();
 
     return Padding(
@@ -81,7 +81,7 @@ class _Preview extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(
             [
-              category.label,
+              exercise.categoryLabel,
               if (exercise.equipment != null) exercise.equipment!,
             ].join(' · '),
             style: theme.textTheme.bodySmall?.copyWith(

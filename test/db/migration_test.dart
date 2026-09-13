@@ -4,6 +4,7 @@ import 'dart:io';
 // collides with the matcher of the same name.
 import 'package:drift/native.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
 
@@ -110,7 +111,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 19);
+    expect(raw.select('PRAGMA user_version').first.values.first, 20);
     raw.close();
   });
 
@@ -191,6 +192,12 @@ void main() {
     // already showing.
     expect(settings.homeLayout, isNull);
 
+    // v20 added categories of your own. The exercise that was already there
+    // has none, which is what null says: it simply is its category.
+    expect(migratedExercise.customCategory, isNull);
+    expect(migratedExercise.categoryLabel, ExerciseCategory.barbell.label);
+    expect(await db.exercisesDao.customCategories(), isEmpty);
+
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
     final migrated = await db.workoutsDao.getWorkoutDetail('w-1');
     expect(migrated!.exercises.single.workoutExercise.isPrAttempt, isFalse);
@@ -234,7 +241,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 19);
+    expect(db.schemaVersion, 20);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

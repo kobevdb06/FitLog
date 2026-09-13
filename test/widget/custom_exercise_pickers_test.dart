@@ -120,6 +120,56 @@ void main() {
     });
   });
 
+  group('a category of your own', () {
+    testWidgets('stands between the built-in ones, and says what it counts '
+        'as', (tester) async {
+      await db.exercisesDao.addCustomCategory('Slee', 'duration');
+      await pumpForm(tester);
+
+      await tester.tap(field('Categorie'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Slee'), findsOneWidget);
+      expect(find.text('Van jezelf, rekent als tijd'), findsOneWidget);
+
+      await tester.tap(find.text('Slee'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(of: field('Categorie'), matching: find.text('Slee')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('and is saved as a name on top of the built-in one', (
+      tester,
+    ) async {
+      await db.exercisesDao.addCustomCategory('Slee', 'duration');
+      await pumpForm(tester);
+
+      await tester.enterText(find.byType(TextField).first, 'Sledepush');
+      await tester.tap(field('Categorie'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Slee'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(field('Primaire spiergroep'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('borst').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      final saved = (await db.exercisesDao.getExercises()).firstWhere(
+        (e) => e.name == 'Sledepush',
+      );
+      // The name is yours; how a set of it is logged is not.
+      expect(saved.customCategory, 'Slee');
+      expect(saved.category, 'duration');
+    });
+  });
+
   group('the muscle', () {
     testWidgets('says nothing is chosen until you choose', (tester) async {
       await pumpForm(tester);

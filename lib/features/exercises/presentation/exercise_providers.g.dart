@@ -48,7 +48,7 @@ final class ExerciseFilterControllerProvider
 }
 
 String _$exerciseFilterControllerHash() =>
-    r'7edf3700836a1807b8a52244f756be8bbc779ae8';
+    r'5e847e40d44aebe16f2419ccdf5f6c6b9ea3f5b8';
 
 /// The filter the exercise list is showing. Lives above the list so the search
 /// field and the chips stay in sync.
@@ -359,6 +359,93 @@ final class CustomEquipmentProvider
 }
 
 String _$customEquipmentHash() => r'c694ab2b81a376569953dfb47b4e3a47df6cbeec';
+
+@ProviderFor(customCategories)
+final customCategoriesProvider = CustomCategoriesProvider._();
+
+final class CustomCategoriesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CustomCategoryRow>>,
+          List<CustomCategoryRow>,
+          Stream<List<CustomCategoryRow>>
+        >
+    with
+        $FutureModifier<List<CustomCategoryRow>>,
+        $StreamProvider<List<CustomCategoryRow>> {
+  CustomCategoriesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'customCategoriesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$customCategoriesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CustomCategoryRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CustomCategoryRow>> create(Ref ref) {
+    return customCategories(ref);
+  }
+}
+
+String _$customCategoriesHash() => r'aa8276d91bc5e5c23af424a60b2b07c7c4e001af';
+
+/// The categories you can pick from: the built-in eight plus your own.
+
+@ProviderFor(categoryOptions)
+final categoryOptionsProvider = CategoryOptionsProvider._();
+
+/// The categories you can pick from: the built-in eight plus your own.
+
+final class CategoryOptionsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CategoryChoice>>,
+          List<CategoryChoice>,
+          Stream<List<CategoryChoice>>
+        >
+    with
+        $FutureModifier<List<CategoryChoice>>,
+        $StreamProvider<List<CategoryChoice>> {
+  /// The categories you can pick from: the built-in eight plus your own.
+  CategoryOptionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'categoryOptionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$categoryOptionsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CategoryChoice>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CategoryChoice>> create(Ref ref) {
+    return categoryOptions(ref);
+  }
+}
+
+String _$categoryOptionsHash() => r'717ca1b8b7e0be7185bbe72582d54bb83ffebb84';
 
 /// The exercises used most recently, shown at the top of the picker.
 

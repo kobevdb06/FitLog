@@ -2019,6 +2019,17 @@ class $ExercisesTableTable extends ExercisesTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _customCategoryMeta = const VerificationMeta(
+    'customCategory',
+  );
+  @override
+  late final GeneratedColumn<String> customCategory = GeneratedColumn<String>(
+    'custom_category',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _instructionsMeta = const VerificationMeta(
     'instructions',
   );
@@ -2126,6 +2137,7 @@ class $ExercisesTableTable extends ExercisesTable
     secondaryMuscles,
     equipment,
     category,
+    customCategory,
     instructions,
     imageAsset,
     startImageFile,
@@ -2193,6 +2205,15 @@ class $ExercisesTableTable extends ExercisesTable
       );
     } else if (isInserting) {
       context.missing(_categoryMeta);
+    }
+    if (data.containsKey('custom_category')) {
+      context.handle(
+        _customCategoryMeta,
+        customCategory.isAcceptableOrUnknown(
+          data['custom_category']!,
+          _customCategoryMeta,
+        ),
+      );
     }
     if (data.containsKey('instructions')) {
       context.handle(
@@ -2289,6 +2310,10 @@ class $ExercisesTableTable extends ExercisesTable
         DriftSqlType.string,
         data['${effectivePrefix}category'],
       )!,
+      customCategory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}custom_category'],
+      ),
       instructions: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}instructions'],
@@ -2339,8 +2364,16 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
   final String secondaryMuscles;
   final String? equipment;
 
-  /// One of [ExerciseCategory].
+  /// One of [ExerciseCategory]. Always set, also for an exercise that carries
+  /// a category of the user's own: that name is a label on top of one of
+  /// these, and everything that reasons about sets reads this column.
   final String category;
+
+  /// The name of the user's own category, if they picked one.
+  ///
+  /// Null means the exercise simply is its [category]. A name here changes
+  /// nothing about how the exercise is logged - only what it is called.
+  final String? customCategory;
   final String? instructions;
   final String? imageAsset;
 
@@ -2368,6 +2401,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     required this.secondaryMuscles,
     this.equipment,
     required this.category,
+    this.customCategory,
     this.instructions,
     this.imageAsset,
     this.startImageFile,
@@ -2388,6 +2422,9 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       map['equipment'] = Variable<String>(equipment);
     }
     map['category'] = Variable<String>(category);
+    if (!nullToAbsent || customCategory != null) {
+      map['custom_category'] = Variable<String>(customCategory);
+    }
     if (!nullToAbsent || instructions != null) {
       map['instructions'] = Variable<String>(instructions);
     }
@@ -2417,6 +2454,9 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ? const Value.absent()
           : Value(equipment),
       category: Value(category),
+      customCategory: customCategory == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customCategory),
       instructions: instructions == null && nullToAbsent
           ? const Value.absent()
           : Value(instructions),
@@ -2448,6 +2488,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       secondaryMuscles: serializer.fromJson<String>(json['secondaryMuscles']),
       equipment: serializer.fromJson<String?>(json['equipment']),
       category: serializer.fromJson<String>(json['category']),
+      customCategory: serializer.fromJson<String?>(json['customCategory']),
       instructions: serializer.fromJson<String?>(json['instructions']),
       imageAsset: serializer.fromJson<String?>(json['imageAsset']),
       startImageFile: serializer.fromJson<String?>(json['startImageFile']),
@@ -2468,6 +2509,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       'secondaryMuscles': serializer.toJson<String>(secondaryMuscles),
       'equipment': serializer.toJson<String?>(equipment),
       'category': serializer.toJson<String>(category),
+      'customCategory': serializer.toJson<String?>(customCategory),
       'instructions': serializer.toJson<String?>(instructions),
       'imageAsset': serializer.toJson<String?>(imageAsset),
       'startImageFile': serializer.toJson<String?>(startImageFile),
@@ -2486,6 +2528,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     String? secondaryMuscles,
     Value<String?> equipment = const Value.absent(),
     String? category,
+    Value<String?> customCategory = const Value.absent(),
     Value<String?> instructions = const Value.absent(),
     Value<String?> imageAsset = const Value.absent(),
     Value<String?> startImageFile = const Value.absent(),
@@ -2501,6 +2544,9 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
     equipment: equipment.present ? equipment.value : this.equipment,
     category: category ?? this.category,
+    customCategory: customCategory.present
+        ? customCategory.value
+        : this.customCategory,
     instructions: instructions.present ? instructions.value : this.instructions,
     imageAsset: imageAsset.present ? imageAsset.value : this.imageAsset,
     startImageFile: startImageFile.present
@@ -2524,6 +2570,9 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           : this.secondaryMuscles,
       equipment: data.equipment.present ? data.equipment.value : this.equipment,
       category: data.category.present ? data.category.value : this.category,
+      customCategory: data.customCategory.present
+          ? data.customCategory.value
+          : this.customCategory,
       instructions: data.instructions.present
           ? data.instructions.value
           : this.instructions,
@@ -2556,6 +2605,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ..write('secondaryMuscles: $secondaryMuscles, ')
           ..write('equipment: $equipment, ')
           ..write('category: $category, ')
+          ..write('customCategory: $customCategory, ')
           ..write('instructions: $instructions, ')
           ..write('imageAsset: $imageAsset, ')
           ..write('startImageFile: $startImageFile, ')
@@ -2576,6 +2626,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     secondaryMuscles,
     equipment,
     category,
+    customCategory,
     instructions,
     imageAsset,
     startImageFile,
@@ -2595,6 +2646,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           other.secondaryMuscles == this.secondaryMuscles &&
           other.equipment == this.equipment &&
           other.category == this.category &&
+          other.customCategory == this.customCategory &&
           other.instructions == this.instructions &&
           other.imageAsset == this.imageAsset &&
           other.startImageFile == this.startImageFile &&
@@ -2612,6 +2664,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
   final Value<String> secondaryMuscles;
   final Value<String?> equipment;
   final Value<String> category;
+  final Value<String?> customCategory;
   final Value<String?> instructions;
   final Value<String?> imageAsset;
   final Value<String?> startImageFile;
@@ -2628,6 +2681,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.secondaryMuscles = const Value.absent(),
     this.equipment = const Value.absent(),
     this.category = const Value.absent(),
+    this.customCategory = const Value.absent(),
     this.instructions = const Value.absent(),
     this.imageAsset = const Value.absent(),
     this.startImageFile = const Value.absent(),
@@ -2645,6 +2699,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.secondaryMuscles = const Value.absent(),
     this.equipment = const Value.absent(),
     required String category,
+    this.customCategory = const Value.absent(),
     this.instructions = const Value.absent(),
     this.imageAsset = const Value.absent(),
     this.startImageFile = const Value.absent(),
@@ -2666,6 +2721,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Expression<String>? secondaryMuscles,
     Expression<String>? equipment,
     Expression<String>? category,
+    Expression<String>? customCategory,
     Expression<String>? instructions,
     Expression<String>? imageAsset,
     Expression<String>? startImageFile,
@@ -2683,6 +2739,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       if (secondaryMuscles != null) 'secondary_muscles': secondaryMuscles,
       if (equipment != null) 'equipment': equipment,
       if (category != null) 'category': category,
+      if (customCategory != null) 'custom_category': customCategory,
       if (instructions != null) 'instructions': instructions,
       if (imageAsset != null) 'image_asset': imageAsset,
       if (startImageFile != null) 'start_image_file': startImageFile,
@@ -2702,6 +2759,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Value<String>? secondaryMuscles,
     Value<String?>? equipment,
     Value<String>? category,
+    Value<String?>? customCategory,
     Value<String?>? instructions,
     Value<String?>? imageAsset,
     Value<String?>? startImageFile,
@@ -2719,6 +2777,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
       equipment: equipment ?? this.equipment,
       category: category ?? this.category,
+      customCategory: customCategory ?? this.customCategory,
       instructions: instructions ?? this.instructions,
       imageAsset: imageAsset ?? this.imageAsset,
       startImageFile: startImageFile ?? this.startImageFile,
@@ -2751,6 +2810,9 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     }
     if (category.present) {
       map['category'] = Variable<String>(category.value);
+    }
+    if (customCategory.present) {
+      map['custom_category'] = Variable<String>(customCategory.value);
     }
     if (instructions.present) {
       map['instructions'] = Variable<String>(instructions.value);
@@ -2791,6 +2853,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
           ..write('secondaryMuscles: $secondaryMuscles, ')
           ..write('equipment: $equipment, ')
           ..write('category: $category, ')
+          ..write('customCategory: $customCategory, ')
           ..write('instructions: $instructions, ')
           ..write('imageAsset: $imageAsset, ')
           ..write('startImageFile: $startImageFile, ')
@@ -3232,6 +3295,272 @@ class CustomEquipmentTableCompanion
   String toString() {
     return (StringBuffer('CustomEquipmentTableCompanion(')
           ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CustomCategoriesTableTable extends CustomCategoriesTable
+    with TableInfo<$CustomCategoriesTableTable, CustomCategoryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomCategoriesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _baseMeta = const VerificationMeta('base');
+  @override
+  late final GeneratedColumn<String> base = GeneratedColumn<String>(
+    'base',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [name, base, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_categories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomCategoryRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('base')) {
+      context.handle(
+        _baseMeta,
+        base.isAcceptableOrUnknown(data['base']!, _baseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_baseMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {name};
+  @override
+  CustomCategoryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomCategoryRow(
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      base: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomCategoriesTableTable createAlias(String alias) {
+    return $CustomCategoriesTableTable(attachedDatabase, alias);
+  }
+}
+
+class CustomCategoryRow extends DataClass
+    implements Insertable<CustomCategoryRow> {
+  final String name;
+
+  /// The wire value of the [ExerciseCategory] this one is measured as.
+  final String base;
+  final int createdAt;
+  const CustomCategoryRow({
+    required this.name,
+    required this.base,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['name'] = Variable<String>(name);
+    map['base'] = Variable<String>(base);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  CustomCategoriesTableCompanion toCompanion(bool nullToAbsent) {
+    return CustomCategoriesTableCompanion(
+      name: Value(name),
+      base: Value(base),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory CustomCategoryRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomCategoryRow(
+      name: serializer.fromJson<String>(json['name']),
+      base: serializer.fromJson<String>(json['base']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'name': serializer.toJson<String>(name),
+      'base': serializer.toJson<String>(base),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  CustomCategoryRow copyWith({String? name, String? base, int? createdAt}) =>
+      CustomCategoryRow(
+        name: name ?? this.name,
+        base: base ?? this.base,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  CustomCategoryRow copyWithCompanion(CustomCategoriesTableCompanion data) {
+    return CustomCategoryRow(
+      name: data.name.present ? data.name.value : this.name,
+      base: data.base.present ? data.base.value : this.base,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomCategoryRow(')
+          ..write('name: $name, ')
+          ..write('base: $base, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(name, base, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomCategoryRow &&
+          other.name == this.name &&
+          other.base == this.base &&
+          other.createdAt == this.createdAt);
+}
+
+class CustomCategoriesTableCompanion
+    extends UpdateCompanion<CustomCategoryRow> {
+  final Value<String> name;
+  final Value<String> base;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const CustomCategoriesTableCompanion({
+    this.name = const Value.absent(),
+    this.base = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomCategoriesTableCompanion.insert({
+    required String name,
+    required String base,
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : name = Value(name),
+       base = Value(base),
+       createdAt = Value(createdAt);
+  static Insertable<CustomCategoryRow> custom({
+    Expression<String>? name,
+    Expression<String>? base,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (name != null) 'name': name,
+      if (base != null) 'base': base,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomCategoriesTableCompanion copyWith({
+    Value<String>? name,
+    Value<String>? base,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return CustomCategoriesTableCompanion(
+      name: name ?? this.name,
+      base: base ?? this.base,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (base.present) {
+      map['base'] = Variable<String>(base.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomCategoriesTableCompanion(')
+          ..write('name: $name, ')
+          ..write('base: $base, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -8640,6 +8969,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CustomMusclesTableTable(this);
   late final $CustomEquipmentTableTable customEquipmentTable =
       $CustomEquipmentTableTable(this);
+  late final $CustomCategoriesTableTable customCategoriesTable =
+      $CustomCategoriesTableTable(this);
   late final $RoutineFoldersTableTable routineFoldersTable =
       $RoutineFoldersTableTable(this);
   late final $RoutinesTableTable routinesTable = $RoutinesTableTable(this);
@@ -8711,6 +9042,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     exercisesTable,
     customMusclesTable,
     customEquipmentTable,
+    customCategoriesTable,
     routineFoldersTable,
     routinesTable,
     routineExercisesTable,
@@ -9679,6 +10011,7 @@ typedef $$ExercisesTableTableCreateCompanionBuilder =
       Value<String> secondaryMuscles,
       Value<String?> equipment,
       required String category,
+      Value<String?> customCategory,
       Value<String?> instructions,
       Value<String?> imageAsset,
       Value<String?> startImageFile,
@@ -9697,6 +10030,7 @@ typedef $$ExercisesTableTableUpdateCompanionBuilder =
       Value<String> secondaryMuscles,
       Value<String?> equipment,
       Value<String> category,
+      Value<String?> customCategory,
       Value<String?> instructions,
       Value<String?> imageAsset,
       Value<String?> startImageFile,
@@ -9828,6 +10162,11 @@ class $$ExercisesTableTableFilterComposer
 
   ColumnFilters<String> get category => $composableBuilder(
     column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customCategory => $composableBuilder(
+    column: $table.customCategory,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9988,6 +10327,11 @@ class $$ExercisesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get customCategory => $composableBuilder(
+    column: $table.customCategory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get instructions => $composableBuilder(
     column: $table.instructions,
     builder: (column) => ColumnOrderings(column),
@@ -10059,6 +10403,11 @@ class $$ExercisesTableTableAnnotationComposer
 
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get customCategory => $composableBuilder(
+    column: $table.customCategory,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get instructions => $composableBuilder(
     column: $table.instructions,
@@ -10215,6 +10564,7 @@ class $$ExercisesTableTableTableManager
                 Value<String> secondaryMuscles = const Value.absent(),
                 Value<String?> equipment = const Value.absent(),
                 Value<String> category = const Value.absent(),
+                Value<String?> customCategory = const Value.absent(),
                 Value<String?> instructions = const Value.absent(),
                 Value<String?> imageAsset = const Value.absent(),
                 Value<String?> startImageFile = const Value.absent(),
@@ -10231,6 +10581,7 @@ class $$ExercisesTableTableTableManager
                 secondaryMuscles: secondaryMuscles,
                 equipment: equipment,
                 category: category,
+                customCategory: customCategory,
                 instructions: instructions,
                 imageAsset: imageAsset,
                 startImageFile: startImageFile,
@@ -10249,6 +10600,7 @@ class $$ExercisesTableTableTableManager
                 Value<String> secondaryMuscles = const Value.absent(),
                 Value<String?> equipment = const Value.absent(),
                 required String category,
+                Value<String?> customCategory = const Value.absent(),
                 Value<String?> instructions = const Value.absent(),
                 Value<String?> imageAsset = const Value.absent(),
                 Value<String?> startImageFile = const Value.absent(),
@@ -10265,6 +10617,7 @@ class $$ExercisesTableTableTableManager
                 secondaryMuscles: secondaryMuscles,
                 equipment: equipment,
                 category: category,
+                customCategory: customCategory,
                 instructions: instructions,
                 imageAsset: imageAsset,
                 startImageFile: startImageFile,
@@ -10701,6 +11054,187 @@ typedef $$CustomEquipmentTableTableProcessedTableManager =
         >,
       ),
       CustomEquipmentRow,
+      PrefetchHooks Function()
+    >;
+typedef $$CustomCategoriesTableTableCreateCompanionBuilder =
+    CustomCategoriesTableCompanion Function({
+      required String name,
+      required String base,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$CustomCategoriesTableTableUpdateCompanionBuilder =
+    CustomCategoriesTableCompanion Function({
+      Value<String> name,
+      Value<String> base,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$CustomCategoriesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomCategoriesTableTable> {
+  $$CustomCategoriesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get base => $composableBuilder(
+    column: $table.base,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CustomCategoriesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomCategoriesTableTable> {
+  $$CustomCategoriesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get base => $composableBuilder(
+    column: $table.base,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomCategoriesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomCategoriesTableTable> {
+  $$CustomCategoriesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get base =>
+      $composableBuilder(column: $table.base, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$CustomCategoriesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomCategoriesTableTable,
+          CustomCategoryRow,
+          $$CustomCategoriesTableTableFilterComposer,
+          $$CustomCategoriesTableTableOrderingComposer,
+          $$CustomCategoriesTableTableAnnotationComposer,
+          $$CustomCategoriesTableTableCreateCompanionBuilder,
+          $$CustomCategoriesTableTableUpdateCompanionBuilder,
+          (
+            CustomCategoryRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CustomCategoriesTableTable,
+              CustomCategoryRow
+            >,
+          ),
+          CustomCategoryRow,
+          PrefetchHooks Function()
+        > {
+  $$CustomCategoriesTableTableTableManager(
+    _$AppDatabase db,
+    $CustomCategoriesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomCategoriesTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CustomCategoriesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CustomCategoriesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> name = const Value.absent(),
+                Value<String> base = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomCategoriesTableCompanion(
+                name: name,
+                base: base,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String name,
+                required String base,
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CustomCategoriesTableCompanion.insert(
+                name: name,
+                base: base,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CustomCategoriesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomCategoriesTableTable,
+      CustomCategoryRow,
+      $$CustomCategoriesTableTableFilterComposer,
+      $$CustomCategoriesTableTableOrderingComposer,
+      $$CustomCategoriesTableTableAnnotationComposer,
+      $$CustomCategoriesTableTableCreateCompanionBuilder,
+      $$CustomCategoriesTableTableUpdateCompanionBuilder,
+      (
+        CustomCategoryRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CustomCategoriesTableTable,
+          CustomCategoryRow
+        >,
+      ),
+      CustomCategoryRow,
       PrefetchHooks Function()
     >;
 typedef $$RoutineFoldersTableTableCreateCompanionBuilder =
@@ -15527,6 +16061,8 @@ class $AppDatabaseManager {
       $$CustomMusclesTableTableTableManager(_db, _db.customMusclesTable);
   $$CustomEquipmentTableTableTableManager get customEquipmentTable =>
       $$CustomEquipmentTableTableTableManager(_db, _db.customEquipmentTable);
+  $$CustomCategoriesTableTableTableManager get customCategoriesTable =>
+      $$CustomCategoriesTableTableTableManager(_db, _db.customCategoriesTable);
   $$RoutineFoldersTableTableTableManager get routineFoldersTable =>
       $$RoutineFoldersTableTableTableManager(_db, _db.routineFoldersTable);
   $$RoutinesTableTableTableManager get routinesTable =>

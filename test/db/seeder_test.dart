@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/models.dart';
 import 'package:fitlog/core/db/seeder.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,7 +90,7 @@ void main() {
       // You decided the plank is a body-weight exercise after all.
       await db.exercisesDao.setCategory(
         (await plank()).id,
-        ExerciseCategory.bodyweight,
+        const CategoryChoice(ExerciseCategory.bodyweight),
       );
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(seedVersion: Value(0)),

@@ -6,6 +6,49 @@ import 'database.dart';
 // value objects so that the presentation layer never has to run its own
 // queries.
 
+/// What an exercise is called, and how it is measured.
+///
+/// The eight built-in categories are not a list of names but a list of
+/// behaviours: each decides which columns a set has, which records make sense,
+/// and whether the plate calculator has anything to say. A category the user
+/// adds cannot invent a behaviour, so it borrows one - a choice is always a
+/// built-in category, and sometimes a name of your own on top of it.
+class CategoryChoice {
+  const CategoryChoice(this.base, [this.name]);
+
+  /// What an exercise row says it is.
+  factory CategoryChoice.of(String categoryWire, String? customName) =>
+      CategoryChoice(ExerciseCategory.fromWire(categoryWire), customName);
+
+  /// How it is logged. Always one of the built-in eight.
+  final ExerciseCategory base;
+
+  /// The user's name for it, or null when it simply is [base].
+  final String? name;
+
+  String get label => name ?? base.label;
+
+  bool get isOwn => name != null;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CategoryChoice && other.base == base && other.name == name;
+
+  @override
+  int get hashCode => Object.hash(base, name);
+
+  @override
+  String toString() => 'CategoryChoice($label)';
+}
+
+extension ExerciseCategoryLabel on ExerciseRow {
+  /// The category to show: your own name for it when there is one.
+  CategoryChoice get categoryChoice =>
+      CategoryChoice.of(category, customCategory);
+
+  String get categoryLabel => categoryChoice.label;
+}
+
 class RoutineSummary {
   const RoutineSummary({
     required this.routine,

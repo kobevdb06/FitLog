@@ -14,6 +14,8 @@ mixin _$ExercisesDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.customMusclesTable;
   $CustomEquipmentTableTable get customEquipmentTable =>
       attachedDatabase.customEquipmentTable;
+  $CustomCategoriesTableTable get customCategoriesTable =>
+      attachedDatabase.customCategoriesTable;
   ExercisesDaoManager get managers => ExercisesDaoManager(this);
 }
 
@@ -48,5 +50,10 @@ class ExercisesDaoManager {
       $$CustomEquipmentTableTableTableManager(
         _db.attachedDatabase,
         _db.customEquipmentTable,
+      );
+  $$CustomCategoriesTableTableTableManager get customCategoriesTable =>
+      $$CustomCategoriesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.customCategoriesTable,
       );
 }

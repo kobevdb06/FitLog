@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../calc/rpe.dart';
 import '../calc/schedule.dart';
 import '../db/database.dart';
+import '../db/models.dart';
 import '../formatting/formatters.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -296,13 +297,57 @@ Future<SetType?> pickSetType(BuildContext context, {required SetType current}) {
 }
 
 /// Picks how an exercise is done, which decides what a set asks you for.
-Future<ExerciseCategory?> pickExerciseCategory(
+///
+/// [options] is the built-in eight followed by the categories the user named
+/// themselves; one of your own says underneath it which of the eight it counts
+/// as, because that is what decides the columns you will be filling in.
+Future<CategoryChoice?> pickExerciseCategory(
   BuildContext context, {
-  required ExerciseCategory current,
+  required CategoryChoice current,
+  required List<CategoryChoice> options,
+  VoidCallback? onAddNew,
 }) {
-  return showAppSheet<ExerciseCategory>(
+  return showAppSheet<CategoryChoice>(
     context: context,
     title: 'Hoe doe je deze oefening?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final choice in options)
+          ListTile(
+            leading: Icon(exerciseCategoryIcon(choice.base)),
+            title: Text(choice.label),
+            subtitle: Text(
+              choice.isOwn
+                  ? 'Van jezelf, rekent als ${choice.base.label.toLowerCase()}'
+                  : exerciseCategoryDescription(choice.base),
+            ),
+            selected: choice == current,
+            onTap: () => Navigator.of(context).pop(choice),
+          ),
+        // Right here rather than only in the settings: you notice a category
+        // is missing while you are making the exercise that needs it.
+        if (onAddNew != null) ...[
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('Nieuwe categorie'),
+            onTap: () {
+              Navigator.of(context).pop();
+              onAddNew();
+            },
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+/// Which of the built-in categories a new category of your own counts as.
+Future<ExerciseCategory?> pickCategoryBase(BuildContext context) {
+  return showAppSheet<ExerciseCategory>(
+    context: context,
+    title: 'Waarmee reken je mee?',
     builder: (context) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -311,7 +356,6 @@ Future<ExerciseCategory?> pickExerciseCategory(
             leading: Icon(exerciseCategoryIcon(category)),
             title: Text(category.label),
             subtitle: Text(exerciseCategoryDescription(category)),
-            selected: category == current,
             onTap: () => Navigator.of(context).pop(category),
           ),
       ],

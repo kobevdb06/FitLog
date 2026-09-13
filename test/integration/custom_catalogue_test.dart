@@ -1,10 +1,11 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../widget/helpers.dart';
 
-/// Muscle groups and kit the app did not come with.
+/// Muscle groups, kit and categories the app did not come with.
 ///
 /// The pickers used to offer only what the bundled catalogue happened to
 /// contain, so a group nothing used could not be chosen at all.
@@ -116,6 +117,120 @@ void main() {
           );
 
       expect(await db.exercisesDao.exercisesUsingMuscle('borst'), 2);
+    });
+  });
+
+  group('categorieën', () {
+    test('een eigen categorie onthoudt waarmee ze rekent', () async {
+      await db.exercisesDao.addCustomCategory('Slee', 'bodyweight');
+
+      final own = await db.exercisesDao.customCategories();
+      expect(own.single.name, 'Slee');
+      expect(own.single.base, 'bodyweight');
+    });
+
+    test('een oefening erin blijft gelogd als haar basis', () async {
+      // Dat is het hele punt: een naam van jezelf verandert niets aan wat een
+      // set van je vraagt.
+      await db.exercisesDao.addCustomCategory('Slee', 'duration');
+      await db.exercisesDao.setCategory(
+        'ex-bench',
+        const CategoryChoice(ExerciseCategory.duration, 'Slee'),
+      );
+
+      final row = (await db.exercisesDao.getById('ex-bench'))!;
+      expect(row.category, 'duration');
+      expect(row.customCategory, 'Slee');
+      expect(row.categoryChoice.base, ExerciseCategory.duration);
+      expect(row.categoryLabel, 'Slee');
+      expect(row.categoryChoice.base.hasDuration, isTrue);
+    });
+
+    test('en zonder eigen naam blijft het label van de app staan', () async {
+      final row = (await db.exercisesDao.getById('ex-bench'))!;
+      expect(row.customCategory, isNull);
+      expect(row.categoryLabel, ExerciseCategory.barbell.label);
+    });
+
+    test('filteren op een eigen categorie vraagt om die naam', () async {
+      await db.exercisesDao.addCustomCategory('Slee', 'duration');
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-sled',
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              category: 'duration',
+              customCategory: const Value('Slee'),
+              createdAt: 0,
+            ),
+          );
+      // Een oefening die toevallig hetzelfde gelogd wordt, maar niet van jou
+      // heet.
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-plank',
+              name: 'Plank',
+              primaryMuscle: 'core',
+              category: 'duration',
+              createdAt: 0,
+            ),
+          );
+
+      final own = await db.exercisesDao.getExercises(
+        const ExerciseFilter(customCategories: {'Slee'}),
+      );
+      expect(own.map((e) => e.id), ['ex-sled']);
+
+      // En op de ingebouwde categorie vind je ze allebei: zo worden ze
+      // allebei gelogd.
+      final both = await db.exercisesDao.getExercises(
+        const ExerciseFilter(categories: {'duration'}),
+      );
+      expect(both.map((e) => e.id), ['ex-plank', 'ex-sled']);
+    });
+
+    test('zoeken vindt een oefening op de naam die jij gaf', () async {
+      await db.exercisesDao.addCustomCategory('Slee', 'duration');
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-sled',
+              name: 'Duwen',
+              primaryMuscle: 'benen',
+              category: 'duration',
+              customCategory: const Value('Slee'),
+              createdAt: 0,
+            ),
+          );
+
+      final found = await db.exercisesDao.getExercises(
+        const ExerciseFilter(query: 'slee'),
+      );
+      expect(found.map((e) => e.id), ['ex-sled']);
+    });
+
+    test('verwijderen mag pas als niets het nog gebruikt', () async {
+      await db.exercisesDao.addCustomCategory('Slee', 'duration');
+      await db.exercisesDao.setCategory(
+        'ex-bench',
+        const CategoryChoice(ExerciseCategory.duration, 'Slee'),
+      );
+
+      expect(await db.exercisesDao.exercisesUsingCategory('Slee'), 1);
+
+      await db.exercisesDao.setCategory(
+        'ex-bench',
+        const CategoryChoice(ExerciseCategory.barbell),
+      );
+
+      expect(await db.exercisesDao.exercisesUsingCategory('Slee'), 0);
+      await db.exercisesDao.removeCustomCategory('Slee');
+      expect(await db.exercisesDao.customCategories(), isEmpty);
     });
   });
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
@@ -263,6 +264,10 @@ class _FilterChips extends ConsumerWidget {
     final notifier = ref.read(exerciseFilterControllerProvider.notifier);
     final muscles = ref.watch(muscleOptionsProvider).value ?? const [];
     final equipment = ref.watch(equipmentOptionsProvider).value ?? const [];
+    final ownCategories = [
+      for (final choice in ref.watch(categoryOptionsProvider).value ?? const [])
+        if (choice.isOwn) choice,
+    ];
 
     return SizedBox(
       height: 104,
@@ -284,6 +289,16 @@ class _FilterChips extends ConsumerWidget {
                     label: Text(category.label),
                     selected: filter.categories.contains(category.wire),
                     onSelected: (_) => notifier.toggleCategory(category.wire),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
+                // Your own categories after the eight, and filtering on one
+                // asks for that name rather than for what it counts as.
+                for (final own in ownCategories) ...[
+                  FilterChip(
+                    label: Text(own.name!),
+                    selected: filter.customCategories.contains(own.name),
+                    onSelected: (_) => notifier.toggleCustomCategory(own.name!),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                 ],
@@ -345,7 +360,6 @@ class _ExerciseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final category = ExerciseCategory.fromWire(exercise.category);
     return ListTile(
       onTap: onTap,
       leading: ExerciseThumb(
@@ -357,7 +371,7 @@ class _ExerciseTile extends StatelessWidget {
       subtitle: Text(
         [
           exercise.primaryMuscle,
-          exercise.equipment ?? category.label,
+          exercise.equipment ?? exercise.categoryLabel,
         ].join(' · '),
       ),
       trailing: selectable

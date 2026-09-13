@@ -1978,3 +1978,29 @@ zijn.
 De breedtes komen daarmee uit `Expanded` in plaats van uit een berekening op
 `MediaQuery`. Een half blok dat alleen in zijn rij staat blijft half: het
 groeit niet stiekem de lege plek in.
+
+## 123. Een eigen categorie leent een van de acht
+
+Spiergroepen en materiaal zijn namen: je zet er een bij en er verandert verder
+niets. Een categorie is dat niet. De acht ingebouwde zijn gedragingen - ze
+bepalen welke kolommen een set heeft, welke records kunnen bestaan, en of de
+schijvenberekening iets te zeggen heeft. Een categorie die de gebruiker
+verzint kan onmogelijk een negende gedrag meebrengen.
+
+Dus vraagt het toevoegen twee dingen: een naam, en welke van de acht ze
+meerekent. In de database staat dat als `custom_categories(name, base)`, en op
+de oefening blijft `category` de ingebouwde waarde terwijl de nieuwe kolom
+`custom_category` de naam draagt. Alles wat over sets, records, delen en
+matchen redeneert leest nog altijd `category` en merkt niets van dit hele
+scherm. Alleen wat een label toont, toont de naam.
+
+Filteren op een eigen categorie zoekt op die naam, niet op de basis: wie op
+*Slee* filtert wil geen planken erbij. Filteren op *Tijd* geeft ze wel
+allebei, want zo worden ze allebei gelogd.
+
+Wat een routine deelt via QR draagt de ingebouwde categorie, niet de naam. Een
+telefoon die *Slee* niet kent kan er ook niets mee; de oefening komt daar
+binnen zoals ze gemeten wordt, en dat is het enige wat aan de overkant klopt.
+
+Het scherm heet daarom niet langer "Eigen spieren en materiaal" maar "Eigen
+keuzelijsten": het gaat over alles wat in een keuzelijst terechtkomt.

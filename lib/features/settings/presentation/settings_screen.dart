@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../dashboard/presentation/today_providers.dart';
 
 /// The settings hub.
 class SettingsScreen extends ConsumerWidget {
@@ -23,9 +24,15 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.dashboard_customize_outlined),
             title: const Text('Startscherm'),
-            subtitle: const Text('Welke blokken je ziet, en in welke volgorde'),
+            subtitle: const Text('Welke blokken je ziet, waar, en hoe groot'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.settingsHome),
+            // You arrange the Start tab on the Start tab: a list of words
+            // here could never show what the screen would look like, and it
+            // could not offer the sizes at all.
+            onTap: () {
+              ref.read(homeArrangeRequestProvider.notifier).ask();
+              context.go(Routes.dashboard);
+            },
           ),
           ListTile(
             leading: const Icon(Icons.tune),

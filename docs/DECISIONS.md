@@ -1939,3 +1939,17 @@ goed uit en werkt niet: een `Stack` doet geen hit-test buiten zijn eigen grenzen
 dus de bovenste hoek van die knop was dood. De widgettest zag het meteen - een
 tik die "miste" terwijl hij toevallig nog wel iets raakte - en nu staat het
 kruisje binnen de kaart.
+
+## 120. Het instellingenscherm voor de startpagina is weg
+
+Er waren even twee manieren om de startpagina in te delen: het raster op de
+startpagina zelf, en de oude lijst met schakelaars onder Instellingen. Die
+lijst kon niet wat het raster wel kan (maten), en toonde nooit wat het scherm
+ervan werd - precies de klacht die tot het raster leidde. Twee plekken met
+verschillende mogelijkheden voor hetzelfde is erger dan één.
+
+De rij *Instellingen → Startscherm* is gebleven, want zonder die rij moet je
+weten dat lang indrukken bestaat. Hij brengt je nu naar het starttabblad in de
+indeelstand. Dat gaat via een kleine provider (`homeArrangeRequest`) die het
+tabblad afluistert: het tabblad staat al in de pager, dus het hoort het en zet
+zichzelf aan. `Standaard` verhuisde mee naar de indeelbalk.

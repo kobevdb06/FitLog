@@ -17,6 +17,21 @@ part 'today_providers.g.dart';
 HomeLayout homeLayout(Ref ref) =>
     parseHomeLayout(ref.watch(settingsProvider).value?.homeLayout);
 
+/// Someone asked, from somewhere else in the app, to arrange the Start tab.
+///
+/// Arranging happens on the Start tab itself now, so Instellingen cannot show
+/// it - it can only send you there. The tab is already built and sitting in
+/// the pager, so it hears this and switches itself on.
+@Riverpod(keepAlive: true)
+class HomeArrangeRequest extends _$HomeArrangeRequest {
+  @override
+  bool build() => false;
+
+  void ask() => state = true;
+
+  void taken() => state = false;
+}
+
 /// How many starred routines the card has room for.
 const int kHomeFavourites = 3;
 

@@ -54,6 +54,81 @@ final class HomeLayoutProvider
 
 String _$homeLayoutHash() => r'd25b40b4d214a16118242af2e1a90f52b788e1e0';
 
+/// Someone asked, from somewhere else in the app, to arrange the Start tab.
+///
+/// Arranging happens on the Start tab itself now, so Instellingen cannot show
+/// it - it can only send you there. The tab is already built and sitting in
+/// the pager, so it hears this and switches itself on.
+
+@ProviderFor(HomeArrangeRequest)
+final homeArrangeRequestProvider = HomeArrangeRequestProvider._();
+
+/// Someone asked, from somewhere else in the app, to arrange the Start tab.
+///
+/// Arranging happens on the Start tab itself now, so Instellingen cannot show
+/// it - it can only send you there. The tab is already built and sitting in
+/// the pager, so it hears this and switches itself on.
+final class HomeArrangeRequestProvider
+    extends $NotifierProvider<HomeArrangeRequest, bool> {
+  /// Someone asked, from somewhere else in the app, to arrange the Start tab.
+  ///
+  /// Arranging happens on the Start tab itself now, so Instellingen cannot show
+  /// it - it can only send you there. The tab is already built and sitting in
+  /// the pager, so it hears this and switches itself on.
+  HomeArrangeRequestProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'homeArrangeRequestProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$homeArrangeRequestHash();
+
+  @$internal
+  @override
+  HomeArrangeRequest create() => HomeArrangeRequest();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$homeArrangeRequestHash() =>
+    r'f2e446fd3fde445152ee3ccc42b0dd97ac1f01aa';
+
+/// Someone asked, from somewhere else in the app, to arrange the Start tab.
+///
+/// Arranging happens on the Start tab itself now, so Instellingen cannot show
+/// it - it can only send you there. The tab is already built and sitting in
+/// the pager, so it hears this and switches itself on.
+
+abstract class _$HomeArrangeRequest extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// Every routine that is planned on at least one weekday.
 
 @ProviderFor(scheduledRoutines)

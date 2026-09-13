@@ -189,6 +189,43 @@ void main() {
     expect(find.text('DEZE WEEK'), findsOneWidget);
   });
 
+  testWidgets('Instellingen can send you here to arrange', (tester) async {
+    await pump(tester);
+    expect(find.text('Indelen'), findsNothing);
+
+    // What the Startscherm row in Instellingen does before it navigates.
+    container!.read(homeArrangeRequestProvider.notifier).ask();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Indelen'), findsOneWidget);
+    // Taken, so coming back to the tab later does not put you in arranging
+    // mode again.
+    expect(container!.read(homeArrangeRequestProvider), isFalse);
+  });
+
+  testWidgets('Standaard puts every block back the way it came', (
+    tester,
+  ) async {
+    await pump(tester);
+    await arrange(tester);
+
+    await tester.tap(find.byKey(const ValueKey('formaat-deze-week')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('verberg-volume')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.text('Standaard'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final layout = await stored();
+    expect(layout.blocks, defaultHomeLayout.blocks);
+    expect(layout.sizeOf(HomeBlock.week), HomeBlockSize.wide);
+    expect(layout.shows(HomeBlock.volume), isTrue);
+  });
+
   testWidgets('nothing is arrangeable while you are not arranging', (
     tester,
   ) async {

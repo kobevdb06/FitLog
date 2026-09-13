@@ -53,6 +53,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Instellingen can only send you here; switching on is this screen's job.
+    ref.listen(homeArrangeRequestProvider, (_, asked) {
+      if (!asked || _editing) return;
+      setState(() => _editing = true);
+      ref.read(homeArrangeRequestProvider.notifier).taken();
+    });
+
     final profile = ref.watch(userProfileProvider).value;
     final streak = ref.watch(streakProvider).value;
     final layout = ref.watch(homeLayoutProvider);
@@ -77,6 +84,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       onDone: () => setState(() => _editing = false),
                       onShow: (block) =>
                           _save(layout.withVisible(block, visible: true)),
+                      onReset: () => _save(defaultHomeLayout),
                     )
                   : _Greeting(name: profile?.displayName, streak: streak),
             ),
@@ -100,7 +108,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     _save(layout.withVisible(block, visible: false)),
               ),
             ),
-            if (layout.visible.isEmpty && !_editing) const _EmptyHomeNotice(),
+            if (layout.visible.isEmpty && !_editing)
+              _EmptyHomeNotice(
+                onArrange: () => setState(() => _editing = true),
+              ),
           ],
         ),
       ),
@@ -117,11 +128,13 @@ class _ArrangeBar extends StatelessWidget {
     required this.hidden,
     required this.onDone,
     required this.onShow,
+    required this.onReset,
   });
 
   final List<HomeBlock> hidden;
   final VoidCallback onDone;
   final void Function(HomeBlock block) onShow;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +147,8 @@ class _ArrangeBar extends StatelessWidget {
             Expanded(
               child: Text('Indelen', style: theme.textTheme.headlineSmall),
             ),
+            TextButton(onPressed: onReset, child: const Text('Standaard')),
+            const SizedBox(width: AppSpacing.xs),
             FilledButton(onPressed: onDone, child: const Text('Klaar')),
           ],
         ),
@@ -240,7 +255,9 @@ class _BlockCard extends StatelessWidget {
 /// An empty screen with no way back would be the app overruling you; this says
 /// what happened and where to undo it.
 class _EmptyHomeNotice extends StatelessWidget {
-  const _EmptyHomeNotice();
+  const _EmptyHomeNotice({required this.onArrange});
+
+  final VoidCallback onArrange;
 
   @override
   Widget build(BuildContext context) {
@@ -253,7 +270,7 @@ class _EmptyHomeNotice extends StatelessWidget {
             'Je hebt alle blokken uitgezet. Zet er weer een aan om hier '
             'iets te zien.',
         actionLabel: 'Startscherm indelen',
-        onAction: () => context.push(Routes.settingsHome),
+        onAction: onArrange,
       ),
     );
   }

@@ -1829,3 +1829,35 @@ van de build: dat laatste bleek niet aantoonbaar (zie 111).
 
 De prijs is zichtbaar: de oefeningen verschijnen een fractie na de rest van het
 scherm.
+
+## 114. Android maakte een back-up van de database naar Google
+
+Het manifest zei niets over `android:allowBackup`, en dat staat standaard op
+`true`. Android zette de hele app-map dus in het Google-account van de
+gebruiker - inclusief de versleutelde database. De app belooft bij de eerste
+start letterlijk: "Je gegevens blijven op dit toestel en worden nergens naartoe
+gestuurd." Dat was niet waar.
+
+Nu staat er `allowBackup="false"`, met `backup_rules.xml` voor Android 11 en
+ouder en `data_extraction_rules.xml` voor nieuwere versies, allebei met alles
+uitgesloten - ook overdracht naar een nieuw toestel.
+
+Er is nog een tweede reden. De sleutel zit in de Android Keystore en gaat nooit
+mee in een back-up. Een teruggezette database is dus per definitie niet te
+openen, en dat is precies wat er gebeurde: na een herinstallatie zette Android
+gegevens terug, de sleutel paste er niet bij, en de app bleef hangen op
+`WrongDatabaseKeyException` met `hmac check failed for pgno=1` in het logboek.
+Een back-up die niet te herstellen valt is alleen een kopie op een plek waar de
+gebruiker hem niet wilde hebben.
+
+## 115. Uit het foutscherm kwam je niet meer weg
+
+Het scherm bood alleen "Opnieuw proberen". Een database waar de sleutel niet op
+past gaat nooit open, hoe vaak je het ook vraagt, dus wie daar belandde zat er
+voorgoed. De enige uitweg was de app verwijderen - wat alles weggooit, alleen
+zonder het te zeggen.
+
+Er staat nu "Opnieuw beginnen" naast, in rood, met dezelfde twee bevestigingen
+als het wissen in de instellingen: eerst een vraag, dan het woord WISSEN
+uittypen. Ook als opnieuw proberen niet eens aangeboden wordt, want juist dan is
+er geen andere weg.

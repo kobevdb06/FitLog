@@ -5,7 +5,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../core/app/app_controller.dart';
 import '../core/app/app_state.dart';
+import '../core/theme/app_colors.dart';
 import '../core/widgets/common.dart';
+import '../core/widgets/dialogs.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/exercises/presentation/custom_exercise_screen.dart';
 import '../features/exercises/presentation/exercise_detail_screen.dart';
@@ -367,10 +369,49 @@ class StartupFailureScreen extends ConsumerWidget {
                   child: const Text('Opnieuw proberen'),
                 ),
               ],
+              // A database the key does not open never opens, however often
+              // you ask. Without a way out the app is stuck on this screen for
+              // good, and reinstalling is the only escape - which is worse,
+              // because it takes everything with it either way.
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => _startOver(context, ref),
+                child: const Text(
+                  'Opnieuw beginnen',
+                  style: TextStyle(color: AppColors.danger),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Throws the unreadable database away and starts from the first screen.
+  ///
+  /// Two confirmations and the word typed out, the same as wiping from the
+  /// settings: there is no undo and no copy anywhere else.
+  Future<void> _startOver(BuildContext context, WidgetRef ref) async {
+    final first = await confirm(
+      context,
+      title: 'Opnieuw beginnen?',
+      message:
+          'Alles wat FitLog op dit toestel bewaart wordt gewist en je begint '
+          'bij het eerste scherm. Er is geen kopie elders.',
+      confirmLabel: 'Doorgaan',
+      destructive: true,
+    );
+    if (!first || !context.mounted) return;
+
+    final second = await confirmByTyping(
+      context,
+      title: 'Zeker weten?',
+      message: 'Typ WISSEN om te bevestigen. Dit kan niet ongedaan gemaakt.',
+      word: 'WISSEN',
+    );
+    if (!second) return;
+
+    await ref.read(appControllerProvider.notifier).wipeEverything();
   }
 }

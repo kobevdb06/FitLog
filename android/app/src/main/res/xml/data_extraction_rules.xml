@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FitLog bewaart alles in één versleutelde database op dit toestel, en zegt dat
+  ook bij de eerste start. Android maakt standaard een back-up van de hele
+  app-map naar het Google-account van de gebruiker; dat is precies wat de app
+  belooft niet te doen.
+
+  De sleutel gaat trouwens nooit mee in zo'n back-up - die zit in de Keystore -
+  dus een teruggezette database is bovendien niet te openen, en de app bleef
+  daarop hangen met WrongDatabaseKeyException.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

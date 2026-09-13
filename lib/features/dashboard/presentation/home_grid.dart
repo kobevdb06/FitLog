@@ -18,6 +18,14 @@ const double kWiggleRadians = 0.012;
 /// Two columns, so a small block is half a screen.
 const int kHomeColumns = 2;
 
+/// Room above a block for its cross while you are arranging.
+///
+/// The cross has to sit inside the block - a Stack does not hit test outside
+/// its own bounds - and a block's first line is its title, which it would
+/// cover. So while arranging, every block moves down far enough to keep the
+/// two apart.
+const double kCrossRoom = 22;
+
 /// Lays the visible blocks out, wide ones on their own row and small ones in
 /// pairs, and hands each one the size it was given.
 class HomeGrid extends StatelessWidget {
@@ -137,16 +145,19 @@ class _Arrangeable extends StatelessWidget {
             childWhenDragging: Opacity(opacity: 0.25, child: frozen),
             child: Stack(
               children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                    border: Border.all(
-                      color: aiming ? AppColors.accent : Colors.transparent,
-                      width: 2,
+                Padding(
+                  padding: const EdgeInsets.only(top: kCrossRoom),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 120),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                      border: Border.all(
+                        color: aiming ? AppColors.accent : Colors.transparent,
+                        width: 2,
+                      ),
                     ),
+                    child: frozen,
                   ),
-                  child: frozen,
                 ),
                 Positioned.fill(
                   child: GestureDetector(
@@ -155,11 +166,8 @@ class _Arrangeable extends StatelessWidget {
                     onTap: onResize,
                   ),
                 ),
-                // Inside the block, not hanging off it: a Stack does not hit
-                // test outside its own bounds, so a cross that overhangs looks
-                // pressable and is not.
                 Positioned(
-                  top: 4,
+                  top: 0,
                   left: 4,
                   child: _CornerButton(
                     key: ValueKey('verberg-${block.wire}'),

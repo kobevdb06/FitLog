@@ -127,6 +127,18 @@ void main() {
     expect(small.width, lessThan(wide.width * 0.6));
   });
 
+  testWidgets('the cross does not sit on top of the name', (tester) async {
+    await pump(tester);
+    await arrange(tester);
+
+    final cross = tester.getRect(
+      find.byKey(const ValueKey('verberg-deze-week')),
+    );
+    final title = tester.getRect(find.text('DEZE WEEK'));
+
+    expect(cross.bottom, lessThanOrEqualTo(title.top));
+  });
+
   testWidgets('the cross takes a block off the screen, and a chip brings it '
       'back', (tester) async {
     await pump(tester);

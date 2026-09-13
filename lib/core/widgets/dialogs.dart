@@ -51,19 +51,68 @@ Future<String?> promptForText(
   String confirmLabel = 'Opslaan',
   int maxLines = 1,
   TextCapitalization capitalization = TextCapitalization.sentences,
-}) async {
-  final controller = TextEditingController(text: initialValue);
-  final result = await showDialog<String>(
+}) {
+  return showDialog<String>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
+    builder: (context) => _TextPrompt(
+      title: title,
+      initialValue: initialValue,
+      hintText: hintText,
+      confirmLabel: confirmLabel,
+      maxLines: maxLines,
+      capitalization: capitalization,
+    ),
+  );
+}
+
+/// The dialog owns its controller, because the dialog outlives the answer.
+///
+/// Disposing it right after the await looked right and was not: the route is
+/// still fading out and rebuilds the field a few more times, each one reaching
+/// into a controller that is already gone.
+class _TextPrompt extends StatefulWidget {
+  const _TextPrompt({
+    required this.title,
+    required this.initialValue,
+    required this.hintText,
+    required this.confirmLabel,
+    required this.maxLines,
+    required this.capitalization,
+  });
+
+  final String title;
+  final String? initialValue;
+  final String? hintText;
+  final String confirmLabel;
+  final int maxLines;
+  final TextCapitalization capitalization;
+
+  @override
+  State<_TextPrompt> createState() => _TextPromptState();
+}
+
+class _TextPromptState extends State<_TextPrompt> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialValue,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
       content: TextField(
-        controller: controller,
+        controller: _controller,
         autofocus: true,
-        maxLines: maxLines,
-        textCapitalization: capitalization,
-        decoration: InputDecoration(hintText: hintText),
-        onSubmitted: maxLines == 1
+        maxLines: widget.maxLines,
+        textCapitalization: widget.capitalization,
+        decoration: InputDecoration(hintText: widget.hintText),
+        onSubmitted: widget.maxLines == 1
             ? (value) => Navigator.of(context).pop(value)
             : null,
       ),
@@ -73,14 +122,12 @@ Future<String?> promptForText(
           child: const Text('Annuleren'),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: Text(confirmLabel),
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: Text(widget.confirmLabel),
         ),
       ],
-    ),
-  );
-  controller.dispose();
-  return result;
+    );
+  }
 }
 
 /// The last gate before something irreversible: the user has to type a word.

@@ -1953,3 +1953,15 @@ weten dat lang indrukken bestaat. Hij brengt je nu naar het starttabblad in de
 indeelstand. Dat gaat via een kleine provider (`homeArrangeRequest`) die het
 tabblad afluistert: het tabblad staat al in de pager, dus het hoort het en zet
 zichzelf aan. `Standaard` verhuisde mee naar de indeelbalk.
+
+## 121. Een leeg blok krijgt geen plek op het raster
+
+`Herstel`, `Records` en `Favorieten` tekenen niets als er nog niets is. In een
+lijst viel dat niet op; in een `Wrap` wel, want een kind van nul hoog krijgt
+nog altijd zijn rij en zijn tussenruimte. Op een verse installatie stond er
+een gat tussen *Deze week* en *Volume*.
+
+Of een blok gevuld is, is nu één provider (`homeBlockFilled`). Het raster
+vraagt het voor het ruimte maakt, en het blok zelf vraagt het voor het tekent,
+zodat de regel op één plek staat. In de indeelstand blijft elk blok staan - je
+kan niets verslepen dat er niet is - met zijn naam en "Nog niets te tonen".

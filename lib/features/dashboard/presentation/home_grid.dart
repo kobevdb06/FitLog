@@ -24,6 +24,7 @@ class HomeGrid extends StatelessWidget {
   const HomeGrid({
     super.key,
     required this.layout,
+    this.only,
     required this.editing,
     required this.blockBuilder,
     required this.onMove,
@@ -32,6 +33,11 @@ class HomeGrid extends StatelessWidget {
   });
 
   final HomeLayout layout;
+
+  /// Which of the visible blocks actually have something to draw, or null for
+  /// all of them. A block that draws nothing still takes a row in a Wrap, gap
+  /// and all, so it has to be left out rather than shrunk.
+  final Set<HomeBlock>? only;
 
   /// Arranging mode: the blocks lean, and dragging one moves it.
   final bool editing;
@@ -58,17 +64,20 @@ class HomeGrid extends StatelessWidget {
         runSpacing: AppSpacing.md,
         children: [
           for (final block in layout.visible)
-            SizedBox(
-              width: layout.sizeOf(block) == HomeBlockSize.small ? half : full,
-              child: _Arrangeable(
-                block: block,
-                editing: editing,
-                onMove: onMove,
-                onResize: () => onResize(block),
-                onHide: () => onHide(block),
-                child: blockBuilder(block, layout.sizeOf(block)),
+            if (only == null || only!.contains(block))
+              SizedBox(
+                width: layout.sizeOf(block) == HomeBlockSize.small
+                    ? half
+                    : full,
+                child: _Arrangeable(
+                  block: block,
+                  editing: editing,
+                  onMove: onMove,
+                  onResize: () => onResize(block),
+                  onHide: () => onHide(block),
+                  child: blockBuilder(block, layout.sizeOf(block)),
+                ),
               ),
-            ),
         ],
       ),
     );

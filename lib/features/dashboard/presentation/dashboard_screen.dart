@@ -99,9 +99,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   : () => setState(() => _editing = true),
               child: HomeGrid(
                 layout: layout,
+                // A block with nothing in it draws nothing, and a slot for
+                // nothing is a hole between two cards. While arranging every
+                // block stays, or you could not move one that happens to be
+                // empty today.
+                only: _editing
+                    ? null
+                    : {
+                        for (final block in layout.visible)
+                          if (ref.watch(homeBlockFilledProvider(block))) block,
+                      },
                 editing: _editing,
                 blockBuilder: (block, size) =>
-                    _HomeBlockView(block: block, size: size),
+                    _editing && !ref.watch(homeBlockFilledProvider(block))
+                    ? _EmptyBlockCard(block: block)
+                    : _HomeBlockView(block: block, size: size),
                 onMove: (block, onto) => _save(layout.movedOnto(block, onto)),
                 onResize: (block) => _save(layout.resized(block)),
                 onHide: (block) =>
@@ -197,6 +209,30 @@ class _HomeBlockView extends StatelessWidget {
   };
 }
 
+/// What an empty block looks like while you are arranging.
+///
+/// It draws nothing on a normal screen, and you cannot drag something that is
+/// not there, so while arranging it says its name and why it is blank.
+class _EmptyBlockCard extends StatelessWidget {
+  const _EmptyBlockCard({required this.block});
+
+  final HomeBlock block;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return _BlockCard(
+      title: block.label,
+      child: Text(
+        'Nog niets te tonen',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
 /// The frame every block sits in: a card with its name along the top.
 ///
 /// The names used to be section headers spanning the screen, which only works
@@ -288,14 +324,10 @@ class _FavouritesBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(homeBlockFilledProvider(HomeBlock.favourites))) {
+      return const SizedBox.shrink();
+    }
     final favourites = ref.watch(favouriteRoutinesProvider).value ?? const [];
-    if (favourites.isEmpty) return const SizedBox.shrink();
-
-    final layout = ref.watch(homeLayoutProvider);
-    final alreadyShown =
-        layout.shows(HomeBlock.today) &&
-        ref.watch(todayPlanProvider).kind == TodayPlanKind.favourites;
-    if (alreadyShown) return const SizedBox.shrink();
 
     // Half a screen has room for one, and one you can actually read beats
     // three you cannot.
@@ -430,8 +462,10 @@ class _RecordsBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(homeBlockFilledProvider(HomeBlock.records))) {
+      return const SizedBox.shrink();
+    }
     final records = ref.watch(latestRecordsProvider()).value ?? const [];
-    if (records.isEmpty) return const SizedBox.shrink();
 
     final formatters = ref.watch(formattersProvider);
     final theme = Theme.of(context);
@@ -1006,8 +1040,10 @@ class _RecoveryBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(homeBlockFilledProvider(HomeBlock.recovery))) {
+      return const SizedBox.shrink();
+    }
     final estimates = ref.watch(recoveryEstimatesProvider).value ?? const [];
-    if (estimates.isEmpty) return const SizedBox.shrink();
 
     final now = DateTime.now();
     final recovering = [

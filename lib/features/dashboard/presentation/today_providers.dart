@@ -6,6 +6,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../progress/presentation/progress_providers.dart';
+import '../../progress/presentation/recovery_providers.dart';
 import '../../routines/presentation/routine_providers.dart';
 import '../domain/home_layout.dart';
 import '../domain/today_plan.dart';
@@ -31,6 +33,27 @@ class HomeArrangeRequest extends _$HomeArrangeRequest {
 
   void taken() => state = false;
 }
+
+/// Whether a block has anything to say right now.
+///
+/// A block with nothing in it draws nothing, and a slot on the grid for
+/// nothing is a hole between two cards. The grid asks this before it makes
+/// room and the block asks it before it draws, so the rule stays in one place.
+@riverpod
+bool homeBlockFilled(Ref ref, HomeBlock block) => switch (block) {
+  HomeBlock.favourites =>
+    (ref.watch(favouriteRoutinesProvider).value ?? const []).isNotEmpty &&
+        // With no schedule, "Vandaag" already falls through to your
+        // favourites, and the same three routines twice is not a layout
+        // anybody chose.
+        !(ref.watch(homeLayoutProvider).shows(HomeBlock.today) &&
+            ref.watch(todayPlanProvider).kind == TodayPlanKind.favourites),
+  HomeBlock.records =>
+    (ref.watch(latestRecordsProvider()).value ?? const []).isNotEmpty,
+  HomeBlock.recovery =>
+    (ref.watch(recoveryEstimatesProvider).value ?? const []).isNotEmpty,
+  HomeBlock.today || HomeBlock.week || HomeBlock.volume => true,
+};
 
 /// How many starred routines the card has room for.
 const int kHomeFavourites = 3;

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/theme/app_spacing.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/core/widgets/common.dart';
 import 'package:fitlog/features/dashboard/domain/home_layout.dart';
@@ -220,6 +221,29 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a block with nothing in it leaves no hole', (tester) async {
+    // Herstel and Records sit between Deze week and Volume, and with an empty
+    // database neither draws anything. A Wrap still gives an empty child its
+    // row and its gap, so the screen showed a stretch of nothing.
+    await pump(tester);
+
+    final week = tester.getRect(cardOf(tester, 'DEZE WEEK'));
+    final volume = tester.getRect(cardOf(tester, 'VOLUME, LAATSTE 8 WEKEN'));
+
+    expect(volume.top - week.bottom, closeTo(AppSpacing.md, 0.5));
+  });
+
+  testWidgets('but you can still arrange it', (tester) async {
+    await pump(tester);
+    await arrange(tester);
+
+    // Not there means not draggable, so while arranging an empty block says
+    // its name instead of nothing at all.
+    expect(find.text('HERSTEL'), findsOneWidget);
+    expect(find.text('Nog niets te tonen'), findsWidgets);
+    expect(find.byKey(const ValueKey('verberg-herstel')), findsOneWidget);
   });
 
   testWidgets('Instellingen can send you here to arrange', (tester) async {

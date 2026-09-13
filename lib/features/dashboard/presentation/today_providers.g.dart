@@ -129,6 +129,112 @@ abstract class _$HomeArrangeRequest extends $Notifier<bool> {
   }
 }
 
+/// Whether a block has anything to say right now.
+///
+/// A block with nothing in it draws nothing, and a slot on the grid for
+/// nothing is a hole between two cards. The grid asks this before it makes
+/// room and the block asks it before it draws, so the rule stays in one place.
+
+@ProviderFor(homeBlockFilled)
+final homeBlockFilledProvider = HomeBlockFilledFamily._();
+
+/// Whether a block has anything to say right now.
+///
+/// A block with nothing in it draws nothing, and a slot on the grid for
+/// nothing is a hole between two cards. The grid asks this before it makes
+/// room and the block asks it before it draws, so the rule stays in one place.
+
+final class HomeBlockFilledProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// Whether a block has anything to say right now.
+  ///
+  /// A block with nothing in it draws nothing, and a slot on the grid for
+  /// nothing is a hole between two cards. The grid asks this before it makes
+  /// room and the block asks it before it draws, so the rule stays in one place.
+  HomeBlockFilledProvider._({
+    required HomeBlockFilledFamily super.from,
+    required HomeBlock super.argument,
+  }) : super(
+         retry: null,
+         name: r'homeBlockFilledProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$homeBlockFilledHash();
+
+  @override
+  String toString() {
+    return r'homeBlockFilledProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    final argument = this.argument as HomeBlock;
+    return homeBlockFilled(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is HomeBlockFilledProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$homeBlockFilledHash() => r'd34bf98e1d0f85fc7f4a30e51f6d5dce11e83f4a';
+
+/// Whether a block has anything to say right now.
+///
+/// A block with nothing in it draws nothing, and a slot on the grid for
+/// nothing is a hole between two cards. The grid asks this before it makes
+/// room and the block asks it before it draws, so the rule stays in one place.
+
+final class HomeBlockFilledFamily extends $Family
+    with $FunctionalFamilyOverride<bool, HomeBlock> {
+  HomeBlockFilledFamily._()
+    : super(
+        retry: null,
+        name: r'homeBlockFilledProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Whether a block has anything to say right now.
+  ///
+  /// A block with nothing in it draws nothing, and a slot on the grid for
+  /// nothing is a hole between two cards. The grid asks this before it makes
+  /// room and the block asks it before it draws, so the rule stays in one place.
+
+  HomeBlockFilledProvider call(HomeBlock block) =>
+      HomeBlockFilledProvider._(argument: block, from: this);
+
+  @override
+  String toString() => r'homeBlockFilledProvider';
+}
+
 /// Every routine that is planned on at least one weekday.
 
 @ProviderFor(scheduledRoutines)

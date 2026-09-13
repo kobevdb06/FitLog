@@ -58,34 +58,70 @@ class HomeGrid extends StatelessWidget {
   final void Function(HomeBlock block) onResize;
   final void Function(HomeBlock block) onHide;
 
+  /// The blocks split into rows: a wide block has a row to itself, two small
+  /// ones share.
+  List<List<HomeBlock>> _rows() {
+    final rows = <List<HomeBlock>>[];
+    for (final block in layout.visible) {
+      if (only != null && !only!.contains(block)) continue;
+      final small = layout.sizeOf(block) == HomeBlockSize.small;
+      final last = rows.isEmpty ? null : rows.last;
+      final fits =
+          small &&
+          last != null &&
+          last.length == 1 &&
+          layout.sizeOf(last.first) == HomeBlockSize.small;
+      if (fits) {
+        last.add(block);
+      } else {
+        rows.add([block]);
+      }
+    }
+    return rows;
+  }
+
+  Widget _slot(HomeBlock block) => _Arrangeable(
+    block: block,
+    editing: editing,
+    onMove: onMove,
+    onResize: () => onResize(block),
+    onHide: () => onHide(block),
+    child: blockBuilder(block, layout.sizeOf(block)),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    // The gap between two small blocks belongs to neither of them.
-    final half = (width - AppSpacing.lg * 2 - AppSpacing.md) / kHomeColumns;
-    final full = width - AppSpacing.lg * 2;
+    final rows = _rows();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Wrap(
-        spacing: AppSpacing.md,
-        runSpacing: AppSpacing.md,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final block in layout.visible)
-            if (only == null || only!.contains(block))
-              SizedBox(
-                width: layout.sizeOf(block) == HomeBlockSize.small
-                    ? half
-                    : full,
-                child: _Arrangeable(
-                  block: block,
-                  editing: editing,
-                  onMove: onMove,
-                  onResize: () => onResize(block),
-                  onHide: () => onHide(block),
-                  child: blockBuilder(block, layout.sizeOf(block)),
+          for (final (index, row) in rows.indexed) ...[
+            if (index > 0) const SizedBox(height: AppSpacing.md),
+            if (row.length == 1 &&
+                layout.sizeOf(row.first) == HomeBlockSize.wide)
+              _slot(row.first)
+            else
+              // Two blocks beside each other are the same height, the way
+              // widgets on a home screen are. A half block on its own keeps
+              // its half: it does not quietly grow into the empty place.
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: _slot(row.first)),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: row.length > 1
+                          ? _slot(row[1])
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
                 ),
               ),
+          ],
         ],
       ),
     );

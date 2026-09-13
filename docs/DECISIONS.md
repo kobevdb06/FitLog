@@ -1965,3 +1965,16 @@ Of een blok gevuld is, is nu één provider (`homeBlockFilled`). Het raster
 vraagt het voor het ruimte maakt, en het blok zelf vraagt het voor het tekent,
 zodat de regel op één plek staat. In de indeelstand blijft elk blok staan - je
 kan niets verslepen dat er niet is - met zijn naam en "Nog niets te tonen".
+
+## 122. Het raster is een kolom met rijen, geen `Wrap`
+
+Een `Wrap` zet twee halve blokken naast elkaar met hun bovenkanten gelijk en
+hun onderkanten waar ze uitkomen. Dat is precies hoe je ziet dat iets een
+lijst is die toevallig omslaat, en niet een raster. Nu bouwt het scherm de
+rijen zelf - een breed blok krijgt een eigen rij, twee smalle delen er een -
+en een rij met twee blokken staat in een `IntrinsicHeight`, zodat ze even hoog
+zijn.
+
+De breedtes komen daarmee uit `Expanded` in plaats van uit een berekening op
+`MediaQuery`. Een half blok dat alleen in zijn rij staat blijft half: het
+groeit niet stiekem de lege plek in.

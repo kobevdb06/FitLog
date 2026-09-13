@@ -127,6 +127,27 @@ void main() {
     expect(small.width, lessThan(wide.width * 0.6));
   });
 
+  testWidgets('two blocks beside each other are the same height', (
+    tester,
+  ) async {
+    // Ragged pairs are what gives a grid of widgets away as a list that
+    // happens to wrap.
+    var layout = defaultHomeLayout;
+    for (final block in [HomeBlock.week, HomeBlock.volume]) {
+      layout = layout.withSize(block, HomeBlockSize.small);
+    }
+    await db.settingsDao.updateSettings(
+      AppSettingsTableCompanion(homeLayout: Value(encodeHomeLayout(layout))),
+    );
+    await pump(tester);
+
+    final week = tester.getRect(cardOf(tester, 'DEZE WEEK'));
+    final volume = tester.getRect(cardOf(tester, 'VOLUME, 8 WEKEN'));
+
+    expect(volume.top, closeTo(week.top, 0.5));
+    expect(volume.height, closeTo(week.height, 0.5));
+  });
+
   testWidgets('the cross does not sit on top of the name', (tester) async {
     await pump(tester);
     await arrange(tester);

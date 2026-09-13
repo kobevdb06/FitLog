@@ -12,6 +12,8 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../data/photo_store.dart';
+import '../domain/photo_grouping.dart';
+import 'photo_detail_sheet.dart';
 import 'photo_providers.dart';
 
 /// Progress photos, grouped per month.
@@ -55,40 +57,33 @@ class PhotosScreen extends ConsumerWidget {
             );
           }
 
-          final byMonth = <String, List<ProgressPhotoRow>>{};
-          for (final photo in list) {
-            final key = Formatters.monthYear(
-              DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
-            );
-            byMonth.putIfAbsent(key, () => []).add(photo);
-          }
-
           return ListView(
             padding: const EdgeInsets.only(bottom: 96),
             children: [
-              for (final entry in byMonth.entries) ...[
-                SectionHeader(entry.key),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                  ),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: entry.value.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: AppSpacing.sm,
-                          crossAxisSpacing: AppSpacing.sm,
-                          childAspectRatio: 0.72,
-                        ),
-                    itemBuilder: (context, index) => _PhotoTile(
-                      photo: entry.value[index],
-                      paths: paths,
+              for (final month in groupPhotos(list)) ...[
+                SectionHeader(Formatters.monthYear(month.month)),
+                for (final day in month.days) ...[
+                  _DayHeader(day: day.day),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: day.photos.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: AppSpacing.sm,
+                            crossAxisSpacing: AppSpacing.sm,
+                            childAspectRatio: 0.72,
+                          ),
+                      itemBuilder: (context, index) =>
+                          _PhotoTile(photo: day.photos[index], paths: paths),
                     ),
                   ),
-                ),
+                ],
               ],
             ],
           );
@@ -103,20 +98,7 @@ class PhotosScreen extends ConsumerWidget {
   }
 
   Future<void> _add(BuildContext context, WidgetRef ref) async {
-    final pose = await showAppSheet<PhotoPose>(
-      context: context,
-      title: 'Welke pose?',
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final pose in PhotoPose.values)
-            ListTile(
-              title: Text(pose.label),
-              onTap: () => Navigator.of(context).pop(pose),
-            ),
-        ],
-      ),
-    );
+    final pose = await pickPose(context);
     if (pose == null || !context.mounted) return;
 
     final source = await showAppSheet<ImageSource>(
@@ -158,6 +140,52 @@ class PhotosScreen extends ConsumerWidget {
   }
 }
 
+/// The day above one row of tiles.
+///
+/// Smaller than the month above it: the month is where you are in the list,
+/// the day is which pictures belong together.
+class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.day});
+
+  final DateTime day;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final relative = Formatters.relativeDay(day);
+    final recent = relative == Formatters.date(day) ? null : relative;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Text(
+            Formatters.weekdayDayMonth(day),
+            style: theme.textTheme.labelLarge,
+          ),
+          // Only while it still means something. Past a week `relativeDay`
+          // falls back to the date, and repeating the date next to the date
+          // says nothing.
+          if (recent != null) ...[
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              recent.toLowerCase(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _PhotoTile extends ConsumerWidget {
   const _PhotoTile({required this.photo, required this.paths});
 
@@ -169,6 +197,11 @@ class _PhotoTile extends ConsumerWidget {
     final file = paths.photoFile(photo.fileName);
 
     return GestureDetector(
+      onTap: () => showPhotoDetail(
+        context,
+        photoId: photo.id,
+        takenAt: DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
+      ),
       onLongPress: () async {
         final ok = await confirm(
           context,
@@ -196,15 +229,39 @@ class _PhotoTile extends ConsumerWidget {
               right: 0,
               bottom: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 color: Colors.black.withValues(alpha: 0.55),
-                child: Text(
-                  '${PhotoPose.fromWire(photo.pose).label}\n'
-                  '${Formatters.date(DateTime.fromMillisecondsSinceEpoch(photo.takenAt))}',
-                  style: const TextStyle(color: Colors.white, fontSize: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        // The date is gone: the day above the grid already
+                        // says it, on every tile underneath it.
+                        PhotoPose.fromWire(photo.pose).label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    // Small marks for what is behind the picture, so a note
+                    // you wrote is not invisible until you open it.
+                    if (photo.workoutId != null)
+                      const Icon(
+                        Icons.fitness_center,
+                        size: 12,
+                        color: Colors.white70,
+                      ),
+                    if (photo.note != null && photo.note!.trim().isNotEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 3),
+                        child: Icon(
+                          Icons.sticky_note_2_outlined,
+                          size: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

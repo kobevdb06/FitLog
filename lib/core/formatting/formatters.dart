@@ -214,6 +214,7 @@ class Formatters {
   static final DateFormat _shortDate = DateFormat('d MMM yyyy', _locale);
   static final DateFormat _weekday = DateFormat('EEEE', _locale);
   static final DateFormat _weekdayShort = DateFormat('E', _locale);
+  static final DateFormat _weekdayDayMonth = DateFormat('EEEE d MMMM', _locale);
   static final DateFormat _monthYear = DateFormat('MMMM yyyy', _locale);
   static final DateFormat _time = DateFormat('HH:mm', _locale);
 
@@ -226,6 +227,9 @@ class Formatters {
   static String monthYear(DateTime at) => _monthYear.format(at);
 
   static String weekday(DateTime at) => _weekday.format(at);
+
+  /// `zondag 13 september` - a day written out, for a heading over a group.
+  static String weekdayDayMonth(DateTime at) => _weekdayDayMonth.format(at);
 
   static String time(DateTime at) => _time.format(at);
 

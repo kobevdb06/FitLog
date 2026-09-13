@@ -456,6 +456,64 @@ Future<String?> pickPhoto(
   );
 }
 
+/// Front, side or back.
+Future<PhotoPose?> pickPose(BuildContext context, {PhotoPose? current}) {
+  return showAppSheet<PhotoPose>(
+    context: context,
+    title: 'Welke pose?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final pose in PhotoPose.values)
+          ListTile(
+            title: Text(pose.label),
+            selected: pose == current,
+            onTap: () => Navigator.of(context).pop(pose),
+          ),
+      ],
+    ),
+  );
+}
+
+/// Which session a photograph belongs to.
+///
+/// "Geen workout" is the first line rather than a way to back out, for the
+/// same reason the folder picker works that way: closing the sheet means
+/// "never mind", and the two cannot be the same answer.
+Future<({String? id})?> pickWorkoutForPhoto(
+  BuildContext context, {
+  required String? current,
+  required List<WorkoutRow> workouts,
+}) {
+  return showAppSheet<({String? id})>(
+    context: context,
+    title: 'Bij welke workout hoort deze foto?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.link_off_outlined),
+          title: const Text('Geen workout'),
+          selected: current == null,
+          onTap: () => Navigator.of(context).pop((id: null)),
+        ),
+        for (final workout in workouts)
+          ListTile(
+            leading: const Icon(Icons.fitness_center_outlined),
+            title: Text(workout.name),
+            subtitle: Text(
+              Formatters.relativeDay(
+                DateTime.fromMillisecondsSinceEpoch(workout.startedAt),
+              ),
+            ),
+            selected: workout.id == current,
+            onTap: () => Navigator.of(context).pop((id: workout.id)),
+          ),
+      ],
+    ),
+  );
+}
+
 /// What a set of this kind asks you to fill in.
 String exerciseCategoryDescription(ExerciseCategory category) {
   if (category.hasDistance) return 'Afstand en tijd';

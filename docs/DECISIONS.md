@@ -1528,3 +1528,74 @@ Er staat nu ook een test die heel `lib/` afgaat op `DropdownButton`. Ze kwamen
 één voor één terug en elke keer zag dat er los onschuldig uit; dit zegt het één
 keer, voor alle schermen tegelijk - ook die waar je een hele flow voor moet
 doorlopen om er te komen.
+
+## 101. Op een foto tikken deed niets
+
+Letterlijk niets. Alleen lang indrukken deed iets, en dat verwijderde hem. Een
+raster van foto's waar je niet op kunt tikken is geen raster van foto's.
+
+Een tik opent nu een sheet in de vorm van de oefeningvoorbeschouwing: de foto
+op 42% van de schermhoogte, daaronder pose, datum, je notitie en de sessie
+waar hij bij hoort. Een tik op de foto zelf gaat schermvullend, met knijpen om
+in te zoomen, op zwart - een voortgangsfoto is grotendeels huid tegen een muur,
+en het oppervlak van de app zit daar precies tussenin en laat allebei er
+verkeerd uitzien.
+
+De sheet leest de rij via `progressPhotoProvider` in plaats van hem doorgegeven
+te krijgen. De bewerkpagina schrijft naar de database en deze sheet staat er op
+dat moment nog onder.
+
+## 102. Een foto bewaart nu ook wat je die dag deed
+
+`note` bestond al als kolom maar was nergens in te vullen of te lezen. Nu wel,
+samen met een koppeling naar een sessie: `progress_photos.workout_id`, schema
+v18.
+
+`ON DELETE SET NULL`, geen cascade. Je geschiedenis opruimen hoort je foto's
+niet mee te nemen. De foto overleeft de sessie en vergeet alleen nog welke het
+was. Er staat een test die faalt als iemand er ooit een cascade van maakt.
+
+`updatePhoto` geeft alle vier de velden door bij elke aanroep, ook de lege. Met
+een gedeeltelijke companion zouden "niet genoemd" en "leeggemaakt" hetzelfde
+betekenen, en dan kon je een notitie nooit meer weghalen.
+
+De sessies die de bewerkpagina aanbiedt komen van de dag zelf plus de dag
+ervoor en erna. Je fotografeert jezelf voor of na het trainen, niet twee weken
+later; een breder net zou vooral sessies aanbieden die niets met de foto te
+maken hebben, en dat is erger dan er geen aanbieden.
+
+## 103. Een maand was te grof
+
+Vier foto's onder één kop "SEPTEMBER 2026", met de datum op elke tegel. Dat is
+het raster dat vier keer hetzelfde zegt en je nog steeds laat uitzoeken welke
+bij elkaar horen.
+
+Nu is de maand de grote kop en de dag een regel daarboven: `zondag 13
+september`. De datum is daarmee van de tegel verdwenen - de kop erboven zegt
+het al, voor elke tegel eronder. Er staat nog wel "vandaag" of "3 dagen
+geleden" naast de dag, maar alleen zolang dat iets toevoegt: verder terug valt
+`relativeDay` terug op de datum, en de datum naast de datum zegt niets.
+
+De tegel heeft er twee kleine tekens bij gekregen: een halter als er een sessie
+aan hangt, een notitieblaadje als je iets geschreven hebt. Anders is wat je
+opschreef onzichtbaar tot je hem opent.
+
+## 104. Een voorkant tegen een achterkant is geen vergelijking
+
+Het vergelijkscherm liet je elke twee foto's naast elkaar zetten. In de praktijk
+leverde dat dit op: 7 september voorkant naast 7 september achterkant, met
+"0 dagen ertussen" en "0 kg". De app hielp je daar actief bij.
+
+De pose is nu de vergelijking, niet een van de twee helften. Bovenaan kies je
+er een - met erachter hoeveel foto's je ervan hebt, zodat je vooraf ziet waar
+iets te vergelijken valt - en daaronder kies je twee momenten van díe pose.
+Standaard de oudste en de nieuwste, en het scherm opent op de pose waar je er
+het meest van hebt. De pose staat daarmee niet meer onder beide foto's: de balk
+erboven zegt het één keer en het is per definitie voor allebei hetzelfde.
+
+Heb je van een pose minder dan twee foto's, dan zegt het scherm dat, met hoeveel
+je er hebt. Een kapotte vergelijking aanbieden is slechter dan er geen
+aanbieden.
+
+Dat kost één ding: twee verschillende poses naast elkaar kan niet meer. Dat is
+de bedoeling.

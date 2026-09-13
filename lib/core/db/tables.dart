@@ -502,6 +502,16 @@ class ProgressPhotosTable extends Table {
   TextColumn get pose => text()();
   TextColumn get note => text().nullable()();
 
+  /// The session this picture belongs to, if you said so.
+  ///
+  /// `SET NULL` rather than a cascade: clearing out your history should not
+  /// take your photographs with it. The picture outlives the session; it just
+  /// stops saying which one it was.
+  TextColumn get workoutId => text()
+      .named('workout_id')
+      .nullable()
+      .references(WorkoutsTable, #id, onDelete: KeyAction.setNull)();
+
   @override
   Set<Column> get primaryKey => {id};
 }

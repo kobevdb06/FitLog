@@ -376,6 +376,33 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
     progressPhotosTable,
   )..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  Stream<ProgressPhotoRow?> watchPhoto(String id) => (select(
+    progressPhotosTable,
+  )..where((t) => t.id.equals(id))).watchSingleOrNull();
+
+  /// Everything about a photo except the picture itself.
+  ///
+  /// Every field is passed on every call, because this is what an edit screen
+  /// hands back and each of the four can be cleared: a note wiped, a session
+  /// unlinked. A partial companion would make "not mentioned" and "emptied"
+  /// the same thing.
+  Future<void> updatePhoto(
+    String id, {
+    required PhotoPose pose,
+    required DateTime takenAt,
+    required String? note,
+    required String? workoutId,
+  }) async {
+    await (update(progressPhotosTable)..where((t) => t.id.equals(id))).write(
+      ProgressPhotosTableCompanion(
+        pose: Value(pose.wire),
+        takenAt: Value(takenAt.millisecondsSinceEpoch),
+        note: Value(note),
+        workoutId: Value(workoutId),
+      ),
+    );
+  }
+
   Future<void> deletePhoto(String id) async {
     await (delete(progressPhotosTable)..where((t) => t.id.equals(id))).go();
   }

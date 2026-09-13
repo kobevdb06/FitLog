@@ -110,7 +110,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 17);
+    expect(raw.select('PRAGMA user_version').first.values.first, 18);
     raw.close();
   });
 
@@ -159,7 +159,10 @@ void main() {
     expect(migratedRoutine.scheduledDays, 0);
 
     expect(await db.recordsDao.measurements(), hasLength(1));
-    expect(await db.recordsDao.photos(), hasLength(1));
+    final photo = (await db.recordsDao.photos()).single;
+    // v18 tied a photo to a session. Null on everything that existed, which is
+    // exactly true: nobody could point at one before there was a way to.
+    expect(photo.workoutId, isNull);
 
     // Both record rows survive; only the dangling reference is cleared.
     final records = await db.recordsDao.recordsForExercise('ex-1');
@@ -231,7 +234,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 17);
+    expect(db.schemaVersion, 18);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

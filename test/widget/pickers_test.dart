@@ -160,9 +160,11 @@ void main() {
 
   group('the photo under a comparison', () {
     setUp(() async {
+      // The same pose twice: comparing is per pose now, so two different ones
+      // would leave the screen with nothing to put side by side.
       for (final (id, day, pose) in [
         ('ph-1', 1, 'front'),
-        ('ph-2', 8, 'back'),
+        ('ph-2', 8, 'front'),
       ]) {
         await db.recordsDao.addPhoto(
           fileName: '$id.jpg',
@@ -183,7 +185,7 @@ void main() {
       expect(find.text('Welke foto?'), findsOneWidget);
       // Two photos, and each line carries the picture itself.
       expect(find.byType(Image), findsWidgets);
-      expect(find.text('Achterkant'), findsWidgets);
+      expect(find.text('1 mrt 2026'), findsWidgets);
     });
   });
 }

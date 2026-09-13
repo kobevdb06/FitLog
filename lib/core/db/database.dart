@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -183,6 +183,12 @@ class AppDatabase extends _$AppDatabase {
           // "never changed" - and that is the layout these databases were
           // already showing.
           await m.addColumn(appSettingsTable, appSettingsTable.homeLayout);
+        }
+        if (from < 18) {
+          // The session a progress photo belongs to. Additive and null, which
+          // says what is true of every picture taken before you could point at
+          // one: nobody knows what was done that day.
+          await m.addColumn(progressPhotosTable, progressPhotosTable.workoutId);
         }
       });
 

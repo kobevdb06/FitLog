@@ -9,12 +9,35 @@ import '../../../core/util/paths.dart';
 import '../data/photo_library.dart';
 import '../data/photo_store.dart';
 import '../data/pick_recovery.dart';
+import '../domain/photo_window.dart';
 
 part 'photo_providers.g.dart';
 
 @riverpod
 Stream<List<ProgressPhotoRow>> progressPhotos(Ref ref) =>
     ref.watch(databaseProvider).recordsDao.watchPhotos();
+
+/// One photo, watched: the sheet that shows it stays open while you edit it.
+@riverpod
+Stream<ProgressPhotoRow?> progressPhoto(Ref ref, String id) =>
+    ref.watch(databaseProvider).recordsDao.watchPhoto(id);
+
+/// The finished sessions around a photo's day, oldest first.
+@riverpod
+Stream<List<WorkoutRow>> workoutsAroundPhoto(Ref ref, DateTime takenAt) {
+  final window = workoutWindowFor(takenAt);
+  return ref
+      .watch(databaseProvider)
+      .workoutsDao
+      .watchWorkoutsBetween(window.from, window.to);
+}
+
+/// The session a photo points at, or null when it points at none.
+@riverpod
+Stream<WorkoutRow?> photoWorkout(Ref ref, String? workoutId) {
+  if (workoutId == null) return Stream.value(null);
+  return ref.watch(databaseProvider).workoutsDao.watchWorkout(workoutId);
+}
 
 /// Null while the documents directory is still being resolved.
 @riverpod
@@ -87,6 +110,23 @@ class PhotoActions {
     final library = await _library();
     await library.deletePhoto(photo);
   }
+
+  Future<void> update(
+    String id, {
+    required PhotoPose pose,
+    required DateTime takenAt,
+    required String? note,
+    required String? workoutId,
+  }) => ref
+      .read(databaseProvider)
+      .recordsDao
+      .updatePhoto(
+        id,
+        pose: pose,
+        takenAt: takenAt,
+        note: note,
+        workoutId: workoutId,
+      );
 
   Future<AppPaths> paths() => ref.read(appPathsProvider.future);
 }

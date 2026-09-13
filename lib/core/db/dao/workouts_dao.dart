@@ -1101,6 +1101,11 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// One workout's own row, watched.
+  Stream<WorkoutRow?> watchWorkout(String id) => (select(
+    workoutsTable,
+  )..where((t) => t.id.equals(id))).watchSingleOrNull();
+
   /// Every finished workout that started inside [from] .. [to).
   Stream<List<WorkoutRow>> watchWorkoutsBetween(DateTime from, DateTime to) {
     return (select(workoutsTable)

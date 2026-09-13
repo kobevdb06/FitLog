@@ -7827,8 +7827,29 @@ class $ProgressPhotosTableTable extends ProgressPhotosTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _workoutIdMeta = const VerificationMeta(
+    'workoutId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, takenAt, fileName, pose, note];
+  late final GeneratedColumn<String> workoutId = GeneratedColumn<String>(
+    'workout_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workouts (id) ON DELETE SET NULL',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    takenAt,
+    fileName,
+    pose,
+    note,
+    workoutId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -7876,6 +7897,12 @@ class $ProgressPhotosTableTable extends ProgressPhotosTable
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('workout_id')) {
+      context.handle(
+        _workoutIdMeta,
+        workoutId.isAcceptableOrUnknown(data['workout_id']!, _workoutIdMeta),
+      );
+    }
     return context;
   }
 
@@ -7905,6 +7932,10 @@ class $ProgressPhotosTableTable extends ProgressPhotosTable
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      workoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workout_id'],
+      ),
     );
   }
 
@@ -7926,12 +7957,20 @@ class ProgressPhotoRow extends DataClass
   /// `front` | `side` | `back`.
   final String pose;
   final String? note;
+
+  /// The session this picture belongs to, if you said so.
+  ///
+  /// `SET NULL` rather than a cascade: clearing out your history should not
+  /// take your photographs with it. The picture outlives the session; it just
+  /// stops saying which one it was.
+  final String? workoutId;
   const ProgressPhotoRow({
     required this.id,
     required this.takenAt,
     required this.fileName,
     required this.pose,
     this.note,
+    this.workoutId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7943,6 +7982,9 @@ class ProgressPhotoRow extends DataClass
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || workoutId != null) {
+      map['workout_id'] = Variable<String>(workoutId);
+    }
     return map;
   }
 
@@ -7953,6 +7995,9 @@ class ProgressPhotoRow extends DataClass
       fileName: Value(fileName),
       pose: Value(pose),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      workoutId: workoutId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workoutId),
     );
   }
 
@@ -7967,6 +8012,7 @@ class ProgressPhotoRow extends DataClass
       fileName: serializer.fromJson<String>(json['fileName']),
       pose: serializer.fromJson<String>(json['pose']),
       note: serializer.fromJson<String?>(json['note']),
+      workoutId: serializer.fromJson<String?>(json['workoutId']),
     );
   }
   @override
@@ -7978,6 +8024,7 @@ class ProgressPhotoRow extends DataClass
       'fileName': serializer.toJson<String>(fileName),
       'pose': serializer.toJson<String>(pose),
       'note': serializer.toJson<String?>(note),
+      'workoutId': serializer.toJson<String?>(workoutId),
     };
   }
 
@@ -7987,12 +8034,14 @@ class ProgressPhotoRow extends DataClass
     String? fileName,
     String? pose,
     Value<String?> note = const Value.absent(),
+    Value<String?> workoutId = const Value.absent(),
   }) => ProgressPhotoRow(
     id: id ?? this.id,
     takenAt: takenAt ?? this.takenAt,
     fileName: fileName ?? this.fileName,
     pose: pose ?? this.pose,
     note: note.present ? note.value : this.note,
+    workoutId: workoutId.present ? workoutId.value : this.workoutId,
   );
   ProgressPhotoRow copyWithCompanion(ProgressPhotosTableCompanion data) {
     return ProgressPhotoRow(
@@ -8001,6 +8050,7 @@ class ProgressPhotoRow extends DataClass
       fileName: data.fileName.present ? data.fileName.value : this.fileName,
       pose: data.pose.present ? data.pose.value : this.pose,
       note: data.note.present ? data.note.value : this.note,
+      workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
     );
   }
 
@@ -8011,13 +8061,14 @@ class ProgressPhotoRow extends DataClass
           ..write('takenAt: $takenAt, ')
           ..write('fileName: $fileName, ')
           ..write('pose: $pose, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('workoutId: $workoutId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, takenAt, fileName, pose, note);
+  int get hashCode => Object.hash(id, takenAt, fileName, pose, note, workoutId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8026,7 +8077,8 @@ class ProgressPhotoRow extends DataClass
           other.takenAt == this.takenAt &&
           other.fileName == this.fileName &&
           other.pose == this.pose &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.workoutId == this.workoutId);
 }
 
 class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
@@ -8035,6 +8087,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
   final Value<String> fileName;
   final Value<String> pose;
   final Value<String?> note;
+  final Value<String?> workoutId;
   final Value<int> rowid;
   const ProgressPhotosTableCompanion({
     this.id = const Value.absent(),
@@ -8042,6 +8095,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
     this.fileName = const Value.absent(),
     this.pose = const Value.absent(),
     this.note = const Value.absent(),
+    this.workoutId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ProgressPhotosTableCompanion.insert({
@@ -8050,6 +8104,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
     required String fileName,
     required String pose,
     this.note = const Value.absent(),
+    this.workoutId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        takenAt = Value(takenAt),
@@ -8061,6 +8116,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
     Expression<String>? fileName,
     Expression<String>? pose,
     Expression<String>? note,
+    Expression<String>? workoutId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8069,6 +8125,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
       if (fileName != null) 'file_name': fileName,
       if (pose != null) 'pose': pose,
       if (note != null) 'note': note,
+      if (workoutId != null) 'workout_id': workoutId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8079,6 +8136,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
     Value<String>? fileName,
     Value<String>? pose,
     Value<String?>? note,
+    Value<String?>? workoutId,
     Value<int>? rowid,
   }) {
     return ProgressPhotosTableCompanion(
@@ -8087,6 +8145,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
       fileName: fileName ?? this.fileName,
       pose: pose ?? this.pose,
       note: note ?? this.note,
+      workoutId: workoutId ?? this.workoutId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8109,6 +8168,9 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (workoutId.present) {
+      map['workout_id'] = Variable<String>(workoutId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8123,6 +8185,7 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
           ..write('fileName: $fileName, ')
           ..write('pose: $pose, ')
           ..write('note: $note, ')
+          ..write('workoutId: $workoutId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -8285,6 +8348,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('personal_records', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workouts',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('progress_photos', kind: UpdateKind.update)],
     ),
   ]);
 }
@@ -11856,6 +11926,27 @@ final class $$WorkoutsTableTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$ProgressPhotosTableTable, List<ProgressPhotoRow>>
+  _progressPhotosTableRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.progressPhotosTable,
+        aliasName: 'workouts__id__progress_photos__workout_id',
+      );
+
+  $$ProgressPhotosTableTableProcessedTableManager get progressPhotosTableRefs {
+    final manager = $$ProgressPhotosTableTableTableManager(
+      $_db,
+      $_db.progressPhotosTable,
+    ).filter((f) => f.workoutId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _progressPhotosTableRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$WorkoutsTableTableFilterComposer
@@ -11963,6 +12054,31 @@ class $$WorkoutsTableTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> progressPhotosTableRefs(
+    Expression<bool> Function($$ProgressPhotosTableTableFilterComposer f) f,
+  ) {
+    final $$ProgressPhotosTableTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.progressPhotosTable,
+      getReferencedColumn: (t) => t.workoutId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProgressPhotosTableTableFilterComposer(
+            $db: $db,
+            $table: $db.progressPhotosTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -12145,6 +12261,32 @@ class $$WorkoutsTableTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> progressPhotosTableRefs<T extends Object>(
+    Expression<T> Function($$ProgressPhotosTableTableAnnotationComposer a) f,
+  ) {
+    final $$ProgressPhotosTableTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.progressPhotosTable,
+          getReferencedColumn: (t) => t.workoutId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProgressPhotosTableTableAnnotationComposer(
+                $db: $db,
+                $table: $db.progressPhotosTable,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkoutsTableTableTableManager
@@ -12163,6 +12305,7 @@ class $$WorkoutsTableTableTableManager
           PrefetchHooks Function({
             bool routineId,
             bool workoutExercisesTableRefs,
+            bool progressPhotosTableRefs,
           })
         > {
   $$WorkoutsTableTableTableManager(_$AppDatabase db, $WorkoutsTableTable table)
@@ -12241,11 +12384,16 @@ class $$WorkoutsTableTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({routineId = false, workoutExercisesTableRefs = false}) {
+              ({
+                routineId = false,
+                workoutExercisesTableRefs = false,
+                progressPhotosTableRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (workoutExercisesTableRefs) db.workoutExercisesTable,
+                    if (progressPhotosTableRefs) db.progressPhotosTable,
                   ],
                   addJoins:
                       <
@@ -12300,6 +12448,27 @@ class $$WorkoutsTableTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (progressPhotosTableRefs)
+                        await $_getPrefetchedData<
+                          WorkoutRow,
+                          $WorkoutsTableTable,
+                          ProgressPhotoRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkoutsTableTableReferences
+                              ._progressPhotosTableRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkoutsTableTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).progressPhotosTableRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -12320,7 +12489,11 @@ typedef $$WorkoutsTableTableProcessedTableManager =
       $$WorkoutsTableTableUpdateCompanionBuilder,
       (WorkoutRow, $$WorkoutsTableTableReferences),
       WorkoutRow,
-      PrefetchHooks Function({bool routineId, bool workoutExercisesTableRefs})
+      PrefetchHooks Function({
+        bool routineId,
+        bool workoutExercisesTableRefs,
+        bool progressPhotosTableRefs,
+      })
     >;
 typedef $$WorkoutExercisesTableTableCreateCompanionBuilder =
     WorkoutExercisesTableCompanion Function({
@@ -14241,6 +14414,7 @@ typedef $$ProgressPhotosTableTableCreateCompanionBuilder =
       required String fileName,
       required String pose,
       Value<String?> note,
+      Value<String?> workoutId,
       Value<int> rowid,
     });
 typedef $$ProgressPhotosTableTableUpdateCompanionBuilder =
@@ -14250,8 +14424,40 @@ typedef $$ProgressPhotosTableTableUpdateCompanionBuilder =
       Value<String> fileName,
       Value<String> pose,
       Value<String?> note,
+      Value<String?> workoutId,
       Value<int> rowid,
     });
+
+final class $$ProgressPhotosTableTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ProgressPhotosTableTable,
+          ProgressPhotoRow
+        > {
+  $$ProgressPhotosTableTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkoutsTableTable _workoutIdTable(_$AppDatabase db) =>
+      db.workoutsTable.createAlias('progress_photos__workout_id__workouts__id');
+
+  $$WorkoutsTableTableProcessedTableManager? get workoutId {
+    final $_column = $_itemColumn<String>('workout_id');
+    if ($_column == null) return null;
+    final manager = $$WorkoutsTableTableTableManager(
+      $_db,
+      $_db.workoutsTable,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workoutIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
 
 class $$ProgressPhotosTableTableFilterComposer
     extends Composer<_$AppDatabase, $ProgressPhotosTableTable> {
@@ -14286,6 +14492,29 @@ class $$ProgressPhotosTableTableFilterComposer
     column: $table.note,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$WorkoutsTableTableFilterComposer get workoutId {
+    final $$WorkoutsTableTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workoutsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableTableFilterComposer(
+            $db: $db,
+            $table: $db.workoutsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ProgressPhotosTableTableOrderingComposer
@@ -14321,6 +14550,29 @@ class $$ProgressPhotosTableTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$WorkoutsTableTableOrderingComposer get workoutId {
+    final $$WorkoutsTableTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workoutsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableTableOrderingComposer(
+            $db: $db,
+            $table: $db.workoutsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ProgressPhotosTableTableAnnotationComposer
@@ -14346,6 +14598,29 @@ class $$ProgressPhotosTableTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  $$WorkoutsTableTableAnnotationComposer get workoutId {
+    final $$WorkoutsTableTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workoutsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workoutsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ProgressPhotosTableTableTableManager
@@ -14359,16 +14634,9 @@ class $$ProgressPhotosTableTableTableManager
           $$ProgressPhotosTableTableAnnotationComposer,
           $$ProgressPhotosTableTableCreateCompanionBuilder,
           $$ProgressPhotosTableTableUpdateCompanionBuilder,
-          (
-            ProgressPhotoRow,
-            BaseReferences<
-              _$AppDatabase,
-              $ProgressPhotosTableTable,
-              ProgressPhotoRow
-            >,
-          ),
+          (ProgressPhotoRow, $$ProgressPhotosTableTableReferences),
           ProgressPhotoRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool workoutId})
         > {
   $$ProgressPhotosTableTableTableManager(
     _$AppDatabase db,
@@ -14396,6 +14664,7 @@ class $$ProgressPhotosTableTableTableManager
                 Value<String> fileName = const Value.absent(),
                 Value<String> pose = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> workoutId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProgressPhotosTableCompanion(
                 id: id,
@@ -14403,6 +14672,7 @@ class $$ProgressPhotosTableTableTableManager
                 fileName: fileName,
                 pose: pose,
                 note: note,
+                workoutId: workoutId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -14412,6 +14682,7 @@ class $$ProgressPhotosTableTableTableManager
                 required String fileName,
                 required String pose,
                 Value<String?> note = const Value.absent(),
+                Value<String?> workoutId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProgressPhotosTableCompanion.insert(
                 id: id,
@@ -14419,12 +14690,56 @@ class $$ProgressPhotosTableTableTableManager
                 fileName: fileName,
                 pose: pose,
                 note: note,
+                workoutId: workoutId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProgressPhotosTableTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({workoutId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workoutId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workoutId,
+                        referencedTable: $$ProgressPhotosTableTableReferences
+                            ._workoutIdTable(db),
+                        referencedColumn: $$ProgressPhotosTableTableReferences
+                            ._workoutIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -14439,16 +14754,9 @@ typedef $$ProgressPhotosTableTableProcessedTableManager =
       $$ProgressPhotosTableTableAnnotationComposer,
       $$ProgressPhotosTableTableCreateCompanionBuilder,
       $$ProgressPhotosTableTableUpdateCompanionBuilder,
-      (
-        ProgressPhotoRow,
-        BaseReferences<
-          _$AppDatabase,
-          $ProgressPhotosTableTable,
-          ProgressPhotoRow
-        >,
-      ),
+      (ProgressPhotoRow, $$ProgressPhotosTableTableReferences),
       ProgressPhotoRow,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool workoutId})
     >;
 
 class $AppDatabaseManager {

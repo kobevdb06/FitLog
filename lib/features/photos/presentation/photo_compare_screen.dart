@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../domain/photo_grouping.dart';
 import 'photo_providers.dart';
 
 /// Two photos side by side with their dates and the weight difference.
@@ -20,23 +21,39 @@ class PhotoCompareScreen extends ConsumerStatefulWidget {
 }
 
 class _PhotoCompareScreenState extends ConsumerState<PhotoCompareScreen> {
+  PhotoPose? _pose;
   String? _leftId;
   String? _rightId;
 
   ProgressPhotoRow? _find(List<ProgressPhotoRow> photos, String? id) {
-    if (id == null) return null;
-    for (final p in photos) {
-      if (p.id == id) return p;
+    for (final photo in photos) {
+      if (photo.id == id) return photo;
     }
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final photos = ref.watch(progressPhotosProvider).value ?? const [];
+    final all = ref.watch(progressPhotosProvider).value ?? const [];
     final paths = ref.watch(appPathsProvider).value;
 
-    if (photos.length < 2 || paths == null) {
+    // The pose is the comparison, not one of its halves: a front against a
+    // back has nothing to say, and the screen used to let you build exactly
+    // that - two photos of the same morning, "0 dagen ertussen, 0 kg".
+    final pose = _pose ?? mostComparablePose(all);
+    final photos = [
+      for (final photo in all)
+        if (PhotoPose.fromWire(photo.pose) == pose) photo,
+    ];
+
+    if (paths == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Vergelijken')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (all.length < 2) {
       return Scaffold(
         appBar: AppBar(title: const Text('Vergelijken')),
         body: const EmptyState(
@@ -47,47 +64,113 @@ class _PhotoCompareScreenState extends ConsumerState<PhotoCompareScreen> {
       );
     }
 
-    // Default to the oldest and the newest, which is what people want to see.
-    _leftId ??= photos.last.id;
-    _rightId ??= photos.first.id;
-
-    final left = _find(photos, _leftId) ?? photos.last;
-    final right = _find(photos, _rightId) ?? photos.first;
+    // Oldest against newest of this pose, which is what people are after.
+    final left =
+        _find(photos, _leftId) ?? (photos.isEmpty ? null : photos.last);
+    final right =
+        _find(photos, _rightId) ?? (photos.isEmpty ? null : photos.first);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Vergelijken')),
       body: Column(
         children: [
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _Side(
-                    photo: left,
-                    photos: photos,
-                    paths: paths,
-                    onChanged: (id) => setState(() => _leftId = id),
-                  ),
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  child: _Side(
-                    photo: right,
-                    photos: photos,
-                    paths: paths,
-                    onChanged: (id) => setState(() => _rightId = id),
-                  ),
-                ),
-              ],
-            ),
+          _PoseBar(
+            pose: pose,
+            counts: photosPerPose(all),
+            onChanged: (picked) => setState(() {
+              _pose = picked;
+              // The chosen moments belonged to the old pose.
+              _leftId = null;
+              _rightId = null;
+            }),
           ),
-          _Difference(left: left, right: right),
+          if (left == null || right == null || photos.length < 2)
+            Expanded(
+              child: EmptyState(
+                icon: Icons.compare_arrows,
+                title: 'Te weinig van deze pose',
+                message:
+                    'Je hebt twee foto\'s van dezelfde pose nodig. Van '
+                    '${pose.label.toLowerCase()} heb je er '
+                    '${photos.length}.',
+              ),
+            )
+          else ...[
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _Side(
+                      photo: left,
+                      photos: photos,
+                      paths: paths,
+                      onChanged: (id) => setState(() => _leftId = id),
+                    ),
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    child: _Side(
+                      photo: right,
+                      photos: photos,
+                      paths: paths,
+                      onChanged: (id) => setState(() => _rightId = id),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _Difference(left: left, right: right),
+          ],
         ],
       ),
     );
   }
 }
 
+/// Which pose you are comparing, and how many you have of each.
+class _PoseBar extends StatelessWidget {
+  const _PoseBar({
+    required this.pose,
+    required this.counts,
+    required this.onChanged,
+  });
+
+  final PhotoPose pose;
+  final Map<PhotoPose, int> counts;
+  final ValueChanged<PhotoPose> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          for (final option in PhotoPose.values)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: ChoiceChip(
+                selected: option == pose,
+                onSelected: (_) => onChanged(option),
+                // The count is the honest part: it says in advance which poses
+                // there is anything to compare.
+                label: Text('${option.label} (${counts[option] ?? 0})'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One half of the comparison: the picture, and which moment it is.
+///
+/// The pose is not repeated here - the bar above the two halves says it once,
+/// and it is the same for both by definition.
 class _Side extends StatelessWidget {
   const _Side({
     required this.photo,
@@ -130,8 +213,9 @@ class _Side extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    '${Formatters.date(DateTime.fromMillisecondsSinceEpoch(photo.takenAt))}'
-                    ' · ${PhotoPose.fromWire(photo.pose).label}',
+                    Formatters.date(
+                      DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
+                    ),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),

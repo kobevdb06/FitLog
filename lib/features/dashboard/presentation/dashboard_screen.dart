@@ -589,14 +589,22 @@ class _Greeting extends StatelessWidget {
                   : theme.colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: AppSpacing.xs),
-            Text(
-              streak == null || !streak!.isActive
-                  ? 'Nog geen reeks. Begin er een.'
-                  : '${streak!.weeks} '
-                        '${streak!.weeks == 1 ? 'week' : 'weken'} op rij'
-                        '${streak!.daysSinceLast == null ? '' : ' · laatste workout ${Formatters.daysAgoWords(streak!.daysSinceLast!)}'}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            // The line grows with your streak - "3 weken op rij · laatste
+            // workout 5 dagen geleden" - and without a flex it simply ran off
+            // a narrow phone. Trimmed rather than wrapped: it is one line
+            // under a heading, and two would push the first block down.
+            Expanded(
+              child: Text(
+                streak == null || !streak!.isActive
+                    ? 'Nog geen reeks. Begin er een.'
+                    : '${streak!.weeks} '
+                          '${streak!.weeks == 1 ? 'week' : 'weken'} op rij'
+                          '${streak!.daysSinceLast == null ? '' : ' · laatste workout ${Formatters.daysAgoWords(streak!.daysSinceLast!)}'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],

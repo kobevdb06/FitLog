@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
@@ -146,6 +147,46 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect((await stored()).shows(HomeBlock.week), isTrue);
+  });
+
+  testWidgets('every block fits at half a real phone, not a test screen', (
+    tester,
+  ) async {
+    // The other tests run on a wide view, where half is 550 pixels and
+    // anything fits. A phone is 360 wide, so a small block gets about 160 -
+    // which is where a block that does not really adapt overflows.
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    var layout = defaultHomeLayout.withVisible(
+      HomeBlock.favourites,
+      visible: true,
+    );
+    for (final block in HomeBlock.values) {
+      layout = layout.withSize(block, HomeBlockSize.small);
+    }
+    await db.settingsDao.updateSettings(
+      AppSettingsTableCompanion(homeLayout: Value(encodeHomeLayout(layout))),
+    );
+
+    container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
+        scheduledRoutinesProvider.overrideWith((ref) => Stream.value(const [])),
+        favouriteRoutinesProvider.overrideWith((ref) => Stream.value(const [])),
+        suggestedRoutineProvider.overrideWith((ref) async => null),
+      ],
+    );
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const DashboardScreen()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('DEZE WEEK'), findsOneWidget);
   });
 
   testWidgets('nothing is arrangeable while you are not arranging', (

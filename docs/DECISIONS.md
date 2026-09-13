@@ -1446,3 +1446,41 @@ Dus is er geen schakelaar. "Favorieten" is gewoon een blok: zet je het aan, dan
 staat het naast je planning; laat je het uit, dan zie je alleen je planning. Het
 blok houdt zich stil wanneer "Vandaag" al op je favorieten is teruggevallen -
 dezelfde drie routines twee keer is geen indeling die iemand kiest.
+
+## 97. De PR-knop stond achter de data, en kon dus niet meevliegen
+
+Een routine heeft "Start workout" en een oefening heeft "PR-poging", allebei
+zwevend in dezelfde hoek, dus Flutter laat de ene in de andere overgaan als je
+ertussen beweegt. Dat werkt alleen als beide er zijn op het moment dat de
+beweging begint.
+
+Op de oefeningpagina zat de knop binnen `exercise.when(data: ...)`, dus de
+aankomende pagina landde zónder knop en die verscheen een frame later. Precies
+dezelfde fout als op de routinepagina (beslissing over `routine_fab_test`), op
+een andere plek.
+
+Nu staat de hele Scaffold buiten `when` en is alleen de body nog afhankelijk
+van de data. Zolang de oefening nog gelezen wordt is de knop er wel maar niet
+aantikbaar: er valt nog niets aan te vallen. Is de oefening er niet meer, dan
+is de knop er ook niet - er valt geen record te vestigen op iets dat niet
+bestaat.
+
+## 98. De dropdown bij een nieuwe meting is een sheet geworden
+
+Bij een nieuwe meting koos je het type via een `DropdownButtonFormField`: een
+grijze plaat met twaalf namen over de pagina, in een stijl die verder nergens
+in de app voorkomt. Hij stond bovendien pal boven "Waarde" en "Datum", die
+allebei wél een sheet openen als je erop tikt.
+
+Nu is het hetzelfde veld met dezelfde sheet eronder, met de eenheid rechts op
+elke regel - want de eenheid volgt je instellingen, en dezelfde meting is kg
+voor de een en lb voor de ander.
+
+Van type wisselen maakt het ingevulde getal leeg. 82 kg wordt geen 82 cm omdat
+je van gedachten verandert over wat je aan het meten was.
+
+Er staan er nog vijf elders: het type en de spiergroep van een eigen oefening,
+je geslacht bij de eerste start, de map in de routine-editor, en de fotokiezer
+bij het vergelijken. Die zijn hier bewust niet meegenomen - er is om deze
+gevraagd - maar ze staan er nog, en dit is de plek waar dat opgeschreven
+hoort.

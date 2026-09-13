@@ -268,6 +268,42 @@ Future<ExerciseCategory?> pickExerciseCategory(
   );
 }
 
+/// What you are about to measure.
+///
+/// A sheet rather than a dropdown: twelve entries in a Material dropdown is a
+/// grey slab over the page in a style the app uses nowhere else, and it sits
+/// right above two fields that already open a sheet when you tap them.
+///
+/// [unitLabel] comes from the caller because the unit follows your settings:
+/// the same weight is kg for one person and lb for the next.
+Future<MeasurementType?> pickMeasurementType(
+  BuildContext context, {
+  required MeasurementType current,
+  required String Function(MeasurementType) unitLabel,
+}) {
+  return showAppSheet<MeasurementType>(
+    context: context,
+    title: 'Wat wil je meten?',
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final type in MeasurementType.values)
+          ListTile(
+            title: Text(type.label),
+            trailing: Text(
+              unitLabel(type),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            selected: type == current,
+            onTap: () => Navigator.of(context).pop(type),
+          ),
+      ],
+    ),
+  );
+}
+
 /// What a set of this kind asks you to fill in.
 String exerciseCategoryDescription(ExerciseCategory category) {
   if (category.hasDistance) return 'Afstand en tijd';

@@ -71,7 +71,8 @@ class _MeasurementTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final history = ref.watch(measurementHistoryProvider(type)).value ?? const [];
+    final history =
+        ref.watch(measurementHistoryProvider(type)).value ?? const [];
     final difference = history.length >= 2
         ? history.first.value - history.last.value
         : null;
@@ -193,16 +194,36 @@ Future<void> showAddMeasurementSheet(
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
-              DropdownButtonFormField<MeasurementType>(
-                initialValue: selected,
-                decoration: const InputDecoration(labelText: 'Type'),
-                items: [
-                  for (final t in MeasurementType.values)
-                    DropdownMenuItem(value: t, child: Text(t.label)),
-                ],
-                onChanged: (v) {
-                  if (v != null) setState(() => selected = v);
+              InkWell(
+                onTap: () async {
+                  final picked = await pickMeasurementType(
+                    context,
+                    current: selected,
+                    unitLabel: formatters.measurementUnitLabel,
+                  );
+                  if (picked == null || picked == selected) return;
+                  // The value belongs to the old type - 82 kg does not become
+                  // 82 cm because you changed your mind about what you were
+                  // measuring.
+                  setState(() {
+                    selected = picked;
+                    value = const KeypadValue.empty();
+                  });
                 },
+                child: InputDecorator(
+                  decoration: const InputDecoration(labelText: 'Type'),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selected.label,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      const Icon(Icons.expand_more, size: 20),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               InkWell(

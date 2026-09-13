@@ -47,77 +47,85 @@ class ExerciseDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Starts a run at this exercise's maximum, and steps into it if it begins.
+  Future<void> _attemptPr(BuildContext context, ExerciseRow exercise) async {
+    final started = await PrAttemptScreen.open(context, exercise: exercise);
+    if (started && context.mounted) context.push(Routes.workout);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercise = ref.watch(exerciseByIdProvider(exerciseId));
+    final row = exercise.value;
+    final gone = exercise.hasError || (exercise.hasValue && row == null);
 
-    return exercise.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) => Scaffold(body: Center(child: Text('$error'))),
-      data: (row) {
-        if (row == null) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const EmptyState(
-              icon: Icons.help_outline,
-              title: 'Oefening niet gevonden',
-              message: 'Deze oefening bestaat niet meer.',
-            ),
-          );
-        }
-
-        return DefaultTabController(
-          length: 4,
-          child: Scaffold(
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () async {
-                final started = await PrAttemptScreen.open(
-                  context,
-                  exercise: row,
-                );
-                if (started && context.mounted) {
-                  context.push(Routes.workout);
-                }
-              },
-              icon: const Icon(Icons.emoji_events_outlined),
-              label: const Text('PR-poging'),
-            ),
-            appBar: AppBar(
-              title: Text(row.name),
-              actions: [
-                if (row.isCustom)
-                  IconButton(
-                    tooltip: 'Bewerken',
-                    onPressed: () => CustomExerciseScreen.open(
-                      context,
-                      exerciseId: exerciseId,
-                    ),
-                    icon: const Icon(Icons.edit_outlined),
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
+        // Present from the first frame, including while the exercise is still
+        // being read. The button you came from flies into this one, and a Hero
+        // can only fly to something that is already on the arriving page: put
+        // this behind the data and the page lands without it, so the button
+        // pops in a frame later instead of moving.
+        //
+        // It only promises what it can do: until the exercise is there, there
+        // is nothing to attempt a record on, so it is shown but not tappable.
+        floatingActionButton: gone
+            ? null
+            : FloatingActionButton.extended(
+                onPressed: row == null ? null : () => _attemptPr(context, row),
+                icon: const Icon(Icons.emoji_events_outlined),
+                label: const Text('PR-poging'),
+              ),
+        appBar: AppBar(
+          title: Text(row?.name ?? 'Oefening'),
+          actions: [
+            if (row != null) ...[
+              if (row.isCustom)
+                IconButton(
+                  tooltip: 'Bewerken',
+                  onPressed: () => CustomExerciseScreen.open(
+                    context,
+                    exerciseId: exerciseId,
                   ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'category') _changeCategory(context, ref, row);
-                  },
-                  itemBuilder: (context) => [
-                    menuItem(
-                      value: 'category',
-                      icon: Icons.tune,
-                      label: 'Type wijzigen',
-                    ),
-                  ],
+                  icon: const Icon(Icons.edit_outlined),
                 ),
-              ],
-              bottom: const TabBar(
-                tabs: [
-                  Tab(text: 'Info'),
-                  Tab(text: 'Geschiedenis'),
-                  Tab(text: 'Grafieken'),
-                  Tab(text: 'Records'),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'category') _changeCategory(context, ref, row);
+                },
+                itemBuilder: (context) => [
+                  menuItem(
+                    value: 'category',
+                    icon: Icons.tune,
+                    label: 'Type wijzigen',
+                  ),
                 ],
               ),
-            ),
-            body: TabBarView(
+            ],
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Info'),
+              Tab(text: 'Geschiedenis'),
+              Tab(text: 'Grafieken'),
+              Tab(text: 'Records'),
+            ],
+          ),
+        ),
+        body: exercise.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(child: Text('$error')),
+          data: (row) {
+            if (row == null) {
+              return const EmptyState(
+                icon: Icons.help_outline,
+                title: 'Oefening niet gevonden',
+                message: 'Deze oefening bestaat niet meer.',
+              );
+            }
+
+            return TabBarView(
               children: [
                 _InfoTab(exercise: row),
                 _HistoryTab(exerciseId: exerciseId),
@@ -127,10 +135,10 @@ class ExerciseDetailScreen extends ConsumerWidget {
                 ),
                 _RecordsTab(exerciseId: exerciseId),
               ],
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }

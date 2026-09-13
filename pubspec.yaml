@@ -76,6 +76,10 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # Drives the app on a real device or emulator, which is the only place frame
+  # timings mean anything: a widget test has no raster thread.
+  integration_test:
+    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

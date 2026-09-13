@@ -1698,3 +1698,38 @@ duur die je zelf met een `Stopwatch` meet klopt, maar de tijdstempels in het
 logboek zeggen niets over wanneer iets gebeurde. Ik heb daar een keer een
 conclusie op gebaseerd die ik niet kon trekken. Wie het clusteren van gebeurte-
 nissen wil meten moet ze in het proces verzamelen en in één keer wegschrijven.
+
+## 110. Haperingen meet je op een toestel, niet in een widgettest
+
+Er staat nu een `integration_test` die het workoutscherm op een emulator of
+telefoon opent en telt hoeveel frames over hun budget gingen. Draaien:
+
+```
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/workout_perf_test.dart -d <toestel> --profile
+```
+
+Waarom dit en niet iets eenvoudigers: een widgettest heeft geen rasterthread,
+dus die kan per definitie niets over vloeiendheid zeggen. En de app echt
+opstarten betekent door de onboarding heen, met een herstelzin die per
+installatie verschilt - dus de test zet het scherm rechtstreeks neer met een
+eigen database in het geheugen. Wat gemeten wordt is het scherm en zijn
+overgang, niet het opstarten van de app.
+
+Profielmodus is niet optioneel. Een debugbuild is niet AOT-gecompileerd en
+bouwt widgets veelvouden trager; getallen daaruit zeggen niets.
+
+Wat het opleverde, met een opwarmronde vooraf zodat eenmalige kosten er niet
+doorheen lopen:
+
+| oefeningen | frames te traag | ergste build |
+|---|---|---|
+| 4, koud   | 1 | 24,2 ms |
+| 0, warm   | 0 |  3,4 ms |
+| 1, warm   | 0 |  4,9 ms |
+| 4, warm   | 1 |  9,2 ms |
+
+Twee kosten die los van elkaar staan: een vaste koude start van ongeveer 24 ms
+de allereerste keer dat het scherm getoond wordt, en daarbovenop zo'n 1,5 ms
+per oefening. Op een telefoon is dat ruwweg het dubbele, wat overeenkomt met de
+17 tot 27 ms die daar gemeten is.

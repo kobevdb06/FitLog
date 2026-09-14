@@ -380,9 +380,12 @@ class _WelcomeStep extends StatelessWidget {
           const InfoBanner(
             icon: Icons.shield_outlined,
             message:
-                'Je gegevens blijven op dit toestel en worden nergens naartoe '
-                'gestuurd. FitLog heeft geen account, geen server en geen '
-                'internettoegang.',
+                'Je gegevens blijven op dit toestel. FitLog heeft geen '
+                'account, geen server en stuurt niets door. Er is één '
+                'uitzondering, en die staat uit: wil je later een AI-coach, '
+                'dan vul je zelf een API-sleutel in en gaat alleen je vraag '
+                'naar Anthropic. Zonder die sleutel maakt de app geen enkele '
+                'verbinding.',
           ),
           const Spacer(),
           FilledButton(onPressed: onNext, child: const Text('Beginnen')),

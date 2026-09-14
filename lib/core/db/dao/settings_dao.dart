@@ -49,7 +49,8 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Its own method so that there is one place to look for what happens to a
   /// key: it is trimmed, it is written, and it is never logged, never copied
-  /// into an error message, and never sent anywhere but api.anthropic.com.
+  /// into an error message, and never sent anywhere but to Anthropic's own
+  /// API, by the one file that is allowed to open a connection at all.
   Future<void> setApiKey(String? key) async {
     final trimmed = key?.trim();
     await updateSettings(

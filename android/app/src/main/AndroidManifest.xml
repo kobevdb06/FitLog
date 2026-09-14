@@ -1,5 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- FitLog is fully offline: there is deliberately no INTERNET permission. -->
+    <!-- The only reason this app can reach the network at all is the AI coach,
+         and that stays asleep until the user enters an API key of their own.
+         An Android permission is decided at build time, so it has to be here
+         even for someone who never switches the coach on; what keeps the
+         promise is that exactly one file in lib/ can open a connection, and a
+         test fails if a second one ever appears. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE"/>

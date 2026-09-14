@@ -72,6 +72,7 @@ dependencies:
   mobile_scanner: ^7.4.0
   qr: ^4.0.0
   quick_actions: ^1.1.1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

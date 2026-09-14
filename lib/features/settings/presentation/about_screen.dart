@@ -33,11 +33,20 @@ class AboutScreen extends StatelessWidget {
           const InfoBanner(
             icon: Icons.wifi_off,
             message:
-                'FitLog verzendt geen gegevens. De app heeft geen account, '
-                'geen server, geen analytics en geen internettoegang: op '
-                'Android staat de INTERNET-permissie bewust niet in het '
-                'manifest, en de release-build haalt hem weg als een '
-                'onderdeel er alsnog om vraagt.',
+                'FitLog verzendt geen gegevens. Geen account, geen server, '
+                'geen analytics, geen synchronisatie, geen back-up in de '
+                'cloud.',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const InfoBanner(
+            icon: Icons.smart_toy_outlined,
+            message:
+                'De enige uitzondering is de AI-coach, en die werkt pas als '
+                'je zelf een API-sleutel invult. Dan gaat je vraag naar '
+                'Anthropic, samen met wat de coach in je logboek opvraagt om '
+                'te antwoorden — de app toont per antwoord wat dat was. '
+                'Zonder sleutel opent de app geen enkele verbinding, en er is '
+                'precies één bestand in de code dat dat überhaupt kan.',
           ),
           const SizedBox(height: AppSpacing.md),
           const InfoBanner(

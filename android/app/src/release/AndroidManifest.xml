@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The release build has no internet access, and this makes that structural
-     rather than hopeful: a dependency that declares INTERNET in its own
-     manifest - as several Google libraries do - would otherwise have it merged
-     into ours without anyone noticing. The marker strips it again.
+<!-- Nothing to strip any more: since the AI coach the app declares INTERNET
+     itself, in the main manifest, with the reasoning there.
 
-     Debug and profile builds keep the permission; the Flutter tooling needs it
-     to talk to the running app. -->
+     Kept as a file rather than deleted, because this is where a permission a
+     dependency drags in would be removed again, and the next one will be
+     easier to catch with the pattern still standing. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
 </manifest>

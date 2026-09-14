@@ -140,19 +140,14 @@ GoRouter router(Ref ref) {
           ),
         ],
       ),
-      // The coach. Without a key there is nothing to show, and saying so
-      // beats a screen that cannot do anything.
+      // Where the key is entered. At the root rather than under Instellingen,
+      // because the chat has a button to it and one branch cannot push a
+      // route that belongs to another.
       GoRoute(
-        path: Routes.coach,
+        path: Routes.settingsCoach,
         parentNavigatorKey: _rootKey,
-        pageBuilder: (context, state) => appPage(
-          state,
-          Consumer(
-            builder: (context, ref, child) => ref.watch(coachEnabledProvider)
-                ? const CoachScreen()
-                : const CoachDisabledScreen(),
-          ),
-        ),
+        pageBuilder: (context, state) =>
+            appPage(state, const CoachSettingsScreen()),
       ),
       GoRoute(
         path: Routes.exercises,
@@ -182,8 +177,13 @@ GoRouter router(Ref ref) {
         builder: (context, state, shell) => AppShell(shell: shell),
         // The tabs lie side by side instead of stacked, so a swipe drags the
         // next one into view rather than cutting to it.
-        navigatorContainerBuilder: (context, shell, children) =>
-            TabPager(shell: shell, branches: children),
+        navigatorContainerBuilder: (context, shell, children) => Consumer(
+          builder: (context, ref, child) => TabPager(
+            shell: shell,
+            branches: children,
+            visible: visibleBranches(coach: ref.watch(coachEnabledProvider)),
+          ),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -301,6 +301,24 @@ GoRouter router(Ref ref) {
               ),
             ],
           ),
+          // The coach. The bar leaves this tab out until there is a key, and
+          // the screen says so for anyone who lands here anyway.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.chat,
+                pageBuilder: (context, state) => appPage(
+                  state,
+                  Consumer(
+                    builder: (context, ref, child) =>
+                        ref.watch(coachEnabledProvider)
+                        ? const CoachScreen()
+                        : const CoachDisabledScreen(),
+                  ),
+                ),
+              ),
+            ],
+          ),
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -313,11 +331,6 @@ GoRouter router(Ref ref) {
                     pageBuilder: (context, state) =>
                         appPage(state, const SettingsScreen()),
                     routes: [
-                      GoRoute(
-                        path: 'coach',
-                        pageBuilder: (context, state) =>
-                            appPage(state, const CoachSettingsScreen()),
-                      ),
                       GoRoute(
                         path: 'catalogus',
                         pageBuilder: (context, state) =>

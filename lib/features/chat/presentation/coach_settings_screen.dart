@@ -283,7 +283,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
                 'Bewaard op dit toestel, in dezelfde versleutelde database.',
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(Routes.coach),
+              onTap: () => context.go(Routes.chat),
             ),
             if (threads.isNotEmpty)
               Padding(

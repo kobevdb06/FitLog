@@ -7,16 +7,31 @@ import 'package:go_router/go_router.dart';
 import '../core/formatting/formatters.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
+import '../features/chat/presentation/chat_providers.dart';
 import '../features/workout/presentation/workout_providers.dart';
 import 'pages.dart';
 import 'routes.dart';
 import 'tab_pager.dart';
 
-/// The four-tab shell. A running workout gets a permanent bar above the
-/// navigation bar so it is never more than one tap away.
-/// How many tabs the bar has, so a half-finished swipe cannot round past the
-/// last one.
-const int _tabCount = 4;
+/// The tab shell. A running workout gets a permanent bar above the navigation
+/// bar so it is never more than one tap away.
+///
+/// Four tabs, or five: the coach joins them once there is an API key, and is
+/// not there at all before that. [visibleBranches] is what keeps the bar, the
+/// pager and the router agreeing on which number means which tab.
+
+/// What every tab looks like on the bar, in the router's branch order.
+const List<({IconData icon, IconData selected, String label})> _tabs = [
+  (icon: Icons.home_outlined, selected: Icons.home, label: 'Start'),
+  (
+    icon: Icons.fitness_center_outlined,
+    selected: Icons.fitness_center,
+    label: 'Trainen',
+  ),
+  (icon: Icons.insights_outlined, selected: Icons.insights, label: 'Voortgang'),
+  (icon: Icons.smart_toy_outlined, selected: Icons.smart_toy, label: 'Chat'),
+  (icon: Icons.person_outline, selected: Icons.person, label: 'Profiel'),
+];
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
@@ -25,6 +40,8 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final visible = visibleBranches(coach: ref.watch(coachEnabledProvider));
+
     return Scaffold(
       // The shell is the pager: swiping between the tabs lives in TabPager.
       body: shell,
@@ -40,32 +57,21 @@ class AppShell extends ConsumerWidget {
           ValueListenableBuilder<double>(
             valueListenable: ref.watch(tabPositionProvider),
             builder: (context, position, _) => NavigationBar(
-              selectedIndex: position.round().clamp(0, _tabCount - 1),
-              onDestinationSelected: (index) => shell.goBranch(
-                index,
-                initialLocation: index == shell.currentIndex,
-              ),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: 'Start',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.fitness_center_outlined),
-                  selectedIcon: Icon(Icons.fitness_center),
-                  label: 'Trainen',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.insights_outlined),
-                  selectedIcon: Icon(Icons.insights),
-                  label: 'Voortgang',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.person_outline),
-                  selectedIcon: Icon(Icons.person),
-                  label: 'Profiel',
-                ),
+              selectedIndex: position.round().clamp(0, visible.length - 1),
+              onDestinationSelected: (index) {
+                final branch = visible[index];
+                shell.goBranch(
+                  branch,
+                  initialLocation: branch == shell.currentIndex,
+                );
+              },
+              destinations: [
+                for (final branch in visible)
+                  NavigationDestination(
+                    icon: Icon(_tabs[branch].icon),
+                    selectedIcon: Icon(_tabs[branch].selected),
+                    label: _tabs[branch].label,
+                  ),
               ],
             ),
           ),

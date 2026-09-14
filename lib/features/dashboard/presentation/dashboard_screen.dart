@@ -222,7 +222,7 @@ class _CoachBlock extends StatelessWidget {
     final theme = Theme.of(context);
     return _BlockCard(
       title: 'Coach',
-      onTap: () => context.push(Routes.coach),
+      onTap: () => context.go(Routes.chat),
       child: Row(
         children: [
           Icon(Icons.smart_toy_outlined, color: theme.colorScheme.primary),

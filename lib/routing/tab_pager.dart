@@ -18,6 +18,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -38,13 +39,32 @@ ValueNotifier<double> tabPosition(Ref ref) {
   return position;
 }
 
+/// Which branch sits behind which tab.
+///
+/// The coach is a branch like the others, but the bar leaves it out until
+/// there is an API key - so the position in the bar and the branch behind it
+/// are no longer the same number. Everything that maps between them uses this
+/// one list.
+const int kChatBranch = 3;
+
+List<int> visibleBranches({required bool coach}) =>
+    coach ? const [0, 1, 2, 3, 4] : const [0, 1, 2, 4];
+
 class TabPager extends ConsumerStatefulWidget {
-  const TabPager({super.key, required this.shell, required this.branches});
+  const TabPager({
+    super.key,
+    required this.shell,
+    required this.branches,
+    this.visible,
+  });
 
   final StatefulNavigationShell shell;
 
-  /// One navigator per tab, in the order of the navigation bar.
+  /// One navigator per branch, in the router's order.
   final List<Widget> branches;
+
+  /// Which of them are on the bar right now, or null for all of them.
+  final List<int>? visible;
 
   @override
   ConsumerState<TabPager> createState() => _TabPagerState();
@@ -52,8 +72,18 @@ class TabPager extends ConsumerStatefulWidget {
 
 class _TabPagerState extends ConsumerState<TabPager> {
   late final PageController _controller = PageController(
-    initialPage: widget.shell.currentIndex,
+    initialPage: _pageOf(widget.shell.currentIndex),
   );
+
+  List<int> get _visible =>
+      widget.visible ?? [for (var i = 0; i < widget.branches.length; i++) i];
+
+  /// Where a branch sits on the pager. A branch that is not on the bar - the
+  /// coach without a key - counts as the first tab rather than as -1.
+  int _pageOf(int branch) {
+    final page = _visible.indexOf(branch);
+    return page < 0 ? 0 : page;
+  }
 
   @override
   void initState() {
@@ -64,7 +94,21 @@ class _TabPagerState extends ConsumerState<TabPager> {
   void _reportPosition() {
     final page = _controller.page;
     if (page == null) return;
-    ref.read(tabPositionProvider).value = page;
+    final position = ref.read(tabPositionProvider);
+
+    // A jump that comes from didUpdateWidget happens inside somebody else's
+    // build, and the navigation bar listens to this. Telling it now would ask
+    // it to rebuild while the frame it is part of is still being built, which
+    // Flutter refuses. One frame later it is an ordinary change.
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) position.value = page;
+      });
+      return;
+    }
+    position.value = page;
   }
 
   @override
@@ -73,13 +117,13 @@ class _TabPagerState extends ConsumerState<TabPager> {
     // The tab can also change from the navigation bar, or from a link that
     // lands in another branch. Swiping already moved the page itself, so this
     // only has to catch up when something else did the moving.
-    final index = widget.shell.currentIndex;
+    final page = _pageOf(widget.shell.currentIndex);
     if (!_controller.hasClients) return;
     if ((_controller.page ?? _controller.initialPage.toDouble()).round() ==
-        index) {
+        page) {
       return;
     }
-    _controller.jumpToPage(index);
+    _controller.jumpToPage(page);
   }
 
   @override
@@ -96,11 +140,12 @@ class _TabPagerState extends ConsumerState<TabPager> {
       // Where you let go is where you meant to be; the router is told after
       // the page has settled rather than during the drag, so a swipe you pull
       // back does not leave a trail of branch switches behind it.
-      onPageChanged: (index) {
-        if (index == widget.shell.currentIndex) return;
-        widget.shell.goBranch(index);
+      onPageChanged: (page) {
+        final branch = _visible[page];
+        if (branch == widget.shell.currentIndex) return;
+        widget.shell.goBranch(branch);
       },
-      children: widget.branches,
+      children: [for (final branch in _visible) widget.branches[branch]],
     );
   }
 }

@@ -50,11 +50,15 @@ abstract final class Routes {
   // Profile and settings
   static const settings = '/profiel/instellingen';
   static const settingsCatalogue = '/profiel/instellingen/catalogus';
-  static const settingsCoach = '/profiel/instellingen/coach';
 
-  /// Full screen, outside the tabs: a conversation is not a tab you swipe
-  /// away from by accident.
-  static const coach = '/coach';
+  /// Reachable from anywhere, because the coach screen has a button to it
+  /// and that screen is a tab of its own. A route that lives inside the
+  /// Profiel branch cannot be pushed from another branch: you get an empty
+  /// page, which is exactly what happened.
+  static const settingsCoach = '/coach/instellingen';
+
+  /// The chat, as the fourth tab. Only there once there is a key.
+  static const chat = '/chat';
   static const settingsWorkout = '/profiel/instellingen/workout';
   static const settingsSecurity = '/profiel/instellingen/beveiliging';
   static const settingsBackup = '/profiel/instellingen/backup';

@@ -8,9 +8,9 @@ import 'photo_store.dart';
 /// The two must stay in step: a row without a file shows a broken tile, and a
 /// file without a row is dead weight that also ends up in every backup.
 ///
-/// Two kinds of row point into this directory - progress photos and the two
-/// frames of a user-made exercise - and the reconcile has to know about both,
-/// or it deletes one of them as an orphan.
+/// Three kinds of row point into this directory - progress photos, the two
+/// frames of a user-made exercise, and a photo sent to the coach - and the
+/// reconcile has to know about all of them, or it deletes one as an orphan.
 class PhotoLibrary {
   const PhotoLibrary({required this.db, required this.store});
 
@@ -48,7 +48,9 @@ class PhotoLibrary {
   Future<PhotoCleanupResult> cleanup() async {
     final rows = await db.recordsDao.photos();
     final frames = await db.exercisesDao.imageFileNames();
-    final known = {for (final row in rows) row.fileName, ...frames};
+    // A photo asked about in the chat lives here too.
+    final asked = await db.chatDao.imageFileNames();
+    final known = {for (final row in rows) row.fileName, ...frames, ...asked};
 
     final result = await store.reconcile(known);
 

@@ -185,24 +185,37 @@ class CoachToolResult {
 /// Neither service's shape: both are translated on the way out, so the loop
 /// that runs the lookups does not have to know which one it is talking to.
 class CoachMessage {
-  const CoachMessage.user(String this.text)
+  const CoachMessage.user(String this.text, {this.image})
     : role = 'user',
       toolCalls = const [],
       toolResults = const [];
 
   const CoachMessage.assistant({this.text, this.toolCalls = const []})
     : role = 'assistant',
+      image = null,
       toolResults = const [];
 
   const CoachMessage.results(this.toolResults)
     : role = 'user',
       text = null,
+      image = null,
       toolCalls = const [];
 
   final String role;
   final String? text;
   final List<CoachToolCall> toolCalls;
   final List<CoachToolResult> toolResults;
+
+  /// A photo the user sent with this question.
+  final CoachImage? image;
+}
+
+/// A photo on its way out, already scaled down and encoded.
+class CoachImage {
+  const CoachImage({required this.base64, this.mediaType = 'image/jpeg'});
+
+  final String base64;
+  final String mediaType;
 }
 
 /// One turn back from the service.
@@ -355,7 +368,27 @@ class AiClient {
       };
     }
     if (message.toolCalls.isEmpty) {
-      return {'role': message.role, 'content': message.text ?? ''};
+      final image = message.image;
+      if (image == null) {
+        return {'role': message.role, 'content': message.text ?? ''};
+      }
+      // The picture first: a question about it reads better after it, and
+      // both services are happier that way round.
+      return {
+        'role': message.role,
+        'content': [
+          {
+            'type': 'image',
+            'source': {
+              'type': 'base64',
+              'media_type': image.mediaType,
+              'data': image.base64,
+            },
+          },
+          if (message.text != null && message.text!.isNotEmpty)
+            {'type': 'text', 'text': message.text},
+        ],
+      };
     }
     return {
       'role': 'assistant',
@@ -412,9 +445,14 @@ class AiClient {
         ],
       };
     }
+    final image = message.image;
     return {
       'role': message.role == 'assistant' ? 'model' : 'user',
       'parts': [
+        if (image != null)
+          {
+            'inlineData': {'mimeType': image.mediaType, 'data': image.base64},
+          },
         if (message.text != null && message.text!.isNotEmpty)
           {'text': message.text},
         for (final call in message.toolCalls)

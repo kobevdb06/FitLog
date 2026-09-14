@@ -335,6 +335,79 @@ void main() {
     });
   });
 
+  group('een foto bij de vraag', () {
+    const photo = CoachImage(base64: 'AAAAfoto');
+
+    test('gaat bij Anthropic mee als image-blok, voor de tekst', () async {
+      final client = clientThatAnswers(200, {
+        'content': [
+          {'type': 'text', 'text': 'Dat is een lat pulldown.'},
+        ],
+      });
+
+      await client.send(
+        system: 'x',
+        messages: [CoachMessage.user('Wat is dit?', image: photo)],
+        tools: const [],
+        model: CoachModel.sonnet,
+      );
+
+      final content =
+          ((jsonDecode(sent.body) as Map)['messages'] as List).single
+              as Map<String, Object?>;
+      final blocks = content['content']! as List;
+      expect((blocks.first as Map)['type'], 'image');
+      expect(
+        ((blocks.first as Map)['source']! as Map)['media_type'],
+        'image/jpeg',
+      );
+      expect((blocks[1] as Map)['text'], 'Wat is dit?');
+    });
+
+    test('en bij Google als inlineData', () async {
+      final client = clientThatAnswers(200, {
+        'candidates': [
+          {
+            'content': {
+              'parts': [
+                {'text': 'Dat is een lat pulldown.'},
+              ],
+            },
+          },
+        ],
+      }, key: 'AIzaSyGeheim123');
+
+      await client.send(
+        system: 'x',
+        messages: [CoachMessage.user('Wat is dit?', image: photo)],
+        tools: const [],
+        model: CoachModel.geminiFlash,
+      );
+
+      final parts =
+          ((jsonDecode(sent.body) as Map)['contents'] as List).single
+              as Map<String, Object?>;
+      final first = (parts['parts']! as List).first as Map<String, Object?>;
+      expect((first['inlineData']! as Map)['mimeType'], 'image/jpeg');
+      expect((first['inlineData']! as Map)['data'], 'AAAAfoto');
+    });
+
+    test('en zonder foto blijft een vraag gewone tekst', () async {
+      final client = clientThatAnswers(200, {
+        'content': [
+          {'type': 'text', 'text': 'ok'},
+        ],
+      });
+
+      await ask(client);
+
+      final message =
+          ((jsonDecode(sent.body) as Map)['messages'] as List).single
+              as Map<String, Object?>;
+      expect(message['content'], isA<String>());
+    });
+  });
+
   group('als het misgaat', () {
     test('een geweigerde sleutel wijst naar de instellingen', () async {
       final client = clientThatAnswers(401, {

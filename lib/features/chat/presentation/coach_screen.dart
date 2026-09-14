@@ -6,7 +6,10 @@
 /// money.
 library;
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +19,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../photos/data/photo_store.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
 
@@ -41,6 +45,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   /// The conversation being shown, or null until the first question makes one.
   String? _threadId;
   var _loaded = false;
+
+  /// A photo picked but not sent yet, as a file name in the photo directory.
+  String? _photo;
 
   @override
   void dispose() {
@@ -70,9 +77,52 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       setState(() => _threadId = thread);
     }
 
+    final photo = _photo;
     _controller.clear();
-    await controller.ask(threadId: thread, question: question);
+    setState(() => _photo = null);
+    await controller.ask(
+      threadId: thread,
+      question: question,
+      imageFile: photo,
+    );
     _toBottom();
+  }
+
+  /// Picks a photo to ask about. It is stored straight away and shown above
+  /// the field, so what is about to be sent is visible before it goes.
+  Future<void> _pickPhoto() async {
+    final source = await showAppSheet<ImageSource>(
+      context: context,
+      title: 'Welke foto?',
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined),
+            title: const Text('Nu een foto maken'),
+            subtitle: const Text('Bijvoorbeeld van een toestel in de zaal'),
+            onTap: () => Navigator.of(context).pop(ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Uit je galerij'),
+            onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+          ),
+        ],
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 2400,
+    );
+    if (picked == null || !mounted) return;
+
+    final stored = await ref
+        .read(coachControllerProvider.notifier)
+        .importPhoto(File(picked.path));
+    if (mounted) setState(() => _photo = stored);
   }
 
   void _toBottom() {
@@ -187,7 +237,17 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                 onRetry: () =>
                     ref.read(coachControllerProvider.notifier).clearError(),
               ),
-            _Ask(controller: _controller, busy: state.sending, onSend: _send),
+            if (_photo != null)
+              _PickedPhoto(
+                fileName: _photo!,
+                onRemove: () => setState(() => _photo = null),
+              ),
+            _Ask(
+              controller: _controller,
+              busy: state.sending,
+              onSend: _send,
+              onPickPhoto: _pickPhoto,
+            ),
           ],
         ),
       ),
@@ -269,6 +329,8 @@ class _Bubble extends StatelessWidget {
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
+            if (message.imageFile != null)
+              _SentPhoto(fileName: message.imageFile!),
             Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
               padding: const EdgeInsets.symmetric(
@@ -332,6 +394,90 @@ class _Lookups extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The photo that is about to be sent, above the field.
+class _PickedPhoto extends ConsumerWidget {
+  const _PickedPhoto({required this.fileName, required this.onRemove});
+
+  final String fileName;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paths = ref.watch(appPathsProvider).value;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          if (paths != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              child: Image.file(
+                PhotoStore(paths).fileFor(fileName),
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+              ),
+            ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Deze foto gaat mee met je vraag.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Toch niet',
+            onPressed: onRemove,
+            icon: const Icon(Icons.close),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A photo inside a message, tappable to see it whole.
+class _SentPhoto extends ConsumerWidget {
+  const _SentPhoto({required this.fileName});
+
+  final String fileName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paths = ref.watch(appPathsProvider).value;
+    if (paths == null) return const SizedBox.shrink();
+
+    final file = PhotoStore(paths).fileFor(fileName);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        child: GestureDetector(
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (context) => Dialog(
+              insetPadding: const EdgeInsets.all(AppSpacing.md),
+              child: InteractiveViewer(child: Image.file(file)),
+            ),
+          ),
+          child: Image.file(
+            file,
+            width: 180,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stack) =>
+                const MissingPhotoPlaceholder(),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -408,11 +554,13 @@ class _Ask extends StatelessWidget {
     required this.controller,
     required this.busy,
     required this.onSend,
+    required this.onPickPhoto,
   });
 
   final TextEditingController controller;
   final bool busy;
   final void Function(String question) onSend;
+  final VoidCallback onPickPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -426,6 +574,11 @@ class _Ask extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          IconButton(
+            tooltip: 'Foto erbij',
+            onPressed: busy ? null : onPickPhoto,
+            icon: const Icon(Icons.add_a_photo_outlined),
+          ),
           Expanded(
             child: TextField(
               controller: controller,

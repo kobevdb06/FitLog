@@ -111,7 +111,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 22);
+    expect(raw.select('PRAGMA user_version').first.values.first, 23);
     raw.close();
   });
 
@@ -205,6 +205,16 @@ void main() {
     // v22: null means "work the service out from the key", which is what the
     // app did before the column existed.
     expect(settings.chatProvider, isNull);
+    // v23: a photo with a question. A conversation that predates it has none,
+    // and a database migrating from before the chat existed gets the column
+    // with the table rather than after it.
+    final chatColumns = await db
+        .customSelect("SELECT name FROM pragma_table_info('chat_messages')")
+        .get();
+    expect(
+      chatColumns.map((row) => row.read<String>('name')),
+      contains('image_file'),
+    );
     expect(await db.chatDao.countThreads(), 0);
 
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
@@ -250,7 +260,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 22);
+    expect(db.schemaVersion, 23);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

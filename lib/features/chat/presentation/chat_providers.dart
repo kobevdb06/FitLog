@@ -4,12 +4,17 @@
 /// the screen is unreachable, and nothing here ever builds a client.
 library;
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../../core/util/paths.dart';
+import '../../photos/data/photo_store.dart';
 import '../data/ai_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
@@ -104,11 +109,31 @@ class CoachController extends _$CoachController {
     return id;
   }
 
+  /// The long edge a photo is scaled to before it is sent.
+  ///
+  /// Smaller than a progress photo on purpose: this one is paid for by the
+  /// token, and a picture of a machine in a gym does not need 1440 pixels to
+  /// be recognisable.
+  static const int photoLongEdge = 768;
+
+  /// Copies a picked photo into the photo directory, scaled down.
+  ///
+  /// It is stored before anything is sent, so what you asked about is still
+  /// there in the conversation a month later.
+  Future<String?> importPhoto(File source) async {
+    final paths = await ref.read(appPathsProvider.future);
+    return PhotoStore(paths).import(source, maxLongEdge: photoLongEdge);
+  }
+
   /// Sends [question] in [threadId] and writes both sides down.
   ///
   /// The question is stored before it is sent: an answer that never arrives
   /// should not take the question with it.
-  Future<void> ask({required String threadId, required String question}) async {
+  Future<void> ask({
+    required String threadId,
+    required String question,
+    String? imageFile,
+  }) async {
     final text = question.trim();
     if (text.isEmpty || state.sending) return;
 
@@ -132,13 +157,35 @@ class CoachController extends _$CoachController {
       threadId: threadId,
       role: 'user',
       content: text,
+      imageFile: imageFile,
     );
 
-    final history = [
+    final paths = await ref.read(appPathsProvider.future);
+    final earlier = [
       for (final row in await db.chatDao.messages(threadId))
-        if (row.content != text || row.role != 'user')
-          CoachTurn(role: row.role, text: row.content),
+        if (row.content != text || row.role != 'user') row,
     ];
+
+    // Only the newest photo of a conversation rides along with a follow-up
+    // question. Sending every picture again on every turn is what makes a
+    // long thread quietly expensive, and the one being talked about is nearly
+    // always the last one.
+    final lastWithPhoto = earlier.lastIndexWhere((r) => r.imageFile != null);
+    final history = <CoachTurn>[];
+    for (var i = 0; i < earlier.length; i++) {
+      final row = earlier[i];
+      history.add(
+        CoachTurn(
+          role: row.role,
+          text: row.content,
+          image: i == lastWithPhoto && imageFile == null
+              ? await _encode(paths, row.imageFile!)
+              : null,
+        ),
+      );
+    }
+
+    final image = imageFile == null ? null : await _encode(paths, imageFile);
 
     final client = ref.read(coachClientFactoryProvider)(key);
     try {
@@ -156,14 +203,24 @@ class CoachController extends _$CoachController {
         ),
       );
 
-      final answer = await coach.ask(history: history, question: text);
+      final answer = await coach.ask(
+        history: history,
+        question: text,
+        image: image,
+      );
 
+      // The photo is part of what left the device, so it belongs on the same
+      // line as the lookups.
+      final reported = [
+        if (image != null) 'de foto die je meestuurde',
+        ...answer.lookups,
+      ];
       await db.chatDao.addMessage(
         id: _uuid.v4(),
         threadId: threadId,
         role: 'assistant',
         content: answer.text,
-        lookups: answer.lookups.isEmpty ? null : answer.lookups.join('\n'),
+        lookups: reported.isEmpty ? null : reported.join('\n'),
         inputTokens: answer.usage.inputTokens,
         outputTokens: answer.usage.outputTokens,
       );
@@ -173,6 +230,17 @@ class CoachController extends _$CoachController {
     } finally {
       client.close();
     }
+  }
+
+  /// Reads a stored photo back as something that can be sent.
+  ///
+  /// A file that is gone is not an error worth stopping for: the question
+  /// still makes sense without the picture, and saying "dat bestand is weg"
+  /// helps nobody mid-conversation.
+  Future<CoachImage?> _encode(AppPaths paths, String fileName) async {
+    final file = PhotoStore(paths).fileFor(fileName);
+    if (!await file.exists()) return null;
+    return CoachImage(base64: base64Encode(await file.readAsBytes()));
   }
 
   void clearError() => state = const CoachState();

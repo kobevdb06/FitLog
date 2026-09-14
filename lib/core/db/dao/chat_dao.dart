@@ -66,6 +66,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     required String role,
     required String content,
     String? lookups,
+    String? imageFile,
     int? inputTokens,
     int? outputTokens,
   }) async {
@@ -78,6 +79,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
           role: role,
           content: content,
           lookups: Value(lookups),
+          imageFile: Value(imageFile),
           inputTokens: Value(inputTokens),
           outputTokens: Value(outputTokens),
           createdAt: now,
@@ -96,6 +98,16 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   Future<void> deleteAllThreads() async {
     await delete(chatMessagesTable).go();
     await delete(chatThreadsTable).go();
+  }
+
+  /// Every photo a conversation points at, so the startup reconcile does not
+  /// take them for orphans and delete them.
+  Future<Set<String>> imageFileNames() async {
+    final rows = await customSelect(
+      'SELECT image_file AS f FROM chat_messages WHERE image_file IS NOT NULL',
+      readsFrom: {chatMessagesTable},
+    ).get();
+    return {for (final row in rows) row.read<String>('f')};
   }
 
   Future<int> countThreads() async {

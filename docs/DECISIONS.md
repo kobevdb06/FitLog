@@ -2109,3 +2109,33 @@ en wat in bijna alle gevallen klopt.
 Het scherm zegt nu welke van de twee het is: "Afgeleid uit je sleutel. Klopt
 dat niet, tik hier" tegenover "Door jou gekozen". Een gok die zich voordoet als
 een feit is het probleem; een gok die zegt dat hij er een is, niet.
+
+## 129. Een foto bij je vraag, en wat dat kost
+
+De coach kan nu een foto krijgen: meestal een toestel in de zaal waarvan je
+niet weet hoe het heet. Hij zegt wat hij ziet en zoekt er met `search_exercises`
+oefeningen uit de catalogus bij, zodat de naam die hij noemt ook echt in de app
+bestaat.
+
+Drie afwegingen.
+
+De foto wordt kleiner bewaard dan een voortgangsfoto: 768 pixels in plaats van
+1440. Dit is de enige foto in de app waar per token voor betaald wordt, en een
+hometrainer is bij 768 nog altijd een hometrainer.
+
+Ze gaat maar één keer de deur uit. Alleen de nieuwste foto van een gesprek gaat
+mee met een vervolgvraag; oudere niet. Elke foto opnieuw meesturen bij elke
+beurt is precies wat een lang gesprek stil duur maakt, en de vraag gaat bijna
+altijd over de laatste.
+
+En ze staat in dezelfde fotomap als de rest, met dezelfde opruiming. Dat is
+geen detail: die opruiming gooit bij het opstarten weg waar niets naar wijst,
+dus zonder deze regel was een foto uit een gesprek de volgende ochtend
+verdwenen. `PhotoLibrary.cleanup` kent nu drie soorten verwijzing in plaats van
+twee.
+
+Onder het antwoord staat "de foto die je meestuurde" bij de opzoekingen. Het is
+het meest persoonlijke dat vertrekt; dan hoort het ook in dat lijstje.
+
+De coach mag wel iets zeggen over houding en uitvoering, en niets over lichamen
+of uiterlijk - ook niet als erom gevraagd wordt.

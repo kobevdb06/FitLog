@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
@@ -67,6 +69,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
         if (api != null)
           coachClientFactoryProvider.overrideWithValue(
             api as CoachClientFactory,

@@ -259,6 +259,11 @@ class ChatMessagesTable extends Table {
   /// answer arrives.
   TextColumn get lookups => text().nullable()();
 
+  /// A photo the user sent with this question, as a file name in the photo
+  /// directory - the same directory, and the same reconcile, as progress
+  /// photos and exercise frames.
+  TextColumn get imageFile => text().named('image_file').nullable()();
+
   IntColumn get inputTokens => integer().named('input_tokens').nullable()();
   IntColumn get outputTokens => integer().named('output_tokens').nullable()();
   IntColumn get createdAt => integer().named('created_at')();

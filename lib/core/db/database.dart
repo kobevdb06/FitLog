@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -230,6 +230,15 @@ class AppDatabase extends _$AppDatabase {
           // every existing row gets - means the app works it out from the key,
           // which is what it did before this column existed.
           await m.addColumn(appSettingsTable, appSettingsTable.chatProvider);
+        }
+        if (from >= 21 && from < 23) {
+          // A photo sent along with a question. Null for every message that
+          // exists, which is what "no photo" has always meant.
+          //
+          // Only for a database that already had the table: one migrating
+          // from before v21 gets it created above, from today's definition,
+          // with this column already in it.
+          await m.addColumn(chatMessagesTable, chatMessagesTable.imageFile);
         }
       });
 

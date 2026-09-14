@@ -14,14 +14,17 @@ import 'coach_tools.dart';
 
 /// One turn of a stored conversation.
 class CoachTurn {
-  const CoachTurn({required this.role, required this.text});
+  const CoachTurn({required this.role, required this.text, this.image});
 
   final String role;
   final String text;
 
+  /// The photo that was sent with this turn, if it is still worth sending.
+  final CoachImage? image;
+
   CoachMessage toMessage() => role == 'assistant'
       ? CoachMessage.assistant(text: text)
-      : CoachMessage.user(text);
+      : CoachMessage.user(text, image: image);
 }
 
 /// What came back, ready to be written down.
@@ -67,6 +70,7 @@ class Coach {
   Future<CoachAnswer> ask({
     required List<CoachTurn> history,
     required String question,
+    CoachImage? image,
   }) async {
     final trimmed = history.length > historyTurns
         ? history.sublist(history.length - historyTurns)
@@ -74,7 +78,7 @@ class Coach {
 
     final messages = <CoachMessage>[
       for (final turn in trimmed) turn.toMessage(),
-      CoachMessage.user(question),
+      CoachMessage.user(question, image: image),
     ];
 
     final lookups = <String>[];

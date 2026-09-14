@@ -166,6 +166,70 @@ void main() {
     });
   });
 
+  group('eerdere gesprekken', () {
+    testWidgets('staan in de lijst achter het klokje', (tester) async {
+      // Ze stonden er niet: het scherm las een stream waar niemand op
+      // geabonneerd was, en kreeg "nog aan het laden" - dus een lege lijst -
+      // terwijl de instellingen wel "1 gesprek" toonden.
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Hoeveel sets voor borst?');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'user',
+        content: 'Hoeveel sets voor borst?',
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.history));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nieuw gesprek'), findsOneWidget);
+      expect(
+        find.widgetWithText(ListTile, 'Hoeveel sets voor borst?'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('en zonder eerdere gesprekken zegt de lijst dat', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+
+      await tester.tap(find.byIcon(Icons.history));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nog geen eerdere gesprekken.'), findsOneWidget);
+    });
+
+    testWidgets('en er een openen toont wat je toen vroeg', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Hoeveel sets voor borst?');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Tussen 10 en 20 per week.',
+      );
+      await db.chatDao.createThread('t-2', 'En voor rug?');
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.history));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(ListTile, 'Hoeveel sets voor borst?'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tussen 10 en 20 per week.'), findsOneWidget);
+    });
+  });
+
   group('een gesprek', () {
     testWidgets('begint met wat de coach is en waar je kan beginnen', (
       tester,

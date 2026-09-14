@@ -15,6 +15,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
@@ -137,8 +138,12 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     });
   }
 
-  Future<void> _pickThread() async {
-    final threads = ref.read(chatThreadsProvider).value ?? const [];
+  /// [threads] comes from build, which is where the list is watched.
+  ///
+  /// Reading it here instead was the bug: nothing was subscribed to that
+  /// stream, so the read answered "still loading" - an empty list - and the
+  /// sheet offered a new conversation and nothing else.
+  Future<void> _pickThread(List<ChatThreadRow> threads) async {
     final picked = await showAppSheet<String>(
       context: context,
       title: 'Gesprekken',
@@ -150,11 +155,21 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
             title: const Text('Nieuw gesprek'),
             onTap: () => Navigator.of(context).pop('nieuw'),
           ),
-          if (threads.isNotEmpty) const Divider(height: 1),
+          const Divider(height: 1),
+          if (threads.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Text('Nog geen eerdere gesprekken.'),
+            ),
           for (final thread in threads)
             ListTile(
               leading: const Icon(Icons.chat_bubble_outline),
               title: Text(thread.title, maxLines: 2),
+              subtitle: Text(
+                Formatters.relativeDay(
+                  DateTime.fromMillisecondsSinceEpoch(thread.updatedAt),
+                ),
+              ),
               selected: thread.id == _threadId,
               onTap: () => Navigator.of(context).pop(thread.id),
             ),
@@ -188,6 +203,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     unawaitedOpen();
 
     final state = ref.watch(coachControllerProvider);
+    final threads = ref.watch(chatThreadsProvider).value ?? const [];
     final messages = _threadId == null
         ? const <ChatMessageRow>[]
         : ref.watch(chatMessagesProvider(_threadId!)).value ?? const [];
@@ -199,7 +215,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           IconButton(
             tooltip: 'Gesprekken',
             icon: const Icon(Icons.history),
-            onPressed: _pickThread,
+            onPressed: () => _pickThread(threads),
           ),
           if (_threadId != null)
             IconButton(

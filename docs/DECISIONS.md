@@ -2139,3 +2139,20 @@ het meest persoonlijke dat vertrekt; dan hoort het ook in dat lijstje.
 
 De coach mag wel iets zeggen over houding en uitvoering, en niets over lichamen
 of uiterlijk - ook niet als erom gevraagd wordt.
+
+## 130. Een stream lezen waar niemand naar luistert geeft niets terug
+
+Twee keer nu dezelfde fout gemaakt. Eerst met de API-sleutel, en daarna met de
+lijst gesprekken: `ref.read(ietsStreamProvider).value` op een provider waar op
+dat moment niemand op geabonneerd is, geeft niet de inhoud maar "nog aan het
+laden" — en dat las ik als leeg. Het instellingenscherm toonde "1 gesprek",
+want dat scherm keek wél naar diezelfde lijst; het chatscherm bood alleen
+"Nieuw gesprek" aan.
+
+`.future` erbij halen lost het niet op: zonder luisteraar wordt de provider
+weggegooid terwijl hij nog laadt, en dan gooit hij.
+
+De regel is dus: wat een scherm nodig heeft, kijkt dat scherm in `build` aan,
+en een callback krijgt die waarde mee in plaats van er zelf naar te grijpen.
+Waar dat niet kan, gaat de vraag rechtstreeks naar de DAO — zoals de sleutel
+nu uit `settingsDao.apiKey()` komt.

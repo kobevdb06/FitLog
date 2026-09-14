@@ -4,11 +4,19 @@ Een krachttraining-logger voor Android en iOS. Routines maken, tijdens de set
 loggen, voortgang zien.
 
 **Alles blijft op het toestel.** Geen account, geen server, geen sync, geen
-analytics, geen crash reporting, geen advertenties. De Android-release heeft
-bewust geen `INTERNET`-permissie in het manifest, dus de app kán niet eens iets
-versturen. De enige keer dat er netwerk aan te pas komt, is tijdens het bouwen:
-pakketten ophalen, de oefeningencatalogus genereren en de illustraties ophalen.
-Alle drie zijn build-tijd; in de app zelf zit geen enkele netwerkaanroep.
+analytics, geen crash reporting, geen advertenties.
+
+Één uitzondering, sinds 1.21: de AI-coach. Die werkt alleen met een
+Anthropic-API-sleutel die de gebruiker zelf invult, praat alleen met
+`api.anthropic.com`, en zonder sleutel opent de app geen enkele verbinding. De
+`INTERNET`-permissie staat daarom wel in het manifest — een Android-permissie
+wordt bij het bouwen vastgelegd, niet wanneer iemand een coach wil. Wat de
+belofte overeind houdt is
+[`test/security/offline_test.dart`](test/security/offline_test.dart): precies
+één bestand in `lib/` mag een HTTP-client importeren of die host noemen, en de
+test faalt zodra er een tweede bijkomt. Verder komt er alleen netwerk aan te
+pas tijdens het bouwen: pakketten ophalen, de oefeningencatalogus genereren en
+de illustraties ophalen.
 
 - **Bundle id:** `be.fitlog.app`
 - **UI-taal:** Nederlands. Code, identifiers, commits en commentaar: Engels.

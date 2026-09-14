@@ -2004,3 +2004,62 @@ binnen zoals ze gemeten wordt, en dat is het enige wat aan de overkant klopt.
 
 Het scherm heet daarom niet langer "Eigen spieren en materiaal" maar "Eigen
 keuzelijsten": het gaat over alles wat in een keuzelijst terechtkomt.
+
+## 124. De app mag nu wél het internet op, en dat kost de belofte
+
+FitLog kon niet online. Dat was geen instelling maar een eigenschap: de
+release-build haalde de `INTERNET`-permissie uit het manifest, dus er viel
+niets te versturen, ook niet per ongeluk.
+
+De AI-coach breekt dat. Een Android-permissie wordt vastgelegd wanneer de app
+gebouwd wordt, niet wanneer een gebruiker beslist dat hij een coach wil, dus
+de permissie staat er voor iedereen — ook voor wie nooit een sleutel invult.
+De harde garantie is weg en er is geen manier om ze te houden en de functie
+te hebben.
+
+Wat ervoor in de plaats komt is smaller en controleerbaar: precies één bestand
+in `lib/` mag een HTTP-client importeren of `api.anthropic.com` noemen, en
+`test/security/offline_test.dart` faalt zodra er een tweede bijkomt. De
+sleutel van de gebruiker is de schakelaar: zonder sleutel wordt er geen client
+gebouwd, bestaat het coach-blok op het startscherm niet, en gaat er geen byte
+weg.
+
+Twee schermen beloofden het oude verhaal letterlijk — de onboarding en het
+Over-scherm. Die zijn herschreven vóór de permissie erin ging, niet erna. Een
+app die op haar eigen beginscherm iets belooft dat niet meer waar is, is erger
+dan een app zonder coach.
+
+## 125. Wat de coach over je mag weten, vraagt hij zelf
+
+De vraag was: sturen we een samenvatting van iemands training mee met elke
+vraag? Dat geeft betere antwoorden en stuurt ook gegevens mee als de vraag
+"hoeveel rust tussen sets" is.
+
+Het is een tussenweg geworden. De coach krijgt niets mee; hij kan zeven
+read-only opzoekingen doen (catalogus, laatste sessies, geschiedenis van één
+oefening, records, routines, weekcijfers, lichaamsmetingen), elk met een
+plafond op het aantal rijen. Alleen wat een vraag nodig heeft, vertrekt.
+
+Elke opzoeking laat een zin Nederlands achter — "je laatste 5 sessies" — die
+onder het antwoord staat én bij het bericht bewaard wordt. "Wat heeft dat ding
+over mij gezien" is daarmee ook volgende maand nog te beantwoorden.
+
+Datums gaan als dag de deur uit, nooit als tijdstip: het uur waarop iemand
+traint zegt meer over die persoon dan over zijn training, en beantwoordt geen
+enkele fitnessvraag.
+
+De lus is begrensd: maximaal vier rondes opzoeken voor er geantwoord moet
+worden, en maximaal twintig eerdere beurten die meegaan met een nieuwe vraag.
+Allebei gaan ze over geld — het is de sleutel van de gebruiker.
+
+## 126. De sleutel staat in de database, niet in de Keystore
+
+De Keystore is de plek voor sleutels, maar deze sleutel is van Anthropic en
+niet van het toestel: hij moet een herstel overleven, anders mag de gebruiker
+hem gaan terughalen bij een dienst waar hij misschien niet meer bij kan. In de
+versleutelde database staat hij achter dezelfde pincode als de rest, en hij
+gaat mee in de back-up die de gebruiker zelf bewaart.
+
+`setApiKey` is de enige plek die hem aanraakt, en de fouten van de client
+gaan door een redactor: een API die je verzoek terugkaatst zou de sleutel
+anders op het scherm zetten.

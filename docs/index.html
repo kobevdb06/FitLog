@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FitLog — je trainingslogboek, op je toestel</title>
-<meta name="description" content="Een logboek voor krachttraining dat volledig op je telefoon blijft. Geen account, geen server, geen internet.">
+<meta name="description" content="Een logboek voor krachttraining dat op je telefoon blijft. Geen account, geen server, geen synchronisatie. Alleen de optionele AI-coach praat met het internet, met jouw eigen sleutel.">
 <meta name="color-scheme" content="dark light">
 <style>
   :root {
@@ -94,7 +94,7 @@
       Download voor Android
       <small id="meta">APK · ongeveer 88 MB</small>
     </a>
-    <p class="note">Gratis. Geen account, geen advertenties, geen internet.</p>
+    <p class="note">Gratis. Geen account, geen advertenties, geen synchronisatie.</p>
   </header>
 
   <h2>Wat het is</h2>
@@ -112,14 +112,18 @@
       database op je telefoon, achter een pincode of je vingerafdruk.
     </p>
     <p>
-      De app heeft op Android <strong>geen internettoegang</strong> — die
-      permissie staat bewust niet in het installatiebestand, en de build haalt
-      hem er actief weer uit als een onderdeel er alsnog om vraagt. Er kan dus
-      niets verstuurd worden, ook niet per ongeluk.
+      Er is <strong>één</strong> ding dat het internet gebruikt: de AI-coach,
+      en die staat uit. Wil je hem, dan maak je zelf een API-sleutel aan bij
+      Anthropic en vul je die in. Vanaf dan gaat je vraag naar Anthropic,
+      samen met wat de coach in je logboek opvraagt om te antwoorden — onder
+      elk antwoord staat wat dat was. Vul je geen sleutel in, dan opent de app
+      geen enkele verbinding. In de code kan precies één bestand dat, en een
+      test laat de build mislukken zodra er een tweede bijkomt.
     </p>
     <p>
-      Geen analytics, geen crashrapporten, geen advertenties. Een routine deel
-      je met een vriend door een QR-code te scannen, niet via een dienst.
+      Verder: geen analytics, geen crashrapporten, geen advertenties, geen
+      back-up in de cloud. Een routine deel je met een vriend door een
+      QR-code te scannen, niet via een dienst.
     </p>
   </div>
 
@@ -164,11 +168,18 @@
   <div class="card">
     <p>
       <strong>De app verzamelt niets.</strong> Je routines, gewichten, foto's
-      en metingen staan versleuteld op je eigen toestel en gaan daar niet weg.
-      Er is geen account en geen server om ze naartoe te sturen, en het
-      installatiebestand bevat geen internetpermissie. Ik zie dus niets van wat
-      je logt — niet omdat ik het niet wil bekijken, maar omdat het nergens
-      naartoe kan.
+      en metingen staan versleuteld op je eigen toestel. Er is geen account en
+      geen server om ze naartoe te sturen, en ik zie niets van wat je logt —
+      niet omdat ik het niet wil bekijken, maar omdat het nergens naartoe kan.
+    </p>
+    <p>
+      <strong>De AI-coach is de uitzondering, en hij is van jou.</strong> Hij
+      werkt alleen met een API-sleutel die jij zelf aanmaakt, je betaalt per
+      vraag rechtstreeks aan Anthropic, en wat er van je toestel vertrekt is
+      je vraag plus wat de coach opvraagt om te antwoorden. Dat gaat naar
+      Anthropic, niet naar mij: ik heb geen server in dit verhaal. De app
+      toont per antwoord wat er is opgezocht, en je kan de sleutel er op elk
+      moment weer uit halen.
     </p>
     <p>
       <strong>Deze pagina zet geen cookies</strong> en laadt niets van

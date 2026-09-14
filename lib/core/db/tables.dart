@@ -132,6 +132,19 @@ class AppSettingsTable extends Table {
   /// screen of the app is the worst place to fail.
   TextColumn get homeLayout => text().named('home_layout').nullable()();
 
+  /// The user's own Anthropic API key, or null when there is none.
+  ///
+  /// Null is the normal state and the one the app ships in: without a key the
+  /// coach does not exist and nothing in the app opens a socket. It lives here
+  /// rather than in the Keystore because here it is already behind the
+  /// database key, and because a key that survives a restore is a key the user
+  /// does not have to find again.
+  TextColumn get anthropicApiKey =>
+      text().named('anthropic_api_key').nullable()();
+
+  /// Which model the coach talks to. Null means the app's own default.
+  TextColumn get chatModel => text().named('chat_model').nullable()();
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   IntColumn get autoLockSeconds =>
@@ -194,6 +207,57 @@ class CustomCategoriesTable extends Table {
 
   @override
   Set<Column> get primaryKey => {name};
+}
+
+/// One conversation with the coach.
+///
+/// Threads rather than one endless log: a question about your bench in March
+/// and a question about your knee in June have nothing to say to each other,
+/// and every message of a thread is sent again with the next one.
+@DataClassName('ChatThreadRow')
+class ChatThreadsTable extends Table {
+  @override
+  String get tableName => 'chat_threads';
+
+  TextColumn get id => text()();
+
+  /// The first thing you asked, shortened. Named by you, never by the model.
+  TextColumn get title => text()();
+  IntColumn get createdAt => integer().named('created_at')();
+  IntColumn get updatedAt => integer().named('updated_at')();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('ChatMessageRow')
+class ChatMessagesTable extends Table {
+  @override
+  String get tableName => 'chat_messages';
+
+  TextColumn get id => text()();
+  TextColumn get threadId => text()
+      .named('thread_id')
+      .references(ChatThreadsTable, #id, onDelete: KeyAction.cascade)();
+
+  /// `user` or `assistant`.
+  TextColumn get role => text()();
+  TextColumn get content => text()();
+
+  /// What the coach looked up in your database while answering, as a JSON
+  /// array of readable lines.
+  ///
+  /// Kept with the message because "what did it get to see about me" is a
+  /// question you should be able to answer later, not only in the second the
+  /// answer arrives.
+  TextColumn get lookups => text().nullable()();
+
+  IntColumn get inputTokens => integer().named('input_tokens').nullable()();
+  IntColumn get outputTokens => integer().named('output_tokens').nullable()();
+  IntColumn get createdAt => integer().named('created_at')();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DataClassName('ExerciseRow')

@@ -111,7 +111,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 20);
+    expect(raw.select('PRAGMA user_version').first.values.first, 21);
     raw.close();
   });
 
@@ -198,6 +198,12 @@ void main() {
     expect(migratedExercise.categoryLabel, ExerciseCategory.barbell.label);
     expect(await db.exercisesDao.customCategories(), isEmpty);
 
+    // v21 added the coach. Switched off is the only state a database that
+    // predates it can be in: no key, and nothing said.
+    expect(settings.anthropicApiKey, isNull);
+    expect(settings.chatModel, isNull);
+    expect(await db.chatDao.countThreads(), 0);
+
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
     final migrated = await db.workoutsDao.getWorkoutDetail('w-1');
     expect(migrated!.exercises.single.workoutExercise.isPrAttempt, isFalse);
@@ -241,7 +247,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 20);
+    expect(db.schemaVersion, 21);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

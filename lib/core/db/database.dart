@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import 'dao/chat_dao.dart';
 import 'dao/exercises_dao.dart';
 import 'dao/records_dao.dart';
 import 'dao/routines_dao.dart';
@@ -26,6 +27,8 @@ part 'database.drift.dart';
     CustomMusclesTable,
     CustomEquipmentTable,
     CustomCategoriesTable,
+    ChatThreadsTable,
+    ChatMessagesTable,
     RoutineFoldersTable,
     RoutinesTable,
     RoutineExercisesTable,
@@ -37,13 +40,20 @@ part 'database.drift.dart';
     BodyMeasurementsTable,
     ProgressPhotosTable,
   ],
-  daos: [SettingsDao, ExercisesDao, RoutinesDao, WorkoutsDao, RecordsDao],
+  daos: [
+    SettingsDao,
+    ExercisesDao,
+    RoutinesDao,
+    WorkoutsDao,
+    RecordsDao,
+    ChatDao,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -206,6 +216,14 @@ class AppDatabase extends _$AppDatabase {
           // simply its category", exactly as before.
           await m.createTable(customCategoriesTable);
           await m.addColumn(exercisesTable, exercisesTable.customCategory);
+        }
+        if (from < 21) {
+          // The coach. Empty and switched off: without an API key - and there
+          // is none until the user types one in - nothing here is ever read.
+          await m.createTable(chatThreadsTable);
+          await m.createTable(chatMessagesTable);
+          await m.addColumn(appSettingsTable, appSettingsTable.anthropicApiKey);
+          await m.addColumn(appSettingsTable, appSettingsTable.chatModel);
         }
       });
 

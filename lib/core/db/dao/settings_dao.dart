@@ -28,34 +28,48 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
     )..where((t) => t.id.equals(kSingletonId))).getSingle();
   }
 
-  Stream<AppSettingsRow> watchSettings() =>
-      (select(appSettingsTable)
-            ..where((t) => t.id.equals(kSingletonId)))
-          .watchSingle();
+  Stream<AppSettingsRow> watchSettings() => (select(
+    appSettingsTable,
+  )..where((t) => t.id.equals(kSingletonId))).watchSingle();
 
-  Future<AppSettingsRow> getSettings() =>
-      (select(appSettingsTable)
-            ..where((t) => t.id.equals(kSingletonId)))
-          .getSingle();
+  Future<AppSettingsRow> getSettings() => (select(
+    appSettingsTable,
+  )..where((t) => t.id.equals(kSingletonId))).getSingle();
 
   Future<void> updateSettings(AppSettingsTableCompanion changes) async {
-    await (update(appSettingsTable)..where((t) => t.id.equals(kSingletonId)))
-        .write(
-          changes.copyWith(
-            updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
-          ),
-        );
+    await (update(
+      appSettingsTable,
+    )..where((t) => t.id.equals(kSingletonId))).write(
+      changes.copyWith(updatedAt: Value(DateTime.now().millisecondsSinceEpoch)),
+    );
   }
 
-  Stream<UserProfileRow?> watchProfile() =>
-      (select(userProfileTable)
-            ..where((t) => t.id.equals(kSingletonId)))
-          .watchSingleOrNull();
+  /// Stores the user's Anthropic key, or clears it when [key] is null or
+  /// blank.
+  ///
+  /// Its own method so that there is one place to look for what happens to a
+  /// key: it is trimmed, it is written, and it is never logged, never copied
+  /// into an error message, and never sent anywhere but api.anthropic.com.
+  Future<void> setApiKey(String? key) async {
+    final trimmed = key?.trim();
+    await updateSettings(
+      AppSettingsTableCompanion(
+        anthropicApiKey: Value(
+          trimmed == null || trimmed.isEmpty ? null : trimmed,
+        ),
+      ),
+    );
+  }
 
-  Future<UserProfileRow?> getProfile() =>
-      (select(userProfileTable)
-            ..where((t) => t.id.equals(kSingletonId)))
-          .getSingleOrNull();
+  Future<String?> apiKey() async => (await getSettings()).anthropicApiKey;
+
+  Stream<UserProfileRow?> watchProfile() => (select(
+    userProfileTable,
+  )..where((t) => t.id.equals(kSingletonId))).watchSingleOrNull();
+
+  Future<UserProfileRow?> getProfile() => (select(
+    userProfileTable,
+  )..where((t) => t.id.equals(kSingletonId))).getSingleOrNull();
 
   Future<void> upsertProfile({
     Value<String?> displayName = const Value.absent(),
@@ -78,17 +92,17 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
         ),
       );
     } else {
-      await (update(userProfileTable)
-            ..where((t) => t.id.equals(kSingletonId)))
-          .write(
-            UserProfileTableCompanion(
-              displayName: displayName,
-              birthDate: birthDate,
-              sex: sex,
-              heightCm: heightCm,
-              updatedAt: Value(now),
-            ),
-          );
+      await (update(
+        userProfileTable,
+      )..where((t) => t.id.equals(kSingletonId))).write(
+        UserProfileTableCompanion(
+          displayName: displayName,
+          birthDate: birthDate,
+          sex: sex,
+          heightCm: heightCm,
+          updatedAt: Value(now),
+        ),
+      );
     }
   }
 }

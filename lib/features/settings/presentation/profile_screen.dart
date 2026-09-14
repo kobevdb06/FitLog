@@ -200,7 +200,9 @@ class ProfileScreen extends ConsumerWidget {
           ),
           ListTile(
             title: const Text('Geslacht'),
-            subtitle: Text(Sex.fromWire(profile?.sex)?.label ?? 'Niet ingevuld'),
+            subtitle: Text(
+              Sex.fromWire(profile?.sex)?.label ?? 'Niet ingevuld',
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final sex = await showAppSheet<Sex>(

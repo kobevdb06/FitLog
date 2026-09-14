@@ -102,13 +102,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 // A block with nothing in it draws nothing, and a slot for
                 // nothing is a hole between two cards. While arranging every
                 // block stays, or you could not move one that happens to be
-                // empty today.
-                only: _editing
-                    ? null
-                    : {
-                        for (final block in layout.visible)
-                          if (ref.watch(homeBlockFilledProvider(block))) block,
-                      },
+                // empty today - except the coach, which does not exist at all
+                // without a key.
+                only: {
+                  for (final block in layout.visible)
+                    if (ref.watch(homeBlockFilledProvider(block)) ||
+                        (_editing && block != HomeBlock.coach))
+                      block,
+                },
                 editing: _editing,
                 blockBuilder: (block, size) =>
                     _editing && !ref.watch(homeBlockFilledProvider(block))
@@ -206,7 +207,40 @@ class _HomeBlockView extends StatelessWidget {
     HomeBlock.recovery => _RecoveryBlock(size: size),
     HomeBlock.records => _RecordsBlock(size: size),
     HomeBlock.volume => _VolumeBlock(size: size),
+    HomeBlock.coach => _CoachBlock(size: size),
   };
+}
+
+/// A way in to the coach, for whoever has one.
+class _CoachBlock extends StatelessWidget {
+  const _CoachBlock({required this.size});
+
+  final HomeBlockSize size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return _BlockCard(
+      title: 'Coach',
+      onTap: () => context.push(Routes.coach),
+      child: Row(
+        children: [
+          Icon(Icons.smart_toy_outlined, color: theme.colorScheme.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              size == HomeBlockSize.small
+                  ? 'Stel een vraag'
+                  : 'Stel een vraag over je training',
+              style: theme.textTheme.bodyMedium,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// What an empty block looks like while you are arranging.

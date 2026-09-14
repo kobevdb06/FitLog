@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../../dashboard/presentation/today_providers.dart';
 
 /// The settings hub.
@@ -51,6 +52,17 @@ class SettingsScreen extends ConsumerWidget {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.settingsCatalogue),
+          ),
+          ListTile(
+            leading: const Icon(Icons.smart_toy_outlined),
+            title: const Text('AI-coach'),
+            subtitle: Text(
+              ref.watch(coachEnabledProvider)
+                  ? 'Aan. Het enige deel van de app dat internet gebruikt'
+                  : 'Uit. Werkt alleen met een API-sleutel van jezelf',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.settingsCoach),
           ),
           ListTile(
             leading: const Icon(Icons.lock_outline),

@@ -45,8 +45,7 @@ class _SecuritySettingsScreenState
     });
   }
 
-  Uint8List? get _dek =>
-      ref.read(appControllerProvider.notifier).currentDek;
+  Uint8List? get _dek => ref.read(appControllerProvider.notifier).currentDek;
 
   // --- Actions --------------------------------------------------------------
 

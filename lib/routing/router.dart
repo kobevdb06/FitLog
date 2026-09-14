@@ -8,6 +8,9 @@ import '../core/app/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/common.dart';
 import '../core/widgets/dialogs.dart';
+import '../features/chat/presentation/chat_providers.dart';
+import '../features/chat/presentation/coach_screen.dart';
+import '../features/chat/presentation/coach_settings_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/exercises/presentation/custom_exercise_screen.dart';
 import '../features/exercises/presentation/exercise_detail_screen.dart';
@@ -136,6 +139,20 @@ GoRouter router(Ref ref) {
             ),
           ),
         ],
+      ),
+      // The coach. Without a key there is nothing to show, and saying so
+      // beats a screen that cannot do anything.
+      GoRoute(
+        path: Routes.coach,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) => appPage(
+          state,
+          Consumer(
+            builder: (context, ref, child) => ref.watch(coachEnabledProvider)
+                ? const CoachScreen()
+                : const CoachDisabledScreen(),
+          ),
+        ),
       ),
       GoRoute(
         path: Routes.exercises,
@@ -296,6 +313,11 @@ GoRouter router(Ref ref) {
                     pageBuilder: (context, state) =>
                         appPage(state, const SettingsScreen()),
                     routes: [
+                      GoRoute(
+                        path: 'coach',
+                        pageBuilder: (context, state) =>
+                            appPage(state, const CoachSettingsScreen()),
+                      ),
                       GoRoute(
                         path: 'catalogus',
                         pageBuilder: (context, state) =>

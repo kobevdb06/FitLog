@@ -97,7 +97,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       ),
     );
     if (mounted) {
-      setState(() => _message = 'Back-up gemaakt: ${file.uri.pathSegments.last}');
+      setState(
+        () => _message = 'Back-up gemaakt: ${file.uri.pathSegments.last}',
+      );
     }
   });
 

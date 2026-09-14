@@ -29,7 +29,14 @@ enum HomeBlock {
 
   records('records', 'Laatste records', 'Wat je onlangs verbeterde'),
 
-  volume('volume', 'Volume', 'Je volume van de laatste acht weken');
+  volume('volume', 'Volume', 'Je volume van de laatste acht weken'),
+
+  /// A way in to the coach, for whoever switched it on.
+  ///
+  /// It is not on anybody's screen unless they entered an API key: without
+  /// one there is no coach to open, and a block that says so would be an
+  /// advertisement rather than a layout choice.
+  coach('coach', 'Coach', 'Een vraag stellen aan je AI-coach');
 
   const HomeBlock(this.wire, this.label, this.description);
 

@@ -10,7 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
-import '../data/anthropic_client.dart';
+import '../data/ai_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
 import '../domain/coach_prompt.dart';
@@ -21,11 +21,11 @@ const _uuid = Uuid();
 
 /// How a client is made, so a test can hand over one that answers from
 /// memory instead of from the network.
-typedef CoachClientFactory = AnthropicClient Function(String apiKey);
+typedef CoachClientFactory = AiClient Function(String apiKey);
 
 @riverpod
 CoachClientFactory coachClientFactory(Ref ref) =>
-    (apiKey) => AnthropicClient(apiKey: apiKey);
+    (apiKey) => AiClient(apiKey: apiKey);
 
 @riverpod
 String? coachApiKey(Ref ref) {
@@ -37,9 +37,20 @@ String? coachApiKey(Ref ref) {
 @riverpod
 bool coachEnabled(Ref ref) => ref.watch(coachApiKeyProvider) != null;
 
+/// Which service the pasted key belongs to, read off the key itself.
 @riverpod
-CoachModel coachModel(Ref ref) =>
-    CoachModel.fromWire(ref.watch(settingsProvider).value?.chatModel);
+CoachProvider coachProvider(Ref ref) {
+  final key = ref.watch(coachApiKeyProvider);
+  return key == null ? CoachProvider.anthropic : CoachProvider.forKey(key);
+}
+
+/// The chosen model, or this service's default - which is also what happens
+/// when someone swaps a key for one of the other service.
+@riverpod
+CoachModel coachModel(Ref ref) => CoachModel.resolve(
+  ref.watch(settingsProvider).value?.chatModel,
+  ref.watch(coachProviderProvider),
+);
 
 @riverpod
 Stream<List<ChatThreadRow>> chatThreads(Ref ref) =>
@@ -160,9 +171,7 @@ class CoachController extends _$CoachController {
     try {
       await client.send(
         system: 'Antwoord met het woord ok.',
-        messages: [
-          {'role': 'user', 'content': 'ok'},
-        ],
+        messages: [CoachMessage.user('ok')],
         tools: const [],
         model: ref.read(coachModelProvider),
         maxTokens: 8,

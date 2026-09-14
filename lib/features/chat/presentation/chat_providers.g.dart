@@ -55,7 +55,7 @@ final class CoachClientFactoryProvider
 }
 
 String _$coachClientFactoryHash() =>
-    r'2b064ec2d66a5f9fabe658c16a1cc8aea374cc4c';
+    r'e69daeb2b2eab167230a5c4380373cf50606e995';
 
 @ProviderFor(coachApiKey)
 final coachApiKeyProvider = CoachApiKeyProvider._();
@@ -143,12 +143,66 @@ final class CoachEnabledProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$coachEnabledHash() => r'2f1cf687f29e9e40a02bbbaf0c50fec54559931a';
 
+/// Which service the pasted key belongs to, read off the key itself.
+
+@ProviderFor(coachProvider)
+final coachProviderProvider = CoachProviderProvider._();
+
+/// Which service the pasted key belongs to, read off the key itself.
+
+final class CoachProviderProvider
+    extends $FunctionalProvider<CoachProvider, CoachProvider, CoachProvider>
+    with $Provider<CoachProvider> {
+  /// Which service the pasted key belongs to, read off the key itself.
+  CoachProviderProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachProviderProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachProviderHash();
+
+  @$internal
+  @override
+  $ProviderElement<CoachProvider> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  CoachProvider create(Ref ref) {
+    return coachProvider(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CoachProvider value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CoachProvider>(value),
+    );
+  }
+}
+
+String _$coachProviderHash() => r'68246cb61f3cef84849dea279c8d0c3325ca6cf4';
+
+/// The chosen model, or this service's default - which is also what happens
+/// when someone swaps a key for one of the other service.
+
 @ProviderFor(coachModel)
 final coachModelProvider = CoachModelProvider._();
+
+/// The chosen model, or this service's default - which is also what happens
+/// when someone swaps a key for one of the other service.
 
 final class CoachModelProvider
     extends $FunctionalProvider<CoachModel, CoachModel, CoachModel>
     with $Provider<CoachModel> {
+  /// The chosen model, or this service's default - which is also what happens
+  /// when someone swaps a key for one of the other service.
   CoachModelProvider._()
     : super(
         from: null,
@@ -182,7 +236,7 @@ final class CoachModelProvider
   }
 }
 
-String _$coachModelHash() => r'085b86b7cb753f3e5fc133fa414325a34a808a97';
+String _$coachModelHash() => r'839ee08ed9f69f051fe489e38eabac1c036e84a9';
 
 @ProviderFor(chatThreads)
 final chatThreadsProvider = ChatThreadsProvider._();
@@ -338,7 +392,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'5d940c0086c606fccb43750630c8706090c3bc70';
+String _$coachControllerHash() => r'331e1227b76b74f7bf5a4d047fed255085c4f096';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

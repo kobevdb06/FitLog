@@ -12,7 +12,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
-import '../data/anthropic_client.dart';
+import '../data/ai_client.dart';
 import 'chat_providers.dart';
 
 class CoachSettingsScreen extends ConsumerStatefulWidget {
@@ -82,13 +82,14 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
 
   Future<void> _pickModel() async {
     final current = ref.read(coachModelProvider);
+    final provider = ref.read(coachProviderProvider);
     final picked = await showAppSheet<CoachModel>(
       context: context,
-      title: 'Welk model?',
+      title: 'Welk model van ${provider.label}?',
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final model in CoachModel.values)
+          for (final model in CoachModel.forProvider(provider))
             ListTile(
               leading: const Icon(Icons.smart_toy_outlined),
               title: Text(model.label),
@@ -127,6 +128,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
   Widget build(BuildContext context) {
     final key = ref.watch(coachApiKeyProvider);
     final model = ref.watch(coachModelProvider);
+    final provider = ref.watch(coachProviderProvider);
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
 
     return Scaffold(
@@ -146,9 +148,10 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               message:
                   'Dit is het enige deel van FitLog dat internet gebruikt, en '
                   'het werkt alleen met een sleutel van jezelf. Je vraag gaat '
-                  'naar Anthropic, samen met wat de coach in je logboek '
-                  'opvraagt om te antwoorden; onder elk antwoord staat wat '
-                  'dat was. Zonder sleutel maakt de app geen verbinding.',
+                  'naar de dienst van die sleutel, samen met wat de coach in '
+                  'je logboek opvraagt om te antwoorden; onder elk antwoord '
+                  'staat wat dat was. Zonder sleutel maakt de app geen '
+                  'verbinding.',
             ),
           ),
           const SectionHeader('Sleutel'),
@@ -157,9 +160,11 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             title: Text(key == null ? 'Nog geen sleutel' : _masked(key)),
             subtitle: Text(
               key == null
-                  ? 'Maak er een aan bij console.anthropic.com en plak hem '
-                        'hier. Je betaalt per vraag, aan Anthropic.'
-                  : 'Bewaard in je versleutelde database, achter je pincode.',
+                  ? 'Een sleutel van Google AI Studio (gratis laag) of van '
+                        'Anthropic. Plak hem hier; de app ziet zelf welke van '
+                        'de twee het is.'
+                  : 'Herkend als ${provider.label}. Bewaard in je '
+                        'versleutelde database, achter je pincode.',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: _enterKey,

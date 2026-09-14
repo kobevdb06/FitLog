@@ -4,9 +4,12 @@
 /// loop lives here: send, run whatever it asked for, send the results back,
 /// repeat until it stops asking or until the ceiling is reached. The ceiling
 /// matters - every round is another request the user pays for.
+///
+/// Which service is on the other end is the client's business, not this
+/// file's: the conversation is kept in the app's own shape.
 library;
 
-import 'anthropic_client.dart';
+import 'ai_client.dart';
 import 'coach_tools.dart';
 
 /// One turn of a stored conversation.
@@ -16,7 +19,9 @@ class CoachTurn {
   final String role;
   final String text;
 
-  Map<String, Object?> toWire() => {'role': role, 'content': text};
+  CoachMessage toMessage() => role == 'assistant'
+      ? CoachMessage.assistant(text: text)
+      : CoachMessage.user(text);
 }
 
 /// What came back, ready to be written down.
@@ -43,7 +48,7 @@ class Coach {
     required this.system,
   });
 
-  final AnthropicClient client;
+  final AiClient client;
   final CoachTools tools;
   final CoachModel model;
   final String system;
@@ -67,9 +72,9 @@ class Coach {
         ? history.sublist(history.length - historyTurns)
         : history;
 
-    final messages = <Map<String, Object?>>[
-      for (final turn in trimmed) turn.toWire(),
-      {'role': 'user', 'content': question},
+    final messages = <CoachMessage>[
+      for (final turn in trimmed) turn.toMessage(),
+      CoachMessage.user(question),
     ];
 
     final lookups = <String>[];
@@ -107,19 +112,17 @@ class Coach {
         );
       }
 
-      messages.add({'role': 'assistant', 'content': reply.content});
+      messages.add(
+        CoachMessage.assistant(text: reply.text, toolCalls: reply.toolCalls),
+      );
 
-      final results = <Map<String, Object?>>[];
+      final results = <CoachToolResult>[];
       for (final call in reply.toolCalls) {
         final lookup = await tools.run(call.name, call.input);
         if (!lookups.contains(lookup.summary)) lookups.add(lookup.summary);
-        results.add({
-          'type': 'tool_result',
-          'tool_use_id': call.id,
-          'content': lookup.json,
-        });
+        results.add(CoachToolResult(call: call, json: lookup.json));
       }
-      messages.add({'role': 'user', 'content': results});
+      messages.add(CoachMessage.results(results));
     }
 
     // Unreachable: the loop returns on its last round.

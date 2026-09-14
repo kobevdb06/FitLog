@@ -18,7 +18,7 @@ void main() {
   String read(String path) => File(path).readAsStringSync();
 
   const main = 'android/app/src/main/AndroidManifest.xml';
-  const client = 'lib/features/chat/data/anthropic_client.dart';
+  const client = 'lib/features/chat/data/ai_client.dart';
 
   /// Every .dart file under lib/, path and source.
   Iterable<(String, String)> sources() sync* {
@@ -67,21 +67,23 @@ void main() {
     );
   });
 
-  test('and it can only reach Anthropic', () {
+  test('and it can only reach the two services it was written for', () {
     final source = read(client);
 
-    expect(source, contains("'https://api.anthropic.com/v1/messages'"));
-    // One address, written down once, not assembled from parts at runtime.
+    // Written down once each, not assembled from parts at runtime.
     final urls = RegExp(r"'https?://[^']+'").allMatches(source);
     expect(urls.map((m) => m.group(0)), [
       "'https://api.anthropic.com/v1/messages'",
+      "'https://generativelanguage.googleapis.com/v1beta/models'",
     ]);
   });
 
-  test('nothing else in the app names that host either', () {
+  test('nothing else in the app names either host', () {
     for (final (path, source) in sources()) {
       if (path == client) continue;
-      expect(source, isNot(contains('api.anthropic.com')), reason: path);
+      for (final host in ['api.anthropic.com', 'googleapis.com']) {
+        expect(source, isNot(contains(host)), reason: path);
+      }
     }
   });
 

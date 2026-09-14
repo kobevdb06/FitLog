@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' show InsertMode, Value;
 import 'package:fitlog/core/db/database.dart';
-import 'package:fitlog/features/chat/data/anthropic_client.dart';
+import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/data/coach.dart';
 import 'package:fitlog/features/chat/data/coach_tools.dart';
 import 'package:fitlog/features/chat/domain/coach_prompt.dart';
@@ -35,9 +35,9 @@ void main() {
   });
 
   /// A client that answers with [replies] in turn.
-  AnthropicClient clientSaying(List<Object> replies) {
+  AiClient clientSaying(List<Object> replies) {
     var next = 0;
-    return AnthropicClient(
+    return AiClient(
       apiKey: 'sk-ant-test',
       client: MockClient((request) async {
         sent.add(jsonDecode(request.body) as Map<String, Object?>);
@@ -72,7 +72,7 @@ void main() {
     'usage': {'input_tokens': 200, 'output_tokens': 30},
   };
 
-  Coach coachWith(AnthropicClient client) => Coach(
+  Coach coachWith(AiClient client) => Coach(
     client: client,
     tools: CoachTools(db),
     model: CoachModel.sonnet,
@@ -257,6 +257,111 @@ void main() {
       expect(answer.text, 'Daar kan ik niet bij.');
       expect(answer.lookups.single, contains('bestaat'));
       expect('${sent[1]['messages']}', contains('onbekende tool'));
+    });
+  });
+
+  group('met een Gemini-sleutel', () {
+    /// The same conversation, in Google's shapes.
+    AiClient geminiSaying(List<Object> replies) {
+      var next = 0;
+      return AiClient(
+        apiKey: 'AIzaSyTest',
+        client: MockClient((request) async {
+          sent.add(jsonDecode(request.body) as Map<String, Object?>);
+          final reply =
+              replies[next < replies.length ? next : replies.length - 1];
+          next++;
+          return http.Response(
+            jsonEncode(reply),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+    }
+
+    Map<String, Object?> geminiSays(String text) => {
+      'candidates': [
+        {
+          'content': {
+            'role': 'model',
+            'parts': [
+              {'text': text},
+            ],
+          },
+        },
+      ],
+      'usageMetadata': {'promptTokenCount': 400, 'candidatesTokenCount': 20},
+    };
+
+    Map<String, Object?> geminiAsksFor(
+      String tool,
+      Map<String, Object?> args,
+    ) => {
+      'candidates': [
+        {
+          'content': {
+            'role': 'model',
+            'parts': [
+              {
+                'functionCall': {'name': tool, 'args': args},
+              },
+            ],
+          },
+        },
+      ],
+      'usageMetadata': {'promptTokenCount': 300, 'candidatesTokenCount': 10},
+    };
+
+    test('loopt dezelfde lus, met dezelfde opzoekingen', () async {
+      await seedWorkout(exercise: 'Bench Press', weight: 80, reps: 5);
+
+      final coach = Coach(
+        client: geminiSaying([
+          geminiAsksFor('recent_workouts', {'limit': 3}),
+          geminiSays('Je laatste sessie was Push, met 80 kg voor 5.'),
+        ]),
+        tools: CoachTools(db),
+        model: CoachModel.geminiFlash,
+        system: buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
+      );
+
+      final answer = await coach.ask(
+        history: const [],
+        question: 'Hoe ging mijn laatste sessie?',
+      );
+
+      expect(answer.text, contains('80 kg'));
+      expect(answer.lookups, ['je laatste 1 sessie']);
+      expect(answer.usage.inputTokens, 700);
+
+      // De tweede vraag draagt de functionCall en het antwoord erop, in
+      // Google's vorm.
+      final contents = sent[1]['contents']! as List;
+      expect(contents, hasLength(3));
+      expect('${contents[1]}', contains('functionCall'));
+      expect('${contents[2]}', contains('functionResponse'));
+      expect('${contents[2]}', contains('Bench Press'));
+    });
+
+    test('en het gereedschap gaat mee als functionDeclarations', () async {
+      final coach = Coach(
+        client: geminiSaying([geminiSays('Ja.')]),
+        tools: CoachTools(db),
+        model: CoachModel.geminiFlash,
+        system: buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
+      );
+
+      await coach.ask(history: const [], question: 'Is 3x8 genoeg?');
+
+      final declarations =
+          ((sent.single['tools']! as List).single
+                  as Map<String, Object?>)['functionDeclarations']!
+              as List;
+      expect(
+        declarations.map((d) => (d! as Map<String, Object?>)['name']).toSet(),
+        CoachTools.names,
+      );
     });
   });
 

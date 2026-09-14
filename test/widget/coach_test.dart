@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
-import 'package:fitlog/features/chat/data/anthropic_client.dart';
+import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
@@ -40,7 +40,7 @@ void main() {
 
   /// A coach whose API says [reply] to everything.
   CoachClientFactory apiSaying(Object reply, {int status = 200}) =>
-      (apiKey) => AnthropicClient(
+      (apiKey) => AiClient(
         apiKey: apiKey,
         client: MockClient((request) async {
           sent.add(request.body);
@@ -174,7 +174,7 @@ void main() {
       await pump(
         tester,
         const CoachScreen(),
-        api: (apiKey) => AnthropicClient(
+        api: (apiKey) => AiClient(
           apiKey: apiKey,
           client: MockClient((request) async {
             sent.add(request.body);

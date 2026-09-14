@@ -2063,3 +2063,31 @@ gaat mee in de back-up die de gebruiker zelf bewaart.
 `setApiKey` is de enige plek die hem aanraakt, en de fouten van de client
 gaan door een redactor: een API die je verzoek terugkaatst zou de sleutel
 anders op het scherm zetten.
+
+## 127. Twee diensten, herkend aan de sleutel
+
+De coach was op Anthropic gebouwd; de eerste gebruiker had een sleutel van
+Google. Een dienst schrappen die werkt en getest is, is waarde weggooien, dus
+kan de client nu allebei.
+
+Niet twee clients: één bestand, twee vormen. De deurtest zou anders zijn punt
+verliezen — "precies één bestand in `lib/` mag netwerken" is controleerbaar,
+"twee bestanden" is het begin van een lijst. Het bestand noemt beide adressen
+letterlijk, één keer elk, en de test leest ze eruit.
+
+Welke dienst een sleutel hoort, wordt van de sleutel afgelezen: `sk-ant-` is
+Anthropic, `AIza` is Google. Niemand hoeft twee keer te zeggen wat hij al weet.
+Iets onherkenbaars wordt Anthropic, en het instellingenscherm toont wat er
+herkend is, zodat een verkeerde gok zichtbaar is vóór de eerste vraag in plaats
+van erna.
+
+Het gesprek staat nu in de vorm van de app zelf (`CoachMessage`), niet in die
+van Anthropic. De lus die opzoekingen draait weet niet meer met wie ze praat;
+de client vertaalt op de drempel. Dat is ook waar de verschillen zitten:
+Anthropic koppelt een resultaat aan zijn vraag met een id, Google op naam;
+Google wil `contents` met `parts` en een aparte `systemInstruction`, en weigert
+een functiebeschrijving met een leeg `parameters`-object.
+
+Modellen horen bij een dienst. Wie zijn sleutel vervangt, houdt een
+modelkeuze die niet meer bestaat — `CoachModel.resolve` valt dan terug op de
+standaard van de nieuwe dienst in plaats van een 404 te laten ophalen.

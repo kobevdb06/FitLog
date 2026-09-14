@@ -42,9 +42,10 @@ class AboutScreen extends StatelessWidget {
             icon: Icons.smart_toy_outlined,
             message:
                 'De enige uitzondering is de AI-coach, en die werkt pas als '
-                'je zelf een API-sleutel invult. Dan gaat je vraag naar '
-                'Anthropic, samen met wat de coach in je logboek opvraagt om '
-                'te antwoorden — de app toont per antwoord wat dat was. '
+                'je zelf een API-sleutel invult, van Google of van Anthropic. '
+                'Dan gaat je vraag naar die dienst, samen met wat de coach in '
+                'je logboek opvraagt om te antwoorden — de app toont per '
+                'antwoord wat dat was. '
                 'Zonder sleutel opent de app geen enkele verbinding, en er is '
                 'precies één bestand in de code dat dat überhaupt kan.',
           ),

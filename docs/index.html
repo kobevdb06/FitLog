@@ -29,6 +29,15 @@
   h1 { font-size: 2.25rem; margin: 1rem 0 .25rem; letter-spacing: -.02em; }
   .tagline { color: var(--muted); margin: 0 0 2rem; }
   h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; }
+  h3 { font-size: 1rem; margin: 1.75rem 0 .5rem; color: var(--muted); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .875em;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: .1em .35em;
+  }
   p { margin: 0 0 1rem; }
   a { color: var(--accent); }
 
@@ -163,6 +172,53 @@
     staan. Wil je bericht krijgen wanneer er een is, dan kun je
     <a href="https://github.com/ImranR98/Obtainium" rel="noopener">Obtainium</a>
     de releasepagina laten volgen — die werkt de app dan zelf bij.
+  </p>
+
+  <h2>De AI-coach aanzetten</h2>
+  <p>
+    De coach is het enige deel van FitLog dat het internet gebruikt, en hij
+    staat uit tot jij er een sleutel in zet. Je betaalt per vraag rechtstreeks
+    aan Google of Anthropic — ik zit daar niet tussen en heb er geen server
+    voor. Bij <strong>Google AI Studio</strong> is er een gratis laag die voor
+    een paar vragen per dag ruim volstaat.
+  </p>
+
+  <h3>Een sleutel halen bij Google AI Studio</h3>
+  <ol>
+    <li>Ga naar
+      <a href="https://aistudio.google.com/" rel="noopener">aistudio.google.com</a>
+      en meld je aan met je Google-account.</li>
+    <li>Klik links op <strong>Get API key</strong> (of ga rechtstreeks naar
+      <a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a>).</li>
+    <li>Klik op <strong>Create API key</strong>. Kies desgevraagd een project;
+      een nieuw project is prima.</li>
+    <li>Kopieer de sleutel die verschijnt. Hij begint met <code>AIza</code> of
+      met <code>AQ.</code> en je krijgt hem maar één keer te zien.</li>
+  </ol>
+  <p class="note" style="text-align:left">
+    Zo'n sleutel is een wachtwoord: wie hem heeft, kan op jouw rekening
+    vragen stellen. Deel hem met niemand, en zet hem niet in een screenshot.
+    Denk je dat hij is gaan rondzwerven, verwijder hem dan in AI Studio en maak
+    een nieuwe.
+  </p>
+
+  <h3>De sleutel in de app zetten</h3>
+  <ol>
+    <li>Open FitLog en ga naar <strong>Profiel → Instellingen →
+      AI-coach</strong>.</li>
+    <li>Tik op <strong>Nog geen sleutel</strong>, plak je sleutel en tik op
+      <strong>Bewaren</strong>.</li>
+    <li>Eronder verschijnt welke dienst herkend is — bij een sleutel van AI
+      Studio hoort daar <em>Google Gemini</em> te staan. Klopt dat niet, tik
+      dan op die regel en kies zelf.</li>
+    <li>Tik op <strong>Sleutel testen</strong>. Dat is één goedkope vraag die
+      zegt of hij werkt, of anders precies wat er mis is.</li>
+  </ol>
+  <p>
+    Daarna staat er een tabblad <strong>Chat</strong> onderaan, tussen
+    Voortgang en Profiel. Onder elk antwoord staat wat de coach in je logboek
+    heeft opgezocht en wat de vraag aan tokens kostte. Je kan de sleutel er op
+    elk moment weer uit halen; dan maakt de app opnieuw geen enkele verbinding.
   </p>
 
   <h2>Privacy</h2>

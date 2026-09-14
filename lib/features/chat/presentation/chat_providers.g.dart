@@ -143,17 +143,20 @@ final class CoachEnabledProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$coachEnabledHash() => r'2f1cf687f29e9e40a02bbbaf0c50fec54559931a';
 
-/// Which service the pasted key belongs to, read off the key itself.
+/// Which service the key belongs to: what the user said, or else what the
+/// key looks like.
 
 @ProviderFor(coachProvider)
 final coachProviderProvider = CoachProviderProvider._();
 
-/// Which service the pasted key belongs to, read off the key itself.
+/// Which service the key belongs to: what the user said, or else what the
+/// key looks like.
 
 final class CoachProviderProvider
     extends $FunctionalProvider<CoachProvider, CoachProvider, CoachProvider>
     with $Provider<CoachProvider> {
-  /// Which service the pasted key belongs to, read off the key itself.
+  /// Which service the key belongs to: what the user said, or else what the
+  /// key looks like.
   CoachProviderProvider._()
     : super(
         from: null,
@@ -187,7 +190,57 @@ final class CoachProviderProvider
   }
 }
 
-String _$coachProviderHash() => r'68246cb61f3cef84849dea279c8d0c3325ca6cf4';
+String _$coachProviderHash() => r'd07c02193dab2ccf552b5d1fbbb18220b0f09d6e';
+
+/// Whether the service was worked out rather than chosen, which is what the
+/// settings screen says out loud.
+
+@ProviderFor(coachProviderIsGuessed)
+final coachProviderIsGuessedProvider = CoachProviderIsGuessedProvider._();
+
+/// Whether the service was worked out rather than chosen, which is what the
+/// settings screen says out loud.
+
+final class CoachProviderIsGuessedProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// Whether the service was worked out rather than chosen, which is what the
+  /// settings screen says out loud.
+  CoachProviderIsGuessedProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachProviderIsGuessedProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachProviderIsGuessedHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return coachProviderIsGuessed(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$coachProviderIsGuessedHash() =>
+    r'f7d5654cb5b2710157ac670992ec46414a0e7dc4';
 
 /// The chosen model, or this service's default - which is also what happens
 /// when someone swaps a key for one of the other service.
@@ -392,7 +445,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'331e1227b76b74f7bf5a4d047fed255085c4f096';
+String _$coachControllerHash() => r'8ae61bdf2098223979bce90008f6bb1a2f1fb8c9';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

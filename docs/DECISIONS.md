@@ -2091,3 +2091,21 @@ een functiebeschrijving met een leeg `parameters`-object.
 Modellen horen bij een dienst. Wie zijn sleutel vervangt, houdt een
 modelkeuze die niet meer bestaat — `CoachModel.resolve` valt dan terug op de
 standaard van de nieuwe dienst in plaats van een 404 te laten ophalen.
+
+## 128. De dienst raden mag, beslissen niet
+
+De eerste echte sleutel was er een van Google die begon met `AQ.`, en die
+herkende de app als Anthropic: ik kende alleen `AIza`. De vraag was niet
+alleen "welk prefix vergeten we nog" maar "wat doen we als een dienst morgen
+weer iets nieuws uitdeelt".
+
+Twee dingen veranderd. Het raden zelf is omgedraaid: alleen `sk-ant-` is
+onmiskenbaar, dus dat beslist, en al de rest wordt Google — dat is de dienst
+waarvan de sleutelvormen variëren. En er is een instelling bijgekomen
+(`app_settings.chat_provider`, schema 22) waarmee de gebruiker het rechtzet.
+Null blijft "leid het af uit de sleutel", wat elke bestaande installatie krijgt
+en wat in bijna alle gevallen klopt.
+
+Het scherm zegt nu welke van de twee het is: "Afgeleid uit je sleutel. Klopt
+dat niet, tik hier" tegenover "Door jou gekozen". Een gok die zich voordoet als
+een feit is het probleem; een gok die zegt dat hij er een is, niet.

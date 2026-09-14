@@ -80,6 +80,49 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     });
   }
 
+  /// Sets the service straight when the guess is wrong, or hands it back to
+  /// the guess.
+  Future<void> _pickProvider() async {
+    final guessed = ref.read(coachProviderIsGuessedProvider);
+    final current = ref.read(coachProviderProvider);
+
+    final picked = await showAppSheet<String>(
+      context: context,
+      title: 'Van welke dienst is je sleutel?',
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.auto_awesome),
+            title: const Text('Automatisch'),
+            subtitle: const Text('Afgeleid uit de sleutel zelf'),
+            selected: guessed,
+            onTap: () => Navigator.of(context).pop('auto'),
+          ),
+          const Divider(height: 1),
+          for (final provider in CoachProvider.values)
+            ListTile(
+              leading: const Icon(Icons.cloud_outlined),
+              title: Text(provider.label),
+              selected: !guessed && provider == current,
+              onTap: () => Navigator.of(context).pop(provider.wire),
+            ),
+        ],
+      ),
+    );
+    if (picked == null || !mounted) return;
+
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          AppSettingsTableCompanion(
+            chatProvider: Value(picked == 'auto' ? null : picked),
+          ),
+        );
+    if (mounted) setState(() => _result = null);
+  }
+
   Future<void> _pickModel() async {
     final current = ref.read(coachModelProvider);
     final provider = ref.read(coachProviderProvider);
@@ -129,6 +172,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     final key = ref.watch(coachApiKeyProvider);
     final model = ref.watch(coachModelProvider);
     final provider = ref.watch(coachProviderProvider);
+    final guessed = ref.watch(coachProviderIsGuessedProvider);
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
 
     return Scaffold(
@@ -161,14 +205,25 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             subtitle: Text(
               key == null
                   ? 'Een sleutel van Google AI Studio (gratis laag) of van '
-                        'Anthropic. Plak hem hier; de app ziet zelf welke van '
-                        'de twee het is.'
-                  : 'Herkend als ${provider.label}. Bewaard in je '
-                        'versleutelde database, achter je pincode.',
+                        'Anthropic. Plak hem hier; de app raadt welke van de '
+                        'twee het is.'
+                  : 'Bewaard in je versleutelde database, achter je pincode.',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: _enterKey,
           ),
+          if (key != null)
+            ListTile(
+              leading: const Icon(Icons.cloud_outlined),
+              title: Text(provider.label),
+              subtitle: Text(
+                guessed
+                    ? 'Afgeleid uit je sleutel. Klopt dat niet, tik hier.'
+                    : 'Door jou gekozen.',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickProvider,
+            ),
           if (key != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),

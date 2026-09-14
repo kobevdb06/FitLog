@@ -785,6 +785,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _chatProviderMeta = const VerificationMeta(
+    'chatProvider',
+  );
+  @override
+  late final GeneratedColumn<String> chatProvider = GeneratedColumn<String>(
+    'chat_provider',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _autoLockSecondsMeta = const VerificationMeta(
     'autoLockSeconds',
   );
@@ -835,6 +846,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     homeLayout,
     anthropicApiKey,
     chatModel,
+    chatProvider,
     autoLockSeconds,
     updatedAt,
   ];
@@ -1050,6 +1062,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         chatModel.isAcceptableOrUnknown(data['chat_model']!, _chatModelMeta),
       );
     }
+    if (data.containsKey('chat_provider')) {
+      context.handle(
+        _chatProviderMeta,
+        chatProvider.isAcceptableOrUnknown(
+          data['chat_provider']!,
+          _chatProviderMeta,
+        ),
+      );
+    }
     if (data.containsKey('auto_lock_seconds')) {
       context.handle(
         _autoLockSecondsMeta,
@@ -1176,6 +1197,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}chat_model'],
       ),
+      chatProvider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_provider'],
+      ),
       autoLockSeconds: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}auto_lock_seconds'],
@@ -1284,6 +1309,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// Which model the coach talks to. Null means the app's own default.
   final String? chatModel;
 
+  /// Which service the key belongs to, when the user has said so themselves.
+  ///
+  /// Null means "work it out from the key", which is right almost always and
+  /// wrong exactly when a service invents a new key format. This column is
+  /// what stops that from needing a new release.
+  final String? chatProvider;
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   final int autoLockSeconds;
@@ -1314,6 +1346,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.homeLayout,
     this.anthropicApiKey,
     this.chatModel,
+    this.chatProvider,
     required this.autoLockSeconds,
     required this.updatedAt,
   });
@@ -1356,6 +1389,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     }
     if (!nullToAbsent || chatModel != null) {
       map['chat_model'] = Variable<String>(chatModel);
+    }
+    if (!nullToAbsent || chatProvider != null) {
+      map['chat_provider'] = Variable<String>(chatProvider);
     }
     map['auto_lock_seconds'] = Variable<int>(autoLockSeconds);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -1401,6 +1437,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       chatModel: chatModel == null && nullToAbsent
           ? const Value.absent()
           : Value(chatModel),
+      chatProvider: chatProvider == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chatProvider),
       autoLockSeconds: Value(autoLockSeconds),
       updatedAt: Value(updatedAt),
     );
@@ -1443,6 +1482,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       homeLayout: serializer.fromJson<String?>(json['homeLayout']),
       anthropicApiKey: serializer.fromJson<String?>(json['anthropicApiKey']),
       chatModel: serializer.fromJson<String?>(json['chatModel']),
+      chatProvider: serializer.fromJson<String?>(json['chatProvider']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -1476,6 +1516,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'homeLayout': serializer.toJson<String?>(homeLayout),
       'anthropicApiKey': serializer.toJson<String?>(anthropicApiKey),
       'chatModel': serializer.toJson<String?>(chatModel),
+      'chatProvider': serializer.toJson<String?>(chatProvider),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -1507,6 +1548,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<String?> homeLayout = const Value.absent(),
     Value<String?> anthropicApiKey = const Value.absent(),
     Value<String?> chatModel = const Value.absent(),
+    Value<String?> chatProvider = const Value.absent(),
     int? autoLockSeconds,
     int? updatedAt,
   }) => AppSettingsRow(
@@ -1542,6 +1584,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         ? anthropicApiKey.value
         : this.anthropicApiKey,
     chatModel: chatModel.present ? chatModel.value : this.chatModel,
+    chatProvider: chatProvider.present ? chatProvider.value : this.chatProvider,
     autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1612,6 +1655,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ? data.anthropicApiKey.value
           : this.anthropicApiKey,
       chatModel: data.chatModel.present ? data.chatModel.value : this.chatModel,
+      chatProvider: data.chatProvider.present
+          ? data.chatProvider.value
+          : this.chatProvider,
       autoLockSeconds: data.autoLockSeconds.present
           ? data.autoLockSeconds.value
           : this.autoLockSeconds,
@@ -1647,6 +1693,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('homeLayout: $homeLayout, ')
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
+          ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1680,6 +1727,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     homeLayout,
     anthropicApiKey,
     chatModel,
+    chatProvider,
     autoLockSeconds,
     updatedAt,
   ]);
@@ -1712,6 +1760,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.homeLayout == this.homeLayout &&
           other.anthropicApiKey == this.anthropicApiKey &&
           other.chatModel == this.chatModel &&
+          other.chatProvider == this.chatProvider &&
           other.autoLockSeconds == this.autoLockSeconds &&
           other.updatedAt == this.updatedAt);
 }
@@ -1742,6 +1791,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String?> homeLayout;
   final Value<String?> anthropicApiKey;
   final Value<String?> chatModel;
+  final Value<String?> chatProvider;
   final Value<int> autoLockSeconds;
   final Value<int> updatedAt;
   final Value<int> rowid;
@@ -1771,6 +1821,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.homeLayout = const Value.absent(),
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
+    this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1801,6 +1852,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.homeLayout = const Value.absent(),
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
+    this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     required int updatedAt,
     this.rowid = const Value.absent(),
@@ -1832,6 +1884,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? homeLayout,
     Expression<String>? anthropicApiKey,
     Expression<String>? chatModel,
+    Expression<String>? chatProvider,
     Expression<int>? autoLockSeconds,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
@@ -1866,6 +1919,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (homeLayout != null) 'home_layout': homeLayout,
       if (anthropicApiKey != null) 'anthropic_api_key': anthropicApiKey,
       if (chatModel != null) 'chat_model': chatModel,
+      if (chatProvider != null) 'chat_provider': chatProvider,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1898,6 +1952,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String?>? homeLayout,
     Value<String?>? anthropicApiKey,
     Value<String?>? chatModel,
+    Value<String?>? chatProvider,
     Value<int>? autoLockSeconds,
     Value<int>? updatedAt,
     Value<int>? rowid,
@@ -1929,6 +1984,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       homeLayout: homeLayout ?? this.homeLayout,
       anthropicApiKey: anthropicApiKey ?? this.anthropicApiKey,
       chatModel: chatModel ?? this.chatModel,
+      chatProvider: chatProvider ?? this.chatProvider,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -2017,6 +2073,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (chatModel.present) {
       map['chat_model'] = Variable<String>(chatModel.value);
     }
+    if (chatProvider.present) {
+      map['chat_provider'] = Variable<String>(chatProvider.value);
+    }
     if (autoLockSeconds.present) {
       map['auto_lock_seconds'] = Variable<int>(autoLockSeconds.value);
     }
@@ -2057,6 +2116,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('homeLayout: $homeLayout, ')
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
+          ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -10379,6 +10439,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String?> homeLayout,
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
+      Value<String?> chatProvider,
       Value<int> autoLockSeconds,
       required int updatedAt,
       Value<int> rowid,
@@ -10410,6 +10471,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String?> homeLayout,
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
+      Value<String?> chatProvider,
       Value<int> autoLockSeconds,
       Value<int> updatedAt,
       Value<int> rowid,
@@ -10546,6 +10608,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get chatModel => $composableBuilder(
     column: $table.chatModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatProvider => $composableBuilder(
+    column: $table.chatProvider,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10694,6 +10761,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get chatProvider => $composableBuilder(
+    column: $table.chatProvider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -10829,6 +10901,11 @@ class $$AppSettingsTableTableAnnotationComposer
   GeneratedColumn<String> get chatModel =>
       $composableBuilder(column: $table.chatModel, builder: (column) => column);
 
+  GeneratedColumn<String> get chatProvider => $composableBuilder(
+    column: $table.chatProvider,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
     builder: (column) => column,
@@ -10900,6 +10977,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
+                Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -10929,6 +11007,7 @@ class $$AppSettingsTableTableTableManager
                 homeLayout: homeLayout,
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
+                chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -10960,6 +11039,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
+                Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -10989,6 +11069,7 @@ class $$AppSettingsTableTableTableManager
                 homeLayout: homeLayout,
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
+                chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
                 rowid: rowid,

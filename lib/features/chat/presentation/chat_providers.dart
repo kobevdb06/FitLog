@@ -37,12 +37,25 @@ String? coachApiKey(Ref ref) {
 @riverpod
 bool coachEnabled(Ref ref) => ref.watch(coachApiKeyProvider) != null;
 
-/// Which service the pasted key belongs to, read off the key itself.
+/// Which service the key belongs to: what the user said, or else what the
+/// key looks like.
 @riverpod
 CoachProvider coachProvider(Ref ref) {
+  final chosen = CoachProvider.fromWire(
+    ref.watch(settingsProvider).value?.chatProvider,
+  );
+  if (chosen != null) return chosen;
+
   final key = ref.watch(coachApiKeyProvider);
-  return key == null ? CoachProvider.anthropic : CoachProvider.forKey(key);
+  return key == null ? CoachProvider.gemini : CoachProvider.forKey(key);
 }
+
+/// Whether the service was worked out rather than chosen, which is what the
+/// settings screen says out loud.
+@riverpod
+bool coachProviderIsGuessed(Ref ref) =>
+    CoachProvider.fromWire(ref.watch(settingsProvider).value?.chatProvider) ==
+    null;
 
 /// The chosen model, or this service's default - which is also what happens
 /// when someone swaps a key for one of the other service.

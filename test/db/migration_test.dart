@@ -111,7 +111,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 21);
+    expect(raw.select('PRAGMA user_version').first.values.first, 22);
     raw.close();
   });
 
@@ -202,6 +202,9 @@ void main() {
     // predates it can be in: no key, and nothing said.
     expect(settings.anthropicApiKey, isNull);
     expect(settings.chatModel, isNull);
+    // v22: null means "work the service out from the key", which is what the
+    // app did before the column existed.
+    expect(settings.chatProvider, isNull);
     expect(await db.chatDao.countThreads(), 0);
 
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
@@ -247,7 +250,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 21);
+    expect(db.schemaVersion, 22);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

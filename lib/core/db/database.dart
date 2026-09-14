@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -224,6 +224,12 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(chatMessagesTable);
           await m.addColumn(appSettingsTable, appSettingsTable.anthropicApiKey);
           await m.addColumn(appSettingsTable, appSettingsTable.chatModel);
+        }
+        if (from < 22) {
+          // Which service a key belongs to, when the user says so. Null - what
+          // every existing row gets - means the app works it out from the key,
+          // which is what it did before this column existed.
+          await m.addColumn(appSettingsTable, appSettingsTable.chatProvider);
         }
       });
 

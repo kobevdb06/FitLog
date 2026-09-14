@@ -64,14 +64,30 @@ void main() {
   };
 
   group('welke dienst een sleutel hoort', () {
-    test('wordt van de sleutel zelf afgelezen', () {
+    test('wordt van de sleutel zelf afgeleid', () {
       expect(CoachProvider.forKey('sk-ant-abc'), CoachProvider.anthropic);
       expect(CoachProvider.forKey('AIzaSyAbc'), CoachProvider.gemini);
       expect(CoachProvider.forKey('  AIzaSyAbc  '), CoachProvider.gemini);
     });
 
-    test('en iets onherkenbaars wordt niet stilzwijgend Google', () {
-      expect(CoachProvider.forKey('hallo'), CoachProvider.anthropic);
+    test('ook het nieuwere formaat van Google', () {
+      // AQ.Ab8... is wat AI Studio tegenwoordig uitdeelt, en dat werd eerst
+      // voor een Anthropic-sleutel aangezien.
+      expect(CoachProvider.forKey('AQ.Ab8RNiZhX2Mkg'), CoachProvider.gemini);
+    });
+
+    test('en alleen het prefix van Anthropic is onmiskenbaar', () {
+      // Google verzint nieuwe vormen, Anthropic niet: al de rest is dus een
+      // betere gok als Google, en de gebruiker kan het rechtzetten.
+      expect(CoachProvider.forKey('hallo'), CoachProvider.gemini);
+      expect(CoachProvider.forKey(''), CoachProvider.gemini);
+    });
+
+    test('een opgeslagen keuze is terug te lezen', () {
+      expect(CoachProvider.fromWire('gemini'), CoachProvider.gemini);
+      expect(CoachProvider.fromWire('anthropic'), CoachProvider.anthropic);
+      expect(CoachProvider.fromWire(null), isNull);
+      expect(CoachProvider.fromWire('openai'), isNull);
     });
 
     test('een model van de andere dienst valt terug op de standaard', () {

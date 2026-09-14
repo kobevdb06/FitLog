@@ -145,6 +145,13 @@ class AppSettingsTable extends Table {
   /// Which model the coach talks to. Null means the app's own default.
   TextColumn get chatModel => text().named('chat_model').nullable()();
 
+  /// Which service the key belongs to, when the user has said so themselves.
+  ///
+  /// Null means "work it out from the key", which is right almost always and
+  /// wrong exactly when a service invents a new key format. This column is
+  /// what stops that from needing a new release.
+  TextColumn get chatProvider => text().named('chat_provider').nullable()();
+
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   IntColumn get autoLockSeconds =>

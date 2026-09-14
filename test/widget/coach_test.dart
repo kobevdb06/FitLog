@@ -98,6 +98,37 @@ void main() {
     });
   });
 
+  group('welke dienst', () {
+    testWidgets('wordt geraden, en je kan het rechtzetten', (tester) async {
+      // Het nieuwe sleutelformaat van Google werd eerst voor Anthropic
+      // aangezien; daarom staat er nu ook een knop.
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+
+      expect(find.text('Google Gemini'), findsOneWidget);
+      expect(
+        find.text('Afgeleid uit je sleutel. Klopt dat niet, tik hier.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Google Gemini'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Anthropic').last);
+      await tester.pumpAndSettle();
+
+      expect(container!.read(coachProviderProvider), CoachProvider.anthropic);
+      expect(find.text('Door jou gekozen.'), findsOneWidget);
+    });
+
+    testWidgets('en het model volgt de dienst', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+
+      expect(find.text('Gemini 2.5 Flash'), findsOneWidget);
+      expect(find.text('Sonnet 5'), findsNothing);
+    });
+  });
+
   group('een sleutel invullen', () {
     testWidgets('zet de coach aan en toont hem afgeschermd', (tester) async {
       await pump(tester, const CoachSettingsScreen());

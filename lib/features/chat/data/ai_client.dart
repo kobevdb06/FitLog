@@ -19,20 +19,17 @@ import 'package:http/http.dart' as http;
 
 /// The services the coach can talk to, and the only addresses this app knows.
 enum CoachProvider {
-  anthropic(
-    'anthropic',
-    'Anthropic',
-    'https://api.anthropic.com/v1/messages',
+  anthropic('anthropic', 'Anthropic', 'https://api.anthropic.com/v1/messages', [
     'sk-ant-',
-  ),
+  ]),
   gemini(
     'gemini',
     'Google Gemini',
     'https://generativelanguage.googleapis.com/v1beta/models',
-    'AIza',
+    ['AIza', 'AQ.'],
   );
 
-  const CoachProvider(this.wire, this.label, this.endpoint, this.keyPrefix);
+  const CoachProvider(this.wire, this.label, this.endpoint, this.keyPrefixes);
 
   final String wire;
   final String label;
@@ -41,22 +38,31 @@ enum CoachProvider {
   /// which is how that API is shaped.
   final String endpoint;
 
-  /// How a key of this service announces itself.
-  final String keyPrefix;
+  /// How a key of this service announces itself. Google has handed out at
+  /// least two shapes: the older `AIza...` and the newer `AQ....`.
+  final List<String> keyPrefixes;
 
-  /// Which service a pasted key belongs to.
+  static CoachProvider? fromWire(String? wire) {
+    for (final provider in values) {
+      if (provider.wire == wire) return provider;
+    }
+    return null;
+  }
+
+  /// Which service a pasted key most likely belongs to.
   ///
-  /// Read off the key rather than asked, because the user knows where they got
-  /// their key and should not have to say it twice. An unrecognised key is
-  /// treated as Anthropic - it is the older format and the less distinctive
-  /// prefix - and the settings screen shows what was recognised, so a wrong
-  /// guess is visible before the first question.
+  /// A guess, not a fact, and it says so: the settings screen shows what was
+  /// recognised and lets the user set it straight, because key formats change
+  /// and this app cannot ship a new release every time one does.
+  ///
+  /// Anthropic's prefix is the only unmistakable one, so it decides; anything
+  /// else is taken for Google, whose formats are the ones that vary.
   static CoachProvider forKey(String key) {
     final trimmed = key.trim();
-    for (final provider in values) {
-      if (trimmed.startsWith(provider.keyPrefix)) return provider;
+    for (final prefix in CoachProvider.anthropic.keyPrefixes) {
+      if (trimmed.startsWith(prefix)) return CoachProvider.anthropic;
     }
-    return CoachProvider.anthropic;
+    return CoachProvider.gemini;
   }
 }
 

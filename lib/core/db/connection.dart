@@ -74,9 +74,7 @@ QueryExecutor openEncryptedExecutor({
 
 /// Opens an encrypted in-memory database. Used by tests.
 QueryExecutor openEncryptedMemoryExecutor(String keyHex) {
-  return NativeDatabase.memory(
-    setup: (db) => applyKeyAndVerify(db, keyHex),
-  );
+  return NativeDatabase.memory(setup: (db) => applyKeyAndVerify(db, keyHex));
 }
 
 /// Reads `PRAGMA cipher_version` from a throwaway in-memory database.

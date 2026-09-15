@@ -409,6 +409,104 @@ final class ChatMessagesFamily extends $Family
   String toString() => r'chatMessagesProvider';
 }
 
+/// What the user allows themselves in a day, in calls to the service.
+
+@ProviderFor(coachDailyLimit)
+final coachDailyLimitProvider = CoachDailyLimitProvider._();
+
+/// What the user allows themselves in a day, in calls to the service.
+
+final class CoachDailyLimitProvider extends $FunctionalProvider<int, int, int>
+    with $Provider<int> {
+  /// What the user allows themselves in a day, in calls to the service.
+  CoachDailyLimitProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachDailyLimitProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachDailyLimitHash();
+
+  @$internal
+  @override
+  $ProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  int create(Ref ref) {
+    return coachDailyLimit(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(int value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<int>(value),
+    );
+  }
+}
+
+String _$coachDailyLimitHash() => r'a5f0814ebaa83ecd771a2446f34f6dac2475f6ab';
+
+/// What has been spent since this service's day began.
+///
+/// A count of what this app sent, not a reading of what is left over there:
+/// no API tells a client that.
+
+@ProviderFor(coachUsageToday)
+final coachUsageTodayProvider = CoachUsageTodayProvider._();
+
+/// What has been spent since this service's day began.
+///
+/// A count of what this app sent, not a reading of what is left over there:
+/// no API tells a client that.
+
+final class CoachUsageTodayProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CoachDayUsage>,
+          CoachDayUsage,
+          Stream<CoachDayUsage>
+        >
+    with $FutureModifier<CoachDayUsage>, $StreamProvider<CoachDayUsage> {
+  /// What has been spent since this service's day began.
+  ///
+  /// A count of what this app sent, not a reading of what is left over there:
+  /// no API tells a client that.
+  CoachUsageTodayProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachUsageTodayProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachUsageTodayHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<CoachDayUsage> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<CoachDayUsage> create(Ref ref) {
+    return coachUsageToday(ref);
+  }
+}
+
+String _$coachUsageTodayHash() => r'7967412f31ae29c2e37f342300809014191f3131';
+
 /// Asking a question, from the first keystroke to the answer on screen.
 
 @ProviderFor(CoachController)
@@ -445,7 +543,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'8ae61bdf2098223979bce90008f6bb1a2f1fb8c9';
+String _$coachControllerHash() => r'1a4af0a17361d02dc6aad66b7f2939570021bb76';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

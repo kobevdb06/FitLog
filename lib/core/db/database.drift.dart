@@ -785,6 +785,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _coachDailyLimitMeta = const VerificationMeta(
+    'coachDailyLimit',
+  );
+  @override
+  late final GeneratedColumn<int> coachDailyLimit = GeneratedColumn<int>(
+    'coach_daily_limit',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _chatProviderMeta = const VerificationMeta(
     'chatProvider',
   );
@@ -846,6 +857,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     homeLayout,
     anthropicApiKey,
     chatModel,
+    coachDailyLimit,
     chatProvider,
     autoLockSeconds,
     updatedAt,
@@ -1062,6 +1074,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         chatModel.isAcceptableOrUnknown(data['chat_model']!, _chatModelMeta),
       );
     }
+    if (data.containsKey('coach_daily_limit')) {
+      context.handle(
+        _coachDailyLimitMeta,
+        coachDailyLimit.isAcceptableOrUnknown(
+          data['coach_daily_limit']!,
+          _coachDailyLimitMeta,
+        ),
+      );
+    }
     if (data.containsKey('chat_provider')) {
       context.handle(
         _chatProviderMeta,
@@ -1197,6 +1218,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}chat_model'],
       ),
+      coachDailyLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}coach_daily_limit'],
+      ),
       chatProvider: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}chat_provider'],
@@ -1309,6 +1334,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// Which model the coach talks to. Null means the app's own default.
   final String? chatModel;
 
+  /// How many calls a day the user wants to allow themselves, or null for the
+  /// app's own starting figure.
+  ///
+  /// Their number, not the service's: no API tells a client what is left of a
+  /// free tier, so this is a budget the user sets and the app measures against
+  /// what it actually sent.
+  final int? coachDailyLimit;
+
   /// Which service the key belongs to, when the user has said so themselves.
   ///
   /// Null means "work it out from the key", which is right almost always and
@@ -1346,6 +1379,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.homeLayout,
     this.anthropicApiKey,
     this.chatModel,
+    this.coachDailyLimit,
     this.chatProvider,
     required this.autoLockSeconds,
     required this.updatedAt,
@@ -1389,6 +1423,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     }
     if (!nullToAbsent || chatModel != null) {
       map['chat_model'] = Variable<String>(chatModel);
+    }
+    if (!nullToAbsent || coachDailyLimit != null) {
+      map['coach_daily_limit'] = Variable<int>(coachDailyLimit);
     }
     if (!nullToAbsent || chatProvider != null) {
       map['chat_provider'] = Variable<String>(chatProvider);
@@ -1437,6 +1474,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       chatModel: chatModel == null && nullToAbsent
           ? const Value.absent()
           : Value(chatModel),
+      coachDailyLimit: coachDailyLimit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachDailyLimit),
       chatProvider: chatProvider == null && nullToAbsent
           ? const Value.absent()
           : Value(chatProvider),
@@ -1482,6 +1522,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       homeLayout: serializer.fromJson<String?>(json['homeLayout']),
       anthropicApiKey: serializer.fromJson<String?>(json['anthropicApiKey']),
       chatModel: serializer.fromJson<String?>(json['chatModel']),
+      coachDailyLimit: serializer.fromJson<int?>(json['coachDailyLimit']),
       chatProvider: serializer.fromJson<String?>(json['chatProvider']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
@@ -1516,6 +1557,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'homeLayout': serializer.toJson<String?>(homeLayout),
       'anthropicApiKey': serializer.toJson<String?>(anthropicApiKey),
       'chatModel': serializer.toJson<String?>(chatModel),
+      'coachDailyLimit': serializer.toJson<int?>(coachDailyLimit),
       'chatProvider': serializer.toJson<String?>(chatProvider),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
       'updatedAt': serializer.toJson<int>(updatedAt),
@@ -1548,6 +1590,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<String?> homeLayout = const Value.absent(),
     Value<String?> anthropicApiKey = const Value.absent(),
     Value<String?> chatModel = const Value.absent(),
+    Value<int?> coachDailyLimit = const Value.absent(),
     Value<String?> chatProvider = const Value.absent(),
     int? autoLockSeconds,
     int? updatedAt,
@@ -1584,6 +1627,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         ? anthropicApiKey.value
         : this.anthropicApiKey,
     chatModel: chatModel.present ? chatModel.value : this.chatModel,
+    coachDailyLimit: coachDailyLimit.present
+        ? coachDailyLimit.value
+        : this.coachDailyLimit,
     chatProvider: chatProvider.present ? chatProvider.value : this.chatProvider,
     autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1655,6 +1701,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ? data.anthropicApiKey.value
           : this.anthropicApiKey,
       chatModel: data.chatModel.present ? data.chatModel.value : this.chatModel,
+      coachDailyLimit: data.coachDailyLimit.present
+          ? data.coachDailyLimit.value
+          : this.coachDailyLimit,
       chatProvider: data.chatProvider.present
           ? data.chatProvider.value
           : this.chatProvider,
@@ -1693,6 +1742,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('homeLayout: $homeLayout, ')
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
+          ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt')
@@ -1727,6 +1777,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     homeLayout,
     anthropicApiKey,
     chatModel,
+    coachDailyLimit,
     chatProvider,
     autoLockSeconds,
     updatedAt,
@@ -1760,6 +1811,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.homeLayout == this.homeLayout &&
           other.anthropicApiKey == this.anthropicApiKey &&
           other.chatModel == this.chatModel &&
+          other.coachDailyLimit == this.coachDailyLimit &&
           other.chatProvider == this.chatProvider &&
           other.autoLockSeconds == this.autoLockSeconds &&
           other.updatedAt == this.updatedAt);
@@ -1791,6 +1843,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String?> homeLayout;
   final Value<String?> anthropicApiKey;
   final Value<String?> chatModel;
+  final Value<int?> coachDailyLimit;
   final Value<String?> chatProvider;
   final Value<int> autoLockSeconds;
   final Value<int> updatedAt;
@@ -1821,6 +1874,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.homeLayout = const Value.absent(),
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
+    this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1852,6 +1906,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.homeLayout = const Value.absent(),
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
+    this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
     required int updatedAt,
@@ -1884,6 +1939,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? homeLayout,
     Expression<String>? anthropicApiKey,
     Expression<String>? chatModel,
+    Expression<int>? coachDailyLimit,
     Expression<String>? chatProvider,
     Expression<int>? autoLockSeconds,
     Expression<int>? updatedAt,
@@ -1919,6 +1975,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (homeLayout != null) 'home_layout': homeLayout,
       if (anthropicApiKey != null) 'anthropic_api_key': anthropicApiKey,
       if (chatModel != null) 'chat_model': chatModel,
+      if (coachDailyLimit != null) 'coach_daily_limit': coachDailyLimit,
       if (chatProvider != null) 'chat_provider': chatProvider,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1952,6 +2009,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String?>? homeLayout,
     Value<String?>? anthropicApiKey,
     Value<String?>? chatModel,
+    Value<int?>? coachDailyLimit,
     Value<String?>? chatProvider,
     Value<int>? autoLockSeconds,
     Value<int>? updatedAt,
@@ -1984,6 +2042,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       homeLayout: homeLayout ?? this.homeLayout,
       anthropicApiKey: anthropicApiKey ?? this.anthropicApiKey,
       chatModel: chatModel ?? this.chatModel,
+      coachDailyLimit: coachDailyLimit ?? this.coachDailyLimit,
       chatProvider: chatProvider ?? this.chatProvider,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -2073,6 +2132,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (chatModel.present) {
       map['chat_model'] = Variable<String>(chatModel.value);
     }
+    if (coachDailyLimit.present) {
+      map['coach_daily_limit'] = Variable<int>(coachDailyLimit.value);
+    }
     if (chatProvider.present) {
       map['chat_provider'] = Variable<String>(chatProvider.value);
     }
@@ -2116,6 +2178,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('homeLayout: $homeLayout, ')
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
+          ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4124,6 +4187,17 @@ class $ChatMessagesTableTable extends ChatMessagesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _requestsMeta = const VerificationMeta(
+    'requests',
+  );
+  @override
+  late final GeneratedColumn<int> requests = GeneratedColumn<int>(
+    'requests',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _inputTokensMeta = const VerificationMeta(
     'inputTokens',
   );
@@ -4165,6 +4239,7 @@ class $ChatMessagesTableTable extends ChatMessagesTable
     content,
     lookups,
     imageFile,
+    requests,
     inputTokens,
     outputTokens,
     createdAt,
@@ -4220,6 +4295,12 @@ class $ChatMessagesTableTable extends ChatMessagesTable
       context.handle(
         _imageFileMeta,
         imageFile.isAcceptableOrUnknown(data['image_file']!, _imageFileMeta),
+      );
+    }
+    if (data.containsKey('requests')) {
+      context.handle(
+        _requestsMeta,
+        requests.isAcceptableOrUnknown(data['requests']!, _requestsMeta),
       );
     }
     if (data.containsKey('input_tokens')) {
@@ -4281,6 +4362,10 @@ class $ChatMessagesTableTable extends ChatMessagesTable
         DriftSqlType.string,
         data['${effectivePrefix}image_file'],
       ),
+      requests: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests'],
+      ),
       inputTokens: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}input_tokens'],
@@ -4322,6 +4407,10 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
   /// directory - the same directory, and the same reconcile, as progress
   /// photos and exercise frames.
   final String? imageFile;
+
+  /// How many calls to the service this answer took: one, plus one for every
+  /// round of looking something up. A free tier counts calls, not questions.
+  final int? requests;
   final int? inputTokens;
   final int? outputTokens;
   final int createdAt;
@@ -4332,6 +4421,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     required this.content,
     this.lookups,
     this.imageFile,
+    this.requests,
     this.inputTokens,
     this.outputTokens,
     required this.createdAt,
@@ -4348,6 +4438,9 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     }
     if (!nullToAbsent || imageFile != null) {
       map['image_file'] = Variable<String>(imageFile);
+    }
+    if (!nullToAbsent || requests != null) {
+      map['requests'] = Variable<int>(requests);
     }
     if (!nullToAbsent || inputTokens != null) {
       map['input_tokens'] = Variable<int>(inputTokens);
@@ -4371,6 +4464,9 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       imageFile: imageFile == null && nullToAbsent
           ? const Value.absent()
           : Value(imageFile),
+      requests: requests == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requests),
       inputTokens: inputTokens == null && nullToAbsent
           ? const Value.absent()
           : Value(inputTokens),
@@ -4393,6 +4489,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       content: serializer.fromJson<String>(json['content']),
       lookups: serializer.fromJson<String?>(json['lookups']),
       imageFile: serializer.fromJson<String?>(json['imageFile']),
+      requests: serializer.fromJson<int?>(json['requests']),
       inputTokens: serializer.fromJson<int?>(json['inputTokens']),
       outputTokens: serializer.fromJson<int?>(json['outputTokens']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -4408,6 +4505,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       'content': serializer.toJson<String>(content),
       'lookups': serializer.toJson<String?>(lookups),
       'imageFile': serializer.toJson<String?>(imageFile),
+      'requests': serializer.toJson<int?>(requests),
       'inputTokens': serializer.toJson<int?>(inputTokens),
       'outputTokens': serializer.toJson<int?>(outputTokens),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -4421,6 +4519,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     String? content,
     Value<String?> lookups = const Value.absent(),
     Value<String?> imageFile = const Value.absent(),
+    Value<int?> requests = const Value.absent(),
     Value<int?> inputTokens = const Value.absent(),
     Value<int?> outputTokens = const Value.absent(),
     int? createdAt,
@@ -4431,6 +4530,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     content: content ?? this.content,
     lookups: lookups.present ? lookups.value : this.lookups,
     imageFile: imageFile.present ? imageFile.value : this.imageFile,
+    requests: requests.present ? requests.value : this.requests,
     inputTokens: inputTokens.present ? inputTokens.value : this.inputTokens,
     outputTokens: outputTokens.present ? outputTokens.value : this.outputTokens,
     createdAt: createdAt ?? this.createdAt,
@@ -4443,6 +4543,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       content: data.content.present ? data.content.value : this.content,
       lookups: data.lookups.present ? data.lookups.value : this.lookups,
       imageFile: data.imageFile.present ? data.imageFile.value : this.imageFile,
+      requests: data.requests.present ? data.requests.value : this.requests,
       inputTokens: data.inputTokens.present
           ? data.inputTokens.value
           : this.inputTokens,
@@ -4462,6 +4563,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
           ..write('content: $content, ')
           ..write('lookups: $lookups, ')
           ..write('imageFile: $imageFile, ')
+          ..write('requests: $requests, ')
           ..write('inputTokens: $inputTokens, ')
           ..write('outputTokens: $outputTokens, ')
           ..write('createdAt: $createdAt')
@@ -4477,6 +4579,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     content,
     lookups,
     imageFile,
+    requests,
     inputTokens,
     outputTokens,
     createdAt,
@@ -4491,6 +4594,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
           other.content == this.content &&
           other.lookups == this.lookups &&
           other.imageFile == this.imageFile &&
+          other.requests == this.requests &&
           other.inputTokens == this.inputTokens &&
           other.outputTokens == this.outputTokens &&
           other.createdAt == this.createdAt);
@@ -4503,6 +4607,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
   final Value<String> content;
   final Value<String?> lookups;
   final Value<String?> imageFile;
+  final Value<int?> requests;
   final Value<int?> inputTokens;
   final Value<int?> outputTokens;
   final Value<int> createdAt;
@@ -4514,6 +4619,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     this.content = const Value.absent(),
     this.lookups = const Value.absent(),
     this.imageFile = const Value.absent(),
+    this.requests = const Value.absent(),
     this.inputTokens = const Value.absent(),
     this.outputTokens = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -4526,6 +4632,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     required String content,
     this.lookups = const Value.absent(),
     this.imageFile = const Value.absent(),
+    this.requests = const Value.absent(),
     this.inputTokens = const Value.absent(),
     this.outputTokens = const Value.absent(),
     required int createdAt,
@@ -4542,6 +4649,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     Expression<String>? content,
     Expression<String>? lookups,
     Expression<String>? imageFile,
+    Expression<int>? requests,
     Expression<int>? inputTokens,
     Expression<int>? outputTokens,
     Expression<int>? createdAt,
@@ -4554,6 +4662,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
       if (content != null) 'content': content,
       if (lookups != null) 'lookups': lookups,
       if (imageFile != null) 'image_file': imageFile,
+      if (requests != null) 'requests': requests,
       if (inputTokens != null) 'input_tokens': inputTokens,
       if (outputTokens != null) 'output_tokens': outputTokens,
       if (createdAt != null) 'created_at': createdAt,
@@ -4568,6 +4677,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     Value<String>? content,
     Value<String?>? lookups,
     Value<String?>? imageFile,
+    Value<int?>? requests,
     Value<int?>? inputTokens,
     Value<int?>? outputTokens,
     Value<int>? createdAt,
@@ -4580,6 +4690,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
       content: content ?? this.content,
       lookups: lookups ?? this.lookups,
       imageFile: imageFile ?? this.imageFile,
+      requests: requests ?? this.requests,
       inputTokens: inputTokens ?? this.inputTokens,
       outputTokens: outputTokens ?? this.outputTokens,
       createdAt: createdAt ?? this.createdAt,
@@ -4608,6 +4719,9 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     if (imageFile.present) {
       map['image_file'] = Variable<String>(imageFile.value);
     }
+    if (requests.present) {
+      map['requests'] = Variable<int>(requests.value);
+    }
     if (inputTokens.present) {
       map['input_tokens'] = Variable<int>(inputTokens.value);
     }
@@ -4632,6 +4746,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
           ..write('content: $content, ')
           ..write('lookups: $lookups, ')
           ..write('imageFile: $imageFile, ')
+          ..write('requests: $requests, ')
           ..write('inputTokens: $inputTokens, ')
           ..write('outputTokens: $outputTokens, ')
           ..write('createdAt: $createdAt, ')
@@ -10492,6 +10607,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String?> homeLayout,
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
+      Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
       required int updatedAt,
@@ -10524,6 +10640,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String?> homeLayout,
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
+      Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
       Value<int> updatedAt,
@@ -10661,6 +10778,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get chatModel => $composableBuilder(
     column: $table.chatModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get coachDailyLimit => $composableBuilder(
+    column: $table.coachDailyLimit,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10814,6 +10936,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get coachDailyLimit => $composableBuilder(
+    column: $table.coachDailyLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get chatProvider => $composableBuilder(
     column: $table.chatProvider,
     builder: (column) => ColumnOrderings(column),
@@ -10954,6 +11081,11 @@ class $$AppSettingsTableTableAnnotationComposer
   GeneratedColumn<String> get chatModel =>
       $composableBuilder(column: $table.chatModel, builder: (column) => column);
 
+  GeneratedColumn<int> get coachDailyLimit => $composableBuilder(
+    column: $table.coachDailyLimit,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get chatProvider => $composableBuilder(
     column: $table.chatProvider,
     builder: (column) => column,
@@ -11030,6 +11162,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
+                Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
@@ -11060,6 +11193,7 @@ class $$AppSettingsTableTableTableManager
                 homeLayout: homeLayout,
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
+                coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
@@ -11092,6 +11226,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
+                Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
                 required int updatedAt,
@@ -11122,6 +11257,7 @@ class $$AppSettingsTableTableTableManager
                 homeLayout: homeLayout,
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
+                coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
                 updatedAt: updatedAt,
@@ -12689,6 +12825,7 @@ typedef $$ChatMessagesTableTableCreateCompanionBuilder =
       required String content,
       Value<String?> lookups,
       Value<String?> imageFile,
+      Value<int?> requests,
       Value<int?> inputTokens,
       Value<int?> outputTokens,
       required int createdAt,
@@ -12702,6 +12839,7 @@ typedef $$ChatMessagesTableTableUpdateCompanionBuilder =
       Value<String> content,
       Value<String?> lookups,
       Value<String?> imageFile,
+      Value<int?> requests,
       Value<int?> inputTokens,
       Value<int?> outputTokens,
       Value<int> createdAt,
@@ -12767,6 +12905,11 @@ class $$ChatMessagesTableTableFilterComposer
 
   ColumnFilters<String> get imageFile => $composableBuilder(
     column: $table.imageFile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requests => $composableBuilder(
+    column: $table.requests,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12843,6 +12986,11 @@ class $$ChatMessagesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get inputTokens => $composableBuilder(
     column: $table.inputTokens,
     builder: (column) => ColumnOrderings(column),
@@ -12905,6 +13053,9 @@ class $$ChatMessagesTableTableAnnotationComposer
 
   GeneratedColumn<String> get imageFile =>
       $composableBuilder(column: $table.imageFile, builder: (column) => column);
+
+  GeneratedColumn<int> get requests =>
+      $composableBuilder(column: $table.requests, builder: (column) => column);
 
   GeneratedColumn<int> get inputTokens => $composableBuilder(
     column: $table.inputTokens,
@@ -12982,6 +13133,7 @@ class $$ChatMessagesTableTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<String?> lookups = const Value.absent(),
                 Value<String?> imageFile = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
                 Value<int?> inputTokens = const Value.absent(),
                 Value<int?> outputTokens = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -12993,6 +13145,7 @@ class $$ChatMessagesTableTableTableManager
                 content: content,
                 lookups: lookups,
                 imageFile: imageFile,
+                requests: requests,
                 inputTokens: inputTokens,
                 outputTokens: outputTokens,
                 createdAt: createdAt,
@@ -13006,6 +13159,7 @@ class $$ChatMessagesTableTableTableManager
                 required String content,
                 Value<String?> lookups = const Value.absent(),
                 Value<String?> imageFile = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
                 Value<int?> inputTokens = const Value.absent(),
                 Value<int?> outputTokens = const Value.absent(),
                 required int createdAt,
@@ -13017,6 +13171,7 @@ class $$ChatMessagesTableTableTableManager
                 content: content,
                 lookups: lookups,
                 imageFile: imageFile,
+                requests: requests,
                 inputTokens: inputTokens,
                 outputTokens: outputTokens,
                 createdAt: createdAt,

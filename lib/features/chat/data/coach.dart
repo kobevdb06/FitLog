@@ -33,6 +33,7 @@ class CoachAnswer {
     required this.text,
     required this.lookups,
     required this.usage,
+    required this.requests,
   });
 
   final String text;
@@ -41,6 +42,12 @@ class CoachAnswer {
   final List<String> lookups;
 
   final CoachUsage usage;
+
+  /// How many calls to the service this one answer took.
+  ///
+  /// One question is not one request: every round of looking something up is
+  /// another call, and a daily free tier counts calls.
+  final int requests;
 }
 
 class Coach {
@@ -83,6 +90,7 @@ class Coach {
 
     final lookups = <String>[];
     var usage = CoachUsage.none;
+    var requests = 0;
 
     for (var round = 0; round <= maxToolRounds; round++) {
       final reply = await client.send(
@@ -92,6 +100,7 @@ class Coach {
         model: model,
       );
       usage = usage.plus(reply.usage);
+      requests++;
 
       if (!reply.wantsTools) {
         return CoachAnswer(
@@ -100,6 +109,7 @@ class Coach {
               : reply.text,
           lookups: lookups,
           usage: usage,
+          requests: requests,
         );
       }
 
@@ -113,6 +123,7 @@ class Coach {
               : reply.text,
           lookups: lookups,
           usage: usage,
+          requests: requests,
         );
       }
 

@@ -8,12 +8,111 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../data/ai_client.dart';
+import '../domain/coach_budget.dart';
 import 'chat_providers.dart';
+
+/// What today has cost, as a bar plus the numbers behind it.
+///
+/// The bar counts calls, not questions: a question where the coach looks
+/// something up in your logbook first is two calls or more, and a daily free
+/// tier counts calls. It also says, in so many words, that this is the app's
+/// own count - no service will tell a client what is left of your quota, and a
+/// bar that looked like it knew would be worse than no bar.
+class _DailyBar extends ConsumerWidget {
+  const _DailyBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final limit = ref.watch(coachDailyLimitProvider);
+    final usage =
+        ref.watch(coachUsageTodayProvider).value ?? CoachDayUsage.none;
+    final over = usage.isOver(limit);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${usage.requests} van $limit',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: over ? AppColors.danger : null,
+                  ),
+                ),
+              ),
+              Text(
+                '${usage.answers} '
+                '${usage.answers == 1 ? 'antwoord' : 'antwoorden'}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            child: LinearProgressIndicator(
+              value: usage.fractionOf(limit),
+              minHeight: 10,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              color: over ? AppColors.danger : AppColors.accent,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            _tokens(usage),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _window(ref.watch(coachProviderProvider)),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _tokens(CoachDayUsage usage) =>
+      '${_thousands(usage.inputTokens)} tokens in, '
+      '${_thousands(usage.outputTokens)} uit';
+
+  /// A count of calls, and where the day starts, in one line.
+  String _window(CoachProvider provider) => provider == CoachProvider.gemini
+      ? 'Elke opzoeking in je logboek is een eigen vraag aan Google. De teller '
+            'begint bij middernacht in Californië, want daar springt de '
+            "gratis laag terug — hier is dat rond negen uur 's ochtends. "
+            'Dit is wat de app zelf verstuurde; je echte tegoed kan niemand '
+            'opvragen.'
+      : 'Elke opzoeking in je logboek is een eigen vraag aan Anthropic. De '
+            'teller begint bij middernacht. Dit is wat de app zelf '
+            'verstuurde; je echte tegoed kan niemand opvragen.';
+
+  static String _thousands(int value) {
+    final text = '$value';
+    final buffer = StringBuffer();
+    for (var i = 0; i < text.length; i++) {
+      if (i > 0 && (text.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(text[i]);
+    }
+    return buffer.toString();
+  }
+}
 
 class CoachSettingsScreen extends ConsumerStatefulWidget {
   const CoachSettingsScreen({super.key});
@@ -153,6 +252,33 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
         );
   }
 
+  /// The limit is the user's own number, so it is typed rather than chosen
+  /// from a list the app made up.
+  Future<void> _pickLimit() async {
+    final current = ref.read(coachDailyLimitProvider);
+    final answer = await promptForText(
+      context,
+      title: 'Daglimiet',
+      initialValue: '$current',
+      hintText: 'aantal vragen per dag',
+      confirmLabel: 'Bewaren',
+    );
+    if (answer == null || !mounted) return;
+
+    final value = int.tryParse(answer.trim());
+    if (value == null || value <= 0) {
+      showSnack(context, 'Geef een getal groter dan nul.');
+      return;
+    }
+
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          AppSettingsTableCompanion(coachDailyLimit: Value(value)),
+        );
+  }
+
   Future<void> _clearThreads() async {
     final ok = await confirm(
       context,
@@ -173,6 +299,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     final model = ref.watch(coachModelProvider);
     final provider = ref.watch(coachProviderProvider);
     final guessed = ref.watch(coachProviderIsGuessedProvider);
+    final limit = ref.watch(coachDailyLimitProvider);
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
 
     return Scaffold(
@@ -262,6 +389,17 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
+            const SectionHeader('Verbruik vandaag'),
+            const _DailyBar(),
+            ListTile(
+              leading: const Icon(Icons.speed),
+              title: Text('Daglimiet: $limit vragen'),
+              subtitle: const Text(
+                'Je eigen plafond. Tik om het aan te passen.',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickLimit,
+            ),
             const SectionHeader('Model'),
             ListTile(
               leading: const Icon(Icons.tune),

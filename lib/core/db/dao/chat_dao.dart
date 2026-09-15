@@ -67,6 +67,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     required String content,
     String? lookups,
     String? imageFile,
+    int? requests,
     int? inputTokens,
     int? outputTokens,
   }) async {
@@ -80,6 +81,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
           content: content,
           lookups: Value(lookups),
           imageFile: Value(imageFile),
+          requests: Value(requests),
           inputTokens: Value(inputTokens),
           outputTokens: Value(outputTokens),
           createdAt: now,
@@ -99,6 +101,51 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     await delete(chatMessagesTable).go();
     await delete(chatThreadsTable).go();
   }
+
+  /// What was spent since [since]: calls, answers and tokens.
+  ///
+  /// An answer from before the app counted calls has no number; it is read as
+  /// one, which is the least it can have been.
+  Future<({int requests, int answers, int inputTokens, int outputTokens})>
+  usageSince(DateTime since) async {
+    final row = await customSelect(
+      'SELECT COUNT(*) AS answers, '
+      'COALESCE(SUM(COALESCE(requests, 1)), 0) AS requests, '
+      'COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens, '
+      'COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens '
+      "FROM chat_messages WHERE role = 'assistant' AND created_at >= ?",
+      variables: [Variable.withInt(since.millisecondsSinceEpoch)],
+      readsFrom: {chatMessagesTable},
+    ).getSingle();
+
+    return (
+      requests: row.read<int>('requests'),
+      answers: row.read<int>('answers'),
+      inputTokens: row.read<int>('input_tokens'),
+      outputTokens: row.read<int>('output_tokens'),
+    );
+  }
+
+  /// The same, as a stream, so the settings screen follows a conversation
+  /// happening in the other tab.
+  Stream<({int requests, int answers, int inputTokens, int outputTokens})>
+  watchUsageSince(DateTime since) =>
+      customSelect(
+        'SELECT COUNT(*) AS answers, '
+        'COALESCE(SUM(COALESCE(requests, 1)), 0) AS requests, '
+        'COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens, '
+        'COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens '
+        "FROM chat_messages WHERE role = 'assistant' AND created_at >= ?",
+        variables: [Variable.withInt(since.millisecondsSinceEpoch)],
+        readsFrom: {chatMessagesTable},
+      ).watchSingle().map(
+        (row) => (
+          requests: row.read<int>('requests'),
+          answers: row.read<int>('answers'),
+          inputTokens: row.read<int>('input_tokens'),
+          outputTokens: row.read<int>('output_tokens'),
+        ),
+      );
 
   /// Every photo a conversation points at, so the startup reconcile does not
   /// take them for orphans and delete them.

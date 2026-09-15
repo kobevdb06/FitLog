@@ -2156,3 +2156,29 @@ De regel is dus: wat een scherm nodig heeft, kijkt dat scherm in `build` aan,
 en een callback krijgt die waarde mee in plaats van er zelf naar te grijpen.
 Waar dat niet kan, gaat de vraag rechtstreeks naar de DAO — zoals de sleutel
 nu uit `settingsDao.apiKey()` komt.
+
+## 131. De balk telt wat de app verstuurde, niet wat je nog over hebt
+
+De vraag was een balk met je dagelijkse tegoed. Het eerlijke antwoord: dat
+tegoed is niet op te vragen. Noch Google noch Anthropic geeft een client een
+endpoint dat zegt hoeveel er van een gratis laag over is; je merkt het pas aan
+een 429. Een balk die doet alsof hij het weet, is erger dan geen balk.
+
+Wat er wél is, is een telling van wat deze app zelf deed: het aantal calls en
+de tokens komen met elk antwoord mee terug van de dienst. De balk zet dat af
+tegen een getal dat de gebruiker zelf instelt (250 om mee te beginnen), en het
+scherm zegt met zoveel woorden dat dit de eigen telling is.
+
+Twee dingen die het verschil maken tussen een nuttige en een misleidende balk.
+
+Hij telt **calls**, geen vragen. Een vraag waarbij de coach eerst iets in je
+logboek opzoekt is er minstens twee, en een gratis laag telt ook calls. Daarom
+staat er nu bij elk antwoord hoeveel calls het kostte (schema 24); een antwoord
+van voor die kolom telt als één, het minimum dat het geweest kan zijn.
+
+En de dag begint waar de dienst hem laat beginnen. De gratis laag van Google
+springt terug om middernacht in Californië — hier rond negen uur 's ochtends.
+Per lokale kalenderdag tellen zou om acht uur 's ochtends "3 vandaag" tonen
+terwijl Google nog tweehonderd van gisteren op de teller had staan, precies op
+het moment dat iemand hierop kijkt. Voor Anthropic, waar geen daglimiet
+bestaat, is het een budget van jezelf en dus je eigen middernacht.

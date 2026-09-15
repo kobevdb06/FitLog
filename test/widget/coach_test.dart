@@ -166,6 +166,86 @@ void main() {
     });
   });
 
+  group('de balk met het dagverbruik', () {
+    testWidgets('staat in de instellingen, niet in de chat', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+
+      expect(find.text('VERBRUIK VANDAAG'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.text('Daglimiet: 250 vragen'), findsOneWidget);
+    });
+
+    testWidgets('telt de calls van vandaag, niet de berichten', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Vraag');
+      // Eén antwoord dat twee calls kostte: de coach zocht eerst iets op.
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'user',
+        content: 'Welke routines heb ik?',
+      );
+      await db.chatDao.addMessage(
+        id: 'm-2',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Nog geen.',
+        requests: 2,
+        inputTokens: 1300,
+        outputTokens: 50,
+      );
+
+      await pump(tester, const CoachSettingsScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 van 250'), findsOneWidget);
+      expect(find.text('1 antwoord'), findsOneWidget);
+      expect(find.text('1.300 tokens in, 50 uit'), findsOneWidget);
+    });
+
+    testWidgets('en zegt erbij dat het de eigen telling is', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+
+      expect(
+        find.textContaining('je echte tegoed kan niemand opvragen'),
+        findsOneWidget,
+      );
+      // En waar de dag van Google begint.
+      expect(find.textContaining('Californië'), findsOneWidget);
+    });
+
+    testWidgets('de limiet is er een die je zelf zet', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+
+      await tester.tap(find.text('Daglimiet: 250 vragen'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '40');
+      await tester.tap(find.widgetWithText(FilledButton, 'Bewaren'));
+      await tester.pumpAndSettle();
+
+      expect((await db.settingsDao.getSettings()).coachDailyLimit, 40);
+      expect(find.text('Daglimiet: 40 vragen'), findsOneWidget);
+    });
+
+    testWidgets('en onzin als limiet wordt niet bewaard', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+
+      await tester.tap(find.text('Daglimiet: 250 vragen'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'nul komma nul');
+      await tester.tap(find.widgetWithText(FilledButton, 'Bewaren'));
+      await tester.pumpAndSettle();
+
+      expect((await db.settingsDao.getSettings()).coachDailyLimit, isNull);
+      expect(find.text('Geef een getal groter dan nul.'), findsOneWidget);
+    });
+  });
+
   group('eerdere gesprekken', () {
     testWidgets('staan in de lijst achter het klokje', (tester) async {
       // Ze stonden er niet: het scherm las een stream waar niemand op

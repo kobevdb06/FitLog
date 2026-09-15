@@ -145,6 +145,15 @@ class AppSettingsTable extends Table {
   /// Which model the coach talks to. Null means the app's own default.
   TextColumn get chatModel => text().named('chat_model').nullable()();
 
+  /// How many calls a day the user wants to allow themselves, or null for the
+  /// app's own starting figure.
+  ///
+  /// Their number, not the service's: no API tells a client what is left of a
+  /// free tier, so this is a budget the user sets and the app measures against
+  /// what it actually sent.
+  IntColumn get coachDailyLimit =>
+      integer().named('coach_daily_limit').nullable()();
+
   /// Which service the key belongs to, when the user has said so themselves.
   ///
   /// Null means "work it out from the key", which is right almost always and
@@ -263,6 +272,10 @@ class ChatMessagesTable extends Table {
   /// directory - the same directory, and the same reconcile, as progress
   /// photos and exercise frames.
   TextColumn get imageFile => text().named('image_file').nullable()();
+
+  /// How many calls to the service this answer took: one, plus one for every
+  /// round of looking something up. A free tier counts calls, not questions.
+  IntColumn get requests => integer().nullable()();
 
   IntColumn get inputTokens => integer().named('input_tokens').nullable()();
   IntColumn get outputTokens => integer().named('output_tokens').nullable()();

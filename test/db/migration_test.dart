@@ -111,7 +111,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 23);
+    expect(raw.select('PRAGMA user_version').first.values.first, 24);
     raw.close();
   });
 
@@ -215,6 +215,12 @@ void main() {
       chatColumns.map((row) => row.read<String>('name')),
       contains('image_file'),
     );
+    // v24: how many calls an answer took, and a daily budget of your own.
+    expect(
+      chatColumns.map((row) => row.read<String>('name')),
+      contains('requests'),
+    );
+    expect(settings.coachDailyLimit, isNull);
     expect(await db.chatDao.countThreads(), 0);
 
     // v4 also adds the PR columns; the existing exercise is an ordinary one.
@@ -260,7 +266,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 23);
+    expect(db.schemaVersion, 24);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

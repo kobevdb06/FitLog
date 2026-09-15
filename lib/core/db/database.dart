@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -239,6 +239,15 @@ class AppDatabase extends _$AppDatabase {
           // from before v21 gets it created above, from today's definition,
           // with this column already in it.
           await m.addColumn(chatMessagesTable, chatMessagesTable.imageFile);
+        }
+        if (from >= 21 && from < 24) {
+          // How many calls an answer took. Null for answers from before the
+          // app counted, which the meter reads as one call - the least it can
+          // have been.
+          await m.addColumn(chatMessagesTable, chatMessagesTable.requests);
+        }
+        if (from < 24) {
+          await m.addColumn(appSettingsTable, appSettingsTable.coachDailyLimit);
         }
       });
 

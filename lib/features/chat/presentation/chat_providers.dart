@@ -18,6 +18,7 @@ import '../../photos/data/photo_store.dart';
 import '../data/ai_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
+import '../domain/coach_budget.dart';
 import '../domain/coach_prompt.dart';
 
 part 'chat_providers.g.dart';
@@ -77,6 +78,33 @@ Stream<List<ChatThreadRow>> chatThreads(Ref ref) =>
 @riverpod
 Stream<List<ChatMessageRow>> chatMessages(Ref ref, String threadId) =>
     ref.watch(databaseProvider).chatDao.watchMessages(threadId);
+
+/// What the user allows themselves in a day, in calls to the service.
+@riverpod
+int coachDailyLimit(Ref ref) =>
+    ref.watch(settingsProvider).value?.coachDailyLimit ?? kDefaultDailyLimit;
+
+/// What has been spent since this service's day began.
+///
+/// A count of what this app sent, not a reading of what is left over there:
+/// no API tells a client that.
+@riverpod
+Stream<CoachDayUsage> coachUsageToday(Ref ref) {
+  final since = coachDayStart(DateTime.now(), ref.watch(coachProviderProvider));
+  return ref
+      .watch(databaseProvider)
+      .chatDao
+      .watchUsageSince(since)
+      .map(
+        (row) => CoachDayUsage(
+          requests: row.requests,
+          answers: row.answers,
+          inputTokens: row.inputTokens,
+          outputTokens: row.outputTokens,
+          since: since,
+        ),
+      );
+}
 
 /// Where the conversation stands: waiting for an answer, or holding a failure.
 class CoachState {
@@ -221,6 +249,7 @@ class CoachController extends _$CoachController {
         role: 'assistant',
         content: answer.text,
         lookups: reported.isEmpty ? null : reported.join('\n'),
+        requests: answer.requests,
         inputTokens: answer.usage.inputTokens,
         outputTokens: answer.usage.outputTokens,
       );

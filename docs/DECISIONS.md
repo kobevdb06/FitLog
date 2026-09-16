@@ -2298,3 +2298,19 @@ Ze verschijnen alleen als de sleutel ze werkelijk kan gebruiken, want de lijst
 komt van Google. Heeft de sleutel er geen, dan staat er ook geen kopje
 "Aanbevolen" boven een lijst waarin niets aanbevolen is - dan is het gewoon één
 lijst.
+
+## 137. Een beeldmodel is geen coach, ook al praat het hetzelfde
+
+"Nano Banana 2 Lite" stond in de lijst, en zelfs onder Aanbevolen: het heet
+iets met flash-lite, het is een gemini-3-model, en het antwoordt op
+`generateContent` — alleen antwoordt het met een plaatje.
+
+Het filter keek naar losse woorden in de id (`imagen`, `veo`, `tts`) en miste
+zowel `image` als de naam waaronder Google die modellen uitbrengt. Nu kijkt het
+naar de id én de weergavenaam, en vallen `image`, `banana` en `audio` er ook
+onder. De aanbevelingsregel bouwt daarop voort in plaats van ernaast te staan:
+wat geen chatmodel is, kan nooit aanbevolen zijn.
+
+Het blijft raden op namen, en dat is eerlijk gezegd broos — Google zegt in die
+lijst niet met zoveel woorden "dit levert beeld op". Beter dan het alternatief:
+een model aanbevelen dat op elke vraag een plaatje terugstuurt.

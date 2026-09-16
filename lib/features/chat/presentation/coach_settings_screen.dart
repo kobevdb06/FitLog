@@ -261,7 +261,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
                 for (final model in group)
                   ListTile(
                     leading: Icon(
-                      isRecommendedModel(model.wire)
+                      isRecommendedModel(model.wire, model.label)
                           ? Icons.star_outline
                           : Icons.smart_toy_outlined,
                     ),
@@ -296,7 +296,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
   List<(String?, List<CoachModelInfo>)> _grouped(List<CoachModelInfo> models) {
     final recommended = [
       for (final model in models)
-        if (isRecommendedModel(model.wire)) model,
+        if (isRecommendedModel(model.wire, model.label)) model,
     ];
     if (recommended.isEmpty) return [(null, models)];
 
@@ -306,7 +306,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
         'Alles wat je sleutel kan',
         [
           for (final model in models)
-            if (!isRecommendedModel(model.wire)) model,
+            if (!isRecommendedModel(model.wire, model.label)) model,
         ],
       ),
     ];

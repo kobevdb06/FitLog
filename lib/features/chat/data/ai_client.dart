@@ -85,15 +85,39 @@ enum CoachProvider {
 /// `CoachProvider.anthropic` back is this one line.
 const List<CoachProvider> kOfferedProviders = [CoachProvider.gemini];
 
+/// Whether a model is one this app can hold a conversation with.
+///
+/// Google's list is everything its API can do, and most of that is not a
+/// coach: embeddings, speech, video, and the image models - the "Nano Banana"
+/// family - which answer a question with a picture. They speak the same
+/// endpoint, so the name is what gives them away.
+bool isChatModel(String wire, [String label = '']) {
+  final name = '$wire $label'.toLowerCase();
+  const notAChat = [
+    'embedding',
+    'imagen',
+    'image',
+    'banana',
+    'veo',
+    'tts',
+    'audio',
+    'aqa',
+    'live',
+  ];
+  return !notAChat.any(name.contains);
+}
+
 /// Which models the app puts at the top of the picker.
 ///
 /// A rule rather than a list of names, for the same reason the list itself is
 /// fetched instead of shipped: the light Gemini 3 models are the ones with
 /// room to spare in the free tier, and there will be more of them than the
 /// two that exist while this is being written.
-bool isRecommendedModel(String wire) {
+bool isRecommendedModel(String wire, [String label = '']) {
   final name = wire.toLowerCase();
-  return name.startsWith('gemini-3') && name.contains('flash-lite');
+  return isChatModel(wire, label) &&
+      name.startsWith('gemini-3') &&
+      name.contains('flash-lite');
 }
 
 /// The wire version of the Anthropic messages API this client speaks.
@@ -504,14 +528,17 @@ class AiClient {
     final talks = methods is List && methods.contains('generateContent');
     if (!talks) return null;
 
-    const unusable = ['embedding', 'imagen', 'veo', 'tts', 'aqa', 'live'];
-    if (unusable.any(wire.contains)) return null;
+    final label = entry['displayName'] is String
+        ? entry['displayName']! as String
+        : wire;
+
+    // An image model answers generateContent too, with a picture. The name is
+    // what tells them apart, so both the id and the name it goes by are read.
+    if (!isChatModel(wire, label)) return null;
 
     return CoachModelInfo(
       wire: wire,
-      label: entry['displayName'] is String
-          ? entry['displayName']! as String
-          : wire,
+      label: label,
       description: entry['description'] is String
           ? entry['description']! as String
           : null,

@@ -90,6 +90,8 @@ void main() {
       expect(isRecommendedModel('gemini-3.7-flash-lite-preview'), isTrue);
 
       expect(isRecommendedModel('gemini-3-pro'), isFalse);
+      // Een beeldmodel is nooit aanbevolen, ook niet met flash-lite erin.
+      expect(isRecommendedModel('gemini-3-flash-lite-image-preview'), isFalse);
       expect(isRecommendedModel('gemini-2.5-flash-lite'), isFalse);
       expect(isRecommendedModel('claude-sonnet-5'), isFalse);
     });
@@ -170,6 +172,50 @@ void main() {
       final models = await client.listModels();
 
       expect(models.map((m) => m.wire), ['gemini-3-pro']);
+    });
+
+    test('ook de beeldmodellen, hoe licht ze ook heten', () async {
+      // Nano Banana antwoordt op generateContent met een plaatje. Het is
+      // geen coach, en het hoort dus zeker niet onder "Aanbevolen".
+      final client = clientThatAnswers(200, {
+        'models': [
+          {
+            'name': 'models/gemini-3-flash-lite-image-preview',
+            'displayName': 'Nano Banana 2 Lite',
+            'supportedGenerationMethods': ['generateContent'],
+          },
+          {
+            'name': 'models/gemini-3-pro-image-preview',
+            'displayName': 'Nano Banana Pro',
+            'supportedGenerationMethods': ['generateContent'],
+          },
+          {
+            'name': 'models/gemini-3.5-flash-lite',
+            'displayName': 'Gemini 3.5 Flash Lite',
+            'supportedGenerationMethods': ['generateContent'],
+          },
+        ],
+      }, key: 'AIzaSyGeheim123');
+
+      final models = await client.listModels();
+
+      expect(models.map((m) => m.wire), ['gemini-3.5-flash-lite']);
+    });
+
+    test('en een beeldmodel dat alleen aan zijn naam te zien is ook', () {
+      // Zou de id niets verraden, dan doet de naam het.
+      expect(
+        isChatModel('gemini-3-flash-lite-x', 'Nano Banana 2 Lite'),
+        isFalse,
+      );
+      expect(
+        isRecommendedModel('gemini-3-flash-lite-x', 'Nano Banana 2 Lite'),
+        isFalse,
+      );
+      expect(
+        isRecommendedModel('gemini-3.5-flash-lite', 'Gemini 3.5 Flash Lite'),
+        isTrue,
+      );
     });
 
     test(

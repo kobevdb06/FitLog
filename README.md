@@ -7,9 +7,10 @@ loggen, voortgang zien.
 analytics, geen crash reporting, geen advertenties.
 
 Één uitzondering, sinds 1.21: de AI-coach. Die werkt alleen met een
-API-sleutel die de gebruiker zelf invult — van Google of van Anthropic, de app
-leest aan de sleutel af welke — praat alleen met `generativelanguage.googleapis.com`
-of `api.anthropic.com`, en zonder sleutel opent de app geen enkele verbinding. De
+API-sleutel die de gebruiker zelf invult bij Google AI Studio, praat alleen met
+`generativelanguage.googleapis.com`, en zonder sleutel opent de app geen enkele
+verbinding. De Anthropic-kant is geschreven en getest maar staat uit als keuze
+(`kOfferedProviders`), zodat één dienst goed werkt in plaats van twee half. De
 `INTERNET`-permissie staat daarom wel in het manifest — een Android-permissie
 wordt bij het bouwen vastgelegd, niet wanneer iemand een coach wil. Wat de
 belofte overeind houdt is

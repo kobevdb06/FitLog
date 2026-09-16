@@ -46,8 +46,9 @@ void main() {
         databaseProvider.overrideWithValue(db),
         appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
         coachClientFactoryProvider.overrideWithValue(
-          (apiKey) => AiClient(
+          (apiKey, provider) => AiClient(
             apiKey: apiKey,
+            provider: provider,
             client: MockClient((request) async {
               final reply =
                   replies[next < replies.length ? next : replies.length - 1];

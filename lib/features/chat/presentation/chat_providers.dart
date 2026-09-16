@@ -30,11 +30,17 @@ const _uuid = Uuid();
 
 /// How a client is made, so a test can hand over one that answers from
 /// memory instead of from the network.
-typedef CoachClientFactory = AiClient Function(String apiKey);
+///
+/// The service is passed in rather than read off the key: the app decides
+/// which one it offers, and the client should not quietly disagree.
+typedef CoachClientFactory = AiClient Function(
+  String apiKey,
+  CoachProvider provider,
+);
 
 @riverpod
 CoachClientFactory coachClientFactory(Ref ref) =>
-    (apiKey) => AiClient(apiKey: apiKey);
+    (apiKey, provider) => AiClient(apiKey: apiKey, provider: provider);
 
 @riverpod
 String? coachApiKey(Ref ref) {
@@ -46,25 +52,19 @@ String? coachApiKey(Ref ref) {
 @riverpod
 bool coachEnabled(Ref ref) => ref.watch(coachApiKeyProvider) != null;
 
-/// Which service the key belongs to: what the user said, or else what the
-/// key looks like.
+/// Which service the coach talks to.
+///
+/// Only one is offered at the moment, so there is nothing to guess and nothing
+/// to choose. A stored choice from when there were two is honoured as long as
+/// that service is still on offer, and otherwise ignored rather than used.
 @riverpod
 CoachProvider coachProvider(Ref ref) {
   final chosen = CoachProvider.fromWire(
     ref.watch(settingsProvider).value?.chatProvider,
   );
-  if (chosen != null) return chosen;
-
-  final key = ref.watch(coachApiKeyProvider);
-  return key == null ? CoachProvider.gemini : CoachProvider.forKey(key);
+  if (chosen != null && kOfferedProviders.contains(chosen)) return chosen;
+  return kOfferedProviders.first;
 }
-
-/// Whether the service was worked out rather than chosen, which is what the
-/// settings screen says out loud.
-@riverpod
-bool coachProviderIsGuessed(Ref ref) =>
-    CoachProvider.fromWire(ref.watch(settingsProvider).value?.chatProvider) ==
-    null;
 
 /// Which model to ask, as the service names it.
 ///
@@ -92,7 +92,10 @@ Future<List<CoachModelInfo>> coachModels(Ref ref) async {
   final key = ref.watch(coachApiKeyProvider);
   if (key == null) return const [];
 
-  final client = ref.watch(coachClientFactoryProvider)(key);
+  final client = ref.watch(coachClientFactoryProvider)(
+    key,
+    ref.watch(coachProviderProvider),
+  );
   try {
     return await client.listModels();
   } finally {
@@ -244,7 +247,10 @@ class CoachController extends _$CoachController {
 
     final image = imageFile == null ? null : await _encode(paths, imageFile);
 
-    final client = ref.read(coachClientFactoryProvider)(key);
+    final client = ref.read(coachClientFactoryProvider)(
+      key,
+      ref.read(coachProviderProvider),
+    );
     try {
       final settings = ref.read(settingsProvider).value;
       final profile = ref.read(userProfileProvider).value;
@@ -399,7 +405,10 @@ class CoachController extends _$CoachController {
   /// One cheap call, to find out whether a key works before the user types a
   /// question and waits for a failure.
   Future<String?> testKey(String key) async {
-    final client = ref.read(coachClientFactoryProvider)(key.trim());
+    final client = ref.read(coachClientFactoryProvider)(
+      key.trim(),
+      ref.read(coachProviderProvider),
+    );
     try {
       await client.send(
         system: 'Antwoord met het woord ok.',

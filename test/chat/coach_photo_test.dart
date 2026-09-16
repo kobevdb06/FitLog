@@ -55,8 +55,9 @@ void main() {
         databaseProvider.overrideWithValue(db),
         appPathsProvider.overrideWith((ref) => paths),
         coachClientFactoryProvider.overrideWithValue(
-          (apiKey) => AiClient(
+          (apiKey, provider) => AiClient(
             apiKey: apiKey,
+            provider: provider,
             client: MockClient((request) async {
               sent.add(request.body);
               return http.Response(

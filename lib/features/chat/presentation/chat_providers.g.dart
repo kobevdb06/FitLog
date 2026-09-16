@@ -55,7 +55,7 @@ final class CoachClientFactoryProvider
 }
 
 String _$coachClientFactoryHash() =>
-    r'e69daeb2b2eab167230a5c4380373cf50606e995';
+    r'74c5013af5fa09c6ac9640f9340622d92f966942';
 
 @ProviderFor(coachApiKey)
 final coachApiKeyProvider = CoachApiKeyProvider._();
@@ -143,20 +143,29 @@ final class CoachEnabledProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$coachEnabledHash() => r'2f1cf687f29e9e40a02bbbaf0c50fec54559931a';
 
-/// Which service the key belongs to: what the user said, or else what the
-/// key looks like.
+/// Which service the coach talks to.
+///
+/// Only one is offered at the moment, so there is nothing to guess and nothing
+/// to choose. A stored choice from when there were two is honoured as long as
+/// that service is still on offer, and otherwise ignored rather than used.
 
 @ProviderFor(coachProvider)
 final coachProviderProvider = CoachProviderProvider._();
 
-/// Which service the key belongs to: what the user said, or else what the
-/// key looks like.
+/// Which service the coach talks to.
+///
+/// Only one is offered at the moment, so there is nothing to guess and nothing
+/// to choose. A stored choice from when there were two is honoured as long as
+/// that service is still on offer, and otherwise ignored rather than used.
 
 final class CoachProviderProvider
     extends $FunctionalProvider<CoachProvider, CoachProvider, CoachProvider>
     with $Provider<CoachProvider> {
-  /// Which service the key belongs to: what the user said, or else what the
-  /// key looks like.
+  /// Which service the coach talks to.
+  ///
+  /// Only one is offered at the moment, so there is nothing to guess and nothing
+  /// to choose. A stored choice from when there were two is honoured as long as
+  /// that service is still on offer, and otherwise ignored rather than used.
   CoachProviderProvider._()
     : super(
         from: null,
@@ -190,57 +199,7 @@ final class CoachProviderProvider
   }
 }
 
-String _$coachProviderHash() => r'd07c02193dab2ccf552b5d1fbbb18220b0f09d6e';
-
-/// Whether the service was worked out rather than chosen, which is what the
-/// settings screen says out loud.
-
-@ProviderFor(coachProviderIsGuessed)
-final coachProviderIsGuessedProvider = CoachProviderIsGuessedProvider._();
-
-/// Whether the service was worked out rather than chosen, which is what the
-/// settings screen says out loud.
-
-final class CoachProviderIsGuessedProvider
-    extends $FunctionalProvider<bool, bool, bool>
-    with $Provider<bool> {
-  /// Whether the service was worked out rather than chosen, which is what the
-  /// settings screen says out loud.
-  CoachProviderIsGuessedProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'coachProviderIsGuessedProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$coachProviderIsGuessedHash();
-
-  @$internal
-  @override
-  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  bool create(Ref ref) {
-    return coachProviderIsGuessed(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
-}
-
-String _$coachProviderIsGuessedHash() =>
-    r'f7d5654cb5b2710157ac670992ec46414a0e7dc4';
+String _$coachProviderHash() => r'bd991600820ae03f00efb7c6c252e1f00668c64d';
 
 /// Which model to ask, as the service names it.
 ///
@@ -396,7 +355,7 @@ final class CoachModelsProvider
   }
 }
 
-String _$coachModelsHash() => r'513c4b8214c0ad918d50edfcfff71a1a3fcc8c07';
+String _$coachModelsHash() => r'37dcac415f13133b4252325446a787700c8f5e93';
 
 @ProviderFor(chatThreads)
 final chatThreadsProvider = ChatThreadsProvider._();
@@ -650,7 +609,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'b262502e3e844993185280f2058a63d43fb17478';
+String _$coachControllerHash() => r'7cb536c0bc8ca51860ad76a5bc6d44b9853feb42';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

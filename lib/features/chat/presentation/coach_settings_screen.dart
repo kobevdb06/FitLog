@@ -136,12 +136,32 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     final key = await promptForText(
       context,
       title: 'API-sleutel',
-      hintText: 'sk-ant-...',
+      hintText: 'AIza... of AQ....',
       confirmLabel: 'Bewaren',
     );
     if (key == null || !mounted) return;
 
-    await ref.read(databaseProvider).settingsDao.setApiKey(key);
+    final trimmed = key.trim();
+    if (trimmed.isEmpty) {
+      await ref.read(databaseProvider).settingsDao.setApiKey(null);
+      if (mounted) setState(() => _result = null);
+      return;
+    }
+
+    // A key that unmistakably belongs to a service this version does not
+    // offer is refused here rather than on the first question - the failure
+    // would otherwise arrive as a rejected request that says nothing useful.
+    final belongsTo = CoachProvider.forKey(trimmed);
+    if (!kOfferedProviders.contains(belongsTo)) {
+      showSnack(
+        context,
+        'Dat lijkt een sleutel van ${belongsTo.label}. FitLog werkt op dit '
+        'moment alleen met een sleutel van Google AI Studio.',
+      );
+      return;
+    }
+
+    await ref.read(databaseProvider).settingsDao.setApiKey(trimmed);
     if (mounted) setState(() => _result = null);
   }
 
@@ -177,49 +197,6 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
       _testing = false;
       _result = failure ?? 'De sleutel werkt.';
     });
-  }
-
-  /// Sets the service straight when the guess is wrong, or hands it back to
-  /// the guess.
-  Future<void> _pickProvider() async {
-    final guessed = ref.read(coachProviderIsGuessedProvider);
-    final current = ref.read(coachProviderProvider);
-
-    final picked = await showAppSheet<String>(
-      context: context,
-      title: 'Van welke dienst is je sleutel?',
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.auto_awesome),
-            title: const Text('Automatisch'),
-            subtitle: const Text('Afgeleid uit de sleutel zelf'),
-            selected: guessed,
-            onTap: () => Navigator.of(context).pop('auto'),
-          ),
-          const Divider(height: 1),
-          for (final provider in CoachProvider.values)
-            ListTile(
-              leading: const Icon(Icons.cloud_outlined),
-              title: Text(provider.label),
-              selected: !guessed && provider == current,
-              onTap: () => Navigator.of(context).pop(provider.wire),
-            ),
-        ],
-      ),
-    );
-    if (picked == null || !mounted) return;
-
-    await ref
-        .read(databaseProvider)
-        .settingsDao
-        .updateSettings(
-          AppSettingsTableCompanion(
-            chatProvider: Value(picked == 'auto' ? null : picked),
-          ),
-        );
-    if (mounted) setState(() => _result = null);
   }
 
   /// The models this key may use, asked of the service.
@@ -348,8 +325,6 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
   Widget build(BuildContext context) {
     final key = ref.watch(coachApiKeyProvider);
     final model = ref.watch(coachModelProvider);
-    final provider = ref.watch(coachProviderProvider);
-    final guessed = ref.watch(coachProviderIsGuessedProvider);
     final limit = ref.watch(coachDailyLimitProvider);
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
 
@@ -370,10 +345,9 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               message:
                   'Dit is het enige deel van FitLog dat internet gebruikt, en '
                   'het werkt alleen met een sleutel van jezelf. Je vraag gaat '
-                  'naar de dienst van die sleutel, samen met wat de coach in '
-                  'je logboek opvraagt om te antwoorden; onder elk antwoord '
-                  'staat wat dat was. Zonder sleutel maakt de app geen '
-                  'verbinding.',
+                  'naar Google, samen met wat de coach in je logboek opvraagt '
+                  'om te antwoorden; onder elk antwoord staat wat dat was. '
+                  'Zonder sleutel maakt de app geen verbinding.',
             ),
           ),
           const SectionHeader('Sleutel'),
@@ -382,26 +356,14 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             title: Text(key == null ? 'Nog geen sleutel' : _masked(key)),
             subtitle: Text(
               key == null
-                  ? 'Een sleutel van Google AI Studio (gratis laag) of van '
-                        'Anthropic. Plak hem hier; de app raadt welke van de '
-                        'twee het is.'
+                  ? 'Een sleutel van Google AI Studio. Die heeft een gratis '
+                        'laag; maak er een aan op aistudio.google.com/apikey.'
                   : 'Bewaard in je versleutelde database, achter je pincode.',
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: _enterKey,
           ),
-          if (key != null)
-            ListTile(
-              leading: const Icon(Icons.cloud_outlined),
-              title: Text(provider.label),
-              subtitle: Text(
-                guessed
-                    ? 'Afgeleid uit je sleutel. Klopt dat niet, tik hier.'
-                    : 'Door jou gekozen.',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickProvider,
-            ),
+
           if (key != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),

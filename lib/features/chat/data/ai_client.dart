@@ -77,6 +77,14 @@ enum CoachProvider {
   }
 }
 
+/// Which services the app offers to the user right now.
+///
+/// Anthropic is written, tested and working, but switched off as a choice
+/// while the coach is made to work properly on Google's free tier: one service
+/// done right beats two done half. Everything else reads this list, so putting
+/// `CoachProvider.anthropic` back is this one line.
+const List<CoachProvider> kOfferedProviders = [CoachProvider.gemini];
+
 /// The wire version of the Anthropic messages API this client speaks.
 const String kAnthropicVersion = '2023-06-01';
 

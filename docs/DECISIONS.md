@@ -2256,3 +2256,27 @@ Het viel pas op met een echte sleutel en een echt model. De namaak-API in de
 tests antwoordde netjes zonder handtekening, want ik wist niet dat ze bestond.
 Nu staat ze in de testantwoorden, en een test faalt zodra ze onderweg
 verdwijnt.
+
+## 135. Eén dienst tegelijk: Anthropic staat uit als keuze
+
+Twee diensten ondersteunen betekent twee vormen, twee foutafhandelingen en
+twee manieren waarop iets stuk kan zijn dat je niet allebei kan uitproberen.
+Met een gratis Gemini-sleutel in de hand is Google de dienst die er werkelijk
+toe doet, dus staat Anthropic uit als keuze.
+
+Niet weg: `kOfferedProviders` is één lijst met één element, en die regel
+uitbreiden brengt hem terug. De client, de vormen en hun tests blijven staan;
+wat weg is, is de mogelijkheid om er een sleutel voor in te vullen.
+
+Twee dingen volgen daaruit.
+
+Een sleutel die onmiskenbaar van een andere dienst is (`sk-ant-`) wordt
+geweigerd bij het invullen, met de reden. Anders mislukt pas je eerste vraag,
+met een foutmelding van een server die niets weet van deze keuze.
+
+En de client krijgt de dienst nu mee in plaats van hem uit de sleutel af te
+leiden. De app beslist wat ze aanbiedt; de client hoort daar niet stilletjes
+van te mogen afwijken.
+
+De schermtests praten nu ook Gemini: de namaak-API antwoordt in Google's vorm,
+want dat is de enige vorm die de app nog spreekt.

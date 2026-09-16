@@ -43,8 +43,9 @@ void main() {
 
   /// A coach whose API says [reply] to everything.
   CoachClientFactory apiSaying(Object reply, {int status = 200}) =>
-      (apiKey) => AiClient(
+      (apiKey, provider) => AiClient(
         apiKey: apiKey,
+        provider: provider,
         client: MockClient((request) async {
           sent.add(request.body);
           return http.Response(
@@ -55,11 +56,19 @@ void main() {
         }),
       );
 
+  /// Google's shape, because Google is the only service the app offers.
   Map<String, Object?> says(String text) => {
-    'content': [
-      {'type': 'text', 'text': text},
+    'candidates': [
+      {
+        'content': {
+          'role': 'model',
+          'parts': [
+            {'text': text},
+          ],
+        },
+      },
     ],
-    'usage': {'input_tokens': 900, 'output_tokens': 30},
+    'usageMetadata': {'promptTokenCount': 900, 'candidatesTokenCount': 30},
   };
 
   Future<void> pump(WidgetTester tester, Widget screen, {Object? api}) async {
@@ -91,6 +100,16 @@ void main() {
       expect(find.textContaining('geen enkele verbinding'), findsOneWidget);
     });
 
+    testWidgets('en het scherm wijst naar Google AI Studio', (tester) async {
+      await pump(tester, const CoachSettingsScreen());
+
+      expect(
+        find.textContaining('Een sleutel van Google AI Studio'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Anthropic'), findsNothing);
+    });
+
     testWidgets('en de instellingen bieden alleen een sleutel aan', (
       tester,
     ) async {
@@ -103,33 +122,42 @@ void main() {
   });
 
   group('welke dienst', () {
-    testWidgets('wordt geraden, en je kan het rechtzetten', (tester) async {
-      // Het nieuwe sleutelformaat van Google werd eerst voor Anthropic
-      // aangezien; daarom staat er nu ook een knop.
+    testWidgets('is er maar een, dus er valt niets te kiezen', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
       await pump(tester, const CoachSettingsScreen());
 
-      expect(find.text('Google Gemini'), findsOneWidget);
-      expect(
-        find.text('Afgeleid uit je sleutel. Klopt dat niet, tik hier.'),
-        findsOneWidget,
-      );
-
-      await tester.tap(find.text('Google Gemini'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ListTile, 'Anthropic').last);
-      await tester.pumpAndSettle();
-
-      expect(container!.read(coachProviderProvider), CoachProvider.anthropic);
-      expect(find.text('Door jou gekozen.'), findsOneWidget);
+      expect(container!.read(coachProviderProvider), CoachProvider.gemini);
+      // Geen rij om de dienst om te zetten zolang er een is.
+      expect(find.text('Door jou gekozen.'), findsNothing);
+      expect(find.textContaining('Afgeleid uit je sleutel'), findsNothing);
     });
 
-    testWidgets('en het model volgt de dienst', (tester) async {
+    testWidgets('en het model is er een van Google', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
       await pump(tester, const CoachSettingsScreen());
 
       expect(find.text('Gemini 2.5 Flash'), findsOneWidget);
       expect(find.text('Sonnet 5'), findsNothing);
+    });
+
+    testWidgets('een sleutel van een andere dienst wordt geweigerd', (
+      tester,
+    ) async {
+      // Anders zou de eerste vraag pas mislukken, met een foutmelding die
+      // niets uitlegt.
+      await pump(tester, const CoachSettingsScreen());
+
+      await tester.tap(find.text('Nog geen sleutel'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'sk-ant-api03-geheim');
+      await tester.tap(find.widgetWithText(FilledButton, 'Bewaren'));
+      await tester.pumpAndSettle();
+
+      expect(await db.settingsDao.apiKey(), isNull);
+      expect(
+        find.textContaining('alleen met een sleutel van Google'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -141,20 +169,20 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byType(TextField),
-        'sk-ant-api03-geheimgeheim-1234',
+        'AQ.Ab8RNgeheimgeheim1234',
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Bewaren'));
       await tester.pumpAndSettle();
 
-      expect(await db.settingsDao.apiKey(), 'sk-ant-api03-geheimgeheim-1234');
+      expect(await db.settingsDao.apiKey(), 'AQ.Ab8RNgeheimgeheim1234');
       // Enough to recognise, not enough to use.
-      expect(find.text('sk-ant-a…1234'), findsOneWidget);
-      expect(find.text('sk-ant-api03-geheimgeheim-1234'), findsNothing);
+      expect(find.text('AQ.Ab8RN…1234'), findsOneWidget);
+      expect(find.text('AQ.Ab8RNgeheimgeheim1234'), findsNothing);
       expect(find.text('Sleutel testen'), findsOneWidget);
     });
 
     testWidgets('en hem weghalen zet de coach weer uit', (tester) async {
-      await db.settingsDao.setApiKey('sk-ant-api03-geheimgeheim-1234');
+      await db.settingsDao.setApiKey('AQ.Ab8RNgeheimgeheim1234');
       await pump(tester, const CoachSettingsScreen());
 
       await tester.tap(find.widgetWithText(TextButton, 'Verwijderen'));
@@ -465,7 +493,7 @@ void main() {
     testWidgets('begint met wat de coach is en waar je kan beginnen', (
       tester,
     ) async {
-      await db.settingsDao.setApiKey('sk-ant-test');
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
 
       expect(find.text('Vraag je coach'), findsOneWidget);
@@ -473,7 +501,7 @@ void main() {
     });
 
     testWidgets('bewaart je vraag en het antwoord', (tester) async {
-      await db.settingsDao.setApiKey('sk-ant-test');
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(
         tester,
         const CoachScreen(),
@@ -498,26 +526,38 @@ void main() {
     });
 
     testWidgets('en toont wat het over jou heeft opgezocht', (tester) async {
-      await db.settingsDao.setApiKey('sk-ant-test');
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       var first = true;
       await pump(
         tester,
         const CoachScreen(),
-        api: (apiKey) => AiClient(
+        api: (apiKey, provider) => AiClient(
           apiKey: apiKey,
+          provider: provider,
           client: MockClient((request) async {
             sent.add(request.body);
             final body = first
                 ? {
-                    'content': [
+                    'candidates': [
                       {
-                        'type': 'tool_use',
-                        'id': 'toolu_1',
-                        'name': 'routines',
-                        'input': <String, Object?>{},
+                        'content': {
+                          'role': 'model',
+                          'parts': [
+                            {
+                              'functionCall': {
+                                'name': 'routines',
+                                'args': <String, Object?>{},
+                              },
+                              'thoughtSignature': 'sig-1',
+                            },
+                          ],
+                        },
                       },
                     ],
-                    'usage': {'input_tokens': 10, 'output_tokens': 5},
+                    'usageMetadata': {
+                      'promptTokenCount': 10,
+                      'candidatesTokenCount': 5,
+                    },
                   }
                 : says('Je hebt nog geen routines.');
             first = false;
@@ -541,7 +581,7 @@ void main() {
     testWidgets('een geweigerde sleutel wijst naar de instellingen', (
       tester,
     ) async {
-      await db.settingsDao.setApiKey('sk-ant-fout');
+      await db.settingsDao.setApiKey('AQ.Ab8RNfout');
       await pump(
         tester,
         const CoachScreen(),
@@ -561,7 +601,7 @@ void main() {
     });
 
     testWidgets('en de vraag gaat één keer de deur uit', (tester) async {
-      await db.settingsDao.setApiKey('sk-ant-test');
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(tester, const CoachScreen(), api: apiSaying(says('Ja.')));
 
       await tester.enterText(find.byType(TextField), 'Is 3x8 genoeg?');

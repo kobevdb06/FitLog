@@ -163,6 +163,38 @@ void main() {
       expect(find.textContaining('Kost tegoed'), findsOneWidget);
     });
 
+    testWidgets('en je ziet eerst wat er gevraagd wordt', (tester) async {
+      // Geen enkele vaste formulering krijgt elke oefening goed - dus krijg je
+      // de zin te zien voor er tegoed aan opgaat, en mag je ze herschrijven.
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await pumpForm(tester);
+
+      await tester.enterText(find.byType(TextField).first, 'Sledepush');
+      await tester.tap(field('Primaire spiergroep'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('borst').last);
+      await tester.pumpAndSettle();
+
+      await openFrameSheet(tester);
+      await tester.tap(find.text('Laten tekenen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wat toont de startpositie?'), findsOneWidget);
+      expect(find.text('Tekenen'), findsOneWidget);
+      final field_ = tester.widget<TextField>(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(field_.controller!.text, contains('Sledepush'));
+      expect(field_.controller!.text, contains('Side view'));
+      // En de stijl van de app staat er niet in; die is niet van jou.
+      expect(field_.controller!.text, isNot(contains('no watermark')));
+    });
+
     testWidgets('en zonder naam wordt er niets getekend', (tester) async {
       // Een tekening van "" is weggegooid tegoed.
       await db.settingsDao.updateSettings(

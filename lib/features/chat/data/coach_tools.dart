@@ -161,14 +161,15 @@ class CoachTools {
           'start_image_prompt': {
             'type': 'string',
             'description':
-                'EEN korte Engelse zin over de HOUDING aan het begin, '
-                'hoogstens 25 woorden: waar de armen en benen staan en hoe de '
-                'gewrichten gebogen zijn, niet wat de oefening heet. Geen '
-                'opsomming van details - het tekenmodel verdrinkt daarin en '
-                'tekent dan iets anders. Geen merknaam van een machine, maar '
-                'hoe ze werkt ("seated at a rowing machine"). Wordt gebruikt '
-                'om een tekening te maken, als de gebruiker daar een token '
-                'voor heeft.',
+                'EEN korte Engelse zin voor de tekening van het begin, '
+                'hoogstens 25 woorden. Begin met de camerahoek en de naam van '
+                'de beweging ("Side view of a person doing a standing '
+                'overhead triceps extension") en zeg er dan in een paar '
+                'woorden bij hoe de gewrichten staan. Noem geen stang of '
+                'handvat boven het hoofd - het tekenmodel maakt daar een '
+                'optrekbeweging van. Geen merknaam van een machine, maar hoe '
+                'ze werkt. Wordt gebruikt om een tekening te maken, als de '
+                'gebruiker daar een token voor heeft.',
           },
           'end_image_prompt': {
             'type': 'string',

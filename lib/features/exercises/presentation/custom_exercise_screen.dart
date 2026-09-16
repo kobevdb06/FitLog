@@ -111,6 +111,12 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   ///
   /// The name and the muscle are what it is drawn from, so both have to be
   /// filled in first - a picture of "" is a waste of your credit.
+  ///
+  /// You are shown the sentence before it is sent, and you can rewrite it.
+  /// No fixed wording gets every exercise right: asked for an overhead
+  /// triceps extension the model drew someone doing a pull-up, and the word
+  /// that caused it was "bar". Whoever knows the exercise can take that word
+  /// out; the app cannot.
   Future<void> _drawFrame(_Slot slot) async {
     final name = _nameController.text.trim();
     final muscle = _primaryMuscle;
@@ -123,6 +129,24 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
       return;
     }
 
+    final asked = await promptForText(
+      context,
+      title: slot == _Slot.start
+          ? 'Wat toont de startpositie?'
+          : 'Wat toont de eindpositie?',
+      initialValue: ImageGenerator.describe(
+        name: name,
+        equipment: _equipment?.trim(),
+        start: slot == _Slot.start,
+      ),
+      hintText: 'In het Engels - daar tekent het model het best van.',
+      confirmLabel: 'Tekenen',
+      maxLines: 4,
+      capitalization: TextCapitalization.none,
+    );
+    final wanted = asked?.trim();
+    if (wanted == null || wanted.isEmpty || !mounted) return;
+
     final again = _drawn.contains(slot);
     setState(() {
       _busy = true;
@@ -134,9 +158,9 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
           .read(exerciseEditorProvider)
           .drawFrame(
             name: name,
-            muscle: muscle,
             start: slot == _Slot.start,
             equipment: _equipment?.trim(),
+            prompt: wanted,
             seed: _seed,
           );
       if (!mounted) return;

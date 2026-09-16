@@ -89,7 +89,7 @@ void main() {
 
       final file = await container!
           .read(exerciseEditorProvider)
-          .drawFrame(name: 'Sledepush', muscle: 'benen', start: true);
+          .drawFrame(name: 'Sledepush', start: true);
 
       expect(file, isNull);
       // En er is niets verstuurd.
@@ -109,12 +109,7 @@ void main() {
 
       final file = await container!
           .read(exerciseEditorProvider)
-          .drawFrame(
-            name: 'Sledepush',
-            muscle: 'benen',
-            start: true,
-            equipment: 'slee',
-          );
+          .drawFrame(name: 'Sledepush', start: true, equipment: 'slee');
 
       expect(file, isNotNull);
       expect(sent, hasLength(1));
@@ -132,7 +127,7 @@ void main() {
 
       final file = await container!
           .read(exerciseEditorProvider)
-          .drawFrame(name: 'Sledepush', muscle: 'benen', start: true);
+          .drawFrame(name: 'Sledepush', start: true);
 
       expect(await PhotoStore(paths).exists(file!), isTrue);
     });
@@ -173,18 +168,16 @@ void main() {
       // precies waarvoor die twee plaatjes bestaan.
       final start = ImageGenerator.promptFor(
         name: 'Sledepush',
-        muscle: 'benen',
         equipment: 'slee',
         start: true,
       );
       final end = ImageGenerator.promptFor(
         name: 'Sledepush',
-        muscle: 'benen',
         equipment: 'slee',
         start: false,
       );
 
-      expect(start, contains('A person doing'));
+      expect(start, contains('a person doing'));
       expect(start, contains('Sledepush'));
       expect(start, contains('slee'));
       expect(start, contains('at the start'));
@@ -194,6 +187,10 @@ void main() {
         start.length - ImageGenerator.style.length,
         lessThanOrEqualTo(ImageGenerator.maxPromptLength),
       );
+      // De beweging staat er met haar naam in, en van opzij: naast elkaar
+      // gezet tekende de naam de juiste houding en een beschrijving van
+      // boven- en onderarm iemand die zijn biceps spande.
+      expect(start, startsWith('Side view of'));
       // En allebei dezelfde stijl, anders is het geen paar.
       expect(start, contains(ImageGenerator.style));
       expect(end, contains(ImageGenerator.style));
@@ -234,14 +231,33 @@ void main() {
           .read(exerciseEditorProvider)
           .drawFrame(
             name: 'Sledepush',
-            muscle: 'benen',
             start: false,
             prompt: 'A person leaning into a loaded sled, arms extended',
           );
 
       expect(sent.single.body, contains('leaning into a loaded sled'));
       // Het sjabloon van de app is dan niet gebruikt.
-      expect(sent.single.body, isNot(contains('A person doing')));
+      expect(sent.single.body, isNot(contains('Side view of a person')));
+    });
+
+    test('en wat de gebruiker te zien krijgt draagt de stijl niet', () {
+      // Die staart is van de app; in het vakje waar je zelf in typt heeft ze
+      // niets te zoeken.
+      final shown = ImageGenerator.describe(
+        name: 'Sledepush',
+        equipment: 'slee',
+        start: true,
+      );
+
+      expect(shown, isNot(contains(ImageGenerator.style)));
+      expect(
+        ImageGenerator.promptFor(
+          name: 'Sledepush',
+          equipment: 'slee',
+          start: true,
+        ),
+        ImageGenerator.stylise(shown),
+      );
     });
 
     test('een leeg tegoed zegt dat er niets getekend is', () async {
@@ -253,7 +269,7 @@ void main() {
       await expectLater(
         container!
             .read(exerciseEditorProvider)
-            .drawFrame(name: 'Sledepush', muscle: 'benen', start: true),
+            .drawFrame(name: 'Sledepush', start: true),
         throwsA(
           isA<CoachException>()
               .having((e) => e.message, 'message', contains('tegoed'))
@@ -268,7 +284,7 @@ void main() {
       await expectLater(
         container!
             .read(exerciseEditorProvider)
-            .drawFrame(name: 'Sledepush', muscle: 'benen', start: true),
+            .drawFrame(name: 'Sledepush', start: true),
         throwsA(
           isA<CoachException>().having((e) => e.badKey, 'badKey', isTrue),
         ),
@@ -281,7 +297,7 @@ void main() {
       await expectLater(
         container!
             .read(exerciseEditorProvider)
-            .drawFrame(name: 'Sledepush', muscle: 'benen', start: true),
+            .drawFrame(name: 'Sledepush', start: true),
         throwsA(isA<CoachException>()),
       );
     });
@@ -295,11 +311,7 @@ void main() {
       );
 
       final editor = container!.read(exerciseEditorProvider);
-      final file = await editor.drawFrame(
-        name: 'Sledepush',
-        muscle: 'benen',
-        start: true,
-      );
+      final file = await editor.drawFrame(name: 'Sledepush', start: true);
       final id = await editor.create(
         name: 'Sledepush',
         primaryMuscle: 'benen',

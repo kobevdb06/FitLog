@@ -436,14 +436,25 @@ class ImageGenerator {
       'light grey background, correct posture and joint angles, no text, no '
       'watermark.';
 
-  /// The prompt an exercise turns into when nobody wrote a better one.
-  ///
-  /// English, because that is what the models are trained on. It says which
-  /// of the two moments it is, because "start" and "end" are the difference
-  /// between a useful pair and two pictures of the same thing.
+  /// The prompt an exercise turns into when nobody wrote a better one, ready
+  /// to send.
   static String promptFor({
     required String name,
-    required String muscle,
+    String? equipment,
+    required bool start,
+  }) => stylise(describe(name: name, equipment: equipment, start: start));
+
+  /// The same description without the style on it: what a person is shown
+  /// when they are asked what the picture should contain.
+  ///
+  /// English, because that is what the models are trained on. It names the
+  /// movement rather than spelling out the joints - tested side by side, the
+  /// name got the posture right and a careful description of upper and lower
+  /// arms produced someone flexing their biceps. And it says which of the two
+  /// moments it is, because "start" and "end" are the difference between a
+  /// useful pair and two pictures of the same thing.
+  static String describe({
+    required String name,
     String? equipment,
     required bool start,
   }) {
@@ -451,8 +462,7 @@ class ImageGenerator {
         ? ''
         : ' with $equipment';
     final moment = start ? 'at the start' : 'at the end';
-    return 'A person doing $name$kit, $moment of the movement, seen from the '
-        'side.$style';
+    return 'Side view of a person doing $name$kit, $moment of the movement';
   }
 
   /// How much of the coach's description reaches the service.

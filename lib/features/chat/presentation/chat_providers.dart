@@ -414,7 +414,6 @@ class CoachController extends _$CoachController {
       final seed = _random.nextInt(_seedCeiling);
       startImage = await editor.drawFrame(
         name: proposal.name,
-        muscle: proposal.primaryMuscle,
         start: true,
         equipment: proposal.equipment,
         prompt: proposal.startImagePrompt,
@@ -422,7 +421,6 @@ class CoachController extends _$CoachController {
       );
       endImage = await editor.drawFrame(
         name: proposal.name,
-        muscle: proposal.primaryMuscle,
         start: false,
         equipment: proposal.equipment,
         prompt: proposal.endImagePrompt,

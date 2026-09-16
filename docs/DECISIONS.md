@@ -2449,3 +2449,32 @@ een vak opnieuw dat er al een had, dan rolt er een nieuw getal: je tikte een
 tweede keer omdat je iets anders wou zien. Daarmee valt het paar uit elkaar
 tot je het andere vak ook opnieuw laat tekenen - dat is de prijs van opnieuw
 mogen proberen, en die is het waard.
+
+## 143. De zin die getekend wordt is van de gebruiker, niet van de app
+
+Een overhead triceps extension kwam er als een optrekbeweging uit. Vier keer
+dezelfde oefening gevraagd, met een echte sleutel en hetzelfde toevalsgetal,
+alleen de woorden anders:
+
+- van achteren, "elbows bent, holding a bar behind his head" -> een man die
+  een barbell boven zijn hoofd houdt;
+- van opzij, met boven- en onderarm netjes beschreven -> iemand die zijn
+  biceps spant;
+- van opzij, "arms straight above his head, holding a bar" -> het negeerde
+  "van opzij" en tekende weer een optrekbeweging;
+- van opzij, mét de naam van de beweging en zonder stang -> klopt.
+
+Twee dingen staan daarmee vast. De naam van een beweging stuurt beter dan een
+beschrijving van gewrichten. En het woord "bar" boven een hoofd roept een
+optrekbeweging op die sterker is dan de rest van de zin.
+
+Allebei zijn ze nu in de opdracht aan de coach verwerkt. Maar dat is niet de
+echte les. De echte les is dat geen enkele vaste formulering elke oefening
+goed krijgt, en dat wie de oefening kent - de gebruiker - het woord dat in de
+weg staat er zo uit haalt. Bij "Laten tekenen" verschijnt daarom eerst de zin
+zelf, in te vullen zoals je wil, met "Tekenen" eronder. Het sjabloon is nog
+altijd het voorstel; alleen is het nu een voorstel en geen besluit.
+
+Daarom ook `describe()` naast `promptFor()`: wat de gebruiker te zien krijgt
+is de zin zonder de staart van de app. Die staart is een besluit van de app
+over hoe een paar eruitziet, geen tekst om aan te rommelen.

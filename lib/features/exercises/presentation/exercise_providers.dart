@@ -450,7 +450,6 @@ class ExerciseEditor {
   /// caller checks, and so does this - one tap here costs the user money.
   Future<String?> drawFrame({
     required String name,
-    required String muscle,
     required bool start,
     String? equipment,
     String? prompt,
@@ -470,7 +469,6 @@ class ExerciseEditor {
         prompt == null || prompt.trim().isEmpty
             ? ImageGenerator.promptFor(
                 name: name,
-                muscle: muscle,
                 equipment: equipment,
                 start: start,
               )

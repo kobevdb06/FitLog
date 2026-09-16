@@ -131,6 +131,106 @@ class _TextPromptState extends State<_TextPrompt> {
   }
 }
 
+/// Two descriptions at once, because they only mean something as a pair.
+///
+/// Returns start and end as they were left, or null when the user backed out.
+Future<(String, String)?> promptForPair(
+  BuildContext context, {
+  required String title,
+  required String note,
+  required String start,
+  required String end,
+  String confirmLabel = 'Tekenen',
+}) {
+  return showDialog<(String, String)>(
+    context: context,
+    builder: (context) => _PairPrompt(
+      title: title,
+      note: note,
+      start: start,
+      end: end,
+      confirmLabel: confirmLabel,
+    ),
+  );
+}
+
+class _PairPrompt extends StatefulWidget {
+  const _PairPrompt({
+    required this.title,
+    required this.note,
+    required this.start,
+    required this.end,
+    required this.confirmLabel,
+  });
+
+  final String title;
+  final String note;
+  final String start;
+  final String end;
+  final String confirmLabel;
+
+  @override
+  State<_PairPrompt> createState() => _PairPromptState();
+}
+
+class _PairPromptState extends State<_PairPrompt> {
+  late final _start = TextEditingController(text: widget.start);
+  late final _end = TextEditingController(text: widget.end);
+
+  @override
+  void dispose() {
+    _start.dispose();
+    _end.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.note,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            TextField(
+              controller: _start,
+              maxLines: 3,
+              textCapitalization: TextCapitalization.none,
+              decoration: const InputDecoration(labelText: 'Startpositie'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _end,
+              maxLines: 3,
+              textCapitalization: TextCapitalization.none,
+              decoration: const InputDecoration(labelText: 'Eindpositie'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuleren'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop((_start.text, _end.text)),
+          child: Text(widget.confirmLabel),
+        ),
+      ],
+    );
+  }
+}
+
 /// The last gate before something irreversible: the user has to type a word.
 Future<bool> confirmByTyping(
   BuildContext context, {

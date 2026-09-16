@@ -203,6 +203,29 @@ void main() {
       expect(made.imagesGenerated, isTrue);
     });
 
+    test('en wat de gebruiker goedkeurt gaat voor', () async {
+      // De coach kiest ook de naam van de oefening, en "V-Bar Attachment"
+      // sleept het woord bar de tekening in. Wie de oefening kent haalt dat
+      // eruit; dat woord moet dan ook echt weg zijn.
+      container = newContainer();
+      final coach = container!.read(coachControllerProvider.notifier);
+
+      await coach.accept(
+        message: await drawable(),
+        index: 0,
+        withImages: true,
+        startPrompt:
+            'Side view of a person with elbows pointing up, forearms '
+            'behind the head',
+        endPrompt: 'Side view of a person with both arms stretched straight up',
+      );
+
+      expect(drawn, hasLength(2));
+      expect('${drawn.first['prompt']}', contains('forearms behind the head'));
+      expect('${drawn.first['prompt']}', isNot(contains('a bar behind')));
+      expect('${drawn.last['prompt']}', contains('stretched straight up'));
+    });
+
     test('en zonder die knop wordt er niets getekend', () async {
       container = newContainer();
       final coach = container!.read(coachControllerProvider.notifier);

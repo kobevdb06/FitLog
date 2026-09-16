@@ -346,6 +346,8 @@ class CoachController extends _$CoachController {
     required ChatMessageRow message,
     required int index,
     bool withImages = false,
+    String? startPrompt,
+    String? endPrompt,
   }) async {
     final proposals = parseProposals(message.proposals);
     if (index >= proposals.length) return null;
@@ -361,6 +363,8 @@ class CoachController extends _$CoachController {
           db,
           proposal.exercise!,
           withImages: withImages,
+          startPrompt: startPrompt,
+          endPrompt: endPrompt,
         );
       case ProposalKind.routine:
         id = await _createRoutine(db, proposal.routine!);
@@ -375,6 +379,8 @@ class CoachController extends _$CoachController {
     AppDatabase db,
     ExerciseProposal proposal, {
     bool withImages = false,
+    String? startPrompt,
+    String? endPrompt,
   }) async {
     // A muscle or a piece of kit the app has never seen is added to the
     // pickers too, or the exercise would point at a name nothing else knows.
@@ -416,14 +422,14 @@ class CoachController extends _$CoachController {
         name: proposal.name,
         start: true,
         equipment: proposal.equipment,
-        prompt: proposal.startImagePrompt,
+        prompt: startPrompt ?? proposal.startImagePrompt,
         seed: seed,
       );
       endImage = await editor.drawFrame(
         name: proposal.name,
         start: false,
         equipment: proposal.equipment,
-        prompt: proposal.endImagePrompt,
+        prompt: endPrompt ?? proposal.endImagePrompt,
         seed: seed,
       );
     }

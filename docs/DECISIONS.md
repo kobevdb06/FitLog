@@ -2478,3 +2478,20 @@ altijd het voorstel; alleen is het nu een voorstel en geen besluit.
 Daarom ook `describe()` naast `promptFor()`: wat de gebruiker te zien krijgt
 is de zin zonder de staart van de app. Die staart is een besluit van de app
 over hoe een paar eruitziet, geen tekst om aan te rommelen.
+
+## 144. Ook bij de coach lees je eerst wat er getekend wordt
+
+De oefening die de coach aanmaakte heette "Triceps Overhead Extension - V-Bar
+Attachment", en die naam gaat mee in de tekenopdracht. Het woord waarvan in
+143 vaststond dat het een optrekbeweging oproept, stond dus in de naam die de
+coach zelf koos - geen instructie aan het model haalt dat er nog uit.
+
+De knop "Toevoegen mét tekeningen" opent daarom nu hetzelfde vakje als het
+eigen scherm, maar dan met de twee zinnen van de coach erin: start en eind
+naast elkaar, in te vullen, met "Tekenen" eronder. Pas daarna gaat er tegoed
+op.
+
+Dat is dezelfde keuze als 143, doorgetrokken naar de plek waar ze het hardst
+nodig was: het model is niet bij te sturen met nog een regel in de
+systeemprompt, wie de oefening kent wel. En het scheelt ook geld - je ziet nu
+waar je voor betaalt voor het betaald is.

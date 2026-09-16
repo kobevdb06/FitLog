@@ -417,6 +417,28 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
   bool _busy = false;
 
   Future<void> _accept({bool withImages = false}) async {
+    // What gets drawn is worth reading before it is paid for. The coach picks
+    // the exercise name too, and a name like "Overhead Extension - V-Bar
+    // Attachment" drags the word bar into the picture, where the model turns
+    // it into someone hanging from a pull-up bar. Whoever knows the exercise
+    // can take that word out in one tap; the app cannot guess it.
+    String? start;
+    String? end;
+    if (withImages) {
+      final exercise = widget.proposal.exercise!;
+      final pair = await promptForPair(
+        context,
+        title: 'Wat moeten de tekeningen tonen?',
+        note:
+            'In het Engels. Noem geen stang of handvat boven het hoofd - daar '
+            'maakt de tekenaar een optrekbeweging van.',
+        start: exercise.startImagePrompt ?? '',
+        end: exercise.endImagePrompt ?? '',
+      );
+      if (pair == null || !mounted) return;
+      (start, end) = pair;
+    }
+
     setState(() => _busy = true);
     try {
       final id = await ref
@@ -425,6 +447,8 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             message: widget.message,
             index: widget.index,
             withImages: withImages,
+            startPrompt: start,
+            endPrompt: end,
           );
       if (!mounted) return;
       if (id == null) return;

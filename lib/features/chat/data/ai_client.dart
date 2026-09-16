@@ -209,6 +209,7 @@ class CoachToolCall {
     required this.id,
     required this.name,
     required this.input,
+    this.signature,
   });
 
   /// Anthropic matches a result to its request by id. Gemini matches by name
@@ -216,6 +217,14 @@ class CoachToolCall {
   final String id;
   final String name;
   final Map<String, Object?> input;
+
+  /// Google's thought signature for this call, to be handed back exactly as
+  /// it came.
+  ///
+  /// The Gemini 3 models refuse a conversation that returns a functionCall
+  /// without it: "Function call is missing a thought_signature". It is theirs,
+  /// not ours - we carry it, we do not read it.
+  final String? signature;
 }
 
 /// The answer to one such request, on its way back.
@@ -236,18 +245,23 @@ class CoachMessage {
   const CoachMessage.user(String this.text, {this.image})
     : role = 'user',
       toolCalls = const [],
-      toolResults = const [];
+      toolResults = const [],
+      textSignature = null;
 
-  const CoachMessage.assistant({this.text, this.toolCalls = const []})
-    : role = 'assistant',
-      image = null,
-      toolResults = const [];
+  const CoachMessage.assistant({
+    this.text,
+    this.toolCalls = const [],
+    this.textSignature,
+  }) : role = 'assistant',
+       image = null,
+       toolResults = const [];
 
   const CoachMessage.results(this.toolResults)
     : role = 'user',
       text = null,
       image = null,
-      toolCalls = const [];
+      toolCalls = const [],
+      textSignature = null;
 
   final String role;
   final String? text;
@@ -256,6 +270,10 @@ class CoachMessage {
 
   /// A photo the user sent with this question.
   final CoachImage? image;
+
+  /// Google's thought signature on the text part, carried back untouched for
+  /// the same reason as [CoachToolCall.signature].
+  final String? textSignature;
 }
 
 /// A photo on its way out, already scaled down and encoded.
@@ -272,7 +290,12 @@ class CoachReply {
     required this.text,
     required this.toolCalls,
     required this.usage,
+    this.textSignature,
   });
+
+  /// Google's thought signature on the text part of this answer, if it sent
+  /// one.
+  final String? textSignature;
 
   /// What it said, with the tool requests left out.
   final String text;
@@ -593,10 +616,13 @@ class AiClient {
             'inlineData': {'mimeType': image.mediaType, 'data': image.base64},
           },
         if (message.text != null && message.text!.isNotEmpty)
-          {'text': message.text},
+          {'text': message.text, 'thoughtSignature': ?message.textSignature},
         for (final call in message.toolCalls)
           {
             'functionCall': {'name': call.name, 'args': call.input},
+            // Handed back exactly as it came: the Gemini 3 models refuse a
+            // functionCall that returns without its signature.
+            'thoughtSignature': ?call.signature,
           },
       ],
     };
@@ -753,11 +779,19 @@ class AiClient {
 
     final text = StringBuffer();
     final calls = <CoachToolCall>[];
+    String? textSignature;
     if (parts is List) {
       for (final part in parts) {
         if (part is! Map) continue;
+        // The signature belongs to the part it arrived on, and has to go back
+        // on that same part.
+        final signature = part['thoughtSignature'];
+
         final value = part['text'];
-        if (value is String) text.write(value);
+        if (value is String) {
+          text.write(value);
+          if (signature is String) textSignature = signature;
+        }
 
         final call = part['functionCall'];
         if (call is Map) {
@@ -767,6 +801,7 @@ class AiClient {
               id: '',
               name: '${call['name']}',
               input: _args(call['args']),
+              signature: signature is String ? signature : null,
             ),
           );
         }
@@ -785,6 +820,7 @@ class AiClient {
             ? (usage['candidatesTokenCount'] as int? ?? 0)
             : 0,
       ),
+      textSignature: textSignature,
     );
   }
 

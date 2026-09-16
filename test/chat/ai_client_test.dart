@@ -436,6 +436,89 @@ void main() {
       expect(routines.containsKey('parameters'), isFalse);
     });
 
+    test('een thought signature komt mee en gaat onveranderd terug', () async {
+      // De Gemini 3-modellen weigeren een gesprek waarin een functionCall
+      // zonder zijn signature terugkomt: "Function call is missing a
+      // thought_signature".
+      final client = gemini({
+        'candidates': [
+          {
+            'content': {
+              'role': 'model',
+              'parts': [
+                {'text': 'Even kijken.', 'thoughtSignature': 'sig-tekst'},
+                {
+                  'functionCall': {
+                    'name': 'search_exercises',
+                    'args': {'query': 'pec fly'},
+                  },
+                  'thoughtSignature': 'sig-call',
+                },
+              ],
+            },
+          },
+        ],
+        'usageMetadata': {'promptTokenCount': 10, 'candidatesTokenCount': 5},
+      });
+
+      final reply = await ask(client);
+
+      expect(reply.toolCalls.single.signature, 'sig-call');
+      expect(reply.textSignature, 'sig-tekst');
+
+      // En terug de deur uit, op dezelfde delen.
+      const call = CoachToolCall(
+        id: '',
+        name: 'search_exercises',
+        input: <String, Object?>{},
+        signature: 'sig-call',
+      );
+      await client.send(
+        system: 'x',
+        messages: [
+          CoachMessage.user('Staat pec fly in de catalogus?'),
+          const CoachMessage.assistant(
+            text: 'Even kijken.',
+            toolCalls: [call],
+            textSignature: 'sig-tekst',
+          ),
+          const CoachMessage.results([
+            CoachToolResult(call: call, json: '{"exercises":[]}'),
+          ]),
+        ],
+        tools: const [searchTool],
+        model: CoachModel.geminiFlash.wire,
+      );
+
+      final parts =
+          ((jsonDecode(sent.body) as Map)['contents'] as List)[1]
+              as Map<String, Object?>;
+      final written = parts['parts']! as List;
+      expect((written.first as Map)['thoughtSignature'], 'sig-tekst');
+      expect((written[1] as Map)['thoughtSignature'], 'sig-call');
+    });
+
+    test('en zonder signature staat er ook geen lege sleutel in', () async {
+      final client = gemini(saying('ok'));
+
+      const call = CoachToolCall(
+        id: '',
+        name: 'routines',
+        input: <String, Object?>{},
+      );
+      await client.send(
+        system: 'x',
+        messages: [
+          CoachMessage.user('En?'),
+          const CoachMessage.assistant(toolCalls: [call]),
+        ],
+        tools: const [noArgsTool],
+        model: CoachModel.geminiFlash.wire,
+      );
+
+      expect(sent.body, isNot(contains('thoughtSignature')));
+    });
+
     test('een geweigerde prompt is een leesbare fout', () async {
       final client = gemini({
         'promptFeedback': {'blockReason': 'SAFETY'},

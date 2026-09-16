@@ -140,7 +140,11 @@ class Coach {
       }
 
       messages.add(
-        CoachMessage.assistant(text: reply.text, toolCalls: reply.toolCalls),
+        CoachMessage.assistant(
+          text: reply.text,
+          toolCalls: reply.toolCalls,
+          textSignature: reply.textSignature,
+        ),
       );
 
       final results = <CoachToolResult>[];

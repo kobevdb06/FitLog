@@ -344,6 +344,50 @@ void main() {
       expect('${contents[2]}', contains('Bench Press'));
     });
 
+    test('en een signature overleeft de hele lus', () async {
+      // Wat er misging bij Gemini 3: de app stuurde de functionCall terug
+      // zonder de signature en kreeg de vraag afgewezen.
+      await seedWorkout(exercise: 'Pec Fly', weight: 40, reps: 12);
+
+      final coach = Coach(
+        client: geminiSaying([
+          {
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {
+                      'functionCall': {
+                        'name': 'search_exercises',
+                        'args': {'query': 'pec fly'},
+                      },
+                      'thoughtSignature': 'sig-1',
+                    },
+                  ],
+                },
+              },
+            ],
+            'usageMetadata': {
+              'promptTokenCount': 10,
+              'candidatesTokenCount': 5,
+            },
+          },
+          geminiSays('Ja, Pec Fly staat erin.'),
+        ]),
+        tools: CoachTools(db),
+        model: CoachModel.geminiFlash.wire,
+        system: buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
+      );
+
+      final answer = await coach.ask(
+        history: const [],
+        question: 'Staat pec fly in de catalogus?',
+      );
+
+      expect(answer.text, contains('Pec Fly'));
+      expect('${sent[1]['contents']}', contains('sig-1'));
+    });
+
     test('en het gereedschap gaat mee als functionDeclarations', () async {
       final coach = Coach(
         client: geminiSaying([geminiSays('Ja.')]),

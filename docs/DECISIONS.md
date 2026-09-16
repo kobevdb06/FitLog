@@ -2235,3 +2235,24 @@ terugvallijst wanneer er geen verbinding is — met de reden erbij op het scherm
 Dat zijn twee adressen erbij, allebei op hosts die al toegestaan waren en
 allebei in hetzelfde ene bestand. De deurtest leest ze nu alle vier uit dat
 bestand en controleert dat er geen derde host tussen staat.
+
+## 134. De handtekening van Google gaat onveranderd terug
+
+Met een Gemini 3-model brak elke vraag waarvoor de coach iets moest opzoeken:
+"Function call is missing a thought_signature in functionCall parts."
+
+Die modellen sturen bij een `functionCall` een `thoughtSignature` mee, en die
+hoort er onveranderd bij te zitten wanneer je die beurt terugstuurt met het
+resultaat. Wij gooiden ze weg, dus kwam de tweede ronde zonder terug en werd
+ze geweigerd — precies de rondes waar deze app op draait, want elke vraag over
+het eigen logboek is er twee.
+
+De handtekening hoort bij het deel waarop ze binnenkwam, dus zo wordt ze ook
+bewaard: eentje per `functionCall` en eentje voor het tekstdeel. Verder doet
+de app er niets mee — niet lezen, niet interpreteren, alleen dragen. Bij
+Anthropic bestaat ze niet en blijft het veld weg.
+
+Het viel pas op met een echte sleutel en een echt model. De namaak-API in de
+tests antwoordde netjes zonder handtekening, want ik wist niet dat ze bestond.
+Nu staat ze in de testantwoorden, en een test faalt zodra ze onderweg
+verdwijnt.

@@ -465,14 +465,22 @@ class ImageGenerator {
     return 'Side view of a person doing $name$kit, $moment of the movement';
   }
 
-  /// How much of the coach's description reaches the service.
+  /// How much of the description reaches the service.
   ///
-  /// Measured, not guessed. The same model drew a useless picture from a
+  /// The measurement behind it: the same model drew a useless picture from a
   /// 450-character description full of "shoulder blades squeezed together,
   /// seen from a high three-quarter angle" and a usable one from a single
   /// 92-character sentence with one movement in it. A four-step model drowns
-  /// in detail: what it cannot weigh, it averages away.
-  static const int maxPromptLength = 160;
+  /// in detail - what it cannot weigh, it averages away.
+  ///
+  /// But that was two points, and the ceiling was set at the low one. Nothing
+  /// was ever measured in between, and the sentence that did work best -
+  /// naming the movement and then the joints - runs to about 140. Room for
+  /// twice that leaves space for the joints without room for a list. What
+  /// does not fit is cut, and whoever types it is shown the count while they
+  /// do, because a sentence that is quietly shortened is worse than a long
+  /// one.
+  static const int maxPromptLength = 320;
 
   /// A prompt the coach wrote, cut back to one thought, with the same tail.
   ///

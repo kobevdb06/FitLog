@@ -51,6 +51,7 @@ Future<String?> promptForText(
   String? hintText,
   String confirmLabel = 'Opslaan',
   int maxLines = 1,
+  int? maxLength,
   TextCapitalization capitalization = TextCapitalization.sentences,
 }) {
   return showDialog<String>(
@@ -61,6 +62,7 @@ Future<String?> promptForText(
       hintText: hintText,
       confirmLabel: confirmLabel,
       maxLines: maxLines,
+      maxLength: maxLength,
       capitalization: capitalization,
     ),
   );
@@ -78,6 +80,7 @@ class _TextPrompt extends StatefulWidget {
     required this.hintText,
     required this.confirmLabel,
     required this.maxLines,
+    required this.maxLength,
     required this.capitalization,
   });
 
@@ -86,6 +89,10 @@ class _TextPrompt extends StatefulWidget {
   final String? hintText;
   final String confirmLabel;
   final int maxLines;
+
+  /// Shows a count and stops the typing there, so nothing is cut later
+  /// without being seen.
+  final int? maxLength;
   final TextCapitalization capitalization;
 
   @override
@@ -111,6 +118,7 @@ class _TextPromptState extends State<_TextPrompt> {
         controller: _controller,
         autofocus: true,
         maxLines: widget.maxLines,
+        maxLength: widget.maxLength,
         textCapitalization: widget.capitalization,
         decoration: InputDecoration(hintText: widget.hintText),
         onSubmitted: widget.maxLines == 1
@@ -154,6 +162,7 @@ Future<(String, String)?> promptForPair(
   required String start,
   required String end,
   String confirmLabel = 'Tekenen',
+  int? maxLength,
   Future<(String, String)> Function()? onWrite,
   String writeLabel = 'Laat de coach schrijven',
 }) {
@@ -165,6 +174,7 @@ Future<(String, String)?> promptForPair(
       start: start,
       end: end,
       confirmLabel: confirmLabel,
+      maxLength: maxLength,
       onWrite: onWrite,
       writeLabel: writeLabel,
     ),
@@ -178,6 +188,7 @@ class _PairPrompt extends StatefulWidget {
     required this.start,
     required this.end,
     required this.confirmLabel,
+    required this.maxLength,
     required this.onWrite,
     required this.writeLabel,
   });
@@ -187,6 +198,9 @@ class _PairPrompt extends StatefulWidget {
   final String start;
   final String end;
   final String confirmLabel;
+
+  /// Shows a count on both fields and stops the typing there.
+  final int? maxLength;
 
   /// Fills both fields for you, when there is someone who can write them.
   final Future<(String, String)> Function()? onWrite;
@@ -252,6 +266,7 @@ class _PairPromptState extends State<_PairPrompt> {
             TextField(
               controller: _start,
               maxLines: 3,
+              maxLength: widget.maxLength,
               textCapitalization: TextCapitalization.none,
               decoration: const InputDecoration(labelText: 'Startpositie'),
             ),
@@ -259,6 +274,7 @@ class _PairPromptState extends State<_PairPrompt> {
             TextField(
               controller: _end,
               maxLines: 3,
+              maxLength: widget.maxLength,
               textCapitalization: TextCapitalization.none,
               decoration: const InputDecoration(labelText: 'Eindpositie'),
             ),

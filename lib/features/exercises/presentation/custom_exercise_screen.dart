@@ -142,6 +142,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
       hintText: 'In het Engels - daar tekent het model het best van.',
       confirmLabel: 'Tekenen',
       maxLines: 4,
+      maxLength: ImageGenerator.maxPromptLength,
       capitalization: TextCapitalization.none,
     );
     final wanted = asked?.trim();

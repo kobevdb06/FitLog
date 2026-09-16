@@ -434,6 +434,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             'maakt de tekenaar een optrekbeweging van.',
         start: exercise.startImagePrompt ?? '',
         end: exercise.endImagePrompt ?? '',
+        maxLength: ImageGenerator.maxPromptLength,
         // The coach wrote these along the way, while it was also inventing an
         // exercise. Asked again with nothing but this job in front of it, it
         // does better - and one small question is far cheaper than a drawing.

@@ -154,6 +154,21 @@ void main() {
       expect(prompt, contains(ImageGenerator.style));
     });
 
+    test('en een zin met gewrichten erin past nu wel', () {
+      // De zin die in de test wel klopte - de beweging bij naam, dan hoe de
+      // gewrichten staan - is zo'n 140 tekens. Die mag niet sneuvelen aan een
+      // grens die uit twee metingen kwam.
+      const written =
+          'Side view of a person doing a standing overhead triceps extension, '
+          'elbows pointing up beside the ears, forearms folded back behind '
+          'the head, feet shoulder width apart';
+
+      final prompt = ImageGenerator.stylise(written);
+
+      expect(prompt, startsWith(written));
+      expect(written.length, greaterThan(160));
+    });
+
     test('en een korte blijft heel', () {
       final prompt = ImageGenerator.stylise(
         'A man seated at a rowing machine pulls two handles back to his ribs, '

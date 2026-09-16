@@ -116,7 +116,9 @@ Regels, allemaal uit mislukte tekeningen geleerd:
   tekenprogramma maakt daar een optrekbeweging van.
 - De twee zinnen moeten verschillen in de stand van de armen of de benen. Zijn
   ze hetzelfde, dan krijgt de gebruiker twee keer dezelfde tekening.
-- Hoogstens 25 woorden per zin. Een opsomming levert een slechtere tekening op.
+- Hoogstens 45 woorden per zin, en gebruik die ruimte voor de gewrichten en de
+  camerahoek, niet voor een opsomming van sfeer en materiaal. Een lange
+  opsomming levert een slechtere tekening op dan een korte, duidelijke zin.
 
 Antwoord met alleen dit, zonder uitleg eromheen:
 {"start": "...", "end": "..."}

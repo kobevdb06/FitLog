@@ -2516,3 +2516,23 @@ uitging, en die balk bestaat juist om dat te weten.
 
 Het blijft een voorstel: het vult de twee velden in, het tekent niets. Tekenen
 doe je pas als er staat wat jij wil.
+
+## 146. Een grens uit twee metingen is een gok met cijfers erbij
+
+De beschrijving werd afgekapt op 160 tekens. Dat getal kwam uit 141: een zin
+van 92 tekens tekende goed, een opsomming van 450 tekende niets bruikbaars.
+Tussen die twee is nooit gekeken, en het plafond is op het lage punt gelegd.
+
+Twee dingen mankeerden eraan. De zin die in de test het beste werkte - de
+beweging bij naam, dan hoe de gewrichten staan - loopt tot een stuk of 140
+tekens, dus er was nauwelijks ruimte om die gewrichten er nog bij te zetten.
+En wat er niet in paste werd stil weggeknipt: in het vakje stond iets anders
+dan wat er verstuurd werd.
+
+De grens staat nu op 320 - ruimte voor de gewrichten, niet voor een lijst - en
+beide vakjes tellen mee terwijl je typt, zodat je ziet wanneer je eraan komt.
+De coach mag 45 woorden gebruiken in plaats van 25, met erbij waarvoor die
+ruimte bedoeld is.
+
+Wat overeind blijft uit 141: meer woorden maken de tekening niet beter. Ruimte
+om precies te zijn is iets anders dan ruimte om alles te zeggen.

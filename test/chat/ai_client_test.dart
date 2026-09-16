@@ -83,6 +83,17 @@ void main() {
       expect(CoachProvider.forKey(''), CoachProvider.gemini);
     });
 
+    test('de lichte Gemini 3-modellen zijn de aanbevolen', () {
+      expect(isRecommendedModel('gemini-3.5-flash-lite'), isTrue);
+      expect(isRecommendedModel('gemini-3.1-flash-lite'), isTrue);
+      // Ook een variant die er later bijkomt.
+      expect(isRecommendedModel('gemini-3.7-flash-lite-preview'), isTrue);
+
+      expect(isRecommendedModel('gemini-3-pro'), isFalse);
+      expect(isRecommendedModel('gemini-2.5-flash-lite'), isFalse);
+      expect(isRecommendedModel('claude-sonnet-5'), isFalse);
+    });
+
     test('een opgeslagen keuze is terug te lezen', () {
       expect(CoachProvider.fromWire('gemini'), CoachProvider.gemini);
       expect(CoachProvider.fromWire('anthropic'), CoachProvider.anthropic);

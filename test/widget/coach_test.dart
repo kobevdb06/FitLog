@@ -230,6 +230,74 @@ void main() {
       expect(find.text('gemini-3.5-flash-lite'), findsWidgets);
     });
 
+    testWidgets('zet de lichte Gemini 3-modellen onder Aanbevolen', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(
+        tester,
+        const CoachSettingsScreen(),
+        api: apiSaying({
+          'models': [
+            for (final wire in [
+              'gemini-3.5-flash-lite',
+              'gemini-3.1-flash-lite',
+              'gemini-3-pro',
+              'gemini-2.5-flash',
+            ])
+              {
+                'name': 'models/$wire',
+                'displayName': wire,
+                'supportedGenerationMethods': ['generateContent'],
+              },
+          ],
+        }),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Gemini 2.5 Flash'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('AANBEVOLEN'), findsOneWidget);
+      expect(find.text('ALLES WAT JE SLEUTEL KAN'), findsOneWidget);
+
+      // De twee lichte 3-modellen staan boven de rest.
+      final aanbevolen = tester.getRect(find.text('AANBEVOLEN'));
+      final rest = tester.getRect(find.text('ALLES WAT JE SLEUTEL KAN'));
+      for (final wire in ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']) {
+        final row = tester.getRect(find.text(wire).first);
+        expect(row.top, greaterThan(aanbevolen.top));
+        expect(row.top, lessThan(rest.top));
+      }
+      expect(
+        tester.getRect(find.text('gemini-3-pro').first).top,
+        greaterThan(rest.top),
+      );
+    });
+
+    testWidgets('en zonder zulke modellen is er geen kopje', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(
+        tester,
+        const CoachSettingsScreen(),
+        api: apiSaying({
+          'models': [
+            {
+              'name': 'models/gemini-2.5-flash',
+              'displayName': 'Gemini 2.5 Flash',
+              'supportedGenerationMethods': ['generateContent'],
+            },
+          ],
+        }),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Gemini 2.5 Flash'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('AANBEVOLEN'), findsNothing);
+    });
+
     testWidgets('en zonder verbinding valt het terug op wat de app kent', (
       tester,
     ) async {

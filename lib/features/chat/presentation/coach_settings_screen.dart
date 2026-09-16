@@ -252,21 +252,31 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
-              for (final model
-                  in models.value?.isEmpty ?? true ? fallback : models.value!)
-                ListTile(
-                  leading: const Icon(Icons.smart_toy_outlined),
-                  title: Text(model.label),
-                  subtitle: Text(
-                    model.wire == model.label
-                        ? (model.description ?? '')
-                        : model.wire,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+              // The light Gemini 3 models first, under a heading: those are
+              // the ones with room to spare in the free tier.
+              for (final (heading, group) in _grouped(
+                models.value?.isEmpty ?? true ? fallback : models.value!,
+              )) ...[
+                if (heading != null) SectionHeader(heading),
+                for (final model in group)
+                  ListTile(
+                    leading: Icon(
+                      isRecommendedModel(model.wire)
+                          ? Icons.star_outline
+                          : Icons.smart_toy_outlined,
+                    ),
+                    title: Text(model.label),
+                    subtitle: Text(
+                      model.wire == model.label
+                          ? (model.description ?? '')
+                          : model.wire,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    selected: model.wire == current,
+                    onTap: () => Navigator.of(context).pop(model.wire),
                   ),
-                  selected: model.wire == current,
-                  onTap: () => Navigator.of(context).pop(model.wire),
-                ),
+              ],
             ],
           );
         },
@@ -278,6 +288,28 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
         .read(databaseProvider)
         .settingsDao
         .updateSettings(AppSettingsTableCompanion(chatModel: Value(picked)));
+  }
+
+  /// The recommended ones first, then the rest, each under its own heading -
+  /// unless there is nothing to recommend, in which case one unlabelled list
+  /// reads better than a heading over everything.
+  List<(String?, List<CoachModelInfo>)> _grouped(List<CoachModelInfo> models) {
+    final recommended = [
+      for (final model in models)
+        if (isRecommendedModel(model.wire)) model,
+    ];
+    if (recommended.isEmpty) return [(null, models)];
+
+    return [
+      ('Aanbevolen', recommended),
+      (
+        'Alles wat je sleutel kan',
+        [
+          for (final model in models)
+            if (!isRecommendedModel(model.wire)) model,
+        ],
+      ),
+    ];
   }
 
   /// The limit is the user's own number, so it is typed rather than chosen

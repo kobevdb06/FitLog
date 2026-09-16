@@ -2280,3 +2280,21 @@ van te mogen afwijken.
 
 De schermtests praten nu ook Gemini: de namaak-API antwoordt in Google's vorm,
 want dat is de enige vorm die de app nog spreekt.
+
+## 136. Aanbevolen is een regel, geen lijstje namen
+
+De lichte Gemini 3-modellen staan bovenaan in de modelkiezer, onder
+"Aanbevolen". Niet omdat ze de slimste zijn, maar omdat ze in de gratis laag
+veruit de meeste ruimte per dag hebben — en dat telt hier zwaarder dan elders,
+want één vraag waarbij de coach iets opzoekt kost twee of drie aanvragen.
+
+Welke dat zijn, staat niet als namenlijst in de app. Dat zou dezelfde fout zijn
+als de modellenlijst zelf hardcoderen: `gemini-3.5-flash-lite` en
+`gemini-3.1-flash-lite` zijn de twee die bestaan terwijl ik dit schrijf, en er
+komen er meer. De regel is daarom "een gemini-3-model met flash-lite in de
+naam", wat ook een `-preview`- of `-001`-variant vangt.
+
+Ze verschijnen alleen als de sleutel ze werkelijk kan gebruiken, want de lijst
+komt van Google. Heeft de sleutel er geen, dan staat er ook geen kopje
+"Aanbevolen" boven een lijst waarin niets aanbevolen is - dan is het gewoon één
+lijst.

@@ -85,6 +85,17 @@ enum CoachProvider {
 /// `CoachProvider.anthropic` back is this one line.
 const List<CoachProvider> kOfferedProviders = [CoachProvider.gemini];
 
+/// Which models the app puts at the top of the picker.
+///
+/// A rule rather than a list of names, for the same reason the list itself is
+/// fetched instead of shipped: the light Gemini 3 models are the ones with
+/// room to spare in the free tier, and there will be more of them than the
+/// two that exist while this is being written.
+bool isRecommendedModel(String wire) {
+  final name = wire.toLowerCase();
+  return name.startsWith('gemini-3') && name.contains('flash-lite');
+}
+
 /// The wire version of the Anthropic messages API this client speaks.
 const String kAnthropicVersion = '2023-06-01';
 

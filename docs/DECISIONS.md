@@ -2536,3 +2536,21 @@ ruimte bedoeld is.
 
 Wat overeind blijft uit 141: meer woorden maken de tekening niet beter. Ruimte
 om precies te zijn is iets anders dan ruimte om alles te zeggen.
+
+## 147. Waar de tekeningen voor bedoeld zijn, en waar niet
+
+Na zes rondes staat vast wat dit model kan: het tekent een houding die je
+beschrijft, herkenbaar en in een vaste stijl, en het kent geen enkel echt
+apparaat. Voor een stang-, dumbbell- of lichaamsgewichtoefening levert dat
+iets bruikbaars op; voor een kabel- of machineoefening een aannemelijke
+benadering met het verkeerde apparaat erbij.
+
+Daarmee is de plek van deze functie afgesproken: een tijdelijke invulling voor
+wie op dat moment geen foto kan nemen in de zaal. Niet de eindfoto, wel beter
+dan een leeg vak. Het label "getekend door AI, geen foto van de uitvoering"
+zegt precies dat, en de twee vakjes blijven vervangbaar door een echte foto
+met één tik.
+
+Dat bepaalt ook wat er níet meer moet gebeuren: nog een ronde prompts
+bijschaven om een machine kloppend te krijgen. Het model is niet stuk en de
+zin is niet fout - het weet gewoon niet hoe jouw toestel eruitziet.

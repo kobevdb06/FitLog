@@ -162,9 +162,14 @@ class CoachTools {
             'type': 'string',
             'description':
                 'Engelse beschrijving van hoe de STARTpositie eruitziet: de '
-                'houding van de persoon, het materiaal, de camerahoek. Wordt '
-                'gebruikt om een tekening te maken, als de gebruiker daar een '
-                'token voor heeft.',
+                'houding van de persoon, hoe het materiaal vastgehouden '
+                'wordt, en vanuit welke hoek je de beweging het best ziet. '
+                'Beschrijf een machine aan de hand van hoe ze werkt ("seated '
+                'at a chest-supported row machine with two handles that move '
+                'backward"), nooit met een merknaam: het tekenprogramma kent '
+                'die niet en verzint er dan een. Wordt gebruikt om een '
+                'tekening te maken, als de gebruiker daar een token voor '
+                'heeft.',
           },
           'end_image_prompt': {
             'type': 'string',

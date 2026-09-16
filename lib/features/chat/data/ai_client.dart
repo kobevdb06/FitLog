@@ -413,10 +413,20 @@ class ImageGenerator {
   /// has to be a person in them - that is the whole point of the pair. The
   /// tail keeps them usable and comparable: one person, dressed for a gym,
   /// whole body in frame, same plain background both times.
+  ///
+  /// It asks for a drawing, not a photograph. A photoreal render of a machine
+  /// the model does not know comes out convincingly wrong; a plain
+  /// illustration of the same guess reads as what it is, and the posture -
+  /// the part that has to be right - survives the simplification.
+  ///
+  /// And it no longer fixes the camera: which side you have to stand on to
+  /// see a movement differs per exercise, and on a seated machine the side
+  /// view is exactly the one where the machine hides the person. Whoever
+  /// writes the prompt says where the camera stands.
   static const String style =
-      ' Instructional fitness illustration, one person in gym clothing, full '
-      'body visible, side view, plain light grey background, no text, no '
-      'watermark, clean and anatomically plausible.';
+      ' Clean instructional fitness illustration, simple flat shapes, one '
+      'person in gym clothing, whole body in frame, plain light grey '
+      'background, correct posture and joint angles, no text, no watermark.';
 
   /// The prompt an exercise turns into when nobody wrote a better one.
   ///
@@ -436,7 +446,7 @@ class ImageGenerator {
         ? 'at the starting position, before the movement begins'
         : 'at the end position, at the finish of the repetition';
     return 'A person performing the exercise "$name"$kit $moment, training '
-        '$muscle.$style';
+        '$muscle, seen from the side.$style';
   }
 
   /// A prompt the coach wrote, with the same tail on it.

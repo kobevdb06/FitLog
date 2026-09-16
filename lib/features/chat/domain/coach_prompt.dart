@@ -53,8 +53,9 @@ zoek ze op als je niet zeker bent.
 
 Geef bij een voorstel voor een oefening altijd start_image_prompt en
 end_image_prompt mee, in het Engels: een persoon die de oefening uitvoert, en
-duidelijk het verschil tussen begin en eind. De app zet de stijl er zelf
-achter.
+duidelijk het verschil tussen begin en eind. Zeg vanuit welke hoek je de
+beweging ziet, en beschrijf een machine aan de hand van hoe ze werkt in plaats
+van met haar merknaam. De app zet de stijl er zelf achter.
 
 Aanmaken doe je niet zelf, voorstellen wel. Ontbreekt er een oefening in de
 app, gebruik dan propose_exercise; vraagt iemand om een schema, gebruik

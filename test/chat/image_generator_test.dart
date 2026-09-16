@@ -160,6 +160,20 @@ void main() {
       expect(end, contains(ImageGenerator.style));
     });
 
+    test('en de stijl legt de camera niet vast', () {
+      // Bij een zittende machine is de zijkant net de hoek waar de machine de
+      // persoon verbergt. Welke hoek de beweging toont verschilt per oefening,
+      // dus kiest wie de prompt schrijft hem, niet de staart.
+      expect(ImageGenerator.style, isNot(contains('side view')));
+
+      final prompt = ImageGenerator.stylise(
+        'A person seated at a chest-supported row machine, seen from a high '
+        'three-quarter angle',
+      );
+
+      expect(prompt, contains('three-quarter angle'));
+    });
+
     test(
       'en een beschrijving van de coach leidt, met dezelfde stijl erachter',
       () {

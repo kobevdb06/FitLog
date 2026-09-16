@@ -222,24 +222,77 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     if (mounted) setState(() => _result = null);
   }
 
+  /// The models this key may use, asked of the service.
+  ///
+  /// Not a list this app ships: names change faster than releases do, and
+  /// somebody with a key that can reach a model released last week should be
+  /// able to pick it. When the list cannot be fetched - no connection, a key
+  /// that is refused - the handful of names the app does know is offered
+  /// instead, with the reason on screen.
   Future<void> _pickModel() async {
     final current = ref.read(coachModelProvider);
     final provider = ref.read(coachProviderProvider);
-    final picked = await showAppSheet<CoachModel>(
+    final fallback = [
+      for (final model in CoachModel.forProvider(provider))
+        CoachModelInfo(
+          wire: model.wire,
+          label: model.label,
+          description: model.description,
+        ),
+    ];
+
+    final picked = await showAppSheet<String>(
       context: context,
       title: 'Welk model van ${provider.label}?',
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final model in CoachModel.forProvider(provider))
-            ListTile(
-              leading: const Icon(Icons.smart_toy_outlined),
-              title: Text(model.label),
-              subtitle: Text(model.description),
-              selected: model == current,
-              onTap: () => Navigator.of(context).pop(model),
-            ),
-        ],
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final models = ref.watch(coachModelsProvider);
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (models.isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Text('De lijst ophalen bij de dienst…'),
+                    ],
+                  ),
+                ),
+              if (models.hasError)
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(
+                    'De lijst kon niet opgehaald worden: '
+                    '${models.error}. Hieronder staat wat de app zelf kent.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              for (final model
+                  in models.value?.isEmpty ?? true ? fallback : models.value!)
+                ListTile(
+                  leading: const Icon(Icons.smart_toy_outlined),
+                  title: Text(model.label),
+                  subtitle: Text(
+                    model.wire == model.label
+                        ? (model.description ?? '')
+                        : model.wire,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  selected: model.wire == current,
+                  onTap: () => Navigator.of(context).pop(model.wire),
+                ),
+            ],
+          );
+        },
       ),
     );
     if (picked == null || !mounted) return;
@@ -247,9 +300,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     await ref
         .read(databaseProvider)
         .settingsDao
-        .updateSettings(
-          AppSettingsTableCompanion(chatModel: Value(picked.wire)),
-        );
+        .updateSettings(AppSettingsTableCompanion(chatModel: Value(picked)));
   }
 
   /// The limit is the user's own number, so it is typed rather than chosen
@@ -403,8 +454,8 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             const SectionHeader('Model'),
             ListTile(
               leading: const Icon(Icons.tune),
-              title: Text(model.label),
-              subtitle: Text(model.description),
+              title: Text(ref.watch(coachModelLabelProvider)),
+              subtitle: Text(model),
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickModel,
             ),

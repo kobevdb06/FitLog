@@ -167,6 +167,62 @@ void main() {
     });
   });
 
+  group('het model kiezen', () {
+    testWidgets('toont de lijst die de dienst zelf teruggeeft', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(
+        tester,
+        const CoachSettingsScreen(),
+        api: apiSaying({
+          'models': [
+            {
+              'name': 'models/gemini-3.5-flash-lite',
+              'displayName': 'Gemini 3.5 Flash Lite',
+              'supportedGenerationMethods': ['generateContent'],
+            },
+          ],
+        }),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Gemini 2.5 Flash'));
+      await tester.pumpAndSettle();
+
+      // Een model van na deze versie, opgehaald met jouw sleutel.
+      expect(find.text('Gemini 3.5 Flash Lite'), findsOneWidget);
+
+      await tester.tap(find.text('Gemini 3.5 Flash Lite'));
+      await tester.pumpAndSettle();
+
+      expect(
+        (await db.settingsDao.getSettings()).chatModel,
+        'gemini-3.5-flash-lite',
+      );
+      // En het scherm toont voortaan die naam.
+      expect(find.text('gemini-3.5-flash-lite'), findsWidgets);
+    });
+
+    testWidgets('en zonder verbinding valt het terug op wat de app kent', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(
+        tester,
+        const CoachSettingsScreen(),
+        api: apiSaying({
+          'error': {'message': 'kapot'},
+        }, status: 500),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Gemini 2.5 Flash'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('kon niet opgehaald worden'), findsOneWidget);
+      expect(find.text('Gemini 2.5 Flash Lite'), findsOneWidget);
+    });
+  });
+
   group('de balk met het dagverbruik', () {
     testWidgets('staat in de instellingen, niet in de chat', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');

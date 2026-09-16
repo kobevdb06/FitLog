@@ -66,13 +66,39 @@ bool coachProviderIsGuessed(Ref ref) =>
     CoachProvider.fromWire(ref.watch(settingsProvider).value?.chatProvider) ==
     null;
 
-/// The chosen model, or this service's default - which is also what happens
-/// when someone swaps a key for one of the other service.
+/// Which model to ask, as the service names it.
+///
+/// A plain string, not one of the names this app was built with: the picker
+/// lists what the key can really use, and that list outlives this version.
 @riverpod
-CoachModel coachModel(Ref ref) => CoachModel.resolve(
+String coachModel(Ref ref) => CoachModel.resolveWire(
   ref.watch(settingsProvider).value?.chatModel,
   ref.watch(coachProviderProvider),
 );
+
+/// What that model is called on screen.
+@riverpod
+String coachModelLabel(Ref ref) => CoachModel.labelFor(
+  ref.watch(coachModelProvider),
+  ref.watch(coachProviderProvider),
+);
+
+/// Every model this key may use, asked of the service itself.
+///
+/// Kept out of the settings screen's build: it is a network call, and the
+/// screen has to work without one.
+@riverpod
+Future<List<CoachModelInfo>> coachModels(Ref ref) async {
+  final key = ref.watch(coachApiKeyProvider);
+  if (key == null) return const [];
+
+  final client = ref.watch(coachClientFactoryProvider)(key);
+  try {
+    return await client.listModels();
+  } finally {
+    client.close();
+  }
+}
 
 @riverpod
 Stream<List<ChatThreadRow>> chatThreads(Ref ref) =>

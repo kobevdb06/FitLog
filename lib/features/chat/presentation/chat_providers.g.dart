@@ -242,20 +242,26 @@ final class CoachProviderIsGuessedProvider
 String _$coachProviderIsGuessedHash() =>
     r'f7d5654cb5b2710157ac670992ec46414a0e7dc4';
 
-/// The chosen model, or this service's default - which is also what happens
-/// when someone swaps a key for one of the other service.
+/// Which model to ask, as the service names it.
+///
+/// A plain string, not one of the names this app was built with: the picker
+/// lists what the key can really use, and that list outlives this version.
 
 @ProviderFor(coachModel)
 final coachModelProvider = CoachModelProvider._();
 
-/// The chosen model, or this service's default - which is also what happens
-/// when someone swaps a key for one of the other service.
+/// Which model to ask, as the service names it.
+///
+/// A plain string, not one of the names this app was built with: the picker
+/// lists what the key can really use, and that list outlives this version.
 
 final class CoachModelProvider
-    extends $FunctionalProvider<CoachModel, CoachModel, CoachModel>
-    with $Provider<CoachModel> {
-  /// The chosen model, or this service's default - which is also what happens
-  /// when someone swaps a key for one of the other service.
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// Which model to ask, as the service names it.
+  ///
+  /// A plain string, not one of the names this app was built with: the picker
+  /// lists what the key can really use, and that list outlives this version.
   CoachModelProvider._()
     : super(
         from: null,
@@ -272,24 +278,125 @@ final class CoachModelProvider
 
   @$internal
   @override
-  $ProviderElement<CoachModel> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  CoachModel create(Ref ref) {
+  String create(Ref ref) {
     return coachModel(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(CoachModel value) {
+  Override overrideWithValue(String value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<CoachModel>(value),
+      providerOverride: $SyncValueProvider<String>(value),
     );
   }
 }
 
-String _$coachModelHash() => r'839ee08ed9f69f051fe489e38eabac1c036e84a9';
+String _$coachModelHash() => r'29355558660e52783365b5577e60ec7b7aad20a9';
+
+/// What that model is called on screen.
+
+@ProviderFor(coachModelLabel)
+final coachModelLabelProvider = CoachModelLabelProvider._();
+
+/// What that model is called on screen.
+
+final class CoachModelLabelProvider
+    extends $FunctionalProvider<String, String, String>
+    with $Provider<String> {
+  /// What that model is called on screen.
+  CoachModelLabelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachModelLabelProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachModelLabelHash();
+
+  @$internal
+  @override
+  $ProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String create(Ref ref) {
+    return coachModelLabel(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$coachModelLabelHash() => r'1ea260486c92a73cb18edd4506b829b0b406c3ea';
+
+/// Every model this key may use, asked of the service itself.
+///
+/// Kept out of the settings screen's build: it is a network call, and the
+/// screen has to work without one.
+
+@ProviderFor(coachModels)
+final coachModelsProvider = CoachModelsProvider._();
+
+/// Every model this key may use, asked of the service itself.
+///
+/// Kept out of the settings screen's build: it is a network call, and the
+/// screen has to work without one.
+
+final class CoachModelsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CoachModelInfo>>,
+          List<CoachModelInfo>,
+          FutureOr<List<CoachModelInfo>>
+        >
+    with
+        $FutureModifier<List<CoachModelInfo>>,
+        $FutureProvider<List<CoachModelInfo>> {
+  /// Every model this key may use, asked of the service itself.
+  ///
+  /// Kept out of the settings screen's build: it is a network call, and the
+  /// screen has to work without one.
+  CoachModelsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachModelsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachModelsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<CoachModelInfo>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<CoachModelInfo>> create(Ref ref) {
+    return coachModels(ref);
+  }
+}
+
+String _$coachModelsHash() => r'513c4b8214c0ad918d50edfcfff71a1a3fcc8c07';
 
 @ProviderFor(chatThreads)
 final chatThreadsProvider = ChatThreadsProvider._();
@@ -543,7 +650,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'1a4af0a17361d02dc6aad66b7f2939570021bb76';
+String _$coachControllerHash() => r'b262502e3e844993185280f2058a63d43fb17478';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

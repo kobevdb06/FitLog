@@ -66,7 +66,10 @@ class Coach {
 
   final AiClient client;
   final CoachTools tools;
-  final CoachModel model;
+
+  /// Which model to ask, as the service names it. A plain string so a model
+  /// this app has never heard of still works.
+  final String model;
   final String system;
 
   /// How many times the coach may look something up before it has to answer

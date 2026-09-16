@@ -2212,3 +2212,26 @@ naar een naam die nergens anders in de app bestaat.
 
 Wat je aannam blijft op de kaart staan ("Toegevoegd", met een knop om het te
 bekijken). Tweemaal tikken maakt geen twee.
+
+## 133. De lijst met modellen komt van de dienst, niet uit deze app
+
+De vraag was om Gemini 3 te kunnen kiezen. De eerste neiging is een naam
+bijzetten in de enum — en dat is precies de verkeerde oplossing: modelnamen
+veranderen sneller dan deze app uitkomt, en een naam die ik hier gok en die
+niet blijkt te bestaan is een 404 die de gebruiker op zijn scherm krijgt voor
+iets dat hij nooit gekozen heeft.
+
+Dus vraagt de app het. `GET /v1beta/models` bij Google en `GET /v1/models` bij
+Anthropic, met dezelfde sleutel als de vragen zelf, en de kiezer toont wat er
+terugkomt: precies de modellen die die sleutel mag gebruiken, vandaag. Van
+Google's lijst valt weg wat deze app toch niet kan gebruiken — embeddings,
+beeld, spraak, de live-modellen — en de rest staat nieuwste eerst, voor zover
+een naam dat kan zeggen.
+
+Het gekozen model is daarom geen enum-waarde meer maar een tekst. De enum
+blijft bestaan voor twee dingen: het standaardmodel per dienst, en de
+terugvallijst wanneer er geen verbinding is — met de reden erbij op het scherm.
+
+Dat zijn twee adressen erbij, allebei op hosts die al toegestaan waren en
+allebei in hetzelfde ene bestand. De deurtest leest ze nu alle vier uit dat
+bestand en controleert dat er geen derde host tussen staat.

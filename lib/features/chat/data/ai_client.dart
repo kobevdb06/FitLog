@@ -42,6 +42,17 @@ enum CoachProvider {
   /// least two shapes: the older `AIza...` and the newer `AQ....`.
   final List<String> keyPrefixes;
 
+  /// Where the service says which models this key may use.
+  ///
+  /// Asking beats guessing: model names change faster than this app ships, and
+  /// a name hard-coded here that no longer exists is a 404 the user gets to
+  /// see for something they never chose.
+  String get modelsEndpoint => switch (this) {
+    CoachProvider.anthropic => 'https://api.anthropic.com/v1/models?limit=100',
+    CoachProvider.gemini =>
+      'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',
+  };
+
   static CoachProvider? fromWire(String? wire) {
     for (final provider in values) {
       if (provider.wire == wire) return provider;
@@ -132,12 +143,49 @@ enum CoachModel {
   /// The stored choice, or this service's default when the stored name belongs
   /// to the other service - which is exactly what happens when someone swaps
   /// their key.
+  ///
+  /// Only for the names this app happens to know. Which model is actually used
+  /// is a string, not a member of this enum: [AiClient.listModels] asks the
+  /// service what a key may use, and that list is longer and newer than this
+  /// one will ever be.
   static CoachModel resolve(String? wire, CoachProvider provider) {
     for (final model in values) {
       if (model.wire == wire && model.provider == provider) return model;
     }
     return defaultFor(provider);
   }
+
+  /// What to send, given what is stored: the stored name if there is one, and
+  /// otherwise this service's default.
+  ///
+  /// A name this app does not know is kept as it is. That is the whole point:
+  /// a model released after this version still works.
+  static String resolveWire(String? wire, CoachProvider provider) {
+    final stored = wire?.trim();
+    if (stored == null || stored.isEmpty) return defaultFor(provider).wire;
+    return stored;
+  }
+
+  /// How a model name reads when the app has never heard of it.
+  static String labelFor(String wire, CoachProvider provider) {
+    for (final model in values) {
+      if (model.wire == wire && model.provider == provider) return model.label;
+    }
+    return wire;
+  }
+}
+
+/// One model as the service itself describes it.
+class CoachModelInfo {
+  const CoachModelInfo({
+    required this.wire,
+    required this.label,
+    this.description,
+  });
+
+  final String wire;
+  final String label;
+  final String? description;
 }
 
 /// What one answer cost, as the service counted it.
@@ -281,14 +329,14 @@ class AiClient {
     required String system,
     required List<CoachMessage> messages,
     required List<Map<String, Object?>> tools,
-    required CoachModel model,
+    required String model,
     int maxTokens = 1024,
   }) async {
     final anthropic = provider == CoachProvider.anthropic;
     final uri = Uri.parse(
       anthropic
           ? provider.endpoint
-          : '${provider.endpoint}/${model.wire}:generateContent',
+          : '${provider.endpoint}/$model:generateContent',
     );
 
     final body = jsonEncode(
@@ -337,16 +385,107 @@ class AiClient {
         : _parseGemini(response.body);
   }
 
+  /// Which models this key may actually use, straight from the service.
+  ///
+  /// The app ships with a handful of names it happens to know, and those go
+  /// stale: a model released next month is not in this binary. So the picker
+  /// asks, and what comes back is what the key can really do today.
+  Future<List<CoachModelInfo>> listModels() async {
+    final anthropic = provider == CoachProvider.anthropic;
+
+    final http.Response response;
+    try {
+      response = await _client
+          .get(
+            Uri.parse(provider.modelsEndpoint),
+            headers: {
+              if (anthropic) ...{
+                'x-api-key': apiKey,
+                'anthropic-version': kAnthropicVersion,
+              } else
+                'x-goog-api-key': apiKey,
+            },
+          )
+          .timeout(timeout);
+    } on TimeoutException {
+      throw const CoachException('De lijst met modellen kwam niet op tijd.');
+    } on SocketException {
+      throw const CoachException(
+        'Geen verbinding, dus de lijst met modellen kan niet opgehaald worden.',
+      );
+    } on http.ClientException catch (error) {
+      throw CoachException(
+        'De verbinding werd afgebroken: ${_redact(error.message)}',
+      );
+    }
+
+    if (response.statusCode != 200) throw _errorFor(response);
+
+    final json = _decode(response.body);
+    final models = anthropic ? json['data'] : json['models'];
+    if (models is! List) {
+      throw const CoachException('De lijst met modellen was onleesbaar.');
+    }
+
+    final result = <CoachModelInfo>[];
+    for (final entry in models) {
+      if (entry is! Map) continue;
+      final info = anthropic ? _anthropicModel(entry) : _geminiModel(entry);
+      if (info != null) result.add(info);
+    }
+
+    // Newest first, as far as a name can say so: "gemini-3..." sorts above
+    // "gemini-2.5...", and that is the order someone is looking for.
+    result.sort((a, b) => b.wire.compareTo(a.wire));
+    return result;
+  }
+
+  CoachModelInfo? _anthropicModel(Map<Object?, Object?> entry) {
+    final id = entry['id'];
+    if (id is! String || id.isEmpty) return null;
+    return CoachModelInfo(
+      wire: id,
+      label: entry['display_name'] is String
+          ? entry['display_name']! as String
+          : id,
+    );
+  }
+
+  /// Google lists everything its API can do, including things this app cannot
+  /// use: embeddings, images, speech, and the live streaming models.
+  CoachModelInfo? _geminiModel(Map<Object?, Object?> entry) {
+    final name = entry['name'];
+    if (name is! String || !name.startsWith('models/')) return null;
+    final wire = name.substring('models/'.length);
+
+    final methods = entry['supportedGenerationMethods'];
+    final talks = methods is List && methods.contains('generateContent');
+    if (!talks) return null;
+
+    const unusable = ['embedding', 'imagen', 'veo', 'tts', 'aqa', 'live'];
+    if (unusable.any(wire.contains)) return null;
+
+    return CoachModelInfo(
+      wire: wire,
+      label: entry['displayName'] is String
+          ? entry['displayName']! as String
+          : wire,
+      description: entry['description'] is String
+          ? entry['description']! as String
+          : null,
+    );
+  }
+
   // --- what goes out ------------------------------------------------------
 
   Map<String, Object?> _anthropicBody(
     String system,
     List<CoachMessage> messages,
     List<Map<String, Object?>> tools,
-    CoachModel model,
+    String model,
     int maxTokens,
   ) => {
-    'model': model.wire,
+    'model': model,
     'max_tokens': maxTokens,
     'system': system,
     'messages': [for (final message in messages) _anthropicTurn(message)],

@@ -75,7 +75,7 @@ void main() {
   Coach coachWith(AiClient client) => Coach(
     client: client,
     tools: CoachTools(db),
-    model: CoachModel.sonnet,
+    model: CoachModel.sonnet.wire,
     system: buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
   );
 
@@ -322,7 +322,7 @@ void main() {
           geminiSays('Je laatste sessie was Push, met 80 kg voor 5.'),
         ]),
         tools: CoachTools(db),
-        model: CoachModel.geminiFlash,
+        model: CoachModel.geminiFlash.wire,
         system: buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
       );
 
@@ -348,7 +348,7 @@ void main() {
       final coach = Coach(
         client: geminiSaying([geminiSays('Ja.')]),
         tools: CoachTools(db),
-        model: CoachModel.geminiFlash,
+        model: CoachModel.geminiFlash.wire,
         system: buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
       );
 

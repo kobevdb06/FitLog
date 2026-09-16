@@ -43,7 +43,7 @@ void main() {
     system: 'Je bent een coach.',
     messages: [CoachMessage.user('Hoeveel sets voor borst?')],
     tools: tools,
-    model: CoachModel.defaultFor(client.provider),
+    model: CoachModel.defaultFor(client.provider).wire,
   );
 
   const searchTool = {
@@ -102,6 +102,116 @@ void main() {
       expect(
         CoachModel.resolve(null, CoachProvider.anthropic),
         CoachModel.sonnet,
+      );
+    });
+  });
+
+  group('welke modellen een sleutel mag gebruiken', () {
+    test('worden bij Google opgevraagd, niet uit de app gehaald', () async {
+      // Modelnamen veranderen sneller dan deze app uitkomt; wie een sleutel
+      // heeft die een nieuw model aankan, moet het kunnen kiezen.
+      final client = clientThatAnswers(200, {
+        'models': [
+          {
+            'name': 'models/gemini-3.5-flash-lite',
+            'displayName': 'Gemini 3.5 Flash Lite',
+            'description': 'Snel en goedkoop.',
+            'supportedGenerationMethods': ['generateContent', 'countTokens'],
+          },
+          {
+            'name': 'models/gemini-2.5-flash',
+            'displayName': 'Gemini 2.5 Flash',
+            'supportedGenerationMethods': ['generateContent'],
+          },
+        ],
+      }, key: 'AIzaSyGeheim123');
+
+      final models = await client.listModels();
+
+      expect(sent.method, 'GET');
+      expect(sent.url.toString(), contains('/v1beta/models'));
+      expect(sent.headers['x-goog-api-key'], 'AIzaSyGeheim123');
+
+      // Nieuwste eerst, voor zover een naam dat kan zeggen.
+      expect(models.first.wire, 'gemini-3.5-flash-lite');
+      expect(models.first.label, 'Gemini 3.5 Flash Lite');
+      expect(models.map((m) => m.wire), contains('gemini-2.5-flash'));
+    });
+
+    test('en wat deze app niet kan gebruiken valt weg', () async {
+      final client = clientThatAnswers(200, {
+        'models': [
+          {
+            'name': 'models/text-embedding-004',
+            'supportedGenerationMethods': ['embedContent'],
+          },
+          {
+            'name': 'models/imagen-4.0',
+            'supportedGenerationMethods': ['generateContent'],
+          },
+          {
+            'name': 'models/gemini-3-pro',
+            'supportedGenerationMethods': ['generateContent'],
+          },
+        ],
+      }, key: 'AIzaSyGeheim123');
+
+      final models = await client.listModels();
+
+      expect(models.map((m) => m.wire), ['gemini-3-pro']);
+    });
+
+    test(
+      'bij Anthropic komt het uit data, met de versie in de header',
+      () async {
+        final client = clientThatAnswers(200, {
+          'data': [
+            {'type': 'model', 'id': 'claude-opus-5', 'display_name': 'Opus 5'},
+          ],
+        });
+
+        final models = await client.listModels();
+
+        expect(sent.headers['anthropic-version'], kAnthropicVersion);
+        expect(models.single.wire, 'claude-opus-5');
+        expect(models.single.label, 'Opus 5');
+      },
+    );
+
+    test('een geweigerde sleutel zegt dat ook hier', () async {
+      final client = clientThatAnswers(401, {
+        'error': {'message': 'invalid'},
+      });
+
+      await expectLater(
+        client.listModels(),
+        throwsA(
+          isA<CoachException>().having((e) => e.badKey, 'badKey', isTrue),
+        ),
+      );
+    });
+
+    test('en een model dat de app niet kent blijft gewoon staan', () {
+      // Precies waar dit allemaal om draait: een naam van na deze versie.
+      expect(
+        CoachModel.resolveWire('gemini-3.5-flash-lite', CoachProvider.gemini),
+        'gemini-3.5-flash-lite',
+      );
+      expect(
+        CoachModel.resolveWire(null, CoachProvider.gemini),
+        CoachModel.geminiFlash.wire,
+      );
+      expect(
+        CoachModel.resolveWire('  ', CoachProvider.anthropic),
+        CoachModel.sonnet.wire,
+      );
+      expect(
+        CoachModel.labelFor('gemini-3.5-flash-lite', CoachProvider.gemini),
+        'gemini-3.5-flash-lite',
+      );
+      expect(
+        CoachModel.labelFor('claude-sonnet-5', CoachProvider.anthropic),
+        'Sonnet 5',
       );
     });
   });
@@ -185,7 +295,7 @@ void main() {
           ]),
         ],
         tools: const [searchTool],
-        model: CoachModel.sonnet,
+        model: CoachModel.sonnet.wire,
       );
 
       final body = jsonDecode(sent.body) as Map<String, Object?>;
@@ -296,7 +406,7 @@ void main() {
           ]),
         ],
         tools: const [searchTool, noArgsTool],
-        model: CoachModel.geminiFlash,
+        model: CoachModel.geminiFlash.wire,
       );
 
       final body = jsonDecode(sent.body) as Map<String, Object?>;
@@ -349,7 +459,7 @@ void main() {
         system: 'x',
         messages: [CoachMessage.user('Wat is dit?', image: photo)],
         tools: const [],
-        model: CoachModel.sonnet,
+        model: CoachModel.sonnet.wire,
       );
 
       final content =
@@ -381,7 +491,7 @@ void main() {
         system: 'x',
         messages: [CoachMessage.user('Wat is dit?', image: photo)],
         tools: const [],
-        model: CoachModel.geminiFlash,
+        model: CoachModel.geminiFlash.wire,
       );
 
       final parts =

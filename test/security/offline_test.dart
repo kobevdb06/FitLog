@@ -70,12 +70,26 @@ void main() {
   test('and it can only reach the two services it was written for', () {
     final source = read(client);
 
-    // Written down once each, not assembled from parts at runtime.
+    // Written down once each, not assembled from parts at runtime. Two
+    // addresses per service: where a question goes, and where the list of
+    // models it may use comes from.
     final urls = RegExp(r"'https?://[^']+'").allMatches(source);
-    expect(urls.map((m) => m.group(0)), [
+    expect(urls.map((m) => m.group(0)).toSet(), {
       "'https://api.anthropic.com/v1/messages'",
       "'https://generativelanguage.googleapis.com/v1beta/models'",
-    ]);
+      "'https://api.anthropic.com/v1/models?limit=100'",
+      "'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200'",
+    });
+
+    // And both of them are the hosts we already allow.
+    for (final url in urls.map((m) => m.group(0)!)) {
+      expect(
+        url.contains('api.anthropic.com') ||
+            url.contains('generativelanguage.googleapis.com'),
+        isTrue,
+        reason: url,
+      );
+    }
   });
 
   test('nothing else in the app names either host', () {

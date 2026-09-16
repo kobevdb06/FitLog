@@ -601,10 +601,22 @@ class ImageGenerator {
         badKey: true,
       );
     }
-    if (response.statusCode == 402 || response.statusCode == 429) {
+    if (response.statusCode == 402) {
       throw CoachException(
         'Je tegoed bij ${provider.label} is op. Er is niets getekend.',
         badKey: true,
+      );
+    }
+    // A day's worth spent is not a key that was refused. Saying so sent the
+    // user looking at their token, which was fine all along - and the portion
+    // was back a few hours later.
+    if (response.statusCode == 429) {
+      throw CoachException(
+        provider == DrawingService.cloudflare
+            ? 'Je portie van vandaag bij Cloudflare is op. Er is niets '
+                  'getekend; om middernacht (UTC) staat ze er weer.'
+            : 'Er zijn te veel tekeningen na elkaar gevraagd. Probeer het zo '
+                  'opnieuw.',
       );
     }
     if (response.statusCode != 200) {

@@ -2586,3 +2586,19 @@ Technisch: FLUX.2 neemt geen JSON aan ("required properties at '/' are
 in `result.image` waar Hugging Face `data[0].b64_json` zegt. Allebei base64 in
 het antwoord zelf, allebei in hetzelfde ene netwerkbestand, en de deurtest
 kent nu twee tekenadressen.
+
+## 149. Een opgebruikte dagportie is geen geweigerde sleutel
+
+Bij een 429 zei de app "je tegoed is op" en zette ze de sleutel als geweigerd
+weg. Allebei mis. Het gaat om de portie van die dag, die om middernacht UTC
+terugkomt, en het token mankeerde niets - wie die melding leest gaat zoeken in
+zijn instellingen naar een fout die er niet is, terwijl hij alleen moest
+wachten.
+
+402 blijft wat het was: tegoed dat echt op is. 429 zegt nu wat het is, per
+dienst, en laat de sleutel met rust.
+
+Hoe het gevonden is: het dagpotje van 10.000 neurons ging op aan het
+vergelijken zelf - drie tekeningen van Leonardo (elk ~1.900) en vier van
+Klein 9B (elk ~1.364) is al meer dan tienduizend. Dat is geen fout in de
+schatting maar wel het bewijs dat 9B er zeven per dag zijn en niet honderd.

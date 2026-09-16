@@ -304,6 +304,39 @@ void main() {
       );
     });
 
+    test('een opgebruikte dagportie is geen geweigerd token', () async {
+      // Zo stond het er eerst wel, en dan zoek je in je instellingen naar een
+      // fout die er niet is terwijl je gewoon moet wachten.
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          imageProvider: Value('cloudflare'),
+          imageAccountId: Value('acc-123'),
+        ),
+      );
+      container = containerThatDraws(
+        cloudflare: true,
+        status: 429,
+        body: {
+          'success': false,
+          'errors': [
+            {'code': 3036, 'message': 'Account limited'},
+          ],
+        },
+      );
+
+      await expectLater(
+        container!
+            .read(exerciseEditorProvider)
+            .drawFrame(name: 'Sledepush', start: true),
+        throwsA(
+          isA<CoachException>()
+              .having((e) => e.badKey, 'badKey', isFalse)
+              .having((e) => e.message, 'message', contains('vandaag'))
+              .having((e) => e.message, 'message', contains('middernacht')),
+        ),
+      );
+    });
+
     test('een geweigerd token ook', () async {
       container = containerThatDraws(status: 401, body: {'error': 'nope'});
 

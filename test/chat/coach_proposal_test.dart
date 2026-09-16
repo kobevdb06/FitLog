@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:image/image.dart' as img;
 
 import '../widget/helpers.dart';
 
@@ -26,7 +27,11 @@ void main() {
 
   late AppDatabase db;
   late CoachTools tools;
+  late Directory home;
   ProviderContainer? container;
+
+  /// Every drawing that was asked for, as the body of the request.
+  late List<Map<String, Object?>> drawn;
 
   Map<String, Object?> decode(CoachLookup lookup) =>
       jsonDecode(lookup.json) as Map<String, Object?>;
@@ -36,6 +41,8 @@ void main() {
     await db.settingsDao.ensureInitialized();
     await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
     tools = CoachTools(db);
+    home = await Directory.systemTemp.createTemp('fitlog_proposal');
+    drawn = [];
 
     await db
         .into(db.exercisesTable)
@@ -55,17 +62,39 @@ void main() {
     container?.dispose();
     container = null;
     await db.close();
+    if (await home.exists()) await home.delete(recursive: true);
   });
 
   ProviderContainer newContainer() => ProviderContainer(
     overrides: [
       databaseProvider.overrideWithValue(db),
-      appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
+      appPathsProvider.overrideWith((ref) => AppPaths(home)),
       coachClientFactoryProvider.overrideWithValue(
         (apiKey, provider) => AiClient(
           apiKey: apiKey,
           provider: provider,
           client: MockClient((request) async => http.Response('{}', 500)),
+        ),
+      ),
+      imageGeneratorFactoryProvider.overrideWithValue(
+        (apiKey) => ImageGenerator(
+          apiKey: apiKey,
+          client: MockClient((request) async {
+            drawn.add(jsonDecode(request.body) as Map<String, Object?>);
+            return http.Response(
+              jsonEncode({
+                'data': [
+                  {
+                    'b64_json': base64Encode(
+                      img.encodeJpg(img.Image(width: 32, height: 32)),
+                    ),
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
         ),
       ),
     ],
@@ -122,6 +151,66 @@ void main() {
 
       expect(decode(lookup)['ok'], isFalse);
       expect(lookup.proposal, isNull);
+    });
+  });
+
+  group('met tekeningen erbij', () {
+    /// Een voorstel zoals de coach het doet: met twee beschrijvingen erbij.
+    Future<ChatMessageRow> drawable() => answerWith([
+      CoachProposal.ofExercise(
+        const ExerciseProposal(
+          name: 'Overhead triceps extension',
+          primaryMuscle: 'triceps',
+          equipment: 'cable',
+          category: 'cable',
+          startImagePrompt:
+              'A person stands with elbows bent, a bar behind '
+              'the head',
+          endImagePrompt: 'A person stands with the arms straight overhead',
+        ),
+      ),
+    ]);
+
+    setUp(() async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+    });
+
+    test('tekent beide houdingen met hetzelfde toevalsgetal', () async {
+      container = newContainer();
+      final coach = container!.read(coachControllerProvider.notifier);
+
+      final id = await coach.accept(
+        message: await drawable(),
+        index: 0,
+        withImages: true,
+      );
+
+      expect(drawn, hasLength(2));
+      // Twee houdingen...
+      expect('${drawn.first['prompt']}', contains('elbows bent'));
+      expect('${drawn.last['prompt']}', contains('straight overhead'));
+      // ...maar dezelfde persoon: zonder één zaad zijn het twee vreemden in
+      // twee zalen en zegt het verschil tussen de twee niets.
+      expect(drawn.first['seed'], isNotNull);
+      expect(drawn.last['seed'], drawn.first['seed']);
+
+      final made = (await db.exercisesDao.getById(id!))!;
+      expect(made.startImageFile, isNotNull);
+      expect(made.endImageFile, isNotNull);
+      expect(made.startImageFile, isNot(made.endImageFile));
+      expect(made.imagesGenerated, isTrue);
+    });
+
+    test('en zonder die knop wordt er niets getekend', () async {
+      container = newContainer();
+      final coach = container!.read(coachControllerProvider.notifier);
+
+      final id = await coach.accept(message: await drawable(), index: 0);
+
+      expect(drawn, isEmpty);
+      expect((await db.exercisesDao.getById(id!))!.imagesGenerated, isFalse);
     });
   });
 

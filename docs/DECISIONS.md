@@ -2421,3 +2421,31 @@ ook in de geslaagde test.
 
 Tegen de verleiding in om dit "op te lossen" met een duurder model: het model
 was niet stuk, de vraag was te lang.
+
+## 142. Twee tekeningen van één oefening horen dezelfde persoon te zijn
+
+Bij een overhead triceps extension kwamen er twee tekeningen terug: links een
+man met een wit hemd en een pet in een squatrek, rechts een man in een grijs
+hemd bij een kabelmachine. Allebei met de armen gestrekt. Wat je eruit zou
+moeten lezen - het verschil tussen begin en eind - was het verschil tussen
+twee vreemden in twee zalen.
+
+Twee oorzaken, allebei van ons.
+
+Het waren twee losse opdrachten, elk met hun eigen toevalsgetal. Die krijgen
+nu hetzelfde `seed` mee, en de kleding staat in de staart ("a grey tank top
+and black shorts"). Met een echte sleutel getest: dezelfde persoon, dezelfde
+schoenen, dezelfde achtergrond, en alleen de armen bewegen. Precies wat een
+paar moet zijn.
+
+En de coach beschreef tweemaal dezelfde houding, omdat er "beschrijf de
+startpositie" gevraagd werd en een model dan de oefening beschrijft in plaats
+van de houding. De opdracht vraagt nu naar de stand van armen en benen, met de
+eis dat de twee zinnen van elkaar verschillen en met dit geval als voorbeeld:
+begin met gebogen ellebogen, eind met gestrekte armen.
+
+Het zaad zit per bewerkscherm en per voorstel, niet in de database. Teken je
+een vak opnieuw dat er al een had, dan rolt er een nieuw getal: je tikte een
+tweede keer omdat je iets anders wou zien. Daarmee valt het paar uit elkaar
+tot je het andere vak ook opnieuw laat tekenen - dat is de prijs van opnieuw
+mogen proberen, en die is het waard.

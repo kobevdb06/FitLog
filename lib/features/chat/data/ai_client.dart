@@ -432,8 +432,9 @@ class ImageGenerator {
   /// writes the prompt says where the camera stands.
   static const String style =
       ' Clean instructional fitness illustration, simple flat shapes, one '
-      'person in gym clothing, whole body in frame, plain light grey '
-      'background, correct posture and joint angles, no text, no watermark.';
+      'person in a grey tank top and black shorts, whole body in frame, plain '
+      'light grey background, correct posture and joint angles, no text, no '
+      'watermark.';
 
   /// The prompt an exercise turns into when nobody wrote a better one.
   ///
@@ -486,12 +487,19 @@ class ImageGenerator {
   }
 
   /// Returns the image bytes, ready to be written to the photo directory.
-  Future<Uint8List> draw(String prompt) async {
+  ///
+  /// Two drawings of one exercise share a [seed]. Without it they are two
+  /// unrelated draws: one came back in a white shirt in a squat rack, the
+  /// other bare-chested at a cable machine, and the difference you were
+  /// supposed to read off the pair was the difference between two people. One
+  /// seed and one described outfit, and only the posture moves.
+  Future<Uint8List> draw(String prompt, {int? seed}) async {
     final body = jsonEncode({
       'model': model,
       'prompt': prompt,
       'response_format': 'b64_json',
       'size': size,
+      'seed': ?seed,
     });
 
     final http.Response response;

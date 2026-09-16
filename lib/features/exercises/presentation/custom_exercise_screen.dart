@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -60,6 +62,15 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   /// to warn about.
   final Set<_Slot> _drawn = {};
 
+  /// What both drawings of this exercise are drawn from.
+  ///
+  /// The same number twice gives the same person in the same clothes, so the
+  /// only difference between the two pictures is the posture - which is the
+  /// one thing they are there for. Asking for a slot again that already has a
+  /// drawing rolls a new one: you tapped a second time because you wanted
+  /// something else.
+  int? _seed;
+
   bool _loaded = false;
   bool _busy = false;
   String? _error;
@@ -112,9 +123,11 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
       return;
     }
 
+    final again = _drawn.contains(slot);
     setState(() {
       _busy = true;
       _error = null;
+      if (_seed == null || again) _seed = Random().nextInt(1 << 31);
     });
     try {
       final fileName = await ref
@@ -124,6 +137,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
             muscle: muscle,
             start: slot == _Slot.start,
             equipment: _equipment?.trim(),
+            seed: _seed,
           );
       if (!mounted) return;
       if (fileName == null) {

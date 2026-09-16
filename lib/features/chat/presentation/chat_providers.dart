@@ -6,6 +6,7 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -27,6 +28,11 @@ import '../domain/coach_proposal.dart';
 part 'chat_providers.g.dart';
 
 const _uuid = Uuid();
+
+/// The two drawings of one exercise share a seed. Which number it is does not
+/// matter - only that it is the same one twice.
+final _random = Random();
+const _seedCeiling = 1 << 31;
 
 /// How a client is made, so a test can hand over one that answers from
 /// memory instead of from the network.
@@ -403,12 +409,16 @@ class CoachController extends _$CoachController {
     String? endImage;
     if (withImages && proposal.canBeDrawn) {
       final editor = ref.read(exerciseEditorProvider);
+      // One seed for both, so the two drawings are the same person in the
+      // same room and the only thing that changes is the posture.
+      final seed = _random.nextInt(_seedCeiling);
       startImage = await editor.drawFrame(
         name: proposal.name,
         muscle: proposal.primaryMuscle,
         start: true,
         equipment: proposal.equipment,
         prompt: proposal.startImagePrompt,
+        seed: seed,
       );
       endImage = await editor.drawFrame(
         name: proposal.name,
@@ -416,6 +426,7 @@ class CoachController extends _$CoachController {
         start: false,
         equipment: proposal.equipment,
         prompt: proposal.endImagePrompt,
+        seed: seed,
       );
     }
 

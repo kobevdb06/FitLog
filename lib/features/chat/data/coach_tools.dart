@@ -161,20 +161,24 @@ class CoachTools {
           'start_image_prompt': {
             'type': 'string',
             'description':
-                'EEN korte Engelse zin over de STARTpositie, hoogstens 25 '
-                'woorden: wie doet wat, waar de armen en benen zijn, en '
-                'vanuit welke hoek je kijkt. Geen opsomming van details - het '
-                'tekenmodel verdrinkt daarin en tekent dan iets anders. Geen '
-                'merknaam van een machine, maar hoe ze werkt ("seated at a '
-                'rowing machine"). Wordt gebruikt om een tekening te maken, '
-                'als de gebruiker daar een token voor heeft.',
+                'EEN korte Engelse zin over de HOUDING aan het begin, '
+                'hoogstens 25 woorden: waar de armen en benen staan en hoe de '
+                'gewrichten gebogen zijn, niet wat de oefening heet. Geen '
+                'opsomming van details - het tekenmodel verdrinkt daarin en '
+                'tekent dan iets anders. Geen merknaam van een machine, maar '
+                'hoe ze werkt ("seated at a rowing machine"). Wordt gebruikt '
+                'om een tekening te maken, als de gebruiker daar een token '
+                'voor heeft.',
           },
           'end_image_prompt': {
             'type': 'string',
             'description':
-                'Hetzelfde voor de EINDpositie, even kort. Zeg wat er '
-                'verschilt van de start: dat verschil is waar het paar om '
-                'draait.',
+                'Hetzelfde voor de HOUDING aan het eind, even kort. De twee '
+                'zinnen moeten verschillen in de stand van de armen of de '
+                'benen - staat er in allebei hetzelfde ("arms overhead"), dan '
+                'krijgt de gebruiker twee keer dezelfde tekening en heeft het '
+                'paar geen inhoud. Bij een triceps extension: begin met '
+                'gebogen ellebogen, eind met gestrekte armen.',
           },
         },
         'required': ['name', 'primary_muscle'],

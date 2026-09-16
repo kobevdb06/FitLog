@@ -454,6 +454,7 @@ class ExerciseEditor {
     required bool start,
     String? equipment,
     String? prompt,
+    int? seed,
   }) async {
     // Straight from the database, not from the settings stream: reading a
     // stream nobody is listening to answers "still loading", which here would
@@ -474,6 +475,7 @@ class ExerciseEditor {
                 start: start,
               )
             : ImageGenerator.stylise(prompt),
+        seed: seed,
       );
       final paths = await ref.read(appPathsProvider.future);
       return await PhotoStore(paths)

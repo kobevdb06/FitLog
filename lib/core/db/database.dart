@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -253,6 +253,13 @@ class AppDatabase extends _$AppDatabase {
           // What the coach offered to add. Null for every answer so far, which
           // is what "offered nothing" means.
           await m.addColumn(chatMessagesTable, chatMessagesTable.proposals);
+        }
+        if (from < 26) {
+          // A token for drawing an illustration, and a mark on the exercises
+          // that got one. Both empty: no key means no picture, which is what
+          // every database so far has been doing.
+          await m.addColumn(appSettingsTable, appSettingsTable.imageApiKey);
+          await m.addColumn(exercisesTable, exercisesTable.imagesGenerated);
         }
       });
 

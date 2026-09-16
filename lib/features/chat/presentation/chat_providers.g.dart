@@ -475,6 +475,154 @@ final class ChatMessagesFamily extends $Family
   String toString() => r'chatMessagesProvider';
 }
 
+/// The Hugging Face token, or null when there is none.
+
+@ProviderFor(coachImageKey)
+final coachImageKeyProvider = CoachImageKeyProvider._();
+
+/// The Hugging Face token, or null when there is none.
+
+final class CoachImageKeyProvider
+    extends $FunctionalProvider<String?, String?, String?>
+    with $Provider<String?> {
+  /// The Hugging Face token, or null when there is none.
+  CoachImageKeyProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachImageKeyProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachImageKeyHash();
+
+  @$internal
+  @override
+  $ProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String? create(Ref ref) {
+    return coachImageKey(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$coachImageKeyHash() => r'1581d66c74ca2d17552632e9ab4ee9135801ecb1';
+
+/// Whether an illustration can be drawn at all.
+///
+/// Without this token nothing is ever generated, whatever else is switched
+/// on - it is a separate service and separate money.
+
+@ProviderFor(canDrawImages)
+final canDrawImagesProvider = CanDrawImagesProvider._();
+
+/// Whether an illustration can be drawn at all.
+///
+/// Without this token nothing is ever generated, whatever else is switched
+/// on - it is a separate service and separate money.
+
+final class CanDrawImagesProvider extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// Whether an illustration can be drawn at all.
+  ///
+  /// Without this token nothing is ever generated, whatever else is switched
+  /// on - it is a separate service and separate money.
+  CanDrawImagesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'canDrawImagesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$canDrawImagesHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return canDrawImages(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$canDrawImagesHash() => r'dc764c2a2e3b6abd63c9b4345125ae6df38f8fb1';
+
+@ProviderFor(imageGeneratorFactory)
+final imageGeneratorFactoryProvider = ImageGeneratorFactoryProvider._();
+
+final class ImageGeneratorFactoryProvider
+    extends
+        $FunctionalProvider<
+          ImageGeneratorFactory,
+          ImageGeneratorFactory,
+          ImageGeneratorFactory
+        >
+    with $Provider<ImageGeneratorFactory> {
+  ImageGeneratorFactoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'imageGeneratorFactoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$imageGeneratorFactoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ImageGeneratorFactory> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ImageGeneratorFactory create(Ref ref) {
+    return imageGeneratorFactory(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ImageGeneratorFactory value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ImageGeneratorFactory>(value),
+    );
+  }
+}
+
+String _$imageGeneratorFactoryHash() =>
+    r'aa4e5ac9b8f6358e14e723b828e4b44e541bbccd';
+
 /// What the user allows themselves in a day, in calls to the service.
 
 @ProviderFor(coachDailyLimit)

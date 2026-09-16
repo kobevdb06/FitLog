@@ -165,6 +165,45 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     if (mounted) setState(() => _result = null);
   }
 
+  Future<void> _enterImageKey() async {
+    final token = await promptForText(
+      context,
+      title: 'Hugging Face-token',
+      hintText: 'hf_...',
+      confirmLabel: 'Bewaren',
+    );
+    if (token == null || !mounted) return;
+
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          AppSettingsTableCompanion(
+            imageApiKey: Value(token.trim().isEmpty ? null : token.trim()),
+          ),
+        );
+  }
+
+  Future<void> _removeImageKey() async {
+    final ok = await confirm(
+      context,
+      title: 'Token verwijderen?',
+      message:
+          'Er wordt daarna nooit meer iets getekend. Wat al getekend is '
+          'blijft staan.',
+      confirmLabel: 'Verwijderen',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          const AppSettingsTableCompanion(imageApiKey: Value(null)),
+        );
+  }
+
   Future<void> _removeKey() async {
     final ok = await confirm(
       context,
@@ -358,6 +397,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     final key = ref.watch(coachApiKeyProvider);
     final model = ref.watch(coachModelProvider);
     final limit = ref.watch(coachDailyLimitProvider);
+    final imageKey = ref.watch(coachImageKeyProvider);
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
 
     return Scaffold(
@@ -445,6 +485,46 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickLimit,
             ),
+            const SectionHeader('Afbeeldingen'),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.sm,
+              ),
+              child: InfoBanner(
+                icon: Icons.auto_awesome,
+                message:
+                    'Met een token van Hugging Face kan je bij een eigen '
+                    'oefening een illustratie laten tekenen. Alleen daar, en '
+                    'nergens anders: elke tekening kost tegoed. Zonder token '
+                    'wordt er nooit iets getekend.',
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.brush_outlined),
+              title: Text(
+                imageKey == null ? 'Nog geen token' : _masked(imageKey),
+              ),
+              subtitle: Text(
+                imageKey == null
+                    ? 'Maak er een in je Hugging Face-account, bij Access '
+                          'Tokens'
+                    : 'Bewaard naast je andere sleutel, achter je pincode.',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _enterImageKey,
+            ),
+            if (imageKey != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: TextButton.icon(
+                  onPressed: _removeImageKey,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Token verwijderen'),
+                ),
+              ),
             const SectionHeader('Model'),
             ListTile(
               leading: const Icon(Icons.tune),

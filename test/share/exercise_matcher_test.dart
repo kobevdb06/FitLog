@@ -25,6 +25,7 @@ void main() {
     startImageFile: null,
     endImageFile: null,
     isCustom: custom,
+    imagesGenerated: false,
     categoryOverridden: false,
     isArchived: false,
     createdAt: 0,
@@ -63,8 +64,12 @@ void main() {
   group('matching', () {
     final mine = [
       row(id: 'cat-bench', name: 'Bench Press', custom: false),
-      row(id: 'own-curl', name: 'Kabel curl schuin', muscle: 'biceps',
-          category: 'cable'),
+      row(
+        id: 'own-curl',
+        name: 'Kabel curl schuin',
+        muscle: 'biceps',
+        category: 'cable',
+      ),
     ];
 
     test('the same id is the same exercise', () {
@@ -137,7 +142,10 @@ void main() {
     });
 
     test('an empty catalogue matches nothing', () {
-      final match = matchSharedExercise(incoming(name: 'Bench Press'), const []);
+      final match = matchSharedExercise(
+        incoming(name: 'Bench Press'),
+        const [],
+      );
       expect(match.kind, ExerciseMatchKind.none);
     });
   });

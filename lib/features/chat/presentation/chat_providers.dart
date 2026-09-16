@@ -111,6 +111,27 @@ Stream<List<ChatThreadRow>> chatThreads(Ref ref) =>
 Stream<List<ChatMessageRow>> chatMessages(Ref ref, String threadId) =>
     ref.watch(databaseProvider).chatDao.watchMessages(threadId);
 
+/// The Hugging Face token, or null when there is none.
+@riverpod
+String? coachImageKey(Ref ref) {
+  final key = ref.watch(settingsProvider).value?.imageApiKey;
+  return key == null || key.isEmpty ? null : key;
+}
+
+/// Whether an illustration can be drawn at all.
+///
+/// Without this token nothing is ever generated, whatever else is switched
+/// on - it is a separate service and separate money.
+@riverpod
+bool canDrawImages(Ref ref) => ref.watch(coachImageKeyProvider) != null;
+
+/// How a drawing is made, so a test can hand over one that draws from memory.
+typedef ImageGeneratorFactory = ImageGenerator Function(String apiKey);
+
+@riverpod
+ImageGeneratorFactory imageGeneratorFactory(Ref ref) =>
+    (apiKey) => ImageGenerator(apiKey: apiKey);
+
 /// What the user allows themselves in a day, in calls to the service.
 @riverpod
 int coachDailyLimit(Ref ref) =>

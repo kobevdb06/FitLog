@@ -193,6 +193,32 @@ class _InfoTab extends ConsumerWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  // Such a drawing looks like a photograph of a real machine
+                  // and is regularly wrong about how one works. Nobody
+                  // remembers months later which picture came from where, so
+                  // the app remembers it for them.
+                  if (exercise.imagesGenerated) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 14,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            'Afbeelding getekend door AI, geen foto van de '
+                            'uitvoering',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -785,6 +785,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageApiKeyMeta = const VerificationMeta(
+    'imageApiKey',
+  );
+  @override
+  late final GeneratedColumn<String> imageApiKey = GeneratedColumn<String>(
+    'image_api_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _coachDailyLimitMeta = const VerificationMeta(
     'coachDailyLimit',
   );
@@ -857,6 +868,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     homeLayout,
     anthropicApiKey,
     chatModel,
+    imageApiKey,
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
@@ -1074,6 +1086,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         chatModel.isAcceptableOrUnknown(data['chat_model']!, _chatModelMeta),
       );
     }
+    if (data.containsKey('image_api_key')) {
+      context.handle(
+        _imageApiKeyMeta,
+        imageApiKey.isAcceptableOrUnknown(
+          data['image_api_key']!,
+          _imageApiKeyMeta,
+        ),
+      );
+    }
     if (data.containsKey('coach_daily_limit')) {
       context.handle(
         _coachDailyLimitMeta,
@@ -1218,6 +1239,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}chat_model'],
       ),
+      imageApiKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_api_key'],
+      ),
       coachDailyLimit: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}coach_daily_limit'],
@@ -1334,6 +1359,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// Which model the coach talks to. Null means the app's own default.
   final String? chatModel;
 
+  /// A Hugging Face token, for drawing an illustration with an exercise.
+  ///
+  /// Its own key on purpose: a second service, a second thing that costs
+  /// money, and a second thing to be able to take out again. Null - the state
+  /// the app ships in - means no picture is ever generated, whatever else is
+  /// switched on.
+  final String? imageApiKey;
+
   /// How many calls a day the user wants to allow themselves, or null for the
   /// app's own starting figure.
   ///
@@ -1379,6 +1412,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.homeLayout,
     this.anthropicApiKey,
     this.chatModel,
+    this.imageApiKey,
     this.coachDailyLimit,
     this.chatProvider,
     required this.autoLockSeconds,
@@ -1423,6 +1457,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     }
     if (!nullToAbsent || chatModel != null) {
       map['chat_model'] = Variable<String>(chatModel);
+    }
+    if (!nullToAbsent || imageApiKey != null) {
+      map['image_api_key'] = Variable<String>(imageApiKey);
     }
     if (!nullToAbsent || coachDailyLimit != null) {
       map['coach_daily_limit'] = Variable<int>(coachDailyLimit);
@@ -1474,6 +1511,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       chatModel: chatModel == null && nullToAbsent
           ? const Value.absent()
           : Value(chatModel),
+      imageApiKey: imageApiKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageApiKey),
       coachDailyLimit: coachDailyLimit == null && nullToAbsent
           ? const Value.absent()
           : Value(coachDailyLimit),
@@ -1522,6 +1562,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       homeLayout: serializer.fromJson<String?>(json['homeLayout']),
       anthropicApiKey: serializer.fromJson<String?>(json['anthropicApiKey']),
       chatModel: serializer.fromJson<String?>(json['chatModel']),
+      imageApiKey: serializer.fromJson<String?>(json['imageApiKey']),
       coachDailyLimit: serializer.fromJson<int?>(json['coachDailyLimit']),
       chatProvider: serializer.fromJson<String?>(json['chatProvider']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
@@ -1557,6 +1598,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'homeLayout': serializer.toJson<String?>(homeLayout),
       'anthropicApiKey': serializer.toJson<String?>(anthropicApiKey),
       'chatModel': serializer.toJson<String?>(chatModel),
+      'imageApiKey': serializer.toJson<String?>(imageApiKey),
       'coachDailyLimit': serializer.toJson<int?>(coachDailyLimit),
       'chatProvider': serializer.toJson<String?>(chatProvider),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
@@ -1590,6 +1632,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<String?> homeLayout = const Value.absent(),
     Value<String?> anthropicApiKey = const Value.absent(),
     Value<String?> chatModel = const Value.absent(),
+    Value<String?> imageApiKey = const Value.absent(),
     Value<int?> coachDailyLimit = const Value.absent(),
     Value<String?> chatProvider = const Value.absent(),
     int? autoLockSeconds,
@@ -1627,6 +1670,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         ? anthropicApiKey.value
         : this.anthropicApiKey,
     chatModel: chatModel.present ? chatModel.value : this.chatModel,
+    imageApiKey: imageApiKey.present ? imageApiKey.value : this.imageApiKey,
     coachDailyLimit: coachDailyLimit.present
         ? coachDailyLimit.value
         : this.coachDailyLimit,
@@ -1701,6 +1745,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ? data.anthropicApiKey.value
           : this.anthropicApiKey,
       chatModel: data.chatModel.present ? data.chatModel.value : this.chatModel,
+      imageApiKey: data.imageApiKey.present
+          ? data.imageApiKey.value
+          : this.imageApiKey,
       coachDailyLimit: data.coachDailyLimit.present
           ? data.coachDailyLimit.value
           : this.coachDailyLimit,
@@ -1742,6 +1789,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('homeLayout: $homeLayout, ')
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
+          ..write('imageApiKey: $imageApiKey, ')
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
@@ -1777,6 +1825,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     homeLayout,
     anthropicApiKey,
     chatModel,
+    imageApiKey,
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
@@ -1811,6 +1860,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.homeLayout == this.homeLayout &&
           other.anthropicApiKey == this.anthropicApiKey &&
           other.chatModel == this.chatModel &&
+          other.imageApiKey == this.imageApiKey &&
           other.coachDailyLimit == this.coachDailyLimit &&
           other.chatProvider == this.chatProvider &&
           other.autoLockSeconds == this.autoLockSeconds &&
@@ -1843,6 +1893,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String?> homeLayout;
   final Value<String?> anthropicApiKey;
   final Value<String?> chatModel;
+  final Value<String?> imageApiKey;
   final Value<int?> coachDailyLimit;
   final Value<String?> chatProvider;
   final Value<int> autoLockSeconds;
@@ -1874,6 +1925,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.homeLayout = const Value.absent(),
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
+    this.imageApiKey = const Value.absent(),
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
@@ -1906,6 +1958,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.homeLayout = const Value.absent(),
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
+    this.imageApiKey = const Value.absent(),
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
@@ -1939,6 +1992,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? homeLayout,
     Expression<String>? anthropicApiKey,
     Expression<String>? chatModel,
+    Expression<String>? imageApiKey,
     Expression<int>? coachDailyLimit,
     Expression<String>? chatProvider,
     Expression<int>? autoLockSeconds,
@@ -1975,6 +2029,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (homeLayout != null) 'home_layout': homeLayout,
       if (anthropicApiKey != null) 'anthropic_api_key': anthropicApiKey,
       if (chatModel != null) 'chat_model': chatModel,
+      if (imageApiKey != null) 'image_api_key': imageApiKey,
       if (coachDailyLimit != null) 'coach_daily_limit': coachDailyLimit,
       if (chatProvider != null) 'chat_provider': chatProvider,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
@@ -2009,6 +2064,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String?>? homeLayout,
     Value<String?>? anthropicApiKey,
     Value<String?>? chatModel,
+    Value<String?>? imageApiKey,
     Value<int?>? coachDailyLimit,
     Value<String?>? chatProvider,
     Value<int>? autoLockSeconds,
@@ -2042,6 +2098,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       homeLayout: homeLayout ?? this.homeLayout,
       anthropicApiKey: anthropicApiKey ?? this.anthropicApiKey,
       chatModel: chatModel ?? this.chatModel,
+      imageApiKey: imageApiKey ?? this.imageApiKey,
       coachDailyLimit: coachDailyLimit ?? this.coachDailyLimit,
       chatProvider: chatProvider ?? this.chatProvider,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
@@ -2132,6 +2189,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (chatModel.present) {
       map['chat_model'] = Variable<String>(chatModel.value);
     }
+    if (imageApiKey.present) {
+      map['image_api_key'] = Variable<String>(imageApiKey.value);
+    }
     if (coachDailyLimit.present) {
       map['coach_daily_limit'] = Variable<int>(coachDailyLimit.value);
     }
@@ -2178,6 +2238,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('homeLayout: $homeLayout, ')
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
+          ..write('imageApiKey: $imageApiKey, ')
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
@@ -2327,6 +2388,21 @@ class $ExercisesTableTable extends ExercisesTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _imagesGeneratedMeta = const VerificationMeta(
+    'imagesGenerated',
+  );
+  @override
+  late final GeneratedColumn<bool> imagesGenerated = GeneratedColumn<bool>(
+    'images_generated',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("images_generated" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _categoryOverriddenMeta =
       const VerificationMeta('categoryOverridden');
   @override
@@ -2381,6 +2457,7 @@ class $ExercisesTableTable extends ExercisesTable
     startImageFile,
     endImageFile,
     isCustom,
+    imagesGenerated,
     categoryOverridden,
     isArchived,
     createdAt,
@@ -2492,6 +2569,15 @@ class $ExercisesTableTable extends ExercisesTable
         isCustom.isAcceptableOrUnknown(data['is_custom']!, _isCustomMeta),
       );
     }
+    if (data.containsKey('images_generated')) {
+      context.handle(
+        _imagesGeneratedMeta,
+        imagesGenerated.isAcceptableOrUnknown(
+          data['images_generated']!,
+          _imagesGeneratedMeta,
+        ),
+      );
+    }
     if (data.containsKey('category_overridden')) {
       context.handle(
         _categoryOverriddenMeta,
@@ -2572,6 +2658,10 @@ class $ExercisesTableTable extends ExercisesTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_custom'],
       )!,
+      imagesGenerated: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}images_generated'],
+      )!,
       categoryOverridden: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}category_overridden'],
@@ -2622,6 +2712,14 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
   final String? endImageFile;
   final bool isCustom;
 
+  /// Whether the pictures on this exercise were drawn by a model rather than
+  /// taken by the user.
+  ///
+  /// Worth a column of its own: such a drawing looks convincing and is not a
+  /// record of how the movement is done. Six months on, nobody remembers which
+  /// of their own exercises got its picture that way - so the app says it.
+  final bool imagesGenerated;
+
   /// Set once the user has picked the type of this exercise themselves.
   ///
   /// The bundled catalogue can be wrong about how something is done - it had
@@ -2645,6 +2743,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     this.startImageFile,
     this.endImageFile,
     required this.isCustom,
+    required this.imagesGenerated,
     required this.categoryOverridden,
     required this.isArchived,
     required this.createdAt,
@@ -2676,6 +2775,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       map['end_image_file'] = Variable<String>(endImageFile);
     }
     map['is_custom'] = Variable<bool>(isCustom);
+    map['images_generated'] = Variable<bool>(imagesGenerated);
     map['category_overridden'] = Variable<bool>(categoryOverridden);
     map['is_archived'] = Variable<bool>(isArchived);
     map['created_at'] = Variable<int>(createdAt);
@@ -2708,6 +2808,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ? const Value.absent()
           : Value(endImageFile),
       isCustom: Value(isCustom),
+      imagesGenerated: Value(imagesGenerated),
       categoryOverridden: Value(categoryOverridden),
       isArchived: Value(isArchived),
       createdAt: Value(createdAt),
@@ -2732,6 +2833,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       startImageFile: serializer.fromJson<String?>(json['startImageFile']),
       endImageFile: serializer.fromJson<String?>(json['endImageFile']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
+      imagesGenerated: serializer.fromJson<bool>(json['imagesGenerated']),
       categoryOverridden: serializer.fromJson<bool>(json['categoryOverridden']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -2753,6 +2855,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       'startImageFile': serializer.toJson<String?>(startImageFile),
       'endImageFile': serializer.toJson<String?>(endImageFile),
       'isCustom': serializer.toJson<bool>(isCustom),
+      'imagesGenerated': serializer.toJson<bool>(imagesGenerated),
       'categoryOverridden': serializer.toJson<bool>(categoryOverridden),
       'isArchived': serializer.toJson<bool>(isArchived),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -2772,6 +2875,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     Value<String?> startImageFile = const Value.absent(),
     Value<String?> endImageFile = const Value.absent(),
     bool? isCustom,
+    bool? imagesGenerated,
     bool? categoryOverridden,
     bool? isArchived,
     int? createdAt,
@@ -2792,6 +2896,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
         : this.startImageFile,
     endImageFile: endImageFile.present ? endImageFile.value : this.endImageFile,
     isCustom: isCustom ?? this.isCustom,
+    imagesGenerated: imagesGenerated ?? this.imagesGenerated,
     categoryOverridden: categoryOverridden ?? this.categoryOverridden,
     isArchived: isArchived ?? this.isArchived,
     createdAt: createdAt ?? this.createdAt,
@@ -2824,6 +2929,9 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ? data.endImageFile.value
           : this.endImageFile,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
+      imagesGenerated: data.imagesGenerated.present
+          ? data.imagesGenerated.value
+          : this.imagesGenerated,
       categoryOverridden: data.categoryOverridden.present
           ? data.categoryOverridden.value
           : this.categoryOverridden,
@@ -2849,6 +2957,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ..write('startImageFile: $startImageFile, ')
           ..write('endImageFile: $endImageFile, ')
           ..write('isCustom: $isCustom, ')
+          ..write('imagesGenerated: $imagesGenerated, ')
           ..write('categoryOverridden: $categoryOverridden, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt')
@@ -2870,6 +2979,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     startImageFile,
     endImageFile,
     isCustom,
+    imagesGenerated,
     categoryOverridden,
     isArchived,
     createdAt,
@@ -2890,6 +3000,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           other.startImageFile == this.startImageFile &&
           other.endImageFile == this.endImageFile &&
           other.isCustom == this.isCustom &&
+          other.imagesGenerated == this.imagesGenerated &&
           other.categoryOverridden == this.categoryOverridden &&
           other.isArchived == this.isArchived &&
           other.createdAt == this.createdAt);
@@ -2908,6 +3019,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
   final Value<String?> startImageFile;
   final Value<String?> endImageFile;
   final Value<bool> isCustom;
+  final Value<bool> imagesGenerated;
   final Value<bool> categoryOverridden;
   final Value<bool> isArchived;
   final Value<int> createdAt;
@@ -2925,6 +3037,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.startImageFile = const Value.absent(),
     this.endImageFile = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.imagesGenerated = const Value.absent(),
     this.categoryOverridden = const Value.absent(),
     this.isArchived = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -2943,6 +3056,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.startImageFile = const Value.absent(),
     this.endImageFile = const Value.absent(),
     this.isCustom = const Value.absent(),
+    this.imagesGenerated = const Value.absent(),
     this.categoryOverridden = const Value.absent(),
     this.isArchived = const Value.absent(),
     required int createdAt,
@@ -2965,6 +3079,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Expression<String>? startImageFile,
     Expression<String>? endImageFile,
     Expression<bool>? isCustom,
+    Expression<bool>? imagesGenerated,
     Expression<bool>? categoryOverridden,
     Expression<bool>? isArchived,
     Expression<int>? createdAt,
@@ -2983,6 +3098,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       if (startImageFile != null) 'start_image_file': startImageFile,
       if (endImageFile != null) 'end_image_file': endImageFile,
       if (isCustom != null) 'is_custom': isCustom,
+      if (imagesGenerated != null) 'images_generated': imagesGenerated,
       if (categoryOverridden != null) 'category_overridden': categoryOverridden,
       if (isArchived != null) 'is_archived': isArchived,
       if (createdAt != null) 'created_at': createdAt,
@@ -3003,6 +3119,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Value<String?>? startImageFile,
     Value<String?>? endImageFile,
     Value<bool>? isCustom,
+    Value<bool>? imagesGenerated,
     Value<bool>? categoryOverridden,
     Value<bool>? isArchived,
     Value<int>? createdAt,
@@ -3021,6 +3138,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       startImageFile: startImageFile ?? this.startImageFile,
       endImageFile: endImageFile ?? this.endImageFile,
       isCustom: isCustom ?? this.isCustom,
+      imagesGenerated: imagesGenerated ?? this.imagesGenerated,
       categoryOverridden: categoryOverridden ?? this.categoryOverridden,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
@@ -3067,6 +3185,9 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     if (isCustom.present) {
       map['is_custom'] = Variable<bool>(isCustom.value);
     }
+    if (imagesGenerated.present) {
+      map['images_generated'] = Variable<bool>(imagesGenerated.value);
+    }
     if (categoryOverridden.present) {
       map['category_overridden'] = Variable<bool>(categoryOverridden.value);
     }
@@ -3097,6 +3218,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
           ..write('startImageFile: $startImageFile, ')
           ..write('endImageFile: $endImageFile, ')
           ..write('isCustom: $isCustom, ')
+          ..write('imagesGenerated: $imagesGenerated, ')
           ..write('categoryOverridden: $categoryOverridden, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt, ')
@@ -10663,6 +10785,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String?> homeLayout,
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
+      Value<String?> imageApiKey,
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
@@ -10696,6 +10819,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String?> homeLayout,
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
+      Value<String?> imageApiKey,
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
@@ -10834,6 +10958,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get chatModel => $composableBuilder(
     column: $table.chatModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageApiKey => $composableBuilder(
+    column: $table.imageApiKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10992,6 +11121,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageApiKey => $composableBuilder(
+    column: $table.imageApiKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get coachDailyLimit => $composableBuilder(
     column: $table.coachDailyLimit,
     builder: (column) => ColumnOrderings(column),
@@ -11137,6 +11271,11 @@ class $$AppSettingsTableTableAnnotationComposer
   GeneratedColumn<String> get chatModel =>
       $composableBuilder(column: $table.chatModel, builder: (column) => column);
 
+  GeneratedColumn<String> get imageApiKey => $composableBuilder(
+    column: $table.imageApiKey,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get coachDailyLimit => $composableBuilder(
     column: $table.coachDailyLimit,
     builder: (column) => column,
@@ -11218,6 +11357,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
+                Value<String?> imageApiKey = const Value.absent(),
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
@@ -11249,6 +11389,7 @@ class $$AppSettingsTableTableTableManager
                 homeLayout: homeLayout,
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
+                imageApiKey: imageApiKey,
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
@@ -11282,6 +11423,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
+                Value<String?> imageApiKey = const Value.absent(),
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
@@ -11313,6 +11455,7 @@ class $$AppSettingsTableTableTableManager
                 homeLayout: homeLayout,
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
+                imageApiKey: imageApiKey,
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
@@ -11358,6 +11501,7 @@ typedef $$ExercisesTableTableCreateCompanionBuilder =
       Value<String?> startImageFile,
       Value<String?> endImageFile,
       Value<bool> isCustom,
+      Value<bool> imagesGenerated,
       Value<bool> categoryOverridden,
       Value<bool> isArchived,
       required int createdAt,
@@ -11377,6 +11521,7 @@ typedef $$ExercisesTableTableUpdateCompanionBuilder =
       Value<String?> startImageFile,
       Value<String?> endImageFile,
       Value<bool> isCustom,
+      Value<bool> imagesGenerated,
       Value<bool> categoryOverridden,
       Value<bool> isArchived,
       Value<int> createdAt,
@@ -11533,6 +11678,11 @@ class $$ExercisesTableTableFilterComposer
 
   ColumnFilters<bool> get isCustom => $composableBuilder(
     column: $table.isCustom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get imagesGenerated => $composableBuilder(
+    column: $table.imagesGenerated,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11698,6 +11848,11 @@ class $$ExercisesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get imagesGenerated => $composableBuilder(
+    column: $table.imagesGenerated,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get categoryOverridden => $composableBuilder(
     column: $table.categoryOverridden,
     builder: (column) => ColumnOrderings(column),
@@ -11772,6 +11927,11 @@ class $$ExercisesTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isCustom =>
       $composableBuilder(column: $table.isCustom, builder: (column) => column);
+
+  GeneratedColumn<bool> get imagesGenerated => $composableBuilder(
+    column: $table.imagesGenerated,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get categoryOverridden => $composableBuilder(
     column: $table.categoryOverridden,
@@ -11911,6 +12071,7 @@ class $$ExercisesTableTableTableManager
                 Value<String?> startImageFile = const Value.absent(),
                 Value<String?> endImageFile = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<bool> imagesGenerated = const Value.absent(),
                 Value<bool> categoryOverridden = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -11928,6 +12089,7 @@ class $$ExercisesTableTableTableManager
                 startImageFile: startImageFile,
                 endImageFile: endImageFile,
                 isCustom: isCustom,
+                imagesGenerated: imagesGenerated,
                 categoryOverridden: categoryOverridden,
                 isArchived: isArchived,
                 createdAt: createdAt,
@@ -11947,6 +12109,7 @@ class $$ExercisesTableTableTableManager
                 Value<String?> startImageFile = const Value.absent(),
                 Value<String?> endImageFile = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
+                Value<bool> imagesGenerated = const Value.absent(),
                 Value<bool> categoryOverridden = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 required int createdAt,
@@ -11964,6 +12127,7 @@ class $$ExercisesTableTableTableManager
                 startImageFile: startImageFile,
                 endImageFile: endImageFile,
                 isCustom: isCustom,
+                imagesGenerated: imagesGenerated,
                 categoryOverridden: categoryOverridden,
                 isArchived: isArchived,
                 createdAt: createdAt,

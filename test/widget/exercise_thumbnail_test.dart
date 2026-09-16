@@ -67,8 +67,9 @@ void main() {
     await db.close();
   });
 
-  Future<String> makeRoutine() =>
-      container.read(routineActionsProvider).create(
+  Future<String> makeRoutine() => container
+      .read(routineActionsProvider)
+      .create(
         const RoutineDraft(
           name: 'Beenwerk',
           exercises: [
@@ -108,16 +109,20 @@ void main() {
       seeded,
     ]);
     final detail = (await db.workoutsDao.getWorkoutDetail(workoutId))!;
-    await container.read(workoutControllerProvider).completeSet(
-      setId: detail.exercises.single.sets.single.id,
-      weightKg: 100,
-      reps: 5,
-    );
+    await container
+        .read(workoutControllerProvider)
+        .completeSet(
+          setId: detail.exercises.single.sets.single.id,
+          weightKg: 100,
+          reps: 5,
+        );
     await container
         .read(workoutControllerProvider)
         .finish(workoutId, discardPending: true);
 
-    await tester.pumpWidget(wrapWithContainer(container, const RecordsScreen()));
+    await tester.pumpWidget(
+      wrapWithContainer(container, const RecordsScreen()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(ExerciseThumb), findsWidgets);
@@ -133,6 +138,7 @@ void main() {
       category: 'barbell',
       instructions: null,
       isCustom: isCustom,
+      imagesGenerated: false,
       categoryOverridden: false,
       isArchived: false,
       createdAt: 0,
@@ -148,7 +154,9 @@ void main() {
     testWidgets('draws the asset when the manifest lists it', (tester) async {
       await tester.pumpWidget(
         wrapForTest(
-          Center(child: ExerciseThumb(exercise: row(), manifest: manifest)),
+          Center(
+            child: ExerciseThumb(exercise: row(), manifest: manifest),
+          ),
         ),
       );
 

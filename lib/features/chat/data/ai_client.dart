@@ -14,6 +14,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -372,6 +373,140 @@ class CoachException implements Exception {
 String _redact(String text) => text
     .replaceAll(RegExp(r'sk-ant-[A-Za-z0-9_\-]+'), 'sk-ant-...')
     .replaceAll(RegExp(r'AIza[A-Za-z0-9_\-]+'), 'AIza...');
+
+/// Draws one picture, for an exercise the user is making.
+///
+/// A second service and a second key, and both of those are a cost: this is
+/// the only thing in the app that spends someone's credit on a single tap. So
+/// it exists only where an exercise is being made, never in the chat, and not
+/// at all without a token of its own.
+///
+/// What comes out is a drawing, not a photograph of the movement. It looks
+/// convincing and is regularly wrong about how a machine actually works, which
+/// is why the app marks such pictures and says so.
+class ImageGenerator {
+  ImageGenerator({required this.apiKey, http.Client? client, this.timeout})
+    : _client = client ?? http.Client();
+
+  /// Hugging Face routes the call to whoever still runs the model and bills it
+  /// to the token's own account.
+  static const String endpoint =
+      'https://router.huggingface.co/nscale/v1/images/generations';
+
+  /// The model behind it. One name, because unlike the coach's models this is
+  /// not a choice the user makes - it is the button's behaviour.
+  static const String model = 'black-forest-labs/FLUX.1-schnell';
+
+  /// Drawing takes seconds, not milliseconds, and a phone on mobile data takes
+  /// longer than a desk did.
+  static const Duration defaultTimeout = Duration(seconds: 60);
+
+  final String apiKey;
+  final Duration? timeout;
+  final http.Client _client;
+
+  void close() => _client.close();
+
+  /// The prompt an exercise turns into.
+  ///
+  /// English, because the models are trained on it, and deliberately plain:
+  /// what the thing is, on a white background, with no people in it. A drawing
+  /// of a body doing a movement is where these models are most confidently
+  /// wrong, and a picture of the equipment is what a library entry needs.
+  static String promptFor({
+    required String name,
+    required String muscle,
+    String? equipment,
+  }) {
+    final kit = equipment == null || equipment.isEmpty ? '' : ', $equipment';
+    return 'Clean studio product photo of gym equipment for the exercise '
+        '"$name"$kit, used for training $muscle. Plain white background, no '
+        'people, no text, centred, soft even lighting.';
+  }
+
+  /// Returns the image bytes, ready to be written to the photo directory.
+  Future<Uint8List> draw(String prompt) async {
+    final body = jsonEncode({
+      'model': model,
+      'prompt': prompt,
+      'response_format': 'b64_json',
+    });
+
+    final http.Response response;
+    try {
+      response = await _client
+          .post(
+            Uri.parse(endpoint),
+            headers: {
+              'content-type': 'application/json',
+              'authorization': 'Bearer $apiKey',
+            },
+            body: body,
+          )
+          .timeout(timeout ?? defaultTimeout);
+    } on TimeoutException {
+      throw const CoachException(
+        'Het tekenen duurde te lang. Probeer het opnieuw.',
+      );
+    } on SocketException {
+      throw const CoachException(
+        'Geen verbinding, dus er kan niets getekend worden.',
+      );
+    } on http.ClientException catch (error) {
+      throw CoachException(
+        'De verbinding werd afgebroken: ${_redact(error.message)}',
+      );
+    }
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      throw const CoachException(
+        'Dat Hugging Face-token wordt niet aanvaard.',
+        badKey: true,
+      );
+    }
+    if (response.statusCode == 402) {
+      throw const CoachException(
+        'Je tegoed bij Hugging Face is op. Er is niets getekend.',
+        badKey: true,
+      );
+    }
+    if (response.statusCode != 200) {
+      throw CoachException('Tekenen mislukte: ${_detailOf(response.body)}');
+    }
+
+    final json = jsonDecode(response.body);
+    final data = json is Map ? json['data'] : null;
+    final first = data is List && data.isNotEmpty ? data.first : null;
+    final encoded = first is Map ? first['b64_json'] : null;
+    if (encoded is! String || encoded.isEmpty) {
+      throw const CoachException('Er kwam geen afbeelding terug.');
+    }
+
+    try {
+      return base64Decode(encoded);
+    } on FormatException {
+      throw const CoachException('De afbeelding was onleesbaar.');
+    }
+  }
+
+  /// The same reading of an error body as the coach's, kept here so this class
+  /// stands on its own.
+  static String _detailOf(String body) {
+    try {
+      final json = jsonDecode(body);
+      if (json is Map) {
+        final error = json['error'];
+        if (error is String && error.isNotEmpty) return _redact(error);
+        if (error is Map && error['message'] is String) {
+          return _redact(error['message']! as String);
+        }
+      }
+    } on FormatException {
+      // An unreadable body is not worth a second failure.
+    }
+    return 'onbekende fout';
+  }
+}
 
 class AiClient {
   AiClient({

@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/core/widgets/common.dart';
 import 'package:fitlog/features/exercises/presentation/custom_exercise_screen.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +27,12 @@ void main() {
     db = createTestDatabase();
     await db.settingsDao.ensureInitialized();
     container = ProviderContainer(
-      overrides: [databaseProvider.overrideWithValue(db)],
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        // Zonder fotomap tekent het scherm de fotovakken niet, en dan valt er
+        // ook niets te tikken.
+        appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
+      ],
     );
     addTearDown(container.dispose);
 
@@ -117,6 +126,55 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+  });
+
+  group('een tekening laten maken', () {
+    /// De fotovakken staan onderaan het formulier, buiten beeld.
+    Future<void> openFrameSheet(WidgetTester tester) async {
+      // Het label is niet het tikvlak; het vak eronder wel.
+      await tester.ensureVisible(find.text('Foto kiezen').first);
+      await tester.pump();
+      await tester.tap(find.text('Foto kiezen').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('staat er niet zonder token', (tester) async {
+      await pumpForm(tester);
+
+      await openFrameSheet(tester);
+
+      expect(find.text('Nu een foto maken'), findsOneWidget);
+      // Geen token, geen knop: er kan niets getekend worden en dus wordt het
+      // ook niet aangeboden.
+      expect(find.text('Laten tekenen'), findsNothing);
+    });
+
+    testWidgets('en er wel zodra er een token staat', (tester) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await pumpForm(tester);
+
+      await openFrameSheet(tester);
+
+      expect(find.text('Laten tekenen'), findsOneWidget);
+      expect(find.textContaining('Kost tegoed'), findsOneWidget);
+    });
+
+    testWidgets('en zonder naam wordt er niets getekend', (tester) async {
+      // Een tekening van "" is weggegooid tegoed.
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await pumpForm(tester);
+
+      await openFrameSheet(tester);
+      await tester.tap(find.text('Laten tekenen'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Geef eerst een naam'), findsOneWidget);
     });
   });
 

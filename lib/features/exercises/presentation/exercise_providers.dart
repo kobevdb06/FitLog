@@ -14,6 +14,8 @@ import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/db/models.dart';
 import '../../../core/util/paths.dart';
+import '../../chat/data/ai_client.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../../photos/data/photo_store.dart';
 import '../../photos/data/pick_recovery.dart';
 
@@ -336,6 +338,7 @@ class ExerciseEditor {
     String? instructions,
     String? startImageFile,
     String? endImageFile,
+    bool imagesGenerated = false,
   }) async {
     final id = _uuid.v4();
     await ref
@@ -357,6 +360,7 @@ class ExerciseEditor {
             ),
             startImageFile: Value(startImageFile),
             endImageFile: Value(endImageFile),
+            imagesGenerated: Value(imagesGenerated),
             isCustom: const Value(true),
             createdAt: DateTime.now().millisecondsSinceEpoch,
           ),
@@ -374,6 +378,7 @@ class ExerciseEditor {
     String? instructions,
     String? startImageFile,
     String? endImageFile,
+    bool imagesGenerated = false,
   }) {
     return ref
         .read(databaseProvider)
@@ -394,6 +399,7 @@ class ExerciseEditor {
             ),
             startImageFile: Value(startImageFile),
             endImageFile: Value(endImageFile),
+            imagesGenerated: Value(imagesGenerated),
           ),
         );
   }
@@ -434,6 +440,41 @@ class ExerciseEditor {
           .import(File(picked.path), maxLongEdge: frameLongEdge);
     } finally {
       await recovery.forget();
+    }
+  }
+
+  /// Draws an illustration for an exercise and stores it like any other
+  /// frame.
+  ///
+  /// Returns the file name, and never runs without a token of its own: the
+  /// caller checks, and so does this - one tap here costs the user money.
+  Future<String?> drawFrame({
+    required String name,
+    required String muscle,
+    String? equipment,
+  }) async {
+    // Straight from the database, not from the settings stream: reading a
+    // stream nobody is listening to answers "still loading", which here would
+    // read as "no token" and quietly draw nothing.
+    final stored = (await ref.read(databaseProvider).settingsDao.getSettings())
+        .imageApiKey;
+    final key = stored == null || stored.isEmpty ? null : stored;
+    if (key == null) return null;
+
+    final generator = ref.read(imageGeneratorFactoryProvider)(key);
+    try {
+      final bytes = await generator.draw(
+        ImageGenerator.promptFor(
+          name: name,
+          muscle: muscle,
+          equipment: equipment,
+        ),
+      );
+      final paths = await ref.read(appPathsProvider.future);
+      return await PhotoStore(paths)
+          .importBytes(bytes, maxLongEdge: frameLongEdge);
+    } finally {
+      generator.close();
     }
   }
 

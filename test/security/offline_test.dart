@@ -79,13 +79,17 @@ void main() {
       "'https://generativelanguage.googleapis.com/v1beta/models'",
       "'https://api.anthropic.com/v1/models?limit=100'",
       "'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200'",
+      // Waar een illustratie getekend wordt, als de gebruiker daar een token
+      // voor heeft ingevuld.
+      "'https://router.huggingface.co/nscale/v1/images/generations'",
     });
 
-    // And both of them are the hosts we already allow.
+    // And every one of them is a host this app is allowed to know.
     for (final url in urls.map((m) => m.group(0)!)) {
       expect(
         url.contains('api.anthropic.com') ||
-            url.contains('generativelanguage.googleapis.com'),
+            url.contains('generativelanguage.googleapis.com') ||
+            url.contains('router.huggingface.co'),
         isTrue,
         reason: url,
       );
@@ -95,7 +99,11 @@ void main() {
   test('nothing else in the app names either host', () {
     for (final (path, source) in sources()) {
       if (path == client) continue;
-      for (final host in ['api.anthropic.com', 'googleapis.com']) {
+      for (final host in [
+        'api.anthropic.com',
+        'googleapis.com',
+        'huggingface.co',
+      ]) {
         expect(source, isNot(contains(host)), reason: path);
       }
     }

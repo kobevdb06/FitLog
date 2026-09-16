@@ -111,7 +111,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 25);
+    expect(raw.select('PRAGMA user_version').first.values.first, 26);
     raw.close();
   });
 
@@ -195,6 +195,9 @@ void main() {
     // v20 added categories of your own. The exercise that was already there
     // has none, which is what null says: it simply is its category.
     expect(migratedExercise.customCategory, isNull);
+    // v26: een tekening bij een oefening is iets nieuws, dus niets is er een.
+    expect(migratedExercise.imagesGenerated, isFalse);
+    expect(settings.imageApiKey, isNull);
     expect(migratedExercise.categoryLabel, ExerciseCategory.barbell.label);
     expect(await db.exercisesDao.customCategories(), isEmpty);
 
@@ -271,7 +274,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 25);
+    expect(db.schemaVersion, 26);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

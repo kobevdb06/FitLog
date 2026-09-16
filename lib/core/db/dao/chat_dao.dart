@@ -97,11 +97,8 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   /// Rewrites the proposals of one message, which is how a card remembers
   /// that you already tapped it.
   Future<void> setProposals(String messageId, String json) async {
-    await (update(
-      chatMessagesTable,
-    )..where((t) => t.id.equals(messageId))).write(
-      ChatMessagesTableCompanion(proposals: Value(json)),
-    );
+    await (update(chatMessagesTable)..where((t) => t.id.equals(messageId)))
+        .write(ChatMessagesTableCompanion(proposals: Value(json)));
   }
 
   Future<void> deleteThread(String id) async {

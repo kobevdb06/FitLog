@@ -9,6 +9,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../chat/data/ai_client.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../../photos/data/photo_store.dart';
 import 'exercise_providers.dart';
 
@@ -50,6 +52,9 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   /// user can still walk away from the edit.
   final List<String> _replaced = [];
 
+  /// Whether one of the pictures came out of a model rather than a camera.
+  bool _generated = false;
+
   bool _loaded = false;
   bool _busy = false;
   String? _error;
@@ -72,6 +77,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     _category = row.categoryChoice;
     _startImage = row.startImageFile;
     _endImage = row.endImageFile;
+    _generated = row.imagesGenerated;
   }
 
   /// Picks one frame and puts it in [slot].
@@ -79,8 +85,56 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   /// The picked file is copied and processed straight away, so what the slot
   /// shows from here on is the file that will be stored - not the temporary
   /// one the picker handed over, which the system may delete at any moment.
-  Future<void> _pickFrame(_Slot slot) async {
-    final source = await showAppSheet<ImageSource>(
+  /// What the sheet returns when you pick "laten tekenen".
+  static const Object _draw = 'draw';
+
+  /// Draws the illustration and puts it in the slot.
+  ///
+  /// The name and the muscle are what it is drawn from, so both have to be
+  /// filled in first - a picture of "" is a waste of your credit.
+  Future<void> _drawFrame(_Slot slot) async {
+    final name = _nameController.text.trim();
+    final muscle = _primaryMuscle;
+    if (name.isEmpty || muscle == null) {
+      setState(
+        () => _error =
+            'Geef eerst een naam en een spiergroep; daar wordt de '
+            'tekening uit gemaakt.',
+      );
+      return;
+    }
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final fileName = await ref
+          .read(exerciseEditorProvider)
+          .drawFrame(name: name, muscle: muscle, equipment: _equipment?.trim());
+      if (!mounted) return;
+      if (fileName == null) {
+        setState(() => _error = 'Er staat geen Hugging Face-token ingesteld.');
+        return;
+      }
+      setState(() {
+        _setFrame(slot, fileName);
+        _generated = true;
+      });
+    } on CoachException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// [canDraw] comes from build, where it is watched.
+  ///
+  /// Reading it here instead answers "still loading" when nothing is
+  /// subscribed to the settings - which would read as "no token" and hide the
+  /// option from someone who has one.
+  Future<void> _pickFrame(_Slot slot, {required bool canDraw}) async {
+    final source = await showAppSheet<Object>(
       context: context,
       title: 'Waar komt de foto vandaan?',
       builder: (context) => Column(
@@ -96,10 +150,25 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
             title: const Text('Uit de galerij kiezen'),
             onTap: () => Navigator.of(context).pop(ImageSource.gallery),
           ),
+          if (canDraw)
+            ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('Laten tekenen'),
+              subtitle: const Text(
+                'Een tekening van het materiaal, geen foto van de uitvoering. '
+                'Kost tegoed bij Hugging Face.',
+              ),
+              onTap: () => Navigator.of(context).pop(_draw),
+            ),
         ],
       ),
     );
     if (source == null) return;
+    if (source == _draw) {
+      await _drawFrame(slot);
+      return;
+    }
+    if (source is! ImageSource) return;
 
     setState(() => _busy = true);
     try {
@@ -228,6 +297,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         instructions: _notesController.text,
         startImageFile: _startImage,
         endImageFile: _endImage,
+        imagesGenerated: _generated,
       );
     } else {
       id = widget.exerciseId!;
@@ -241,6 +311,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         instructions: _notesController.text,
         startImageFile: _startImage,
         endImageFile: _endImage,
+        imagesGenerated: _generated,
       );
     }
 
@@ -263,6 +334,8 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         ref.watch(categoryOptionsProvider).value ??
         [for (final c in ExerciseCategory.values) CategoryChoice(c)];
     final paths = ref.watch(appPathsProvider).value;
+    // Watched, not read: see _pickFrame.
+    final canDraw = ref.watch(canDrawImagesProvider);
 
     if (widget.exerciseId != null) {
       final existing = ref
@@ -380,7 +453,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
                     fileName: _startImage,
                     paths: paths,
                     enabled: !_busy,
-                    onPick: () => _pickFrame(_Slot.start),
+                    onPick: () => _pickFrame(_Slot.start, canDraw: canDraw),
                     onClear: () => setState(() => _setFrame(_Slot.start, null)),
                   ),
                 ),
@@ -391,7 +464,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
                     fileName: _endImage,
                     paths: paths,
                     enabled: !_busy,
-                    onPick: () => _pickFrame(_Slot.end),
+                    onPick: () => _pickFrame(_Slot.end, canDraw: canDraw),
                     onClear: () => setState(() => _setFrame(_Slot.end, null)),
                   ),
                 ),

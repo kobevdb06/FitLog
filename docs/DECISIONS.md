@@ -2314,3 +2314,38 @@ wat geen chatmodel is, kan nooit aanbevolen zijn.
 Het blijft raden op namen, en dat is eerlijk gezegd broos — Google zegt in die
 lijst niet met zoveel woorden "dit levert beeld op". Beter dan het alternatief:
 een model aanbevelen dat op elke vraag een plaatje terugstuurt.
+
+## 138. Tekenen mag, maar alleen waar het iets kost dat je zelf koos
+
+De coach kan nu een illustratie laten tekenen bij een oefening die je maakt.
+Dat is de eerste functie in deze app die geld uitgeeft bij één tik, en dat
+bepaalt de hele vorm ervan.
+
+Drie grenzen, en ze zitten alle drie in de code, niet in een goede gewoonte:
+
+Zonder token gebeurt er niets. Het is een eigen sleutel (`image_api_key`),
+los van de Gemini-sleutel, en zonder die sleutel bestaat de knop niet en wordt
+er geen client gebouwd. Wie de coach gebruikt maar dit niet wil, heeft het
+vanzelf niet.
+
+Alleen bij het maken van een oefening. Niet in de chat, waar één zin "teken
+eens" een tekening zou kosten, maar in het scherm waar je een eigen oefening
+invult - daar heeft een plaatje een plek om te landen.
+
+En de tekening gaat over het materiaal, niet over een mens. De prompt vraagt
+uitdrukkelijk om geen mensen: een model is het meest overtuigend fout over een
+lichaam dat een beweging uitvoert, en wat een bibliotheek nodig heeft is het
+toestel.
+
+Wat er getekend is, wordt onthouden (`exercises.images_generated`) en het
+detailscherm zegt het: "getekend door AI, geen foto van de uitvoering". Bij het
+proberen kwam er een keurige machine uit die niet bestaat - een bench, een
+staander en losse schijven door elkaar. Dat is precies waarom die regel er moet
+staan.
+
+Technisch: derde host in het ene netwerkbestand, met zijn eigen adres in de
+deurtest. Hugging Face stuurt de call door naar wie het model nog draait
+(nscale, fal, wavespeed) en rekent af op het token. Google's eigen
+beeldgeneratie viel af: die is in België niet beschikbaar via de API, wat de
+test met een echte sleutel uitwees - `FAILED_PRECONDITION: Image generation is
+not available in your country`.

@@ -145,6 +145,14 @@ class AppSettingsTable extends Table {
   /// Which model the coach talks to. Null means the app's own default.
   TextColumn get chatModel => text().named('chat_model').nullable()();
 
+  /// A Hugging Face token, for drawing an illustration with an exercise.
+  ///
+  /// Its own key on purpose: a second service, a second thing that costs
+  /// money, and a second thing to be able to take out again. Null - the state
+  /// the app ships in - means no picture is ever generated, whatever else is
+  /// switched on.
+  TextColumn get imageApiKey => text().named('image_api_key').nullable()();
+
   /// How many calls a day the user wants to allow themselves, or null for the
   /// app's own starting figure.
   ///
@@ -329,6 +337,15 @@ class ExercisesTable extends Table {
 
   BoolColumn get isCustom =>
       boolean().named('is_custom').withDefault(const Constant(false))();
+
+  /// Whether the pictures on this exercise were drawn by a model rather than
+  /// taken by the user.
+  ///
+  /// Worth a column of its own: such a drawing looks convincing and is not a
+  /// record of how the movement is done. Six months on, nobody remembers which
+  /// of their own exercises got its picture that way - so the app says it.
+  BoolColumn get imagesGenerated =>
+      boolean().named('images_generated').withDefault(const Constant(false))();
 
   /// Set once the user has picked the type of this exercise themselves.
   ///

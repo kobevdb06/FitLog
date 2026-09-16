@@ -71,6 +71,20 @@ class PhotoStore {
     return fileName;
   }
 
+  /// The same, for an image that never was a file: one that arrived over the
+  /// network rather than out of a camera.
+  Future<String> importBytes(Uint8List bytes, {int? maxLongEdge}) async {
+    final processed = await _process(
+      bytes,
+      maxLongEdge ?? PhotoStore.maxLongEdge,
+    );
+
+    final dir = await paths.ensurePhotosDirectory();
+    final fileName = '${_uuid.v4()}.jpg';
+    await File('${dir.path}/$fileName').writeAsBytes(processed, flush: true);
+    return fileName;
+  }
+
   /// Decoding and re-encoding a camera photo is heavy enough to drop frames,
   /// so it happens on its own isolate.
   static Future<Uint8List> _process(Uint8List bytes, int maxLongEdge) =>

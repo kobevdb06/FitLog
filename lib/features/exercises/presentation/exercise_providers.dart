@@ -451,7 +451,9 @@ class ExerciseEditor {
   Future<String?> drawFrame({
     required String name,
     required String muscle,
+    required bool start,
     String? equipment,
+    String? prompt,
   }) async {
     // Straight from the database, not from the settings stream: reading a
     // stream nobody is listening to answers "still loading", which here would
@@ -464,11 +466,14 @@ class ExerciseEditor {
     final generator = ref.read(imageGeneratorFactoryProvider)(key);
     try {
       final bytes = await generator.draw(
-        ImageGenerator.promptFor(
-          name: name,
-          muscle: muscle,
-          equipment: equipment,
-        ),
+        prompt == null || prompt.trim().isEmpty
+            ? ImageGenerator.promptFor(
+                name: name,
+                muscle: muscle,
+                equipment: equipment,
+                start: start,
+              )
+            : ImageGenerator.stylise(prompt),
       );
       final paths = await ref.read(appPathsProvider.future);
       return await PhotoStore(paths)

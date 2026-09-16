@@ -39,6 +39,8 @@ class ExerciseProposal {
     this.equipment,
     this.category = 'barbell',
     this.instructions,
+    this.startImagePrompt,
+    this.endImagePrompt,
   });
 
   final String name;
@@ -52,6 +54,20 @@ class ExerciseProposal {
 
   final String? instructions;
 
+  /// What the two pictures should show, in the coach's own words.
+  ///
+  /// It named the exercise, so it knows better than a template what the start
+  /// and the end of it look like - and the difference between those two is
+  /// the whole value of the pair.
+  final String? startImagePrompt;
+  final String? endImagePrompt;
+
+  bool get canBeDrawn =>
+      startImagePrompt != null &&
+      endImagePrompt != null &&
+      startImagePrompt!.isNotEmpty &&
+      endImagePrompt!.isNotEmpty;
+
   Map<String, Object?> toJson() => {
     'name': name,
     'primary_muscle': primaryMuscle,
@@ -59,6 +75,8 @@ class ExerciseProposal {
     'equipment': equipment,
     'category': category,
     'instructions': instructions,
+    'start_image_prompt': startImagePrompt,
+    'end_image_prompt': endImagePrompt,
   };
 
   static ExerciseProposal fromJson(Map<String, Object?> json) =>
@@ -72,6 +90,8 @@ class ExerciseProposal {
         equipment: json['equipment'] as String?,
         category: '${json['category'] ?? 'barbell'}',
         instructions: json['instructions'] as String?,
+        startImagePrompt: json['start_image_prompt'] as String?,
+        endImagePrompt: json['end_image_prompt'] as String?,
       );
 }
 

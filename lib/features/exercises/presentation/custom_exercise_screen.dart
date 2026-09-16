@@ -111,7 +111,12 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     try {
       final fileName = await ref
           .read(exerciseEditorProvider)
-          .drawFrame(name: name, muscle: muscle, equipment: _equipment?.trim());
+          .drawFrame(
+            name: name,
+            muscle: muscle,
+            start: slot == _Slot.start,
+            equipment: _equipment?.trim(),
+          );
       if (!mounted) return;
       if (fileName == null) {
         setState(() => _error = 'Er staat geen Hugging Face-token ingesteld.');

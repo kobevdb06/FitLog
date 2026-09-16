@@ -21,6 +21,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../photos/data/photo_store.dart';
+import '../data/ai_client.dart';
 import '../domain/coach_proposal.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
@@ -415,21 +416,33 @@ class _ProposalCard extends ConsumerStatefulWidget {
 class _ProposalCardState extends ConsumerState<_ProposalCard> {
   bool _busy = false;
 
-  Future<void> _accept() async {
+  Future<void> _accept({bool withImages = false}) async {
     setState(() => _busy = true);
-    final id = await ref
-        .read(coachControllerProvider.notifier)
-        .accept(message: widget.message, index: widget.index);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (id == null) return;
+    try {
+      final id = await ref
+          .read(coachControllerProvider.notifier)
+          .accept(
+            message: widget.message,
+            index: widget.index,
+            withImages: withImages,
+          );
+      if (!mounted) return;
+      if (id == null) return;
 
-    showSnack(
-      context,
-      widget.proposal.kind == ProposalKind.exercise
-          ? 'Oefening toegevoegd.'
-          : 'Routine toegevoegd.',
-    );
+      showSnack(
+        context,
+        widget.proposal.kind == ProposalKind.exercise
+            ? withImages
+                  ? 'Oefening toegevoegd, met tekeningen.'
+                  : 'Oefening toegevoegd.'
+            : 'Routine toegevoegd.',
+      );
+    } on CoachException catch (error) {
+      // The exercise itself may well have been made; only the drawing failed.
+      if (mounted) showSnack(context, error.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   void _open(String id) => switch (widget.proposal.kind) {
@@ -523,11 +536,11 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                   ),
                 ],
               )
-            else
+            else ...[
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _busy ? null : _accept,
+                  onPressed: _busy ? null : () => _accept(),
                   icon: _busy
                       ? const SizedBox(
                           width: 16,
@@ -542,6 +555,31 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                   ),
                 ),
               ),
+              // A second button rather than a switch: two drawings cost
+              // credit, and the difference between the buttons is what you
+              // are agreeing to.
+              if (exercise != null &&
+                  exercise.canBeDrawn &&
+                  ref.watch(canDrawImagesProvider)) ...[
+                const SizedBox(height: AppSpacing.xs),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _busy ? null : () => _accept(withImages: true),
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Toevoegen mét tekeningen'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Twee tekeningen, begin- en eindpositie. Kost tegoed bij '
+                  'Hugging Face.',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
           ],
         ),
       ),

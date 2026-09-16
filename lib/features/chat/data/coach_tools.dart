@@ -158,6 +158,20 @@ class CoachTools {
                 'Of de naam van een eigen categorie van de gebruiker.',
           },
           'instructions': {'type': 'string'},
+          'start_image_prompt': {
+            'type': 'string',
+            'description':
+                'Engelse beschrijving van hoe de STARTpositie eruitziet: de '
+                'houding van de persoon, het materiaal, de camerahoek. Wordt '
+                'gebruikt om een tekening te maken, als de gebruiker daar een '
+                'token voor heeft.',
+          },
+          'end_image_prompt': {
+            'type': 'string',
+            'description':
+                'Hetzelfde voor de EINDpositie. Beschrijf wat er verschilt '
+                'van de start: dat verschil is waar het paar om draait.',
+          },
         },
         'required': ['name', 'primary_muscle'],
       },
@@ -296,6 +310,8 @@ class CoachTools {
       equipment: _text(input['equipment']),
       category: _text(input['category']) ?? 'barbell',
       instructions: _text(input['instructions']),
+      startImagePrompt: _text(input['start_image_prompt']),
+      endImagePrompt: _text(input['end_image_prompt']),
     );
 
     return CoachLookup(

@@ -162,6 +162,49 @@ void main() {
     );
   });
 
+  group('de tekeningen bij een voorstel', () {
+    test('de coach geeft zijn eigen beschrijvingen mee', () async {
+      final lookup = await tools.run('propose_exercise', {
+        'name': 'Sledepush',
+        'primary_muscle': 'benen',
+        'start_image_prompt': 'A person crouched behind a loaded sled',
+        'end_image_prompt': 'The same person leaning forward, sled moved',
+      });
+
+      final proposal = lookup.proposal!.exercise!;
+      expect(proposal.startImagePrompt, contains('crouched'));
+      expect(proposal.endImagePrompt, contains('leaning forward'));
+      expect(proposal.canBeDrawn, isTrue);
+    });
+
+    test('en zonder die twee valt er niets te tekenen', () async {
+      final lookup = await tools.run('propose_exercise', {
+        'name': 'Sledepush',
+        'primary_muscle': 'benen',
+      });
+
+      expect(lookup.proposal!.exercise!.canBeDrawn, isFalse);
+    });
+
+    test('ze overleven opschrijven en teruglezen', () {
+      final read = parseProposals(
+        encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              startImagePrompt: 'start',
+              endImagePrompt: 'eind',
+            ),
+          ),
+        ]),
+      );
+
+      expect(read.single.exercise!.startImagePrompt, 'start');
+      expect(read.single.exercise!.endImagePrompt, 'eind');
+    });
+  });
+
   group('de knop', () {
     test('maakt de oefening aan, met haar eigen spiergroep erbij', () async {
       container = newContainer();

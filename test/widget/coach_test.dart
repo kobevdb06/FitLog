@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
@@ -437,6 +438,66 @@ void main() {
       expect(await db.exercisesDao.countExercises(), 1);
       expect(find.text('Toegevoegd'), findsOneWidget);
       expect(find.text('Oefening toevoegen'), findsNothing);
+    });
+
+    testWidgets('met een token staat er een tweede knop, met wat het kost', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await db.chatDao.createThread('t-1', 'Maak een oefening');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem maken.',
+        proposals: encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              startImagePrompt: 'A person crouched behind a sled',
+              endImagePrompt: 'A person leaning into the sled',
+            ),
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Oefening toevoegen'), findsOneWidget);
+      expect(find.text('Toevoegen mét tekeningen'), findsOneWidget);
+      expect(find.textContaining('Kost tegoed'), findsOneWidget);
+    });
+
+    testWidgets('zonder token is die tweede knop er niet', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Maak een oefening');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem maken.',
+        proposals: encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              startImagePrompt: 'A person crouched behind a sled',
+              endImagePrompt: 'A person leaning into the sled',
+            ),
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Oefening toevoegen'), findsOneWidget);
+      expect(find.text('Toevoegen mét tekeningen'), findsNothing);
     });
 
     testWidgets('een routine toont haar oefeningen en sets', (tester) async {

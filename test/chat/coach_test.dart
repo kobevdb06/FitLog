@@ -470,7 +470,10 @@ void main() {
       );
 
       expect(prompt, isNot(contains('kg 80')));
-      expect(prompt.length, lessThan(4000));
+      // Een budget, geen toevalligheid: dit gaat mee met elke vraag en de
+      // gebruiker betaalt het per keer. Groeit het hierlangs, dan is dat een
+      // beslissing en geen ongeluk.
+      expect(prompt.length, lessThan(4300));
     });
   });
 }

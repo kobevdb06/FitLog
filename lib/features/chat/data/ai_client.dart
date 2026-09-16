@@ -407,21 +407,47 @@ class ImageGenerator {
 
   void close() => _client.close();
 
-  /// The prompt an exercise turns into.
+  /// What every prompt ends with, whoever wrote the rest of it.
   ///
-  /// English, because the models are trained on it, and deliberately plain:
-  /// what the thing is, on a white background, with no people in it. A drawing
-  /// of a body doing a movement is where these models are most confidently
-  /// wrong, and a picture of the equipment is what a library entry needs.
+  /// The two pictures of an exercise are a start and an end position, so there
+  /// has to be a person in them - that is the whole point of the pair. The
+  /// tail keeps them usable and comparable: one person, dressed for a gym,
+  /// whole body in frame, same plain background both times.
+  static const String style =
+      ' Instructional fitness illustration, one person in gym clothing, full '
+      'body visible, side view, plain light grey background, no text, no '
+      'watermark, clean and anatomically plausible.';
+
+  /// The prompt an exercise turns into when nobody wrote a better one.
+  ///
+  /// English, because that is what the models are trained on. It says which
+  /// of the two moments it is, because "start" and "end" are the difference
+  /// between a useful pair and two pictures of the same thing.
   static String promptFor({
     required String name,
     required String muscle,
     String? equipment,
+    required bool start,
   }) {
-    final kit = equipment == null || equipment.isEmpty ? '' : ', $equipment';
-    return 'Clean studio product photo of gym equipment for the exercise '
-        '"$name"$kit, used for training $muscle. Plain white background, no '
-        'people, no text, centred, soft even lighting.';
+    final kit = equipment == null || equipment.isEmpty
+        ? ''
+        : ' using $equipment';
+    final moment = start
+        ? 'at the starting position, before the movement begins'
+        : 'at the end position, at the finish of the repetition';
+    return 'A person performing the exercise "$name"$kit $moment, training '
+        '$muscle.$style';
+  }
+
+  /// A prompt the coach wrote, with the same tail on it.
+  ///
+  /// The coach knows better than a template what those two pictures should
+  /// show - it named the exercise - so its words lead. The tail still decides
+  /// what the picture looks like, so a pair stays a pair.
+  static String stylise(String prompt) {
+    final trimmed = prompt.trim();
+    final ending = trimmed.endsWith('.') ? trimmed : '$trimmed.';
+    return '$ending$style';
   }
 
   /// Returns the image bytes, ready to be written to the photo directory.

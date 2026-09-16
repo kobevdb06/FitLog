@@ -339,6 +339,7 @@ class CoachController extends _$CoachController {
   Future<String?> accept({
     required ChatMessageRow message,
     required int index,
+    bool withImages = false,
   }) async {
     final proposals = parseProposals(message.proposals);
     if (index >= proposals.length) return null;
@@ -350,7 +351,11 @@ class CoachController extends _$CoachController {
     final String id;
     switch (proposal.kind) {
       case ProposalKind.exercise:
-        id = await _createExercise(db, proposal.exercise!);
+        id = await _createExercise(
+          db,
+          proposal.exercise!,
+          withImages: withImages,
+        );
       case ProposalKind.routine:
         id = await _createRoutine(db, proposal.routine!);
     }
@@ -362,8 +367,9 @@ class CoachController extends _$CoachController {
 
   Future<String> _createExercise(
     AppDatabase db,
-    ExerciseProposal proposal,
-  ) async {
+    ExerciseProposal proposal, {
+    bool withImages = false,
+  }) async {
     // A muscle or a piece of kit the app has never seen is added to the
     // pickers too, or the exercise would point at a name nothing else knows.
     final muscles = await db.exercisesDao.distinctPrimaryMuscles();
@@ -390,6 +396,29 @@ class CoachController extends _$CoachController {
         ? CategoryChoice(ExerciseCategory.fromWire(proposal.category))
         : CategoryChoice.of(match.base, match.name);
 
+    // Two drawings, and they are paid for - so only when the user asked for
+    // them by tapping that button, and only with the coach's own descriptions
+    // of what start and end look like.
+    String? startImage;
+    String? endImage;
+    if (withImages && proposal.canBeDrawn) {
+      final editor = ref.read(exerciseEditorProvider);
+      startImage = await editor.drawFrame(
+        name: proposal.name,
+        muscle: proposal.primaryMuscle,
+        start: true,
+        equipment: proposal.equipment,
+        prompt: proposal.startImagePrompt,
+      );
+      endImage = await editor.drawFrame(
+        name: proposal.name,
+        muscle: proposal.primaryMuscle,
+        start: false,
+        equipment: proposal.equipment,
+        prompt: proposal.endImagePrompt,
+      );
+    }
+
     return ref
         .read(exerciseEditorProvider)
         .create(
@@ -399,6 +428,9 @@ class CoachController extends _$CoachController {
           category: choice,
           equipment: proposal.equipment,
           instructions: proposal.instructions,
+          startImageFile: startImage,
+          endImageFile: endImage,
+          imagesGenerated: startImage != null || endImage != null,
         );
   }
 

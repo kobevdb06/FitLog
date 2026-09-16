@@ -2332,10 +2332,12 @@ Alleen bij het maken van een oefening. Niet in de chat, waar één zin "teken
 eens" een tekening zou kosten, maar in het scherm waar je een eigen oefening
 invult - daar heeft een plaatje een plek om te landen.
 
-En de tekening gaat over het materiaal, niet over een mens. De prompt vraagt
-uitdrukkelijk om geen mensen: een model is het meest overtuigend fout over een
-lichaam dat een beweging uitvoert, en wat een bibliotheek nodig heeft is het
-toestel.
+En de tekening ging eerst over het materiaal, uitdrukkelijk zonder mensen -
+omdat een model juist daar het overtuigendst fout is. Dat was verkeerd gedacht:
+de twee afbeeldingen bij een oefening zijn een begin- en een eindpositie, en
+zonder iemand die de beweging uitvoert tonen ze niets. Er staat nu dus wel een
+persoon in, en het waarschuwingslabel doet het werk dat het weglaten van mensen
+moest doen.
 
 Wat er getekend is, wordt onthouden (`exercises.images_generated`) en het
 detailscherm zegt het: "getekend door AI, geen foto van de uitvoering". Bij het
@@ -2349,3 +2351,27 @@ deurtest. Hugging Face stuurt de call door naar wie het model nog draait
 beeldgeneratie viel af: die is in België niet beschikbaar via de API, wat de
 test met een echte sleutel uitwees - `FAILED_PRECONDITION: Image generation is
 not available in your country`.
+
+## 139. De coach schrijft de beschrijving van zijn eigen tekeningen
+
+Twee plaatjes bij een oefening zijn geen twee plaatjes: het zijn een begin- en
+een eindpositie, en het verschil tussen die twee is de hele inhoud. Een
+sjabloon in de app weet dat verschil niet. Het model dat de oefening zonet
+bedacht, weet het wel.
+
+`propose_exercise` geeft daarom `start_image_prompt` en `end_image_prompt` mee,
+in het Engels, en die woorden leiden de tekening. De app hangt er alleen een
+vaste staart aan: één persoon, sportkleding, hele lichaam in beeld, zelfde
+achtergrond. Dat is wat een paar tot een paar maakt - zonder die staart krijg
+je twee tekeningen in twee stijlen en zie je het verschil in de stijl in plaats
+van in de houding.
+
+Op de kaart staat daarvoor een tweede knop, niet een schakelaar: "Toevoegen"
+en "Toevoegen mét tekeningen" met eronder wat het kost. Het verschil tussen de
+twee knoppen is precies waar je ja tegen zegt. De knop verschijnt alleen met
+een token, en alleen als de coach ook echt beschrijvingen meestuurde.
+
+De systeemprompt groeide hierdoor over zijn budget van 4000 tekens. Die grens
+is opgehoogd naar 4300 én de tekst is ingekort: hij rijdt mee met elke vraag en
+de gebruiker betaalt hem per keer, dus dat moet een beslissing zijn en geen
+ongeluk.

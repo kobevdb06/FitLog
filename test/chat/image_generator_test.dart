@@ -120,6 +120,9 @@ void main() {
       expect(sent, hasLength(1));
       expect(sent.single.url.toString(), ImageGenerator.endpoint);
       expect(sent.single.headers['authorization'], 'Bearer hf_test');
+      // Staand, in de verhouding van het fotovak: anders wordt er een
+      // vierkant getekend waar de kop of de voeten afgesneden worden.
+      expect(sent.single.body, contains('768x1024'));
       // De sleutel staat in de header, niet in wat verstuurd wordt.
       expect(sent.single.body, isNot(contains('hf_test')));
     });

@@ -397,6 +397,13 @@ class ImageGenerator {
   /// not a choice the user makes - it is the button's behaviour.
   static const String model = 'black-forest-labs/FLUX.1-schnell';
 
+  /// The shape the two frame slots have.
+  ///
+  /// Without it the service draws a square, which the slot then crops to 3:4 -
+  /// and a standing person loses their head or their feet to that crop.
+  /// Asking for the shape we show costs nothing and wastes no pixels.
+  static const String size = '768x1024';
+
   /// Drawing takes seconds, not milliseconds, and a phone on mobile data takes
   /// longer than a desk did.
   static const Duration defaultTimeout = Duration(seconds: 60);
@@ -466,6 +473,7 @@ class ImageGenerator {
       'model': model,
       'prompt': prompt,
       'response_format': 'b64_json',
+      'size': size,
     });
 
     final http.Response response;

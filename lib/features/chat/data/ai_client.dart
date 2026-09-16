@@ -448,23 +448,41 @@ class ImageGenerator {
   }) {
     final kit = equipment == null || equipment.isEmpty
         ? ''
-        : ' using $equipment';
-    final moment = start
-        ? 'at the starting position, before the movement begins'
-        : 'at the end position, at the finish of the repetition';
-    return 'A person performing the exercise "$name"$kit $moment, training '
-        '$muscle, seen from the side.$style';
+        : ' with $equipment';
+    final moment = start ? 'at the start' : 'at the end';
+    return 'A person doing $name$kit, $moment of the movement, seen from the '
+        'side.$style';
   }
 
-  /// A prompt the coach wrote, with the same tail on it.
+  /// How much of the coach's description reaches the service.
+  ///
+  /// Measured, not guessed. The same model drew a useless picture from a
+  /// 450-character description full of "shoulder blades squeezed together,
+  /// seen from a high three-quarter angle" and a usable one from a single
+  /// 92-character sentence with one movement in it. A four-step model drowns
+  /// in detail: what it cannot weigh, it averages away.
+  static const int maxPromptLength = 160;
+
+  /// A prompt the coach wrote, cut back to one thought, with the same tail.
   ///
   /// The coach knows better than a template what those two pictures should
   /// show - it named the exercise - so its words lead. The tail still decides
   /// what the picture looks like, so a pair stays a pair.
   static String stylise(String prompt) {
-    final trimmed = prompt.trim();
+    final trimmed = _shorten(prompt.trim());
     final ending = trimmed.endsWith('.') ? trimmed : '$trimmed.';
     return '$ending$style';
+  }
+
+  /// Cuts at a sentence if there is one in reach, at a word otherwise. Never
+  /// mid-word: half a word is a word the model still tries to draw.
+  static String _shorten(String prompt) {
+    if (prompt.length <= maxPromptLength) return prompt;
+    final head = prompt.substring(0, maxPromptLength);
+    final sentence = head.lastIndexOf(RegExp(r'[.!?]'));
+    if (sentence > maxPromptLength ~/ 2) return head.substring(0, sentence);
+    final word = head.lastIndexOf(' ');
+    return word > 0 ? head.substring(0, word) : head;
   }
 
   /// Returns the image bytes, ready to be written to the photo directory.

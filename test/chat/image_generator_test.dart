@@ -137,6 +137,37 @@ void main() {
       expect(await PhotoStore(paths).exists(file!), isTrue);
     });
 
+    test('een lange beschrijving wordt teruggebracht tot één gedachte', () {
+      // Gemeten, niet bedacht: hetzelfde model tekende iets bruikbaars van
+      // één zin en iets onbruikbaars van een opsomming.
+      final prompt = ImageGenerator.stylise(
+        'A person seated at a chest-supported row machine, torso upright '
+        'against the pad, both arms pulled back with the handles at the ribs, '
+        'shoulder blades squeezed together, seen from a high three-quarter '
+        'angle behind the shoulder',
+      );
+
+      final own = prompt.substring(
+        0,
+        prompt.length - ImageGenerator.style.length,
+      );
+      expect(own.length, lessThanOrEqualTo(ImageGenerator.maxPromptLength + 1));
+      // Vooraan staat wat er getekend moet worden, en er staat geen half
+      // woord op het einde.
+      expect(own, startsWith('A person seated at a chest-supported row'));
+      expect(own, isNot(contains('three-qua.')));
+      expect(prompt, contains(ImageGenerator.style));
+    });
+
+    test('en een korte blijft heel', () {
+      final prompt = ImageGenerator.stylise(
+        'A man seated at a rowing machine pulls two handles back to his ribs, '
+        'elbows behind his body',
+      );
+
+      expect(prompt, contains('elbows behind his body.'));
+    });
+
     test('de vraag gaat over een mens in een houding', () {
       // Zonder mens kan je geen begin- en eindpositie tonen; dat paar is
       // precies waarvoor die twee plaatjes bestaan.
@@ -153,11 +184,16 @@ void main() {
         start: false,
       );
 
-      expect(start, contains('A person performing'));
+      expect(start, contains('A person doing'));
       expect(start, contains('Sledepush'));
       expect(start, contains('slee'));
-      expect(start, contains('starting position'));
-      expect(end, contains('end position'));
+      expect(start, contains('at the start'));
+      expect(end, contains('at the end'));
+      // En kort, want daar wordt de tekening beter van.
+      expect(
+        start.length - ImageGenerator.style.length,
+        lessThanOrEqualTo(ImageGenerator.maxPromptLength),
+      );
       // En allebei dezelfde stijl, anders is het geen paar.
       expect(start, contains(ImageGenerator.style));
       expect(end, contains(ImageGenerator.style));
@@ -205,7 +241,7 @@ void main() {
 
       expect(sent.single.body, contains('leaning into a loaded sled'));
       // Het sjabloon van de app is dan niet gebruikt.
-      expect(sent.single.body, isNot(contains('A person performing')));
+      expect(sent.single.body, isNot(contains('A person doing')));
     });
 
     test('een leeg tegoed zegt dat er niets getekend is', () async {

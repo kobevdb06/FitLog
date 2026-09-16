@@ -161,21 +161,20 @@ class CoachTools {
           'start_image_prompt': {
             'type': 'string',
             'description':
-                'Engelse beschrijving van hoe de STARTpositie eruitziet: de '
-                'houding van de persoon, hoe het materiaal vastgehouden '
-                'wordt, en vanuit welke hoek je de beweging het best ziet. '
-                'Beschrijf een machine aan de hand van hoe ze werkt ("seated '
-                'at a chest-supported row machine with two handles that move '
-                'backward"), nooit met een merknaam: het tekenprogramma kent '
-                'die niet en verzint er dan een. Wordt gebruikt om een '
-                'tekening te maken, als de gebruiker daar een token voor '
-                'heeft.',
+                'EEN korte Engelse zin over de STARTpositie, hoogstens 25 '
+                'woorden: wie doet wat, waar de armen en benen zijn, en '
+                'vanuit welke hoek je kijkt. Geen opsomming van details - het '
+                'tekenmodel verdrinkt daarin en tekent dan iets anders. Geen '
+                'merknaam van een machine, maar hoe ze werkt ("seated at a '
+                'rowing machine"). Wordt gebruikt om een tekening te maken, '
+                'als de gebruiker daar een token voor heeft.',
           },
           'end_image_prompt': {
             'type': 'string',
             'description':
-                'Hetzelfde voor de EINDpositie. Beschrijf wat er verschilt '
-                'van de start: dat verschil is waar het paar om draait.',
+                'Hetzelfde voor de EINDpositie, even kort. Zeg wat er '
+                'verschilt van de start: dat verschil is waar het paar om '
+                'draait.',
           },
         },
         'required': ['name', 'primary_muscle'],

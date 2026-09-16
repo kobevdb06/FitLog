@@ -2387,3 +2387,37 @@ Het scherm houdt nu per vak bij of wat er hangt getekend is. Een vak leegmaken
 of er een foto in zetten haalt dat weg; laten tekenen zet het terug. Wat er
 bewaard wordt is "er hangt nog minstens één tekening". Zo praat het merkteken
 altijd over iets wat er ook echt staat.
+
+## 141. Een korte zin tekent beter dan een goede beschrijving
+
+De tekeningen bij een machine-oefening klopten niet: bij "Diverging seated
+row" kwam er een man op een krukje uit die zijn biceps spande, zonder machine.
+De eerste verdenking was het model - `FLUX.1-schnell` is de uitgeklede versie
+die in vier stappen tekent - dus is het uitgezocht in plaats van aangenomen,
+met een echte sleutel.
+
+Wat de test uitwees, in deze volgorde:
+
+`size` wordt aanvaard. De tekening komt nu staand binnen (768x1024), de vorm
+van het vak waar ze in hangt, dus er wordt niets meer weggesneden.
+
+Het zwaardere model is niet de oplossing. `FLUX.1-dev` bestaat wel bij fal-ai,
+maar alleen via hun eigen adresvorm, en het antwoord is een link naar
+`v3b.fal.media` - een tweede vreemde host, waar nscale de afbeelding zelf
+meestuurt. En met onze lange prompt tekende dat duurdere model iets dat er
+nog minder op leek: een zijwaartse heffing met twee dumbbells.
+
+De lengte van de prompt was het probleem. Dezelfde `schnell`, met één zin van
+92 tekens - "A man seated at a rowing machine pulls two handles back to his
+ribs, elbows behind his body" - tekende wel iemand op een roeitoestel met de
+ellebogen naar achter. Vier stappen zijn te weinig om veel details tegen
+elkaar af te wegen; wat zo'n model niet kan wegen, middelt het weg.
+
+Dus: de coach wordt om één korte zin gevraagd in plaats van om een volledige
+beschrijving, en de app knipt wat er binnenkomt af op 160 tekens, op een zin
+of anders op een woord. Het sjabloon voor een oefening die je zelf maakt is
+even kort geworden. Wat de app erachter hangt blijft staan - die staart zat
+ook in de geslaagde test.
+
+Tegen de verleiding in om dit "op te lossen" met een duurder model: het model
+was niet stuk, de vraag was te lang.

@@ -228,6 +228,87 @@ void main() {
     });
   });
 
+  group('een tekening die je weghaalt', () {
+    /// Een oefening zoals de coach ze aanmaakt: twee tekeningen, en het
+    /// merkteken eronder dat zegt dat ze getekend zijn.
+    Future<void> addDrawn() async {
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-drawn',
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              category: 'duration',
+              createdAt: 0,
+              isCustom: const Value(true),
+              startImageFile: const Value('start.jpg'),
+              endImageFile: const Value('end.jpg'),
+              imagesGenerated: const Value(true),
+            ),
+          );
+    }
+
+    Future<void> pumpEditor(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1100, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        wrapWithContainer(
+          container,
+          const CustomExerciseScreen(exerciseId: 'ex-drawn'),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    /// Het eerste vak dat er nog een heeft; de knop van de oefening zelf staat
+    /// verderop.
+    Future<void> clearFirstFrame(WidgetTester tester) async {
+      await tester.ensureVisible(find.text('Verwijderen').first);
+      await tester.pump();
+      await tester.tap(find.text('Verwijderen').first);
+      await tester.pump();
+    }
+
+    testWidgets('neemt het merkteken mee als de laatste weg is', (
+      tester,
+    ) async {
+      await addDrawn();
+      await pumpEditor(tester);
+
+      await clearFirstFrame(tester);
+      await clearFirstFrame(tester);
+
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      final saved = (await db.exercisesDao.getById('ex-drawn'))!;
+      expect(saved.startImageFile, isNull);
+      expect(saved.endImageFile, isNull);
+      // Er is geen tekening meer, dus er valt ook niets meer over te zeggen.
+      expect(saved.imagesGenerated, isFalse);
+    });
+
+    testWidgets('maar blijft staan zolang er nog een tekening hangt', (
+      tester,
+    ) async {
+      await addDrawn();
+      await pumpEditor(tester);
+
+      await clearFirstFrame(tester);
+
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      final saved = (await db.exercisesDao.getById('ex-drawn'))!;
+      expect(saved.endImageFile, 'end.jpg');
+      expect(saved.imagesGenerated, isTrue);
+    });
+  });
+
   group('the muscle', () {
     testWidgets('says nothing is chosen until you choose', (tester) async {
       await pumpForm(tester);

@@ -52,8 +52,13 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   /// user can still walk away from the edit.
   final List<String> _replaced = [];
 
-  /// Whether one of the pictures came out of a model rather than a camera.
-  bool _generated = false;
+  /// Which of the two frames came out of a model rather than a camera.
+  ///
+  /// Per slot, because the line under the name on the detail screen only says
+  /// something true as long as a picture it is about is still there. Take the
+  /// drawing away, or put a real photo in its place, and it has nothing left
+  /// to warn about.
+  final Set<_Slot> _drawn = {};
 
   bool _loaded = false;
   bool _busy = false;
@@ -77,7 +82,10 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
     _category = row.categoryChoice;
     _startImage = row.startImageFile;
     _endImage = row.endImageFile;
-    _generated = row.imagesGenerated;
+    if (row.imagesGenerated) {
+      if (_startImage != null) _drawn.add(_Slot.start);
+      if (_endImage != null) _drawn.add(_Slot.end);
+    }
   }
 
   /// Picks one frame and puts it in [slot].
@@ -124,7 +132,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
       }
       setState(() {
         _setFrame(slot, fileName);
-        _generated = true;
+        _drawn.add(slot);
       });
     } on CoachException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -204,6 +212,9 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
   }
 
   void _setFrame(_Slot slot, String? fileName) {
+    // Whatever lands here now, it is not the drawing that was in this slot.
+    // The caller that draws puts the mark back.
+    _drawn.remove(slot);
     final previous = slot == _Slot.start ? _startImage : _endImage;
     if (previous != null) _replaced.add(previous);
     if (slot == _Slot.start) {
@@ -302,7 +313,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         instructions: _notesController.text,
         startImageFile: _startImage,
         endImageFile: _endImage,
-        imagesGenerated: _generated,
+        imagesGenerated: _drawn.isNotEmpty,
       );
     } else {
       id = widget.exerciseId!;
@@ -316,7 +327,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
         instructions: _notesController.text,
         startImageFile: _startImage,
         endImageFile: _endImage,
-        imagesGenerated: _generated,
+        imagesGenerated: _drawn.isNotEmpty,
       );
     }
 

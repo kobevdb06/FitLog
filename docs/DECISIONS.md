@@ -2375,3 +2375,15 @@ De systeemprompt groeide hierdoor over zijn budget van 4000 tekens. Die grens
 is opgehoogd naar 4300 én de tekst is ingekort: hij rijdt mee met elke vraag en
 de gebruiker betaalt hem per keer, dus dat moet een beslissing zijn en geen
 ongeluk.
+
+## 140. Het merkteken "getekend door AI" hangt aan de foto, niet aan de oefening
+
+De oefening onthield dat ze ooit getekend was en bleef dat zeggen, ook nadat de
+tekeningen eruit gehaald waren. Dan staat er een waarschuwing onder een naam
+waar niets meer bij hoort - of erger: onder een echte foto die je er zelf bij
+gezet hebt.
+
+Het scherm houdt nu per vak bij of wat er hangt getekend is. Een vak leegmaken
+of er een foto in zetten haalt dat weg; laten tekenen zet het terug. Wat er
+bewaard wordt is "er hangt nog minstens één tekening". Zo praat het merkteken
+altijd over iets wat er ook echt staat.

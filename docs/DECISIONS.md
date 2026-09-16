@@ -2495,3 +2495,24 @@ Dat is dezelfde keuze als 143, doorgetrokken naar de plek waar ze het hardst
 nodig was: het model is niet bij te sturen met nog een regel in de
 systeemprompt, wie de oefening kent wel. En het scheelt ook geld - je ziet nu
 waar je voor betaalt voor het betaald is.
+
+## 145. Dezelfde coach, maar met maar één ding voor zijn neus
+
+De twee zinnen onder "Wat moeten de tekeningen tonen?" komen van de coach,
+maar hij schrijft ze terloops: hij is op dat moment een oefening aan het
+bedenken, met negen tools en een systeemprompt vol andere regels. De regels
+die we uit mislukte tekeningen geleerd hebben - noem de beweging, geen stang
+boven het hoofd, laat de twee houdingen verschillen - leest hij dan voorbij.
+Dat is precies wat er gebeurde: hij noemde de oefening zelf "Triceps Overhead
+Extension - V-Bar Attachment".
+
+Er staat nu een knop in dat vakje die hem opnieuw vraagt, met alleen die ene
+opdracht ervoor (`kFramePromptSystem`) en zonder tools. Hij krijgt de naam,
+het materiaal en de uitvoering, en antwoordt met twee zinnen in JSON.
+
+Wat het kost wordt bijgeschreven op het antwoord waar het voorstel in stond.
+Anders zou de dagbalk in de instellingen minder tonen dan er werkelijk de deur
+uitging, en die balk bestaat juist om dat te weten.
+
+Het blijft een voorstel: het vult de twee velden in, het tekent niets. Tekenen
+doe je pas als er staat wat jij wil.

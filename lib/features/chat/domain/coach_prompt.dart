@@ -13,6 +13,8 @@ library;
 ///
 /// Kept short on purpose: this rides along with every single question, and
 /// tokens are the user's own money.
+import 'dart:convert';
+
 const String _appFacts = '''
 FitLog is een offline logboek voor krachttraining op Android.
 - Tabbladen: Start (vandaag, je week, herstel, records, volume), Trainen
@@ -89,6 +91,60 @@ herhaling van de vraag, geen samenvatting van wat je zonet zei.
 ''';
 
 /// The whole system prompt, with the little that is known without asking.
+/// The whole instruction for one job: write the two sentences a pair of
+/// drawings is made from.
+///
+/// It is asked on its own, not squeezed into the coach's own prompt, because
+/// the rules in it were bought one drawing at a time and a model that is also
+/// inventing an exercise reads them past. Every line below is something that
+/// went wrong first:
+///
+/// - the name of a movement steers better than a description of joints;
+/// - "bar" above a head produces a pull-up whatever else the sentence says;
+/// - two sentences that do not differ give two identical pictures;
+/// - a long sentence gives a worse drawing than a short one.
+const String kFramePromptSystem = '''
+Je schrijft twee Engelse zinnen waar een tekenprogramma een begin- en een
+eindpositie van een fitnessoefening uit tekent. Meer doe je niet.
+
+Regels, allemaal uit mislukte tekeningen geleerd:
+- Elke zin begint met de camerahoek en de naam van de beweging in gewone
+  woorden: "Side view of a person doing a standing overhead triceps
+  extension". Laat merknamen en toevoegingen als "V-bar attachment" weg.
+- Zet er daarna in een paar woorden bij hoe de gewrichten staan.
+- Noem geen stang, handvat, kabel of gewicht boven het hoofd. Het
+  tekenprogramma maakt daar een optrekbeweging van.
+- De twee zinnen moeten verschillen in de stand van de armen of de benen. Zijn
+  ze hetzelfde, dan krijgt de gebruiker twee keer dezelfde tekening.
+- Hoogstens 25 woorden per zin. Een opsomming levert een slechtere tekening op.
+
+Antwoord met alleen dit, zonder uitleg eromheen:
+{"start": "...", "end": "..."}
+''';
+
+/// Reads the two sentences back out of an answer.
+///
+/// A model that was told to answer with nothing but JSON sometimes wraps it
+/// in a code fence anyway, so the braces decide where it starts and ends.
+/// Anything else is no answer at all - better an error than half a pair.
+(String, String)? parseFramePrompts(String? raw) {
+  if (raw == null) return null;
+  final open = raw.indexOf('{');
+  final close = raw.lastIndexOf('}');
+  if (open < 0 || close <= open) return null;
+  try {
+    final json = jsonDecode(raw.substring(open, close + 1));
+    if (json is! Map) return null;
+    final start = json['start'];
+    final end = json['end'];
+    if (start is! String || end is! String) return null;
+    if (start.trim().isEmpty || end.trim().isEmpty) return null;
+    return (start.trim(), end.trim());
+  } on FormatException {
+    return null;
+  }
+}
+
 String buildCoachPrompt({
   required DateTime now,
   required String weightUnit,

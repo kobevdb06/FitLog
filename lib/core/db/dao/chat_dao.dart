@@ -101,6 +101,31 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
         .write(ChatMessagesTableCompanion(proposals: Value(json)));
   }
 
+  /// Adds what a side call cost to the answer that caused it.
+  ///
+  /// The daily bar counts what leaves the app, and a request that was made
+  /// because of this answer belongs on this answer - otherwise the number in
+  /// the settings is quietly lower than the truth.
+  Future<void> addUsage(
+    String messageId, {
+    int requests = 1,
+    int inputTokens = 0,
+    int outputTokens = 0,
+  }) async {
+    await customUpdate(
+      'UPDATE chat_messages SET requests = COALESCE(requests, 1) + ?, '
+      'input_tokens = COALESCE(input_tokens, 0) + ?, '
+      'output_tokens = COALESCE(output_tokens, 0) + ? WHERE id = ?',
+      variables: [
+        Variable.withInt(requests),
+        Variable.withInt(inputTokens),
+        Variable.withInt(outputTokens),
+        Variable.withString(messageId),
+      ],
+      updates: {chatMessagesTable},
+    );
+  }
+
   Future<void> deleteThread(String id) async {
     await (delete(chatThreadsTable)..where((t) => t.id.equals(id))).go();
   }

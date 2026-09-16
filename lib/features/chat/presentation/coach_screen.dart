@@ -434,6 +434,24 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             'maakt de tekenaar een optrekbeweging van.',
         start: exercise.startImagePrompt ?? '',
         end: exercise.endImagePrompt ?? '',
+        // The coach wrote these along the way, while it was also inventing an
+        // exercise. Asked again with nothing but this job in front of it, it
+        // does better - and one small question is far cheaper than a drawing.
+        writeLabel: 'Laat de coach het opnieuw schrijven',
+        onWrite: () async {
+          try {
+            return await ref
+                .read(coachControllerProvider.notifier)
+                .writeFramePrompts(
+                  messageId: widget.message.id,
+                  name: exercise.name,
+                  equipment: exercise.equipment,
+                  instructions: exercise.instructions,
+                );
+          } on CoachException catch (error) {
+            throw CoachDialogError(error.message);
+          }
+        },
       );
       if (pair == null || !mounted) return;
       (start, end) = pair;

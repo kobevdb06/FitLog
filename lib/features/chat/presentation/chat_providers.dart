@@ -472,6 +472,66 @@ class CoachController extends _$CoachController {
 
   /// One cheap call, to find out whether a key works before the user types a
   /// question and waits for a failure.
+  /// Asks the coach for the two sentences a pair of drawings is made from.
+  ///
+  /// A separate call with only that job in it: the rules for these sentences
+  /// were bought one failed drawing at a time, and a model that is also
+  /// inventing an exercise reads them past. What it costs is added to the
+  /// answer that carried the proposal, so the daily bar keeps telling the
+  /// truth.
+  Future<(String, String)> writeFramePrompts({
+    required String messageId,
+    required String name,
+    String? equipment,
+    String? instructions,
+  }) async {
+    final db = ref.read(databaseProvider);
+    final stored = await db.settingsDao.apiKey();
+    final key = stored == null || stored.isEmpty ? null : stored;
+    if (key == null) {
+      throw const CoachException('Er staat geen API-sleutel in de instellingen.');
+    }
+
+    final client = ref.read(coachClientFactoryProvider)(
+      key,
+      ref.read(coachProviderProvider),
+    );
+    final CoachReply reply;
+    try {
+      reply = await client.send(
+        system: kFramePromptSystem,
+        messages: [
+          CoachMessage.user([
+            'Oefening: $name',
+            if (equipment != null && equipment.isNotEmpty)
+              'Materiaal: $equipment',
+            if (instructions != null && instructions.trim().isNotEmpty)
+              'Uitvoering: ${instructions.trim()}',
+          ].join('\n')),
+        ],
+        tools: const [],
+        model: ref.read(coachModelProvider),
+        maxTokens: 256,
+      );
+    } finally {
+      client.close();
+    }
+
+    await db.chatDao.addUsage(
+      messageId,
+      inputTokens: reply.usage.inputTokens,
+      outputTokens: reply.usage.outputTokens,
+    );
+
+    final pair = parseFramePrompts(reply.text);
+    if (pair == null) {
+      throw const CoachException(
+        'De coach gaf geen bruikbare beschrijving terug.',
+      );
+    }
+    return pair;
+  }
+
   Future<String?> testKey(String key) async {
     final client = ref.read(coachClientFactoryProvider)(
       key.trim(),

@@ -226,6 +226,71 @@ void main() {
       expect('${drawn.last['prompt']}', contains('stretched straight up'));
     });
 
+    test('de coach kan de twee zinnen apart schrijven', () async {
+      // Apart gevraagd, met alleen die opdracht ervoor: dan leest hij de
+      // regels niet voorbij terwijl hij ook een oefening zit te bedenken.
+      late String askedSystem;
+      container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          appPathsProvider.overrideWith((ref) => AppPaths(home)),
+          coachClientFactoryProvider.overrideWithValue(
+            (apiKey, provider) => AiClient(
+              apiKey: apiKey,
+              provider: provider,
+              client: MockClient((request) async {
+                final body = jsonDecode(request.body) as Map<String, Object?>;
+                askedSystem = jsonEncode(body['systemInstruction']);
+                return http.Response(
+                  jsonEncode({
+                    'candidates': [
+                      {
+                        'content': {
+                          'parts': [
+                            {
+                              'text':
+                                  '```json'
+                                  '${jsonEncode({'start': 'Side view A', 'end': 'Side view B'})}'
+                                  '```',
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                    'usageMetadata': {
+                      'promptTokenCount': 120,
+                      'candidatesTokenCount': 30,
+                    },
+                  }),
+                  200,
+                  headers: {'content-type': 'application/json'},
+                );
+              }),
+            ),
+          ),
+        ],
+      );
+      final message = await drawable();
+
+      final (start, end) = await container!
+          .read(coachControllerProvider.notifier)
+          .writeFramePrompts(
+            messageId: message.id,
+            name: 'Overhead triceps extension',
+            equipment: 'cable',
+          );
+
+      expect(start, 'Side view A');
+      expect(end, 'Side view B');
+      // De opdracht die we duur geleerd hebben, staat erin.
+      expect(askedSystem, contains('optrekbeweging'));
+      // En wat het kostte staat bij het antwoord waar het bij hoort, anders
+      // liegt de balk in de instellingen.
+      final stored = (await db.chatDao.messages('t-1')).single;
+      expect(stored.requests, 2);
+      expect(stored.inputTokens, 120);
+    });
+
     test('en zonder die knop wordt er niets getekend', () async {
       container = newContainer();
       final coach = container!.read(coachControllerProvider.notifier);

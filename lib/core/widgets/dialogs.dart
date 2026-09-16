@@ -131,6 +131,19 @@ class _TextPromptState extends State<_TextPrompt> {
   }
 }
 
+/// A failure with a sentence worth showing, thrown by whoever fills the pair.
+///
+/// The dialog lives in core and must not know what a coach is; this is the
+/// one thing it needs from it.
+class CoachDialogError implements Exception {
+  const CoachDialogError(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// Two descriptions at once, because they only mean something as a pair.
 ///
 /// Returns start and end as they were left, or null when the user backed out.
@@ -141,6 +154,8 @@ Future<(String, String)?> promptForPair(
   required String start,
   required String end,
   String confirmLabel = 'Tekenen',
+  Future<(String, String)> Function()? onWrite,
+  String writeLabel = 'Laat de coach schrijven',
 }) {
   return showDialog<(String, String)>(
     context: context,
@@ -150,6 +165,8 @@ Future<(String, String)?> promptForPair(
       start: start,
       end: end,
       confirmLabel: confirmLabel,
+      onWrite: onWrite,
+      writeLabel: writeLabel,
     ),
   );
 }
@@ -161,6 +178,8 @@ class _PairPrompt extends StatefulWidget {
     required this.start,
     required this.end,
     required this.confirmLabel,
+    required this.onWrite,
+    required this.writeLabel,
   });
 
   final String title;
@@ -169,6 +188,10 @@ class _PairPrompt extends StatefulWidget {
   final String end;
   final String confirmLabel;
 
+  /// Fills both fields for you, when there is someone who can write them.
+  final Future<(String, String)> Function()? onWrite;
+  final String writeLabel;
+
   @override
   State<_PairPrompt> createState() => _PairPromptState();
 }
@@ -176,12 +199,37 @@ class _PairPrompt extends StatefulWidget {
 class _PairPromptState extends State<_PairPrompt> {
   late final _start = TextEditingController(text: widget.start);
   late final _end = TextEditingController(text: widget.end);
+  bool _writing = false;
+  String? _error;
 
   @override
   void dispose() {
     _start.dispose();
     _end.dispose();
     super.dispose();
+  }
+
+  Future<void> _write() async {
+    setState(() {
+      _writing = true;
+      _error = null;
+    });
+    try {
+      final (start, end) = await widget.onWrite!();
+      if (!mounted) return;
+      _start.text = start;
+      _end.text = end;
+    } on Object catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error is CoachDialogError
+              ? error.message
+              : 'Dat is niet gelukt.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _writing = false);
+    }
   }
 
   @override
@@ -214,6 +262,32 @@ class _PairPromptState extends State<_PairPrompt> {
               textCapitalization: TextCapitalization.none,
               decoration: const InputDecoration(labelText: 'Eindpositie'),
             ),
+            if (widget.onWrite != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _writing ? null : _write,
+                  icon: _writing
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_awesome, size: 18),
+                  label: Text(widget.writeLabel),
+                ),
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                _error!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
           ],
         ),
       ),

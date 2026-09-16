@@ -67,7 +67,7 @@ void main() {
     );
   });
 
-  test('and it can only reach the two services it was written for', () {
+  test('and it can only reach the services it was written for', () {
     final source = read(client);
 
     // Written down once each, not assembled from parts at runtime. Two
@@ -80,8 +80,10 @@ void main() {
       "'https://api.anthropic.com/v1/models?limit=100'",
       "'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200'",
       // Waar een illustratie getekend wordt, als de gebruiker daar een token
-      // voor heeft ingevuld.
+      // voor heeft ingevuld. Twee diensten om uit te kiezen, dus twee
+      // adressen - en het tweede draagt het account van de gebruiker in zich.
       "'https://router.huggingface.co/nscale/v1/images/generations'",
+      "'https://api.cloudflare.com/client/v4/accounts/\$accountId/ai/run/'",
     });
 
     // And every one of them is a host this app is allowed to know.
@@ -89,7 +91,8 @@ void main() {
       expect(
         url.contains('api.anthropic.com') ||
             url.contains('generativelanguage.googleapis.com') ||
-            url.contains('router.huggingface.co'),
+            url.contains('router.huggingface.co') ||
+            url.contains('api.cloudflare.com'),
         isTrue,
         reason: url,
       );
@@ -103,6 +106,7 @@ void main() {
         'api.anthropic.com',
         'googleapis.com',
         'huggingface.co',
+        'api.cloudflare.com',
       ]) {
         expect(source, isNot(contains(host)), reason: path);
       }

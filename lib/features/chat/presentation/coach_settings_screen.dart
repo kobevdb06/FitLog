@@ -165,12 +165,73 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     if (mounted) setState(() => _result = null);
   }
 
+  /// Which service draws. Asked first, because what it needs from you after
+  /// that differs: one wants a token, the other a token and an account.
+  Future<void> _pickDrawingService() async {
+    final picked = await showAppSheet<DrawingService>(
+      context: context,
+      title: 'Wie tekent?',
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final provider in DrawingService.values)
+            ListTile(
+              leading: Icon(
+                provider.needsAccount
+                    ? Icons.cloud_outlined
+                    : Icons.auto_awesome_outlined,
+              ),
+              title: Text(provider.label),
+              subtitle: Text(provider.blurb),
+              onTap: () => Navigator.of(context).pop(provider),
+            ),
+        ],
+      ),
+    );
+    if (picked == null || !mounted) return;
+
+    // The token of the service you are leaving is no good here, and leaving it
+    // behind would have the app offer to draw with the wrong one.
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          AppSettingsTableCompanion(
+            imageProvider: Value(picked.wire),
+            imageApiKey: const Value(null),
+            imageAccountId: const Value(null),
+          ),
+        );
+  }
+
+  Future<void> _enterImageAccount() async {
+    final id = await promptForText(
+      context,
+      title: 'Cloudflare account-ID',
+      hintText: 'de reeks na dash.cloudflare.com/',
+      confirmLabel: 'Bewaren',
+      capitalization: TextCapitalization.none,
+    );
+    if (id == null || !mounted) return;
+
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          AppSettingsTableCompanion(
+            imageAccountId: Value(id.trim().isEmpty ? null : id.trim()),
+          ),
+        );
+  }
+
   Future<void> _enterImageKey() async {
+    final drawnBy = ref.read(coachDrawingServiceProvider);
     final token = await promptForText(
       context,
-      title: 'Hugging Face-token',
-      hintText: 'hf_...',
+      title: '${drawnBy.label}-token',
+      hintText: drawnBy == DrawingService.huggingFace ? 'hf_...' : null,
       confirmLabel: 'Bewaren',
+      capitalization: TextCapitalization.none,
     );
     if (token == null || !mounted) return;
 
@@ -398,6 +459,8 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     final model = ref.watch(coachModelProvider);
     final limit = ref.watch(coachDailyLimitProvider);
     final imageKey = ref.watch(coachImageKeyProvider);
+    final drawnBy = ref.watch(coachDrawingServiceProvider);
+    final imageAccount = ref.watch(coachImageAccountProvider);
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
 
     return Scaffold(
@@ -496,12 +559,32 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               child: InfoBanner(
                 icon: Icons.auto_awesome,
                 message:
-                    'Met een token van Hugging Face kan je bij een eigen '
-                    'oefening een illustratie laten tekenen. Alleen daar, en '
-                    'nergens anders: elke tekening kost tegoed. Zonder token '
-                    'wordt er nooit iets getekend.',
+                    'Met een eigen token kan je bij een oefening een '
+                    'illustratie laten tekenen. Alleen daar, en nergens '
+                    'anders: elke tekening kost tegoed. Kies eerst wie er '
+                    'tekent; zonder token wordt er nooit iets getekend.',
               ),
             ),
+            // First who draws, then what they need from you. The two services
+            // ask for different things, so asking before the choice is made is
+            // asking for the wrong thing.
+            ListTile(
+              leading: const Icon(Icons.palette_outlined),
+              title: Text(drawnBy.label),
+              subtitle: Text(drawnBy.blurb),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickDrawingService,
+            ),
+            if (drawnBy.needsAccount)
+              ListTile(
+                leading: const Icon(Icons.badge_outlined),
+                title: Text(imageAccount ?? 'Nog geen account-ID'),
+                subtitle: const Text(
+                  'Staat in de URL van je Cloudflare-dashboard.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _enterImageAccount,
+              ),
             ListTile(
               leading: const Icon(Icons.brush_outlined),
               title: Text(
@@ -509,8 +592,14 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               ),
               subtitle: Text(
                 imageKey == null
-                    ? 'Maak er een in je Hugging Face-account, bij Access '
-                          'Tokens'
+                    ? switch (drawnBy) {
+                        DrawingService.huggingFace =>
+                          'Maak er een in je Hugging Face-account, bij Access '
+                              'Tokens',
+                        DrawingService.cloudflare =>
+                          'Maak er een bij Cloudflare, met de rechten Workers '
+                              'AI Read en Edit',
+                      }
                     : 'Bewaard naast je andere sleutel, achter je pincode.',
               ),
               trailing: const Icon(Icons.chevron_right),

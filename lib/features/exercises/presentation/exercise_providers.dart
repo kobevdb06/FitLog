@@ -458,12 +458,22 @@ class ExerciseEditor {
     // Straight from the database, not from the settings stream: reading a
     // stream nobody is listening to answers "still loading", which here would
     // read as "no token" and quietly draw nothing.
-    final stored = (await ref.read(databaseProvider).settingsDao.getSettings())
-        .imageApiKey;
+    final settings = await ref.read(databaseProvider).settingsDao.getSettings();
+    final stored = settings.imageApiKey;
     final key = stored == null || stored.isEmpty ? null : stored;
     if (key == null) return null;
 
-    final generator = ref.read(imageGeneratorFactoryProvider)(key);
+    final provider = DrawingService.fromWire(settings.imageProvider);
+    final account = settings.imageAccountId;
+    if (provider.needsAccount && (account == null || account.isEmpty)) {
+      return null;
+    }
+
+    final generator = ref.read(imageGeneratorFactoryProvider)(
+      key,
+      provider: provider,
+      accountId: account,
+    );
     try {
       final bytes = await generator.draw(
         prompt == null || prompt.trim().isEmpty

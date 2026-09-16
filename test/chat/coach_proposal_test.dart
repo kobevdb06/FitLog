@@ -77,25 +77,26 @@ void main() {
         ),
       ),
       imageGeneratorFactoryProvider.overrideWithValue(
-        (apiKey) => ImageGenerator(
-          apiKey: apiKey,
-          client: MockClient((request) async {
-            drawn.add(jsonDecode(request.body) as Map<String, Object?>);
-            return http.Response(
-              jsonEncode({
-                'data': [
-                  {
-                    'b64_json': base64Encode(
-                      img.encodeJpg(img.Image(width: 32, height: 32)),
-                    ),
-                  },
-                ],
+        (apiKey, {provider = DrawingService.huggingFace, accountId}) =>
+            ImageGenerator(
+              apiKey: apiKey,
+              client: MockClient((request) async {
+                drawn.add(jsonDecode(request.body) as Map<String, Object?>);
+                return http.Response(
+                  jsonEncode({
+                    'data': [
+                      {
+                        'b64_json': base64Encode(
+                          img.encodeJpg(img.Image(width: 32, height: 32)),
+                        ),
+                      },
+                    ],
+                  }),
+                  200,
+                  headers: {'content-type': 'application/json'},
+                );
               }),
-              200,
-              headers: {'content-type': 'application/json'},
-            );
-          }),
-        ),
+            ),
       ),
     ],
   );

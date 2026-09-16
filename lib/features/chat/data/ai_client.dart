@@ -384,17 +384,71 @@ String _redact(String text) => text
 /// What comes out is a drawing, not a photograph of the movement. It looks
 /// convincing and is regularly wrong about how a machine actually works, which
 /// is why the app marks such pictures and says so.
+/// Who draws the illustrations.
+///
+/// Two services rather than one, because they are free in different ways and
+/// good at different things. Hugging Face gives a small monthly credit and
+/// draws with FLUX.1 schnell; Cloudflare gives an allowance that comes back
+/// every day and draws with FLUX.2 Klein, which - tested side by side on the
+/// same sentence - is the first model here that put the arms where the words
+/// said they should be.
+enum DrawingService {
+  huggingFace(
+    'hugging_face',
+    'Hugging Face',
+    'FLUX.1 schnell. Ongeveer \$0,10 aan tegoed per maand, daarna op tot '
+        'de volgende maand.',
+  ),
+  cloudflare(
+    'cloudflare',
+    'Cloudflare',
+    'FLUX.2 Klein 9B. Elke dag opnieuw een gratis portie, goed voor een stuk '
+        'of drie oefeningen per dag.',
+  );
+
+  const DrawingService(this.wire, this.label, this.blurb);
+
+  final String wire;
+  final String label;
+
+  /// What you are choosing between, in one line.
+  final String blurb;
+
+  /// Null - every database from before there was a choice - is Hugging Face,
+  /// because that was the only one there was.
+  static DrawingService fromWire(String? wire) {
+    for (final provider in values) {
+      if (provider.wire == wire) return provider;
+    }
+    return DrawingService.huggingFace;
+  }
+
+  /// Whether this service needs an account of its own next to the token.
+  bool get needsAccount => this == DrawingService.cloudflare;
+}
+
 class ImageGenerator {
-  ImageGenerator({required this.apiKey, http.Client? client, this.timeout})
-    : _client = client ?? http.Client();
+  ImageGenerator({
+    required this.apiKey,
+    this.provider = DrawingService.huggingFace,
+    this.accountId,
+    http.Client? client,
+    this.timeout,
+  }) : _client = client ?? http.Client();
 
   /// Hugging Face routes the call to whoever still runs the model and bills it
   /// to the token's own account.
   static const String endpoint =
       'https://router.huggingface.co/nscale/v1/images/generations';
 
-  /// The model behind it. One name, because unlike the coach's models this is
-  /// not a choice the user makes - it is the button's behaviour.
+  /// Cloudflare runs the model itself, on the account the token belongs to.
+  static String cloudflareEndpoint(String accountId) =>
+      'https://api.cloudflare.com/client/v4/accounts/$accountId/ai/run/'
+      '@cf/black-forest-labs/flux-2-klein-9b';
+
+  /// The model behind it. One name per service, because unlike the coach's
+  /// models this is not a choice the user makes - it is the button's
+  /// behaviour.
   static const String model = 'black-forest-labs/FLUX.1-schnell';
 
   /// The shape the two frame slots have.
@@ -404,11 +458,20 @@ class ImageGenerator {
   /// Asking for the shape we show costs nothing and wastes no pixels.
   static const String size = '768x1024';
 
+  /// The same shape, for a service that wants it as two numbers.
+  static const int width = 768;
+  static const int height = 1024;
+
   /// Drawing takes seconds, not milliseconds, and a phone on mobile data takes
   /// longer than a desk did.
   static const Duration defaultTimeout = Duration(seconds: 60);
 
   final String apiKey;
+  final DrawingService provider;
+
+  /// Whose daily allowance is spent, for a service that asks.
+  final String? accountId;
+
   final Duration? timeout;
   final http.Client _client;
 
@@ -512,25 +575,11 @@ class ImageGenerator {
   /// supposed to read off the pair was the difference between two people. One
   /// seed and one described outfit, and only the posture moves.
   Future<Uint8List> draw(String prompt, {int? seed}) async {
-    final body = jsonEncode({
-      'model': model,
-      'prompt': prompt,
-      'response_format': 'b64_json',
-      'size': size,
-      'seed': ?seed,
-    });
-
     final http.Response response;
     try {
-      response = await _client
-          .post(
-            Uri.parse(endpoint),
-            headers: {
-              'content-type': 'application/json',
-              'authorization': 'Bearer $apiKey',
-            },
-            body: body,
-          )
+      response = await (provider == DrawingService.cloudflare
+              ? _askCloudflare(prompt, seed)
+              : _askHuggingFace(prompt, seed))
           .timeout(timeout ?? defaultTimeout);
     } on TimeoutException {
       throw const CoachException(
@@ -547,14 +596,14 @@ class ImageGenerator {
     }
 
     if (response.statusCode == 401 || response.statusCode == 403) {
-      throw const CoachException(
-        'Dat Hugging Face-token wordt niet aanvaard.',
+      throw CoachException(
+        'Dat ${provider.label}-token wordt niet aanvaard.',
         badKey: true,
       );
     }
-    if (response.statusCode == 402) {
-      throw const CoachException(
-        'Je tegoed bij Hugging Face is op. Er is niets getekend.',
+    if (response.statusCode == 402 || response.statusCode == 429) {
+      throw CoachException(
+        'Je tegoed bij ${provider.label} is op. Er is niets getekend.',
         badKey: true,
       );
     }
@@ -562,11 +611,8 @@ class ImageGenerator {
       throw CoachException('Tekenen mislukte: ${_detailOf(response.body)}');
     }
 
-    final json = jsonDecode(response.body);
-    final data = json is Map ? json['data'] : null;
-    final first = data is List && data.isNotEmpty ? data.first : null;
-    final encoded = first is Map ? first['b64_json'] : null;
-    if (encoded is! String || encoded.isEmpty) {
+    final encoded = _imageOf(response.body);
+    if (encoded == null || encoded.isEmpty) {
       throw const CoachException('Er kwam geen afbeelding terug.');
     }
 
@@ -575,6 +621,62 @@ class ImageGenerator {
     } on FormatException {
       throw const CoachException('De afbeelding was onleesbaar.');
     }
+  }
+
+  /// One JSON call, with the size and the seed in the body.
+  Future<http.Response> _askHuggingFace(String prompt, int? seed) {
+    return _client.post(
+      Uri.parse(endpoint),
+      headers: {
+        'content-type': 'application/json',
+        'authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': model,
+        'prompt': prompt,
+        'response_format': 'b64_json',
+        'size': size,
+        'seed': ?seed,
+      }),
+    );
+  }
+
+  /// The same question as form fields, which is the only shape FLUX.2 takes
+  /// here - a JSON body comes back as "required properties at '/' are
+  /// 'multipart'".
+  Future<http.Response> _askCloudflare(String prompt, int? seed) async {
+    final account = accountId;
+    if (account == null || account.isEmpty) {
+      throw const CoachException(
+        'Er staat geen Cloudflare account-ID bij het token.',
+        badKey: true,
+      );
+    }
+
+    final request =
+        http.MultipartRequest('POST', Uri.parse(cloudflareEndpoint(account)))
+          ..headers['authorization'] = 'Bearer $apiKey'
+          ..fields['prompt'] = prompt
+          ..fields['width'] = '$width'
+          ..fields['height'] = '$height';
+    if (seed != null) request.fields['seed'] = '$seed';
+
+    return http.Response.fromStream(await _client.send(request));
+  }
+
+  /// Reads the picture out of whichever answer came back.
+  ///
+  /// Hugging Face speaks the OpenAI shape and puts it in data[0].b64_json;
+  /// Cloudflare wraps everything of its own in result and calls it image.
+  static String? _imageOf(String body) {
+    final json = jsonDecode(body);
+    if (json is! Map) return null;
+    if (json['result'] case final Map result) {
+      return result['image'] as String?;
+    }
+    final data = json['data'];
+    final first = data is List && data.isNotEmpty ? data.first : null;
+    return first is Map ? first['b64_json'] as String? : null;
   }
 
   /// The same reading of an error body as the coach's, kept here so this class

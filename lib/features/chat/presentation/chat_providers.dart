@@ -124,19 +124,47 @@ String? coachImageKey(Ref ref) {
   return key == null || key.isEmpty ? null : key;
 }
 
+/// Which service draws, of the two on offer.
+@riverpod
+DrawingService coachDrawingService(Ref ref) =>
+    DrawingService.fromWire(ref.watch(settingsProvider).value?.imageProvider);
+
+/// The account a Cloudflare token belongs to.
+@riverpod
+String? coachImageAccount(Ref ref) {
+  final id = ref.watch(settingsProvider).value?.imageAccountId;
+  return id == null || id.isEmpty ? null : id;
+}
+
 /// Whether an illustration can be drawn at all.
 ///
-/// Without this token nothing is ever generated, whatever else is switched
-/// on - it is a separate service and separate money.
+/// Without a token nothing is ever generated, whatever else is switched on -
+/// it is a separate service and separate money. And a service that wants an
+/// account as well is not set up until both are there: half of it drawn is
+/// nothing drawn.
 @riverpod
-bool canDrawImages(Ref ref) => ref.watch(coachImageKeyProvider) != null;
+bool canDrawImages(Ref ref) {
+  if (ref.watch(coachImageKeyProvider) == null) return false;
+  if (!ref.watch(coachDrawingServiceProvider).needsAccount) return true;
+  return ref.watch(coachImageAccountProvider) != null;
+}
 
 /// How a drawing is made, so a test can hand over one that draws from memory.
-typedef ImageGeneratorFactory = ImageGenerator Function(String apiKey);
+typedef ImageGeneratorFactory =
+    ImageGenerator Function(
+      String apiKey, {
+      DrawingService provider,
+      String? accountId,
+    });
 
 @riverpod
 ImageGeneratorFactory imageGeneratorFactory(Ref ref) =>
-    (apiKey) => ImageGenerator(apiKey: apiKey);
+    (apiKey, {provider = DrawingService.huggingFace, accountId}) =>
+        ImageGenerator(
+          apiKey: apiKey,
+          provider: provider,
+          accountId: accountId,
+        );
 
 /// What the user allows themselves in a day, in calls to the service.
 @riverpod

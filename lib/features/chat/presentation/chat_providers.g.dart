@@ -521,25 +521,124 @@ final class CoachImageKeyProvider
 
 String _$coachImageKeyHash() => r'1581d66c74ca2d17552632e9ab4ee9135801ecb1';
 
+/// Which service draws, of the two on offer.
+
+@ProviderFor(coachDrawingService)
+final coachDrawingServiceProvider = CoachDrawingServiceProvider._();
+
+/// Which service draws, of the two on offer.
+
+final class CoachDrawingServiceProvider
+    extends $FunctionalProvider<DrawingService, DrawingService, DrawingService>
+    with $Provider<DrawingService> {
+  /// Which service draws, of the two on offer.
+  CoachDrawingServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachDrawingServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachDrawingServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DrawingService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DrawingService create(Ref ref) {
+    return coachDrawingService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DrawingService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DrawingService>(value),
+    );
+  }
+}
+
+String _$coachDrawingServiceHash() =>
+    r'86d1580f0e8ef9e5d35d315f2c3cdb19c5c0de9f';
+
+/// The account a Cloudflare token belongs to.
+
+@ProviderFor(coachImageAccount)
+final coachImageAccountProvider = CoachImageAccountProvider._();
+
+/// The account a Cloudflare token belongs to.
+
+final class CoachImageAccountProvider
+    extends $FunctionalProvider<String?, String?, String?>
+    with $Provider<String?> {
+  /// The account a Cloudflare token belongs to.
+  CoachImageAccountProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachImageAccountProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachImageAccountHash();
+
+  @$internal
+  @override
+  $ProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String? create(Ref ref) {
+    return coachImageAccount(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$coachImageAccountHash() => r'933eafced9c3d52a6924e3de0045550c0241e780';
+
 /// Whether an illustration can be drawn at all.
 ///
-/// Without this token nothing is ever generated, whatever else is switched
-/// on - it is a separate service and separate money.
+/// Without a token nothing is ever generated, whatever else is switched on -
+/// it is a separate service and separate money. And a service that wants an
+/// account as well is not set up until both are there: half of it drawn is
+/// nothing drawn.
 
 @ProviderFor(canDrawImages)
 final canDrawImagesProvider = CanDrawImagesProvider._();
 
 /// Whether an illustration can be drawn at all.
 ///
-/// Without this token nothing is ever generated, whatever else is switched
-/// on - it is a separate service and separate money.
+/// Without a token nothing is ever generated, whatever else is switched on -
+/// it is a separate service and separate money. And a service that wants an
+/// account as well is not set up until both are there: half of it drawn is
+/// nothing drawn.
 
 final class CanDrawImagesProvider extends $FunctionalProvider<bool, bool, bool>
     with $Provider<bool> {
   /// Whether an illustration can be drawn at all.
   ///
-  /// Without this token nothing is ever generated, whatever else is switched
-  /// on - it is a separate service and separate money.
+  /// Without a token nothing is ever generated, whatever else is switched on -
+  /// it is a separate service and separate money. And a service that wants an
+  /// account as well is not set up until both are there: half of it drawn is
+  /// nothing drawn.
   CanDrawImagesProvider._()
     : super(
         from: null,
@@ -573,7 +672,7 @@ final class CanDrawImagesProvider extends $FunctionalProvider<bool, bool, bool>
   }
 }
 
-String _$canDrawImagesHash() => r'dc764c2a2e3b6abd63c9b4345125ae6df38f8fb1';
+String _$canDrawImagesHash() => r'3c5842afd4d1e2fdf09b5e87d1ee95928747b0a1';
 
 @ProviderFor(imageGeneratorFactory)
 final imageGeneratorFactoryProvider = ImageGeneratorFactoryProvider._();
@@ -621,7 +720,7 @@ final class ImageGeneratorFactoryProvider
 }
 
 String _$imageGeneratorFactoryHash() =>
-    r'aa4e5ac9b8f6358e14e723b828e4b44e541bbccd';
+    r'6a9a7dc82246d730e6553f582b4353e790a711cf';
 
 /// What the user allows themselves in a day, in calls to the service.
 
@@ -757,7 +856,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'7cb536c0bc8ca51860ad76a5bc6d44b9853feb42';
+String _$coachControllerHash() => r'749095d4a700c590e8f5f3f0f649bd532a9df972';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

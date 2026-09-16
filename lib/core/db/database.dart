@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -260,6 +260,13 @@ class AppDatabase extends _$AppDatabase {
           // every database so far has been doing.
           await m.addColumn(appSettingsTable, appSettingsTable.imageApiKey);
           await m.addColumn(exercisesTable, exercisesTable.imagesGenerated);
+        }
+        if (from < 27) {
+          // A second drawing service next to the first, not instead of it.
+          // Null means Hugging Face - the only one there was, and what anyone
+          // who already filled in a token is still using.
+          await m.addColumn(appSettingsTable, appSettingsTable.imageProvider);
+          await m.addColumn(appSettingsTable, appSettingsTable.imageAccountId);
         }
       });
 

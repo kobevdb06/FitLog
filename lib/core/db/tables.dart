@@ -153,6 +153,20 @@ class AppSettingsTable extends Table {
   /// switched on.
   TextColumn get imageApiKey => text().named('image_api_key').nullable()();
 
+  /// Who does the drawing: 'hugging_face' or 'cloudflare'.
+  ///
+  /// Null means Hugging Face, which is what every database that had a drawing
+  /// token before this column was using.
+  TextColumn get imageProvider =>
+      text().named('image_provider').nullable()();
+
+  /// The account a Cloudflare token belongs to.
+  ///
+  /// Cloudflare wants both: the token says who you are, the account says whose
+  /// daily allowance is being spent. Null for anyone who does not use it.
+  TextColumn get imageAccountId =>
+      text().named('image_account_id').nullable()();
+
   /// How many calls a day the user wants to allow themselves, or null for the
   /// app's own starting figure.
   ///

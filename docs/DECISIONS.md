@@ -2554,3 +2554,35 @@ met één tik.
 Dat bepaalt ook wat er níet meer moet gebeuren: nog een ronde prompts
 bijschaven om een machine kloppend te krijgen. Het model is niet stuk en de
 zin is niet fout - het weet gewoon niet hoe jouw toestel eruitziet.
+
+## 148. Een tweede tekenaar naast de eerste, niet in de plaats ervan
+
+Cloudflare draait FLUX.2 Klein 9B, en dat model tekent wel wat de zin zegt.
+Met een echte sleutel naast elkaar gezet, dezelfde woorden, hetzelfde zaad:
+schnell maakte er een optrekbeweging van, Klein zette bij de start de
+ellebogen omhoog naast de oren met de onderarmen achter het hoofd, en bij het
+eind de armen gestrekt. Dat is het paar waar zes rondes prompts bijschaven
+niet in slaagden. Leonardo Lucid Origin tekent mooier maar deed dezelfde fout
+als schnell: twee keer een gestrekte arm.
+
+Wat het gratis maakt is ook anders van vorm. Hugging Face geeft een gratis
+gebruiker $0,10 per maand - een stuk of dertig tekeningen, en dan is het op.
+Cloudflare geeft 10.000 neurons per dag, die elke dag terugkomen: met Klein 9B
+ongeveer zeven tekeningen per dag, drie oefeningen.
+
+Het is een toevoeging geworden, geen vervanging: `image_provider` staat naast
+`image_api_key` en null blijft Hugging Face, dus wie al een token had merkt
+niets. In de instellingen kies je eerst wie er tekent en pas daarna wordt
+gevraagd wat die dienst nodig heeft - één token bij de een, een token en een
+account-ID bij de ander. Vragen voor de keuze gemaakt is naar het verkeerde
+vragen.
+
+Overstappen wist de sleutel van de vorige. Een token van Hugging Face is bij
+Cloudflare niets waard, en laten staan zou de app laten tekenen met iets dat
+daar geweigerd wordt - een mislukking die op niets lijkt behalve op een bug.
+
+Technisch: FLUX.2 neemt geen JSON aan ("required properties at '/' are
+'multipart'"), dus dat is een multipart-verzoek met velden; het antwoord zit
+in `result.image` waar Hugging Face `data[0].b64_json` zegt. Allebei base64 in
+het antwoord zelf, allebei in hetzelfde ene netwerkbestand, en de deurtest
+kent nu twee tekenadressen.

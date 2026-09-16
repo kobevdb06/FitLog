@@ -122,6 +122,74 @@ void main() {
     });
   });
 
+  group('wie de tekeningen maakt', () {
+    /// Het tekenen staat los van de coach, maar wordt op hetzelfde scherm
+    /// ingesteld, dus er moet een sleutel zijn om er iets van te zien.
+    Future<void> openSettings(WidgetTester tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('staat standaard op Hugging Face, met een token en meer '
+        'niet', (tester) async {
+      await openSettings(tester);
+
+      expect(find.text('Hugging Face'), findsOneWidget);
+      // Geen account-ID: die vraagt alleen de andere dienst.
+      expect(find.text('Nog geen account-ID'), findsNothing);
+      expect(find.text('Nog geen token'), findsOneWidget);
+    });
+
+    testWidgets('en met Cloudflare komt het account-ID erbij', (tester) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageProvider: Value('cloudflare')),
+      );
+      await openSettings(tester);
+
+      expect(find.text('Cloudflare'), findsOneWidget);
+      expect(find.text('Nog geen account-ID'), findsOneWidget);
+      expect(find.text('Nog geen token'), findsOneWidget);
+    });
+
+    testWidgets('je kiest eerst, en de vraag komt daarna', (tester) async {
+      await openSettings(tester);
+
+      await tester.tap(find.text('Hugging Face'));
+      await tester.pumpAndSettle();
+      expect(find.text('Wie tekent?'), findsOneWidget);
+
+      await tester.tap(find.text('Cloudflare').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        container!.read(coachDrawingServiceProvider),
+        DrawingService.cloudflare,
+      );
+      // En pas nu wordt er naar een account gevraagd.
+      expect(find.text('Nog geen account-ID'), findsOneWidget);
+    });
+
+    testWidgets('en overstappen laat geen sleutel van de vorige staan', (
+      tester,
+    ) async {
+      // Een token van de een is bij de ander niets waard, en blijven staan
+      // zou de app laten tekenen met een sleutel die daar geweigerd wordt.
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await openSettings(tester);
+
+      await tester.tap(find.text('Hugging Face'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cloudflare').last);
+      await tester.pumpAndSettle();
+
+      expect(container!.read(coachImageKeyProvider), isNull);
+      expect(container!.read(canDrawImagesProvider), isFalse);
+    });
+  });
+
   group('welke dienst', () {
     testWidgets('is er maar een, dus er valt niets te kiezen', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');

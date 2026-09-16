@@ -796,6 +796,28 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageProviderMeta = const VerificationMeta(
+    'imageProvider',
+  );
+  @override
+  late final GeneratedColumn<String> imageProvider = GeneratedColumn<String>(
+    'image_provider',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _imageAccountIdMeta = const VerificationMeta(
+    'imageAccountId',
+  );
+  @override
+  late final GeneratedColumn<String> imageAccountId = GeneratedColumn<String>(
+    'image_account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _coachDailyLimitMeta = const VerificationMeta(
     'coachDailyLimit',
   );
@@ -869,6 +891,8 @@ class $AppSettingsTableTable extends AppSettingsTable
     anthropicApiKey,
     chatModel,
     imageApiKey,
+    imageProvider,
+    imageAccountId,
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
@@ -1095,6 +1119,24 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('image_provider')) {
+      context.handle(
+        _imageProviderMeta,
+        imageProvider.isAcceptableOrUnknown(
+          data['image_provider']!,
+          _imageProviderMeta,
+        ),
+      );
+    }
+    if (data.containsKey('image_account_id')) {
+      context.handle(
+        _imageAccountIdMeta,
+        imageAccountId.isAcceptableOrUnknown(
+          data['image_account_id']!,
+          _imageAccountIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('coach_daily_limit')) {
       context.handle(
         _coachDailyLimitMeta,
@@ -1243,6 +1285,14 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}image_api_key'],
       ),
+      imageProvider: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_provider'],
+      ),
+      imageAccountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_account_id'],
+      ),
       coachDailyLimit: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}coach_daily_limit'],
@@ -1367,6 +1417,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// switched on.
   final String? imageApiKey;
 
+  /// Who does the drawing: 'hugging_face' or 'cloudflare'.
+  ///
+  /// Null means Hugging Face, which is what every database that had a drawing
+  /// token before this column was using.
+  final String? imageProvider;
+
+  /// The account a Cloudflare token belongs to.
+  ///
+  /// Cloudflare wants both: the token says who you are, the account says whose
+  /// daily allowance is being spent. Null for anyone who does not use it.
+  final String? imageAccountId;
+
   /// How many calls a day the user wants to allow themselves, or null for the
   /// app's own starting figure.
   ///
@@ -1413,6 +1475,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.anthropicApiKey,
     this.chatModel,
     this.imageApiKey,
+    this.imageProvider,
+    this.imageAccountId,
     this.coachDailyLimit,
     this.chatProvider,
     required this.autoLockSeconds,
@@ -1460,6 +1524,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     }
     if (!nullToAbsent || imageApiKey != null) {
       map['image_api_key'] = Variable<String>(imageApiKey);
+    }
+    if (!nullToAbsent || imageProvider != null) {
+      map['image_provider'] = Variable<String>(imageProvider);
+    }
+    if (!nullToAbsent || imageAccountId != null) {
+      map['image_account_id'] = Variable<String>(imageAccountId);
     }
     if (!nullToAbsent || coachDailyLimit != null) {
       map['coach_daily_limit'] = Variable<int>(coachDailyLimit);
@@ -1514,6 +1584,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       imageApiKey: imageApiKey == null && nullToAbsent
           ? const Value.absent()
           : Value(imageApiKey),
+      imageProvider: imageProvider == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageProvider),
+      imageAccountId: imageAccountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageAccountId),
       coachDailyLimit: coachDailyLimit == null && nullToAbsent
           ? const Value.absent()
           : Value(coachDailyLimit),
@@ -1563,6 +1639,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       anthropicApiKey: serializer.fromJson<String?>(json['anthropicApiKey']),
       chatModel: serializer.fromJson<String?>(json['chatModel']),
       imageApiKey: serializer.fromJson<String?>(json['imageApiKey']),
+      imageProvider: serializer.fromJson<String?>(json['imageProvider']),
+      imageAccountId: serializer.fromJson<String?>(json['imageAccountId']),
       coachDailyLimit: serializer.fromJson<int?>(json['coachDailyLimit']),
       chatProvider: serializer.fromJson<String?>(json['chatProvider']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
@@ -1599,6 +1677,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'anthropicApiKey': serializer.toJson<String?>(anthropicApiKey),
       'chatModel': serializer.toJson<String?>(chatModel),
       'imageApiKey': serializer.toJson<String?>(imageApiKey),
+      'imageProvider': serializer.toJson<String?>(imageProvider),
+      'imageAccountId': serializer.toJson<String?>(imageAccountId),
       'coachDailyLimit': serializer.toJson<int?>(coachDailyLimit),
       'chatProvider': serializer.toJson<String?>(chatProvider),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
@@ -1633,6 +1713,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<String?> anthropicApiKey = const Value.absent(),
     Value<String?> chatModel = const Value.absent(),
     Value<String?> imageApiKey = const Value.absent(),
+    Value<String?> imageProvider = const Value.absent(),
+    Value<String?> imageAccountId = const Value.absent(),
     Value<int?> coachDailyLimit = const Value.absent(),
     Value<String?> chatProvider = const Value.absent(),
     int? autoLockSeconds,
@@ -1671,6 +1753,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         : this.anthropicApiKey,
     chatModel: chatModel.present ? chatModel.value : this.chatModel,
     imageApiKey: imageApiKey.present ? imageApiKey.value : this.imageApiKey,
+    imageProvider: imageProvider.present
+        ? imageProvider.value
+        : this.imageProvider,
+    imageAccountId: imageAccountId.present
+        ? imageAccountId.value
+        : this.imageAccountId,
     coachDailyLimit: coachDailyLimit.present
         ? coachDailyLimit.value
         : this.coachDailyLimit,
@@ -1748,6 +1836,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       imageApiKey: data.imageApiKey.present
           ? data.imageApiKey.value
           : this.imageApiKey,
+      imageProvider: data.imageProvider.present
+          ? data.imageProvider.value
+          : this.imageProvider,
+      imageAccountId: data.imageAccountId.present
+          ? data.imageAccountId.value
+          : this.imageAccountId,
       coachDailyLimit: data.coachDailyLimit.present
           ? data.coachDailyLimit.value
           : this.coachDailyLimit,
@@ -1790,6 +1884,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
           ..write('imageApiKey: $imageApiKey, ')
+          ..write('imageProvider: $imageProvider, ')
+          ..write('imageAccountId: $imageAccountId, ')
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
@@ -1826,6 +1922,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     anthropicApiKey,
     chatModel,
     imageApiKey,
+    imageProvider,
+    imageAccountId,
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
@@ -1861,6 +1959,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.anthropicApiKey == this.anthropicApiKey &&
           other.chatModel == this.chatModel &&
           other.imageApiKey == this.imageApiKey &&
+          other.imageProvider == this.imageProvider &&
+          other.imageAccountId == this.imageAccountId &&
           other.coachDailyLimit == this.coachDailyLimit &&
           other.chatProvider == this.chatProvider &&
           other.autoLockSeconds == this.autoLockSeconds &&
@@ -1894,6 +1994,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String?> anthropicApiKey;
   final Value<String?> chatModel;
   final Value<String?> imageApiKey;
+  final Value<String?> imageProvider;
+  final Value<String?> imageAccountId;
   final Value<int?> coachDailyLimit;
   final Value<String?> chatProvider;
   final Value<int> autoLockSeconds;
@@ -1926,6 +2028,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
     this.imageApiKey = const Value.absent(),
+    this.imageProvider = const Value.absent(),
+    this.imageAccountId = const Value.absent(),
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
@@ -1959,6 +2063,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.anthropicApiKey = const Value.absent(),
     this.chatModel = const Value.absent(),
     this.imageApiKey = const Value.absent(),
+    this.imageProvider = const Value.absent(),
+    this.imageAccountId = const Value.absent(),
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
@@ -1993,6 +2099,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? anthropicApiKey,
     Expression<String>? chatModel,
     Expression<String>? imageApiKey,
+    Expression<String>? imageProvider,
+    Expression<String>? imageAccountId,
     Expression<int>? coachDailyLimit,
     Expression<String>? chatProvider,
     Expression<int>? autoLockSeconds,
@@ -2030,6 +2138,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (anthropicApiKey != null) 'anthropic_api_key': anthropicApiKey,
       if (chatModel != null) 'chat_model': chatModel,
       if (imageApiKey != null) 'image_api_key': imageApiKey,
+      if (imageProvider != null) 'image_provider': imageProvider,
+      if (imageAccountId != null) 'image_account_id': imageAccountId,
       if (coachDailyLimit != null) 'coach_daily_limit': coachDailyLimit,
       if (chatProvider != null) 'chat_provider': chatProvider,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
@@ -2065,6 +2175,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String?>? anthropicApiKey,
     Value<String?>? chatModel,
     Value<String?>? imageApiKey,
+    Value<String?>? imageProvider,
+    Value<String?>? imageAccountId,
     Value<int?>? coachDailyLimit,
     Value<String?>? chatProvider,
     Value<int>? autoLockSeconds,
@@ -2099,6 +2211,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       anthropicApiKey: anthropicApiKey ?? this.anthropicApiKey,
       chatModel: chatModel ?? this.chatModel,
       imageApiKey: imageApiKey ?? this.imageApiKey,
+      imageProvider: imageProvider ?? this.imageProvider,
+      imageAccountId: imageAccountId ?? this.imageAccountId,
       coachDailyLimit: coachDailyLimit ?? this.coachDailyLimit,
       chatProvider: chatProvider ?? this.chatProvider,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
@@ -2192,6 +2306,12 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (imageApiKey.present) {
       map['image_api_key'] = Variable<String>(imageApiKey.value);
     }
+    if (imageProvider.present) {
+      map['image_provider'] = Variable<String>(imageProvider.value);
+    }
+    if (imageAccountId.present) {
+      map['image_account_id'] = Variable<String>(imageAccountId.value);
+    }
     if (coachDailyLimit.present) {
       map['coach_daily_limit'] = Variable<int>(coachDailyLimit.value);
     }
@@ -2239,6 +2359,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('anthropicApiKey: $anthropicApiKey, ')
           ..write('chatModel: $chatModel, ')
           ..write('imageApiKey: $imageApiKey, ')
+          ..write('imageProvider: $imageProvider, ')
+          ..write('imageAccountId: $imageAccountId, ')
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
@@ -10786,6 +10908,8 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
       Value<String?> imageApiKey,
+      Value<String?> imageProvider,
+      Value<String?> imageAccountId,
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
@@ -10820,6 +10944,8 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String?> anthropicApiKey,
       Value<String?> chatModel,
       Value<String?> imageApiKey,
+      Value<String?> imageProvider,
+      Value<String?> imageAccountId,
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
@@ -10963,6 +11089,16 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get imageApiKey => $composableBuilder(
     column: $table.imageApiKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageProvider => $composableBuilder(
+    column: $table.imageProvider,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageAccountId => $composableBuilder(
+    column: $table.imageAccountId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11126,6 +11262,16 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageProvider => $composableBuilder(
+    column: $table.imageProvider,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageAccountId => $composableBuilder(
+    column: $table.imageAccountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get coachDailyLimit => $composableBuilder(
     column: $table.coachDailyLimit,
     builder: (column) => ColumnOrderings(column),
@@ -11276,6 +11422,16 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get imageProvider => $composableBuilder(
+    column: $table.imageProvider,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imageAccountId => $composableBuilder(
+    column: $table.imageAccountId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get coachDailyLimit => $composableBuilder(
     column: $table.coachDailyLimit,
     builder: (column) => column,
@@ -11358,6 +11514,8 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
                 Value<String?> imageApiKey = const Value.absent(),
+                Value<String?> imageProvider = const Value.absent(),
+                Value<String?> imageAccountId = const Value.absent(),
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
@@ -11390,6 +11548,8 @@ class $$AppSettingsTableTableTableManager
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
                 imageApiKey: imageApiKey,
+                imageProvider: imageProvider,
+                imageAccountId: imageAccountId,
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
@@ -11424,6 +11584,8 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> anthropicApiKey = const Value.absent(),
                 Value<String?> chatModel = const Value.absent(),
                 Value<String?> imageApiKey = const Value.absent(),
+                Value<String?> imageProvider = const Value.absent(),
+                Value<String?> imageAccountId = const Value.absent(),
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
@@ -11456,6 +11618,8 @@ class $$AppSettingsTableTableTableManager
                 anthropicApiKey: anthropicApiKey,
                 chatModel: chatModel,
                 imageApiKey: imageApiKey,
+                imageProvider: imageProvider,
+                imageAccountId: imageAccountId,
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,

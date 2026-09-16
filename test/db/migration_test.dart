@@ -4,6 +4,7 @@ import 'dart:io';
 // collides with the matcher of the same name.
 import 'package:drift/native.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/core/db/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -111,7 +112,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 26);
+    expect(raw.select('PRAGMA user_version').first.values.first, 27);
     raw.close();
   });
 
@@ -198,6 +199,14 @@ void main() {
     // v26: een tekening bij een oefening is iets nieuws, dus niets is er een.
     expect(migratedExercise.imagesGenerated, isFalse);
     expect(settings.imageApiKey, isNull);
+    // v27: er is nu keuze uit twee tekenaars. Niets gekozen betekent Hugging
+    // Face, de enige die er was, en er is geen account bij.
+    expect(settings.imageProvider, isNull);
+    expect(settings.imageAccountId, isNull);
+    expect(
+      DrawingService.fromWire(settings.imageProvider),
+      DrawingService.huggingFace,
+    );
     expect(migratedExercise.categoryLabel, ExerciseCategory.barbell.label);
     expect(await db.exercisesDao.customCategories(), isEmpty);
 
@@ -274,7 +283,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 26);
+    expect(db.schemaVersion, 27);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

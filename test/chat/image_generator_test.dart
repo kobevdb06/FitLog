@@ -53,33 +53,44 @@ void main() {
   String drawnImage() =>
       base64Encode(img.encodeJpg(img.Image(width: 64, height: 64)));
 
-  ProviderContainer containerThatDraws({int status = 200, Object? body}) =>
-      ProviderContainer(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          appPathsProvider.overrideWith((ref) => paths),
-          imageGeneratorFactoryProvider.overrideWithValue(
-            (apiKey) => ImageGenerator(
+  ProviderContainer containerThatDraws({
+    int status = 200,
+    Object? body,
+    bool cloudflare = false,
+  }) => ProviderContainer(
+    overrides: [
+      databaseProvider.overrideWithValue(db),
+      appPathsProvider.overrideWith((ref) => paths),
+      imageGeneratorFactoryProvider.overrideWithValue(
+        (apiKey, {provider = DrawingService.huggingFace, accountId}) =>
+            ImageGenerator(
               apiKey: apiKey,
+              provider: provider,
+              accountId: accountId,
               client: MockClient((request) async {
                 sent.add(request);
                 return http.Response(
                   jsonEncode(
                     body ??
-                        {
-                          'data': [
-                            {'b64_json': drawnImage()},
-                          ],
-                        },
+                        (cloudflare
+                            ? {
+                                'success': true,
+                                'result': {'image': drawnImage()},
+                              }
+                            : {
+                                'data': [
+                                  {'b64_json': drawnImage()},
+                                ],
+                              }),
                   ),
                   status,
                   headers: {'content-type': 'application/json'},
                 );
               }),
             ),
-          ),
-        ],
-      );
+      ),
+    ],
+  );
 
   group('zonder token', () {
     test('wordt er nooit iets getekend', () async {
@@ -315,6 +326,90 @@ void main() {
             .drawFrame(name: 'Sledepush', start: true),
         throwsA(isA<CoachException>()),
       );
+    });
+  });
+
+  group('bij Cloudflare', () {
+    setUp(() async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          imageApiKey: Value('cf_test'),
+          imageProvider: Value('cloudflare'),
+          imageAccountId: Value('acc-123'),
+        ),
+      );
+    });
+
+    test('gaat de vraag naar het account van de gebruiker', () async {
+      container = containerThatDraws(cloudflare: true);
+
+      final file = await container!
+          .read(exerciseEditorProvider)
+          .drawFrame(name: 'Sledepush', start: true, seed: 7);
+
+      expect(file, isNotNull);
+      expect(sent, hasLength(1));
+      expect(
+        sent.single.url.toString(),
+        'https://api.cloudflare.com/client/v4/accounts/acc-123/ai/run/'
+        '@cf/black-forest-labs/flux-2-klein-9b',
+      );
+      expect(sent.single.headers['authorization'], 'Bearer cf_test');
+    });
+
+    test('als formuliervelden, want JSON wordt daar geweigerd', () async {
+      container = containerThatDraws(cloudflare: true);
+
+      await container!
+          .read(exerciseEditorProvider)
+          .drawFrame(name: 'Sledepush', start: true, seed: 7);
+
+      final type = sent.single.headers['content-type'] ?? '';
+      expect(type, contains('multipart/form-data'));
+      final body = sent.single.body;
+      expect(body, contains('name="prompt"'));
+      expect(body, contains('Side view of a person doing Sledepush'));
+      // De vorm van het vak en het zaad van het paar gaan mee.
+      expect(body, contains('name="width"'));
+      expect(body, contains('768'));
+      expect(body, contains('name="seed"'));
+      // En de sleutel staat in de kop, niet in wat verstuurd wordt.
+      expect(body, isNot(contains('cf_test')));
+    });
+
+    test('en het antwoord zit ergens anders in verpakt', () async {
+      // Hugging Face zegt data[0].b64_json, Cloudflare zegt result.image.
+      container = containerThatDraws(
+        cloudflare: true,
+        body: {
+          'success': true,
+          'result': {'image': drawnImage()},
+        },
+      );
+
+      final file = await container!
+          .read(exerciseEditorProvider)
+          .drawFrame(name: 'Sledepush', start: true);
+
+      expect(await PhotoStore(paths).exists(file!), isTrue);
+    });
+
+    test('zonder account-ID wordt er niets getekend', () async {
+      // Half ingevuld is niet ingevuld: een token zonder account weet niet
+      // wiens dagportie het opmaakt.
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageAccountId: Value(null)),
+      );
+      container = containerThatDraws(cloudflare: true);
+
+      expect(container!.read(canDrawImagesProvider), isFalse);
+
+      final file = await container!
+          .read(exerciseEditorProvider)
+          .drawFrame(name: 'Sledepush', start: true);
+
+      expect(file, isNull);
+      expect(sent, isEmpty);
     });
   });
 

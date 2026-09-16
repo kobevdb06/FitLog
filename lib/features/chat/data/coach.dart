@@ -11,6 +11,7 @@ library;
 
 import 'ai_client.dart';
 import 'coach_tools.dart';
+import '../domain/coach_proposal.dart';
 
 /// One turn of a stored conversation.
 class CoachTurn {
@@ -34,6 +35,7 @@ class CoachAnswer {
     required this.lookups,
     required this.usage,
     required this.requests,
+    this.proposals = const [],
   });
 
   final String text;
@@ -42,6 +44,10 @@ class CoachAnswer {
   final List<String> lookups;
 
   final CoachUsage usage;
+
+  /// What the coach offered to add. Offers, not changes: nothing exists until
+  /// the user taps the card.
+  final List<CoachProposal> proposals;
 
   /// How many calls to the service this one answer took.
   ///
@@ -89,6 +95,7 @@ class Coach {
     ];
 
     final lookups = <String>[];
+    final proposals = <CoachProposal>[];
     var usage = CoachUsage.none;
     var requests = 0;
 
@@ -110,6 +117,7 @@ class Coach {
           lookups: lookups,
           usage: usage,
           requests: requests,
+          proposals: proposals,
         );
       }
 
@@ -124,6 +132,7 @@ class Coach {
           lookups: lookups,
           usage: usage,
           requests: requests,
+          proposals: proposals,
         );
       }
 
@@ -135,6 +144,7 @@ class Coach {
       for (final call in reply.toolCalls) {
         final lookup = await tools.run(call.name, call.input);
         if (!lookups.contains(lookup.summary)) lookups.add(lookup.summary);
+        if (lookup.proposal case final proposal?) proposals.add(proposal);
         results.add(CoachToolResult(call: call, json: lookup.json));
       }
       messages.add(CoachMessage.results(results));

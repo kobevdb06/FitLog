@@ -2182,3 +2182,33 @@ Per lokale kalenderdag tellen zou om acht uur 's ochtends "3 vandaag" tonen
 terwijl Google nog tweehonderd van gisteren op de teller had staan, precies op
 het moment dat iemand hierop kijkt. Voor Anthropic, waar geen daglimiet
 bestaat, is het een budget van jezelf en dus je eigen middernacht.
+
+## 132. De coach stelt voor, de gebruiker maakt aan
+
+De vraag was of de coach zelf oefeningen kan aanmaken. Technisch: ja, een
+schrijftool erbij en klaar. Maar een model dat in je logboek mag schrijven kan
+het ook stilletjes vervuilen - een oefening met de verkeerde spiergroep, een
+dubbel van iets dat al bestond - en dat vind je pas maanden later terug in je
+eigen cijfers.
+
+Dus schrijft de coach niets. `propose_exercise` en `propose_routine` maken een
+kaart in het gesprek met de details en een knop. Tik je, dan wordt het
+aangemaakt; tik je niet, dan is er niets gebeurd. Dezelfde regel als bij de
+foto: alles wat het logboek in gaat of de deur uit, is een handeling van jou.
+
+Drie dingen die dat werkbaar houden:
+
+Een routine mag alleen oefeningen bevatten die echt bestaan. Een naam die de
+app niet kent komt terug als fout met de lijst erbij, zodat het model het kan
+rechtzetten in plaats van een routine voor te stellen die half uit verzinsels
+bestaat.
+
+Een oefening die al bestaat wordt geen tweede: de tool antwoordt met de naam
+die er al staat.
+
+En als je een voorstel aanneemt met een spiergroep of materiaal dat de app nog
+niet kende, worden die er meteen bij gezet - anders wijst de nieuwe oefening
+naar een naam die nergens anders in de app bestaat.
+
+Wat je aannam blijft op de kaart staan ("Toegevoegd", met een knop om het te
+bekijken). Tweemaal tikken maakt geen twee.

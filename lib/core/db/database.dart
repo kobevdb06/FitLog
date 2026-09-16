@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -248,6 +248,11 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 24) {
           await m.addColumn(appSettingsTable, appSettingsTable.coachDailyLimit);
+        }
+        if (from >= 21 && from < 25) {
+          // What the coach offered to add. Null for every answer so far, which
+          // is what "offered nothing" means.
+          await m.addColumn(chatMessagesTable, chatMessagesTable.proposals);
         }
       });
 

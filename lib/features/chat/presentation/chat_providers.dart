@@ -12,14 +12,17 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/util/paths.dart';
+import '../../exercises/presentation/exercise_providers.dart';
 import '../../photos/data/photo_store.dart';
 import '../data/ai_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
 import '../domain/coach_budget.dart';
 import '../domain/coach_prompt.dart';
+import '../domain/coach_proposal.dart';
 
 part 'chat_providers.g.dart';
 
@@ -250,6 +253,9 @@ class CoachController extends _$CoachController {
         content: answer.text,
         lookups: reported.isEmpty ? null : reported.join('\n'),
         requests: answer.requests,
+        proposals: answer.proposals.isEmpty
+            ? null
+            : encodeProposals(answer.proposals),
         inputTokens: answer.usage.inputTokens,
         outputTokens: answer.usage.outputTokens,
       );
@@ -270,6 +276,96 @@ class CoachController extends _$CoachController {
     final file = PhotoStore(paths).fileFor(fileName);
     if (!await file.exists()) return null;
     return CoachImage(base64: base64Encode(await file.readAsBytes()));
+  }
+
+  /// Creates what a proposal describes, and remembers that it was taken up.
+  ///
+  /// This is the only place in the coach that writes anything to the logbook,
+  /// and it runs because the user tapped a button - never because the model
+  /// asked for it.
+  Future<String?> accept({
+    required ChatMessageRow message,
+    required int index,
+  }) async {
+    final proposals = parseProposals(message.proposals);
+    if (index >= proposals.length) return null;
+
+    final proposal = proposals[index];
+    if (proposal.isApplied) return proposal.appliedId;
+
+    final db = ref.read(databaseProvider);
+    final String id;
+    switch (proposal.kind) {
+      case ProposalKind.exercise:
+        id = await _createExercise(db, proposal.exercise!);
+      case ProposalKind.routine:
+        id = await _createRoutine(db, proposal.routine!);
+    }
+
+    proposals[index] = proposal.applied(id);
+    await db.chatDao.setProposals(message.id, encodeProposals(proposals));
+    return id;
+  }
+
+  Future<String> _createExercise(
+    AppDatabase db,
+    ExerciseProposal proposal,
+  ) async {
+    // A muscle or a piece of kit the app has never seen is added to the
+    // pickers too, or the exercise would point at a name nothing else knows.
+    final muscles = await db.exercisesDao.distinctPrimaryMuscles();
+    for (final muscle in [
+      proposal.primaryMuscle,
+      ...proposal.secondaryMuscles,
+    ]) {
+      if (!muscles.contains(muscle)) {
+        await db.exercisesDao.addCustomMuscle(muscle);
+      }
+    }
+    if (proposal.equipment case final equipment?) {
+      final known = await db.exercisesDao.distinctEquipment();
+      if (!known.contains(equipment)) {
+        await db.exercisesDao.addCustomEquipment(equipment);
+      }
+    }
+
+    // A category the user already made keeps its own name; anything else is
+    // read as one of the built-in eight.
+    final own = await db.exercisesDao.customCategories();
+    final match = own.where((c) => c.name == proposal.category).firstOrNull;
+    final choice = match == null
+        ? CategoryChoice(ExerciseCategory.fromWire(proposal.category))
+        : CategoryChoice.of(match.base, match.name);
+
+    return ref
+        .read(exerciseEditorProvider)
+        .create(
+          name: proposal.name,
+          primaryMuscle: proposal.primaryMuscle,
+          secondaryMuscles: proposal.secondaryMuscles,
+          category: choice,
+          equipment: proposal.equipment,
+          instructions: proposal.instructions,
+        );
+  }
+
+  Future<String> _createRoutine(AppDatabase db, RoutineProposal proposal) {
+    return db.routinesDao.createRoutine(
+      RoutineDraft(
+        name: proposal.name,
+        notes: proposal.notes,
+        exercises: [
+          for (final exercise in proposal.exercises)
+            RoutineExerciseDraft(
+              exerciseId: exercise.exerciseId,
+              sets: [
+                for (var i = 0; i < exercise.sets; i++)
+                  RoutineSetDraft(targetReps: exercise.targetReps),
+              ],
+            ),
+        ],
+      ),
+    );
   }
 
   void clearError() => state = const CoachState();

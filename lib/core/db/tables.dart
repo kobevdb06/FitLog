@@ -273,6 +273,14 @@ class ChatMessagesTable extends Table {
   /// photos and exercise frames.
   TextColumn get imageFile => text().named('image_file').nullable()();
 
+  /// What the coach offered to add, as JSON, or null for an ordinary answer.
+  ///
+  /// A proposal, not a change: the coach can describe an exercise or a routine
+  /// but cannot write one. The card in the chat carries a button, and tapping
+  /// it is what creates the thing - so the row in your logbook is always
+  /// something you did.
+  TextColumn get proposals => text().nullable()();
+
   /// How many calls to the service this answer took: one, plus one for every
   /// round of looking something up. A free tier counts calls, not questions.
   IntColumn get requests => integer().nullable()();

@@ -21,6 +21,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../photos/data/photo_store.dart';
+import '../domain/coach_proposal.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
 
@@ -364,6 +365,10 @@ class _Bubble extends StatelessWidget {
                 style: theme.textTheme.bodyMedium,
               ),
             ),
+            for (final (index, proposal) in parseProposals(
+              message.proposals,
+            ).indexed)
+              _ProposalCard(message: message, index: index, proposal: proposal),
             if (lookups.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -377,6 +382,163 @@ class _Bubble extends StatelessWidget {
                   '${message.outputTokens} uit',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Something the coach offers to add, and the button that adds it.
+///
+/// The coach cannot write in your logbook. It describes, you decide: until
+/// this button is tapped nothing exists, and afterwards the card says what was
+/// made and takes you to it.
+class _ProposalCard extends ConsumerStatefulWidget {
+  const _ProposalCard({
+    required this.message,
+    required this.index,
+    required this.proposal,
+  });
+
+  final ChatMessageRow message;
+  final int index;
+  final CoachProposal proposal;
+
+  @override
+  ConsumerState<_ProposalCard> createState() => _ProposalCardState();
+}
+
+class _ProposalCardState extends ConsumerState<_ProposalCard> {
+  bool _busy = false;
+
+  Future<void> _accept() async {
+    setState(() => _busy = true);
+    final id = await ref
+        .read(coachControllerProvider.notifier)
+        .accept(message: widget.message, index: widget.index);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (id == null) return;
+
+    showSnack(
+      context,
+      widget.proposal.kind == ProposalKind.exercise
+          ? 'Oefening toegevoegd.'
+          : 'Routine toegevoegd.',
+    );
+  }
+
+  void _open(String id) => switch (widget.proposal.kind) {
+    ProposalKind.exercise => context.push(Routes.exerciseDetail(id)),
+    ProposalKind.routine => context.push(Routes.routineDetail(id)),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final proposal = widget.proposal;
+    final exercise = proposal.exercise;
+    final routine = proposal.routine;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  proposal.kind == ProposalKind.exercise
+                      ? Icons.fitness_center
+                      : Icons.list_alt,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    proposal.kind == ProposalKind.exercise
+                        ? 'Voorstel: oefening'
+                        : 'Voorstel: routine',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(proposal.title, style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.xs),
+            if (exercise != null)
+              Text(
+                [
+                  exercise.primaryMuscle,
+                  ...exercise.secondaryMuscles,
+                  ?exercise.equipment,
+                ].join(' · '),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            if (routine != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final item in routine.exercises)
+                    Text(
+                      '${item.sets}× ${item.name}'
+                      '${item.targetReps == null ? '' : ' · ${item.targetReps} herhalingen'}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '${routine.exercises.length} oefeningen · '
+                    '${routine.totalSets} sets',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            const SizedBox(height: AppSpacing.sm),
+            if (proposal.appliedId case final id?)
+              Row(
+                children: [
+                  Icon(Icons.check_circle, size: 18, color: AppColors.success),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text('Toegevoegd', style: theme.textTheme.bodySmall),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => _open(id),
+                    child: const Text('Bekijken'),
+                  ),
+                ],
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _busy ? null : _accept,
+                  icon: _busy
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add),
+                  label: Text(
+                    proposal.kind == ProposalKind.exercise
+                        ? 'Oefening toevoegen'
+                        : 'Routine toevoegen',
                   ),
                 ),
               ),

@@ -17,17 +17,22 @@ import 'package:drift/drift.dart' show Variable;
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../exercises/presentation/exercise_providers.dart';
+import '../domain/coach_proposal.dart';
 
 /// The result of one lookup: what goes back to the model, and what the user
 /// is told was looked at.
 class CoachLookup {
-  const CoachLookup({required this.json, required this.summary});
+  const CoachLookup({required this.json, required this.summary, this.proposal});
 
   /// The tool result, as the model sees it.
   final String json;
 
   /// One line of Dutch: "je laatste 5 sessies".
   final String summary;
+
+  /// Something the coach offers to add, for the app to draw as a card. The
+  /// tool itself changes nothing.
+  final CoachProposal? proposal;
 }
 
 /// How many rows a single lookup may ever return.
@@ -127,6 +132,67 @@ class CoachTools {
       },
     },
     {
+      'name': 'propose_exercise',
+      'description':
+          'Stel een nieuwe oefening voor die de gebruiker met één tik kan '
+          'toevoegen. Maakt zelf niets aan: de gebruiker beslist. Zoek eerst '
+          'met search_exercises of ze niet al bestaat.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+          'primary_muscle': {
+            'type': 'string',
+            'description': 'Nederlands, zoals in de app: borst, rug, biceps.',
+          },
+          'secondary_muscles': {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          'equipment': {'type': 'string'},
+          'category': {
+            'type': 'string',
+            'description':
+                'Hoe een set gemeten wordt: barbell, dumbbell, machine, '
+                'cable, bodyweight, assisted_bodyweight, duration of cardio. '
+                'Of de naam van een eigen categorie van de gebruiker.',
+          },
+          'instructions': {'type': 'string'},
+        },
+        'required': ['name', 'primary_muscle'],
+      },
+    },
+    {
+      'name': 'propose_routine',
+      'description':
+          'Stel een routine voor die de gebruiker met één tik kan toevoegen. '
+          'Maakt zelf niets aan. Elke oefening moet met haar naam in de app '
+          'bestaan; zoek ze eerst op met search_exercises.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+          'notes': {'type': 'string'},
+          'exercises': {
+            'type': 'array',
+            'items': {
+              'type': 'object',
+              'properties': {
+                'exercise': {
+                  'type': 'string',
+                  'description': 'Naam zoals ze in de app staat.',
+                },
+                'sets': {'type': 'integer'},
+                'target_reps': {'type': 'integer'},
+              },
+              'required': ['exercise', 'sets'],
+            },
+          },
+        },
+        'required': ['name', 'exercises'],
+      },
+    },
+    {
       'name': 'body_measurements',
       'description':
           'De lichaamsmetingen van de gebruiker, bijvoorbeeld gewicht, in '
@@ -148,6 +214,8 @@ class CoachTools {
   ];
 
   static const Set<String> names = {
+    'propose_exercise',
+    'propose_routine',
     'search_exercises',
     'recent_workouts',
     'exercise_history',
@@ -161,6 +229,8 @@ class CoachTools {
   /// invented it, and telling it so is better than failing the whole turn.
   Future<CoachLookup> run(String name, Map<String, Object?> input) async {
     return switch (name) {
+      'propose_exercise' => _proposeExercise(input),
+      'propose_routine' => _proposeRoutine(input),
       'search_exercises' => _searchExercises(input),
       'recent_workouts' => _recentWorkouts(input),
       'exercise_history' => _exerciseHistory(input),
@@ -184,6 +254,141 @@ class CoachTools {
   String? _text(Object? value) {
     final text = value is String ? value.trim() : null;
     return text == null || text.isEmpty ? null : text;
+  }
+
+  /// An exercise the coach would make. Nothing is written here.
+  Future<CoachLookup> _proposeExercise(Map<String, Object?> input) async {
+    final name = _text(input['name']);
+    final muscle = _text(input['primary_muscle']);
+    if (name == null || muscle == null) {
+      return const CoachLookup(
+        json: '{"ok":false,"error":"geef minstens een naam en een spiergroep"}',
+        summary: 'een voorstel zonder naam',
+      );
+    }
+
+    // An exercise that already exists is the answer, not a second copy of it.
+    final existing = await db
+        .customSelect(
+          'SELECT name FROM exercises WHERE LOWER(name) = LOWER(?) '
+          'AND is_archived = 0 LIMIT 1',
+          variables: [Variable.withString(name)],
+        )
+        .getSingleOrNull();
+    if (existing != null) {
+      return CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error': 'die oefening bestaat al',
+          'existing': existing.read<String>('name'),
+        }),
+        summary: 'of "$name" al bestaat',
+      );
+    }
+
+    final proposal = ExerciseProposal(
+      name: name,
+      primaryMuscle: muscle.toLowerCase(),
+      secondaryMuscles: [
+        for (final entry in input['secondary_muscles'] as List? ?? const [])
+          if (_text(entry) case final muscle?) muscle.toLowerCase(),
+      ],
+      equipment: _text(input['equipment']),
+      category: _text(input['category']) ?? 'barbell',
+      instructions: _text(input['instructions']),
+    );
+
+    return CoachLookup(
+      json: jsonEncode({
+        'ok': true,
+        'shown_to_user': true,
+        'note':
+            'Het voorstel staat als kaart in het gesprek. Zeg kort wat je '
+            'voorstelt; de gebruiker tikt zelf op Toevoegen.',
+      }),
+      summary: 'een voorstel voor de oefening "$name"',
+      proposal: CoachProposal.ofExercise(proposal),
+    );
+  }
+
+  /// A routine the coach would make, with every exercise matched to a real
+  /// one. An invented name comes back as an error so the model can fix it.
+  Future<CoachLookup> _proposeRoutine(Map<String, Object?> input) async {
+    final name = _text(input['name']);
+    final wanted = input['exercises'];
+    if (name == null || wanted is! List || wanted.isEmpty) {
+      return const CoachLookup(
+        json: '{"ok":false,"error":"geef een naam en minstens één oefening"}',
+        summary: 'een voorstel zonder oefeningen',
+      );
+    }
+
+    final exercises = <ProposedRoutineExercise>[];
+    final missing = <String>[];
+    for (final entry in wanted.take(kCoachRowCap)) {
+      if (entry is! Map) continue;
+      final asked = _text(entry['exercise']);
+      if (asked == null) continue;
+
+      final match = await db
+          .customSelect(
+            'SELECT id, name FROM exercises '
+            'WHERE is_archived = 0 AND (LOWER(name) = LOWER(?) '
+            'OR name LIKE ?) ORDER BY LENGTH(name) LIMIT 1',
+            variables: [
+              Variable.withString(asked),
+              Variable.withString('%$asked%'),
+            ],
+          )
+          .getSingleOrNull();
+
+      if (match == null) {
+        missing.add(asked);
+        continue;
+      }
+      exercises.add(
+        ProposedRoutineExercise(
+          exerciseId: match.read<String>('id'),
+          name: match.read<String>('name'),
+          sets: _limit(entry['sets'], 3),
+          targetReps: entry['target_reps'] is int
+              ? entry['target_reps']! as int
+              : null,
+        ),
+      );
+    }
+
+    if (missing.isNotEmpty) {
+      return CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error':
+              'deze oefeningen bestaan niet in de app; zoek ze op met '
+              'search_exercises en gebruik de naam die daar staat, of stel ze '
+              'eerst voor met propose_exercise',
+          'not_found': missing,
+        }),
+        summary: 'oefeningen die niet bestaan: ${missing.join(', ')}',
+      );
+    }
+
+    return CoachLookup(
+      json: jsonEncode({
+        'ok': true,
+        'shown_to_user': true,
+        'note':
+            'Het voorstel staat als kaart in het gesprek. Zeg kort waarom je '
+            'deze routine voorstelt; de gebruiker tikt zelf op Toevoegen.',
+      }),
+      summary: 'een voorstel voor de routine "$name"',
+      proposal: CoachProposal.ofRoutine(
+        RoutineProposal(
+          name: name,
+          exercises: exercises,
+          notes: _text(input['notes']),
+        ),
+      ),
+    );
   }
 
   Future<CoachLookup> _searchExercises(Map<String, Object?> input) async {

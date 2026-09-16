@@ -4187,6 +4187,17 @@ class $ChatMessagesTableTable extends ChatMessagesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _proposalsMeta = const VerificationMeta(
+    'proposals',
+  );
+  @override
+  late final GeneratedColumn<String> proposals = GeneratedColumn<String>(
+    'proposals',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _requestsMeta = const VerificationMeta(
     'requests',
   );
@@ -4239,6 +4250,7 @@ class $ChatMessagesTableTable extends ChatMessagesTable
     content,
     lookups,
     imageFile,
+    proposals,
     requests,
     inputTokens,
     outputTokens,
@@ -4295,6 +4307,12 @@ class $ChatMessagesTableTable extends ChatMessagesTable
       context.handle(
         _imageFileMeta,
         imageFile.isAcceptableOrUnknown(data['image_file']!, _imageFileMeta),
+      );
+    }
+    if (data.containsKey('proposals')) {
+      context.handle(
+        _proposalsMeta,
+        proposals.isAcceptableOrUnknown(data['proposals']!, _proposalsMeta),
       );
     }
     if (data.containsKey('requests')) {
@@ -4362,6 +4380,10 @@ class $ChatMessagesTableTable extends ChatMessagesTable
         DriftSqlType.string,
         data['${effectivePrefix}image_file'],
       ),
+      proposals: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}proposals'],
+      ),
       requests: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}requests'],
@@ -4408,6 +4430,14 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
   /// photos and exercise frames.
   final String? imageFile;
 
+  /// What the coach offered to add, as JSON, or null for an ordinary answer.
+  ///
+  /// A proposal, not a change: the coach can describe an exercise or a routine
+  /// but cannot write one. The card in the chat carries a button, and tapping
+  /// it is what creates the thing - so the row in your logbook is always
+  /// something you did.
+  final String? proposals;
+
   /// How many calls to the service this answer took: one, plus one for every
   /// round of looking something up. A free tier counts calls, not questions.
   final int? requests;
@@ -4421,6 +4451,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     required this.content,
     this.lookups,
     this.imageFile,
+    this.proposals,
     this.requests,
     this.inputTokens,
     this.outputTokens,
@@ -4438,6 +4469,9 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     }
     if (!nullToAbsent || imageFile != null) {
       map['image_file'] = Variable<String>(imageFile);
+    }
+    if (!nullToAbsent || proposals != null) {
+      map['proposals'] = Variable<String>(proposals);
     }
     if (!nullToAbsent || requests != null) {
       map['requests'] = Variable<int>(requests);
@@ -4464,6 +4498,9 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       imageFile: imageFile == null && nullToAbsent
           ? const Value.absent()
           : Value(imageFile),
+      proposals: proposals == null && nullToAbsent
+          ? const Value.absent()
+          : Value(proposals),
       requests: requests == null && nullToAbsent
           ? const Value.absent()
           : Value(requests),
@@ -4489,6 +4526,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       content: serializer.fromJson<String>(json['content']),
       lookups: serializer.fromJson<String?>(json['lookups']),
       imageFile: serializer.fromJson<String?>(json['imageFile']),
+      proposals: serializer.fromJson<String?>(json['proposals']),
       requests: serializer.fromJson<int?>(json['requests']),
       inputTokens: serializer.fromJson<int?>(json['inputTokens']),
       outputTokens: serializer.fromJson<int?>(json['outputTokens']),
@@ -4505,6 +4543,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       'content': serializer.toJson<String>(content),
       'lookups': serializer.toJson<String?>(lookups),
       'imageFile': serializer.toJson<String?>(imageFile),
+      'proposals': serializer.toJson<String?>(proposals),
       'requests': serializer.toJson<int?>(requests),
       'inputTokens': serializer.toJson<int?>(inputTokens),
       'outputTokens': serializer.toJson<int?>(outputTokens),
@@ -4519,6 +4558,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     String? content,
     Value<String?> lookups = const Value.absent(),
     Value<String?> imageFile = const Value.absent(),
+    Value<String?> proposals = const Value.absent(),
     Value<int?> requests = const Value.absent(),
     Value<int?> inputTokens = const Value.absent(),
     Value<int?> outputTokens = const Value.absent(),
@@ -4530,6 +4570,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     content: content ?? this.content,
     lookups: lookups.present ? lookups.value : this.lookups,
     imageFile: imageFile.present ? imageFile.value : this.imageFile,
+    proposals: proposals.present ? proposals.value : this.proposals,
     requests: requests.present ? requests.value : this.requests,
     inputTokens: inputTokens.present ? inputTokens.value : this.inputTokens,
     outputTokens: outputTokens.present ? outputTokens.value : this.outputTokens,
@@ -4543,6 +4584,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
       content: data.content.present ? data.content.value : this.content,
       lookups: data.lookups.present ? data.lookups.value : this.lookups,
       imageFile: data.imageFile.present ? data.imageFile.value : this.imageFile,
+      proposals: data.proposals.present ? data.proposals.value : this.proposals,
       requests: data.requests.present ? data.requests.value : this.requests,
       inputTokens: data.inputTokens.present
           ? data.inputTokens.value
@@ -4563,6 +4605,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
           ..write('content: $content, ')
           ..write('lookups: $lookups, ')
           ..write('imageFile: $imageFile, ')
+          ..write('proposals: $proposals, ')
           ..write('requests: $requests, ')
           ..write('inputTokens: $inputTokens, ')
           ..write('outputTokens: $outputTokens, ')
@@ -4579,6 +4622,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
     content,
     lookups,
     imageFile,
+    proposals,
     requests,
     inputTokens,
     outputTokens,
@@ -4594,6 +4638,7 @@ class ChatMessageRow extends DataClass implements Insertable<ChatMessageRow> {
           other.content == this.content &&
           other.lookups == this.lookups &&
           other.imageFile == this.imageFile &&
+          other.proposals == this.proposals &&
           other.requests == this.requests &&
           other.inputTokens == this.inputTokens &&
           other.outputTokens == this.outputTokens &&
@@ -4607,6 +4652,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
   final Value<String> content;
   final Value<String?> lookups;
   final Value<String?> imageFile;
+  final Value<String?> proposals;
   final Value<int?> requests;
   final Value<int?> inputTokens;
   final Value<int?> outputTokens;
@@ -4619,6 +4665,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     this.content = const Value.absent(),
     this.lookups = const Value.absent(),
     this.imageFile = const Value.absent(),
+    this.proposals = const Value.absent(),
     this.requests = const Value.absent(),
     this.inputTokens = const Value.absent(),
     this.outputTokens = const Value.absent(),
@@ -4632,6 +4679,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     required String content,
     this.lookups = const Value.absent(),
     this.imageFile = const Value.absent(),
+    this.proposals = const Value.absent(),
     this.requests = const Value.absent(),
     this.inputTokens = const Value.absent(),
     this.outputTokens = const Value.absent(),
@@ -4649,6 +4697,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     Expression<String>? content,
     Expression<String>? lookups,
     Expression<String>? imageFile,
+    Expression<String>? proposals,
     Expression<int>? requests,
     Expression<int>? inputTokens,
     Expression<int>? outputTokens,
@@ -4662,6 +4711,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
       if (content != null) 'content': content,
       if (lookups != null) 'lookups': lookups,
       if (imageFile != null) 'image_file': imageFile,
+      if (proposals != null) 'proposals': proposals,
       if (requests != null) 'requests': requests,
       if (inputTokens != null) 'input_tokens': inputTokens,
       if (outputTokens != null) 'output_tokens': outputTokens,
@@ -4677,6 +4727,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     Value<String>? content,
     Value<String?>? lookups,
     Value<String?>? imageFile,
+    Value<String?>? proposals,
     Value<int?>? requests,
     Value<int?>? inputTokens,
     Value<int?>? outputTokens,
@@ -4690,6 +4741,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
       content: content ?? this.content,
       lookups: lookups ?? this.lookups,
       imageFile: imageFile ?? this.imageFile,
+      proposals: proposals ?? this.proposals,
       requests: requests ?? this.requests,
       inputTokens: inputTokens ?? this.inputTokens,
       outputTokens: outputTokens ?? this.outputTokens,
@@ -4719,6 +4771,9 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
     if (imageFile.present) {
       map['image_file'] = Variable<String>(imageFile.value);
     }
+    if (proposals.present) {
+      map['proposals'] = Variable<String>(proposals.value);
+    }
     if (requests.present) {
       map['requests'] = Variable<int>(requests.value);
     }
@@ -4746,6 +4801,7 @@ class ChatMessagesTableCompanion extends UpdateCompanion<ChatMessageRow> {
           ..write('content: $content, ')
           ..write('lookups: $lookups, ')
           ..write('imageFile: $imageFile, ')
+          ..write('proposals: $proposals, ')
           ..write('requests: $requests, ')
           ..write('inputTokens: $inputTokens, ')
           ..write('outputTokens: $outputTokens, ')
@@ -12825,6 +12881,7 @@ typedef $$ChatMessagesTableTableCreateCompanionBuilder =
       required String content,
       Value<String?> lookups,
       Value<String?> imageFile,
+      Value<String?> proposals,
       Value<int?> requests,
       Value<int?> inputTokens,
       Value<int?> outputTokens,
@@ -12839,6 +12896,7 @@ typedef $$ChatMessagesTableTableUpdateCompanionBuilder =
       Value<String> content,
       Value<String?> lookups,
       Value<String?> imageFile,
+      Value<String?> proposals,
       Value<int?> requests,
       Value<int?> inputTokens,
       Value<int?> outputTokens,
@@ -12905,6 +12963,11 @@ class $$ChatMessagesTableTableFilterComposer
 
   ColumnFilters<String> get imageFile => $composableBuilder(
     column: $table.imageFile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get proposals => $composableBuilder(
+    column: $table.proposals,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12986,6 +13049,11 @@ class $$ChatMessagesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get proposals => $composableBuilder(
+    column: $table.proposals,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get requests => $composableBuilder(
     column: $table.requests,
     builder: (column) => ColumnOrderings(column),
@@ -13053,6 +13121,9 @@ class $$ChatMessagesTableTableAnnotationComposer
 
   GeneratedColumn<String> get imageFile =>
       $composableBuilder(column: $table.imageFile, builder: (column) => column);
+
+  GeneratedColumn<String> get proposals =>
+      $composableBuilder(column: $table.proposals, builder: (column) => column);
 
   GeneratedColumn<int> get requests =>
       $composableBuilder(column: $table.requests, builder: (column) => column);
@@ -13133,6 +13204,7 @@ class $$ChatMessagesTableTableTableManager
                 Value<String> content = const Value.absent(),
                 Value<String?> lookups = const Value.absent(),
                 Value<String?> imageFile = const Value.absent(),
+                Value<String?> proposals = const Value.absent(),
                 Value<int?> requests = const Value.absent(),
                 Value<int?> inputTokens = const Value.absent(),
                 Value<int?> outputTokens = const Value.absent(),
@@ -13145,6 +13217,7 @@ class $$ChatMessagesTableTableTableManager
                 content: content,
                 lookups: lookups,
                 imageFile: imageFile,
+                proposals: proposals,
                 requests: requests,
                 inputTokens: inputTokens,
                 outputTokens: outputTokens,
@@ -13159,6 +13232,7 @@ class $$ChatMessagesTableTableTableManager
                 required String content,
                 Value<String?> lookups = const Value.absent(),
                 Value<String?> imageFile = const Value.absent(),
+                Value<String?> proposals = const Value.absent(),
                 Value<int?> requests = const Value.absent(),
                 Value<int?> inputTokens = const Value.absent(),
                 Value<int?> outputTokens = const Value.absent(),
@@ -13171,6 +13245,7 @@ class $$ChatMessagesTableTableTableManager
                 content: content,
                 lookups: lookups,
                 imageFile: imageFile,
+                proposals: proposals,
                 requests: requests,
                 inputTokens: inputTokens,
                 outputTokens: outputTokens,

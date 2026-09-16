@@ -6,6 +6,7 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
+import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
 import 'package:flutter/material.dart';
@@ -243,6 +244,100 @@ void main() {
 
       expect((await db.settingsDao.getSettings()).coachDailyLimit, isNull);
       expect(find.text('Geef een getal groter dan nul.'), findsOneWidget);
+    });
+  });
+
+  group('een voorstel in de chat', () {
+    testWidgets('staat als kaart met een knop, en maakt pas iets bij een tik', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Maak een oefening');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem maken.',
+        proposals: encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              equipment: 'slee',
+              category: 'duration',
+            ),
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Voorstel: oefening'), findsOneWidget);
+      expect(find.text('Sledepush'), findsOneWidget);
+      expect(find.text('benen · slee'), findsOneWidget);
+      // Nog niets aangemaakt.
+      expect(await db.exercisesDao.countExercises(), 0);
+
+      await tester.tap(find.text('Oefening toevoegen'));
+      await tester.pumpAndSettle();
+
+      expect(await db.exercisesDao.countExercises(), 1);
+      expect(find.text('Toegevoegd'), findsOneWidget);
+      expect(find.text('Oefening toevoegen'), findsNothing);
+    });
+
+    testWidgets('een routine toont haar oefeningen en sets', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-bench',
+              name: 'Bench Press',
+              primaryMuscle: 'borst',
+              category: 'barbell',
+              createdAt: 0,
+            ),
+          );
+      await db.chatDao.createThread('t-1', 'Maak een routine');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem opbouwen.',
+        proposals: encodeProposals([
+          CoachProposal.ofRoutine(
+            const RoutineProposal(
+              name: 'Push',
+              exercises: [
+                ProposedRoutineExercise(
+                  exerciseId: 'ex-bench',
+                  name: 'Bench Press',
+                  sets: 4,
+                  targetReps: 8,
+                ),
+              ],
+            ),
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Voorstel: routine'), findsOneWidget);
+      expect(find.text('4× Bench Press · 8 herhalingen'), findsOneWidget);
+      expect(find.text('1 oefeningen · 4 sets'), findsOneWidget);
+
+      await tester.tap(find.text('Routine toevoegen'));
+      await tester.pumpAndSettle();
+
+      // Een Future, geen stream: een stream die hier nog openstaat laat een
+      // timer achter en de test klaagt terecht.
+      final routines = await db.select(db.routinesTable).get();
+      expect(routines.single.name, 'Push');
+      expect(find.text('Toegevoegd'), findsOneWidget);
     });
   });
 

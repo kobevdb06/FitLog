@@ -414,6 +414,9 @@ void main() {
       // The two guard rails that matter most.
       expect(prompt, contains('geen arts'));
       expect(prompt, contains('gok nooit'));
+      // En dat het zelf niets aanmaakt.
+      expect(prompt, contains('propose_exercise'));
+      expect(prompt, contains('gebruiker tikt zelf'));
     });
 
     test('and carries no data about the user beyond their name', () {

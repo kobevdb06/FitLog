@@ -67,6 +67,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     required String content,
     String? lookups,
     String? imageFile,
+    String? proposals,
     int? requests,
     int? inputTokens,
     int? outputTokens,
@@ -81,6 +82,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
           content: content,
           lookups: Value(lookups),
           imageFile: Value(imageFile),
+          proposals: Value(proposals),
           requests: Value(requests),
           inputTokens: Value(inputTokens),
           outputTokens: Value(outputTokens),
@@ -90,6 +92,16 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
       await (update(chatThreadsTable)..where((t) => t.id.equals(threadId)))
           .write(ChatThreadsTableCompanion(updatedAt: Value(now)));
     });
+  }
+
+  /// Rewrites the proposals of one message, which is how a card remembers
+  /// that you already tapped it.
+  Future<void> setProposals(String messageId, String json) async {
+    await (update(
+      chatMessagesTable,
+    )..where((t) => t.id.equals(messageId))).write(
+      ChatMessagesTableCompanion(proposals: Value(json)),
+    );
   }
 
   Future<void> deleteThread(String id) async {

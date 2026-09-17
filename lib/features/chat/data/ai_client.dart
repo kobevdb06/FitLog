@@ -613,8 +613,9 @@ class ImageGenerator {
     if (response.statusCode == 429) {
       throw CoachException(
         provider == DrawingService.cloudflare
-            ? 'Je portie van vandaag bij Cloudflare is op. Er is niets '
-                  'getekend; om middernacht (UTC) staat ze er weer.'
+            ? 'Cloudflare tekent nu niet: ${_detailOf(response.body)}. Er is '
+                  'niets getekend. Is je portie van vandaag op, dan staat ze '
+                  'er weer na middernacht (UTC).'
             : 'Er zijn te veel tekeningen na elkaar gevraagd. Probeer het zo '
                   'opnieuw.',
       );
@@ -701,6 +702,18 @@ class ImageGenerator {
         if (error is String && error.isNotEmpty) return _redact(error);
         if (error is Map && error['message'] is String) {
           return _redact(error['message']! as String);
+        }
+        // Cloudflare says it in a list, with a number next to it. That number
+        // is the difference between "wait until tomorrow" (3036, the day's
+        // allowance) and "try again in a minute" (3040, no capacity right
+        // now), so it is worth carrying all the way to the screen.
+        if (json['errors'] case final List errors when errors.isNotEmpty) {
+          final first = errors.first;
+          if (first is Map && first['message'] is String) {
+            final code = first['code'];
+            final message = _redact(first['message']! as String);
+            return code == null ? message : '$message ($code)';
+          }
         }
       }
     } on FormatException {

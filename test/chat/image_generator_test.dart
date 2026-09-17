@@ -331,8 +331,11 @@ void main() {
         throwsA(
           isA<CoachException>()
               .having((e) => e.badKey, 'badKey', isFalse)
-              .having((e) => e.message, 'message', contains('vandaag'))
-              .having((e) => e.message, 'message', contains('middernacht')),
+              .having((e) => e.message, 'message', contains('middernacht'))
+              // En wat de dienst zelf zei, met het nummer erbij: dat nummer
+              // scheidt "wacht tot morgen" van "probeer zo opnieuw".
+              .having((e) => e.message, 'message', contains('Account limited'))
+              .having((e) => e.message, 'message', contains('3036')),
         ),
       );
     });

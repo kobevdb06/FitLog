@@ -2602,3 +2602,22 @@ Hoe het gevonden is: het dagpotje van 10.000 neurons ging op aan het
 vergelijken zelf - drie tekeningen van Leonardo (elk ~1.900) en vier van
 Klein 9B (elk ~1.364) is al meer dan tienduizend. Dat is geen fout in de
 schatting maar wel het bewijs dat 9B er zeven per dag zijn en niet honderd.
+
+## 150. De dienst mag zelf zeggen wat er mis is
+
+Cloudflare weigerde met code 4006 - "you have used up your daily free
+allocation of 10.000 neurons" - terwijl het dashboard "0/10k gebruikt vandaag"
+toonde. Die twee tellers lopen niet gelijk; bij Cloudflare zelf staan daar
+meldingen over. Niets van dat alles kwam op het scherm: de app gokte "je
+tegoed is op" omdat ze de vorm van dat antwoord niet kende, en dan sta je je
+eigen instellingen te controleren terwijl er niets aan mankeert.
+
+Twee dingen daarom veranderd. De foutlezer kent nu ook de lijstvorm met een
+nummer erin, en dat nummer gaat mee naar het scherm - het scheidt "wacht tot
+morgen" (4006, 3036) van "probeer het zo opnieuw" (3040). En de boodschap
+wordt eerst ontdaan van wat er niet voor de lezer bij staat: het label
+"AiError:" dat er tweemaal voor stond, en het tracenummer erachter.
+
+Wat overeind blijft: wat de dienst zegt is waar, ook als het dashboard iets
+anders zegt. De app geeft het door in plaats van het te vervangen door een
+gok.

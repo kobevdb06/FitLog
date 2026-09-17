@@ -577,10 +577,11 @@ class ImageGenerator {
   Future<Uint8List> draw(String prompt, {int? seed}) async {
     final http.Response response;
     try {
-      response = await (provider == DrawingService.cloudflare
-              ? _askCloudflare(prompt, seed)
-              : _askHuggingFace(prompt, seed))
-          .timeout(timeout ?? defaultTimeout);
+      response =
+          await (provider == DrawingService.cloudflare
+                  ? _askCloudflare(prompt, seed)
+                  : _askHuggingFace(prompt, seed))
+              .timeout(timeout ?? defaultTimeout);
     } on TimeoutException {
       throw const CoachException(
         'Het tekenen duurde te lang. Probeer het opnieuw.',
@@ -694,6 +695,28 @@ class ImageGenerator {
 
   /// The same reading of an error body as the coach's, kept here so this class
   /// stands on its own.
+  /// Takes the machine's throat-clearing out of a message meant for a person.
+  ///
+  /// What came back reads "AiError: AiError: you have used up your daily free
+  /// allocation of 10,000 neurons... (fe5d7715-d06b-49c2-93d6-75c21dbbc197)".
+  /// The repeated label and the trace number are for whoever writes the
+  /// service, not for whoever is standing in a gym.
+  static String _tidy(String message) {
+    var text = message.trim();
+    while (text.startsWith('AiError:')) {
+      text = text.substring('AiError:'.length).trim();
+    }
+    return text
+        .replaceAll(
+          RegExp(
+            r'\s*\(\s*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-'
+            r'[0-9a-f]{12}\s*\)',
+          ),
+          '',
+        )
+        .trim();
+  }
+
   static String _detailOf(String body) {
     try {
       final json = jsonDecode(body);
@@ -711,7 +734,7 @@ class ImageGenerator {
           final first = errors.first;
           if (first is Map && first['message'] is String) {
             final code = first['code'];
-            final message = _redact(first['message']! as String);
+            final message = _tidy(_redact(first['message']! as String));
             return code == null ? message : '$message ($code)';
           }
         }

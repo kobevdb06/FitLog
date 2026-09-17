@@ -340,6 +340,46 @@ void main() {
       );
     });
 
+    test('en de boodschap van de dienst wordt leesbaar doorgegeven', () async {
+      // Zoals ze er echt uitkomt: het label tweemaal en een tracenummer dat
+      // alleen iets zegt tegen wie de dienst schreef.
+      container = containerThatDraws(
+        cloudflare: true,
+        status: 429,
+        body: {
+          'success': false,
+          'errors': [
+            {
+              'code': 4006,
+              'message':
+                  'AiError: AiError: you have used up your daily free '
+                  'allocation of 10,000 neurons, please upgrade. '
+                  '(fe5d7715-d06b-49c2-93d6-75c21dbbc197)',
+            },
+          ],
+        },
+      );
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          imageProvider: Value('cloudflare'),
+          imageAccountId: Value('acc-123'),
+        ),
+      );
+
+      await expectLater(
+        container!
+            .read(exerciseEditorProvider)
+            .drawFrame(name: 'Sledepush', start: true),
+        throwsA(
+          isA<CoachException>()
+              .having((e) => e.message, 'message', contains('daily free'))
+              .having((e) => e.message, 'message', contains('(4006)'))
+              .having((e) => e.message, 'message', isNot(contains('AiError')))
+              .having((e) => e.message, 'message', isNot(contains('fe5d7715'))),
+        ),
+      );
+    });
+
     test('een geweigerd token ook', () async {
       container = containerThatDraws(status: 401, body: {'error': 'nope'});
 

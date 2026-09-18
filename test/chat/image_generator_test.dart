@@ -489,6 +489,80 @@ void main() {
     });
   });
 
+  group('materiaal in de tekening', () {
+    setUp(() async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+    });
+
+    test('mag standaard geprobeerd worden', () async {
+      container = containerThatDraws();
+
+      await container!
+          .read(exerciseEditorProvider)
+          .drawFrame(name: 'Sledepush', equipment: 'slee', start: true);
+
+      expect(sent.single.body, contains('slee'));
+      expect(sent.single.body, isNot(contains('No gym equipment')));
+    });
+
+    test('en staat de schakelaar uit, dan blijft het eruit', () async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageEquipment: Value(false)),
+      );
+      container = containerThatDraws();
+
+      await container!
+          .read(exerciseEditorProvider)
+          .drawFrame(name: 'Sledepush', equipment: 'slee', start: true);
+
+      expect(sent.single.body, isNot(contains('slee')));
+      // En er staat uitdrukkelijk dat er geen is: zwijgen is niet genoeg,
+      // dan pakt het model er zelf een.
+      expect(sent.single.body, contains('No gym equipment'));
+      expect(sent.single.body, contains('empty hands'));
+    });
+
+    test('ook in een zin die de coach schreef', () async {
+      // Die zin is niet van ons, maar de staart wel - en die beslist.
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageEquipment: Value(false)),
+      );
+      container = containerThatDraws();
+
+      await container!
+          .read(exerciseEditorProvider)
+          .drawFrame(
+            name: 'Sledepush',
+            start: true,
+            prompt: 'A person leaning forward, arms extended',
+          );
+
+      expect(sent.single.body, contains('leaning forward'));
+      expect(sent.single.body, contains('No gym equipment'));
+    });
+
+    test('en de beschrijving zelf noemt het dan ook niet', () {
+      final shown = ImageGenerator.describe(
+        name: 'Sledepush',
+        equipment: 'slee',
+        start: true,
+      );
+
+      expect(shown, contains('slee'));
+      expect(
+        ImageGenerator.promptFor(
+          name: 'Sledepush',
+          equipment: 'slee',
+          start: true,
+          withEquipment: false,
+        ),
+        isNot(contains('slee')),
+      );
+    });
+  });
+
   group('wat er bewaard wordt', () {
     test('een getekende oefening draagt dat bij zich', () async {
       container = containerThatDraws();

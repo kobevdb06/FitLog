@@ -136,6 +136,14 @@ String? coachImageAccount(Ref ref) {
   return id == null || id.isEmpty ? null : id;
 }
 
+/// Whether a drawing may try to show the kit as well as the movement.
+///
+/// Null - every database that predates the switch - is yes, which is what
+/// every drawing until now attempted.
+@riverpod
+bool coachImageEquipment(Ref ref) =>
+    ref.watch(settingsProvider).value?.imageEquipment ?? true;
+
 /// Whether an illustration can be drawn at all.
 ///
 /// Without a token nothing is ever generated, whatever else is switched on -
@@ -527,7 +535,9 @@ class CoachController extends _$CoachController {
     final CoachReply reply;
     try {
       reply = await client.send(
-        system: kFramePromptSystem,
+        system: ref.read(coachImageEquipmentProvider)
+            ? kFramePromptSystem
+            : '$kFramePromptSystem\n$kFramePromptNoKit',
         messages: [
           CoachMessage.user([
             'Oefening: $name',

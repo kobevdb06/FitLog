@@ -461,6 +461,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     final imageKey = ref.watch(coachImageKeyProvider);
     final drawnBy = ref.watch(coachDrawingServiceProvider);
     final imageAccount = ref.watch(coachImageAccountProvider);
+    final withEquipment = ref.watch(coachImageEquipmentProvider);
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
 
     return Scaffold(
@@ -604,6 +605,28 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: _enterImageKey,
+            ),
+            // What a drawing may attempt, which is a matter of taste as much
+            // as of accuracy: kit that is drawn wrong is worse than kit that
+            // is left out, but an exercise without its bar can read as a
+            // different exercise. So it is yours to set, not ours to decide.
+            SwitchListTile(
+              secondary: const Icon(Icons.fitness_center),
+              title: const Text('Materiaal mee tekenen'),
+              subtitle: Text(
+                withEquipment
+                    ? 'De tekening probeert de stang, kabel of machine erbij '
+                          'te zetten. Die klopt niet altijd.'
+                    : 'Alleen de houding, met lege handen. Wat er niet in '
+                          'staat, kan ook niet fout staan.',
+              ),
+              value: withEquipment,
+              onChanged: (value) => ref
+                  .read(databaseProvider)
+                  .settingsDao
+                  .updateSettings(
+                    AppSettingsTableCompanion(imageEquipment: Value(value)),
+                  ),
             ),
             if (imageKey != null)
               Padding(

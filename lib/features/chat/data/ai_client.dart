@@ -505,7 +505,15 @@ class ImageGenerator {
     required String name,
     String? equipment,
     required bool start,
-  }) => stylise(describe(name: name, equipment: equipment, start: start));
+    bool withEquipment = true,
+  }) => stylise(
+    describe(
+      name: name,
+      equipment: withEquipment ? equipment : null,
+      start: start,
+    ),
+    withEquipment: withEquipment,
+  );
 
   /// The same description without the style on it: what a person is shown
   /// when they are asked what the picture should contain.
@@ -545,15 +553,27 @@ class ImageGenerator {
   /// one.
   static const int maxPromptLength = 320;
 
+  /// What is added when the kit is not allowed in the picture.
+  ///
+  /// Saying nothing about it is not enough: asked for a triceps extension the
+  /// model reaches for a bar of its own accord. This says out loud that there
+  /// is none, which leaves the body doing the movement and nothing else.
+  static const String withoutKit =
+      ' No gym equipment, no weights, no machine, empty hands.';
+
+  /// The whole tail, for a drawing that may or may not show the kit.
+  static String tailFor({required bool withEquipment}) =>
+      withEquipment ? style : '$style$withoutKit';
+
   /// A prompt the coach wrote, cut back to one thought, with the same tail.
   ///
   /// The coach knows better than a template what those two pictures should
   /// show - it named the exercise - so its words lead. The tail still decides
   /// what the picture looks like, so a pair stays a pair.
-  static String stylise(String prompt) {
+  static String stylise(String prompt, {bool withEquipment = true}) {
     final trimmed = _shorten(prompt.trim());
     final ending = trimmed.endsWith('.') ? trimmed : '$trimmed.';
-    return '$ending$style';
+    return '$ending${tailFor(withEquipment: withEquipment)}';
   }
 
   /// Cuts at a sentence if there is one in reach, at a word otherwise. Never

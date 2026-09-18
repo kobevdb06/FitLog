@@ -818,6 +818,20 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageEquipmentMeta = const VerificationMeta(
+    'imageEquipment',
+  );
+  @override
+  late final GeneratedColumn<bool> imageEquipment = GeneratedColumn<bool>(
+    'image_equipment',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("image_equipment" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _coachDailyLimitMeta = const VerificationMeta(
     'coachDailyLimit',
   );
@@ -893,6 +907,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     imageApiKey,
     imageProvider,
     imageAccountId,
+    imageEquipment,
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
@@ -1137,6 +1152,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('image_equipment')) {
+      context.handle(
+        _imageEquipmentMeta,
+        imageEquipment.isAcceptableOrUnknown(
+          data['image_equipment']!,
+          _imageEquipmentMeta,
+        ),
+      );
+    }
     if (data.containsKey('coach_daily_limit')) {
       context.handle(
         _coachDailyLimitMeta,
@@ -1293,6 +1317,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.string,
         data['${effectivePrefix}image_account_id'],
       ),
+      imageEquipment: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}image_equipment'],
+      ),
       coachDailyLimit: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}coach_daily_limit'],
@@ -1429,6 +1457,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// daily allowance is being spent. Null for anyone who does not use it.
   final String? imageAccountId;
 
+  /// Whether a drawing may try to show the kit the exercise uses.
+  ///
+  /// It is a try, not a promise: a model that does not know your machine
+  /// draws one that does not exist, and the arms then follow the invented
+  /// machine instead of the movement. Null - what every row starts as - means
+  /// yes, which is what the app did before there was a choice.
+  final bool? imageEquipment;
+
   /// How many calls a day the user wants to allow themselves, or null for the
   /// app's own starting figure.
   ///
@@ -1477,6 +1513,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.imageApiKey,
     this.imageProvider,
     this.imageAccountId,
+    this.imageEquipment,
     this.coachDailyLimit,
     this.chatProvider,
     required this.autoLockSeconds,
@@ -1530,6 +1567,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     }
     if (!nullToAbsent || imageAccountId != null) {
       map['image_account_id'] = Variable<String>(imageAccountId);
+    }
+    if (!nullToAbsent || imageEquipment != null) {
+      map['image_equipment'] = Variable<bool>(imageEquipment);
     }
     if (!nullToAbsent || coachDailyLimit != null) {
       map['coach_daily_limit'] = Variable<int>(coachDailyLimit);
@@ -1590,6 +1630,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       imageAccountId: imageAccountId == null && nullToAbsent
           ? const Value.absent()
           : Value(imageAccountId),
+      imageEquipment: imageEquipment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageEquipment),
       coachDailyLimit: coachDailyLimit == null && nullToAbsent
           ? const Value.absent()
           : Value(coachDailyLimit),
@@ -1641,6 +1684,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       imageApiKey: serializer.fromJson<String?>(json['imageApiKey']),
       imageProvider: serializer.fromJson<String?>(json['imageProvider']),
       imageAccountId: serializer.fromJson<String?>(json['imageAccountId']),
+      imageEquipment: serializer.fromJson<bool?>(json['imageEquipment']),
       coachDailyLimit: serializer.fromJson<int?>(json['coachDailyLimit']),
       chatProvider: serializer.fromJson<String?>(json['chatProvider']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
@@ -1679,6 +1723,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'imageApiKey': serializer.toJson<String?>(imageApiKey),
       'imageProvider': serializer.toJson<String?>(imageProvider),
       'imageAccountId': serializer.toJson<String?>(imageAccountId),
+      'imageEquipment': serializer.toJson<bool?>(imageEquipment),
       'coachDailyLimit': serializer.toJson<int?>(coachDailyLimit),
       'chatProvider': serializer.toJson<String?>(chatProvider),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
@@ -1715,6 +1760,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<String?> imageApiKey = const Value.absent(),
     Value<String?> imageProvider = const Value.absent(),
     Value<String?> imageAccountId = const Value.absent(),
+    Value<bool?> imageEquipment = const Value.absent(),
     Value<int?> coachDailyLimit = const Value.absent(),
     Value<String?> chatProvider = const Value.absent(),
     int? autoLockSeconds,
@@ -1759,6 +1805,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     imageAccountId: imageAccountId.present
         ? imageAccountId.value
         : this.imageAccountId,
+    imageEquipment: imageEquipment.present
+        ? imageEquipment.value
+        : this.imageEquipment,
     coachDailyLimit: coachDailyLimit.present
         ? coachDailyLimit.value
         : this.coachDailyLimit,
@@ -1842,6 +1891,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       imageAccountId: data.imageAccountId.present
           ? data.imageAccountId.value
           : this.imageAccountId,
+      imageEquipment: data.imageEquipment.present
+          ? data.imageEquipment.value
+          : this.imageEquipment,
       coachDailyLimit: data.coachDailyLimit.present
           ? data.coachDailyLimit.value
           : this.coachDailyLimit,
@@ -1886,6 +1938,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('imageApiKey: $imageApiKey, ')
           ..write('imageProvider: $imageProvider, ')
           ..write('imageAccountId: $imageAccountId, ')
+          ..write('imageEquipment: $imageEquipment, ')
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
@@ -1924,6 +1977,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     imageApiKey,
     imageProvider,
     imageAccountId,
+    imageEquipment,
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
@@ -1961,6 +2015,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.imageApiKey == this.imageApiKey &&
           other.imageProvider == this.imageProvider &&
           other.imageAccountId == this.imageAccountId &&
+          other.imageEquipment == this.imageEquipment &&
           other.coachDailyLimit == this.coachDailyLimit &&
           other.chatProvider == this.chatProvider &&
           other.autoLockSeconds == this.autoLockSeconds &&
@@ -1996,6 +2051,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String?> imageApiKey;
   final Value<String?> imageProvider;
   final Value<String?> imageAccountId;
+  final Value<bool?> imageEquipment;
   final Value<int?> coachDailyLimit;
   final Value<String?> chatProvider;
   final Value<int> autoLockSeconds;
@@ -2030,6 +2086,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.imageApiKey = const Value.absent(),
     this.imageProvider = const Value.absent(),
     this.imageAccountId = const Value.absent(),
+    this.imageEquipment = const Value.absent(),
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
@@ -2065,6 +2122,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.imageApiKey = const Value.absent(),
     this.imageProvider = const Value.absent(),
     this.imageAccountId = const Value.absent(),
+    this.imageEquipment = const Value.absent(),
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
@@ -2101,6 +2159,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? imageApiKey,
     Expression<String>? imageProvider,
     Expression<String>? imageAccountId,
+    Expression<bool>? imageEquipment,
     Expression<int>? coachDailyLimit,
     Expression<String>? chatProvider,
     Expression<int>? autoLockSeconds,
@@ -2140,6 +2199,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (imageApiKey != null) 'image_api_key': imageApiKey,
       if (imageProvider != null) 'image_provider': imageProvider,
       if (imageAccountId != null) 'image_account_id': imageAccountId,
+      if (imageEquipment != null) 'image_equipment': imageEquipment,
       if (coachDailyLimit != null) 'coach_daily_limit': coachDailyLimit,
       if (chatProvider != null) 'chat_provider': chatProvider,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
@@ -2177,6 +2237,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String?>? imageApiKey,
     Value<String?>? imageProvider,
     Value<String?>? imageAccountId,
+    Value<bool?>? imageEquipment,
     Value<int?>? coachDailyLimit,
     Value<String?>? chatProvider,
     Value<int>? autoLockSeconds,
@@ -2213,6 +2274,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       imageApiKey: imageApiKey ?? this.imageApiKey,
       imageProvider: imageProvider ?? this.imageProvider,
       imageAccountId: imageAccountId ?? this.imageAccountId,
+      imageEquipment: imageEquipment ?? this.imageEquipment,
       coachDailyLimit: coachDailyLimit ?? this.coachDailyLimit,
       chatProvider: chatProvider ?? this.chatProvider,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
@@ -2312,6 +2374,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (imageAccountId.present) {
       map['image_account_id'] = Variable<String>(imageAccountId.value);
     }
+    if (imageEquipment.present) {
+      map['image_equipment'] = Variable<bool>(imageEquipment.value);
+    }
     if (coachDailyLimit.present) {
       map['coach_daily_limit'] = Variable<int>(coachDailyLimit.value);
     }
@@ -2361,6 +2426,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('imageApiKey: $imageApiKey, ')
           ..write('imageProvider: $imageProvider, ')
           ..write('imageAccountId: $imageAccountId, ')
+          ..write('imageEquipment: $imageEquipment, ')
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
@@ -10910,6 +10976,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String?> imageApiKey,
       Value<String?> imageProvider,
       Value<String?> imageAccountId,
+      Value<bool?> imageEquipment,
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
@@ -10946,6 +11013,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String?> imageApiKey,
       Value<String?> imageProvider,
       Value<String?> imageAccountId,
+      Value<bool?> imageEquipment,
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
@@ -11099,6 +11167,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<String> get imageAccountId => $composableBuilder(
     column: $table.imageAccountId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get imageEquipment => $composableBuilder(
+    column: $table.imageEquipment,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11272,6 +11345,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get imageEquipment => $composableBuilder(
+    column: $table.imageEquipment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get coachDailyLimit => $composableBuilder(
     column: $table.coachDailyLimit,
     builder: (column) => ColumnOrderings(column),
@@ -11432,6 +11510,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get imageEquipment => $composableBuilder(
+    column: $table.imageEquipment,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get coachDailyLimit => $composableBuilder(
     column: $table.coachDailyLimit,
     builder: (column) => column,
@@ -11516,6 +11599,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> imageApiKey = const Value.absent(),
                 Value<String?> imageProvider = const Value.absent(),
                 Value<String?> imageAccountId = const Value.absent(),
+                Value<bool?> imageEquipment = const Value.absent(),
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
@@ -11550,6 +11634,7 @@ class $$AppSettingsTableTableTableManager
                 imageApiKey: imageApiKey,
                 imageProvider: imageProvider,
                 imageAccountId: imageAccountId,
+                imageEquipment: imageEquipment,
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
@@ -11586,6 +11671,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String?> imageApiKey = const Value.absent(),
                 Value<String?> imageProvider = const Value.absent(),
                 Value<String?> imageAccountId = const Value.absent(),
+                Value<bool?> imageEquipment = const Value.absent(),
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
@@ -11620,6 +11706,7 @@ class $$AppSettingsTableTableTableManager
                 imageApiKey: imageApiKey,
                 imageProvider: imageProvider,
                 imageAccountId: imageAccountId,
+                imageEquipment: imageEquipment,
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,

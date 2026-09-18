@@ -53,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 28;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -267,6 +267,11 @@ class AppDatabase extends _$AppDatabase {
           // who already filled in a token is still using.
           await m.addColumn(appSettingsTable, appSettingsTable.imageProvider);
           await m.addColumn(appSettingsTable, appSettingsTable.imageAccountId);
+        }
+        if (from < 28) {
+          // Whether the kit may be drawn along with the movement. Null means
+          // yes: that is what every drawing so far tried to do.
+          await m.addColumn(appSettingsTable, appSettingsTable.imageEquipment);
         }
       });
 

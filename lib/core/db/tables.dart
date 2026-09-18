@@ -167,6 +167,15 @@ class AppSettingsTable extends Table {
   TextColumn get imageAccountId =>
       text().named('image_account_id').nullable()();
 
+  /// Whether a drawing may try to show the kit the exercise uses.
+  ///
+  /// It is a try, not a promise: a model that does not know your machine
+  /// draws one that does not exist, and the arms then follow the invented
+  /// machine instead of the movement. Null - what every row starts as - means
+  /// yes, which is what the app did before there was a choice.
+  BoolColumn get imageEquipment =>
+      boolean().named('image_equipment').nullable()();
+
   /// How many calls a day the user wants to allow themselves, or null for the
   /// app's own starting figure.
   ///

@@ -152,6 +152,22 @@ void main() {
       expect(find.text('Nog geen token'), findsOneWidget);
     });
 
+    testWidgets('en een schakelaar bepaalt of het materiaal mee mag', (
+      tester,
+    ) async {
+      await openSettings(tester);
+
+      final tile = find.widgetWithText(SwitchListTile, 'Materiaal mee tekenen');
+      expect(tile, findsOneWidget);
+      expect(tester.widget<SwitchListTile>(tile).value, isTrue);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+
+      expect(container!.read(coachImageEquipmentProvider), isFalse);
+      expect(find.textContaining('lege handen'), findsOneWidget);
+    });
+
     testWidgets('je kiest eerst, en de vraag komt daarna', (tester) async {
       await openSettings(tester);
 

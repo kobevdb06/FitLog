@@ -2621,3 +2621,28 @@ wordt eerst ontdaan van wat er niet voor de lezer bij staat: het label
 Wat overeind blijft: wat de dienst zegt is waar, ook als het dashboard iets
 anders zegt. De app geeft het door in plaats van het te vervangen door een
 gok.
+
+## 151. Materiaal in de tekening is een keuze, geen aanname
+
+Met Cloudflare erbij tekent het model de houdingen wel goed, en dan valt op
+waar het nog misgaat: het materiaal. Een machine die het niet kent wordt er
+een die niet bestaat, en de armen volgen dan die verzonnen machine in plaats
+van de beweging.
+
+Daar valt geen goed antwoord voor iedereen op te geven. Een tekening zonder
+stang laat een deadlift op een rekoefening lijken; een tekening met een
+verkeerde stang is gewoon fout. Dus is het een schakelaar geworden in
+Instellingen - Afbeeldingen, niet een regel van ons.
+
+Staat hij uit, dan wordt er niet alleen gezwegen over het materiaal: er staat
+uitdrukkelijk bij dat er geen is ("No gym equipment, no weights, no machine,
+empty hands"). Zwijgen is niet genoeg - gevraagd om een triceps extension
+pakt het model uit zichzelf een stang, en dat is precies hoe die optrekbeweging
+ontstond.
+
+De schakelaar geldt overal waar getekend wordt: in het sjabloon van de app, in
+een zin die jij zelf typt, en in de zinnen die de coach schrijft - die krijgt
+er een regel bij zodat zijn zin niet vecht met de staart die erachter hangt.
+Uit twee helften van één prompt die elkaar tegenspreken komt een warboel.
+
+Standaard staat hij aan, want dat is wat elke tekening tot nu toe probeerde.

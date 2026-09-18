@@ -469,6 +469,10 @@ class ExerciseEditor {
       return null;
     }
 
+    // Whether the kit may be attempted is the user's call, and it applies to
+    // the coach's own sentences too: the tail is where it is enforced.
+    final withEquipment = settings.imageEquipment ?? true;
+
     final generator = ref.read(imageGeneratorFactoryProvider)(
       key,
       provider: provider,
@@ -481,8 +485,9 @@ class ExerciseEditor {
                 name: name,
                 equipment: equipment,
                 start: start,
+                withEquipment: withEquipment,
               )
-            : ImageGenerator.stylise(prompt),
+            : ImageGenerator.stylise(prompt, withEquipment: withEquipment),
         seed: seed,
       );
       final paths = await ref.read(appPathsProvider.future);

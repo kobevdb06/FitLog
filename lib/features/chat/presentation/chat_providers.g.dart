@@ -614,6 +614,62 @@ final class CoachImageAccountProvider
 
 String _$coachImageAccountHash() => r'933eafced9c3d52a6924e3de0045550c0241e780';
 
+/// Whether a drawing may try to show the kit as well as the movement.
+///
+/// Null - every database that predates the switch - is yes, which is what
+/// every drawing until now attempted.
+
+@ProviderFor(coachImageEquipment)
+final coachImageEquipmentProvider = CoachImageEquipmentProvider._();
+
+/// Whether a drawing may try to show the kit as well as the movement.
+///
+/// Null - every database that predates the switch - is yes, which is what
+/// every drawing until now attempted.
+
+final class CoachImageEquipmentProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// Whether a drawing may try to show the kit as well as the movement.
+  ///
+  /// Null - every database that predates the switch - is yes, which is what
+  /// every drawing until now attempted.
+  CoachImageEquipmentProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachImageEquipmentProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachImageEquipmentHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return coachImageEquipment(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$coachImageEquipmentHash() =>
+    r'c9d05f1a16b1beb55cf430c40793b5b01f80dd7d';
+
 /// Whether an illustration can be drawn at all.
 ///
 /// Without a token nothing is ever generated, whatever else is switched on -

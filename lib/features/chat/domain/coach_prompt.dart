@@ -124,6 +124,16 @@ Antwoord met alleen dit, zonder uitleg eromheen:
 {"start": "...", "end": "..."}
 ''';
 
+/// The extra line for someone who does not want the kit drawn.
+///
+/// The tail of the prompt already says there is none, but a sentence that
+/// still describes a bar fights that tail, and a fight between two halves of
+/// one prompt comes out as a muddle.
+const String kFramePromptNoKit =
+    'De gebruiker wil geen materiaal in de tekening. Beschrijf alleen het '
+    'lichaam en de houding, met lege handen - geen stang, dumbbell, kabel of '
+    'machine, ook niet terloops.';
+
 /// Reads the two sentences back out of an answer.
 ///
 /// A model that was told to answer with nothing but JSON sometimes wraps it

@@ -408,6 +408,7 @@ class _EditableSetRow extends StatelessWidget {
                   reps: row.reps,
                   durationSeconds: row.durationSeconds,
                   distanceM: row.distanceM,
+                  rpe: row.rpe,
                 ),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: row.isCompleted

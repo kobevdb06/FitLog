@@ -2646,3 +2646,24 @@ er een regel bij zodat zijn zin niet vecht met de staart die erachter hangt.
 Uit twee helften van één prompt die elkaar tegenspreken komt een warboel.
 
 Standaard staat hij aan, want dat is wat elke tekening tot nu toe probeerde.
+
+## 152. Een RPE die opgeslagen wordt maar nergens te zien is
+
+RPE per set bestond al: een kolom in `workout_sets`, een vak op het toetsenpaneel,
+en een schakelaar "RPE bijhouden" in de workout-instellingen die standaard uit
+staat. Dat laatste is nog altijd juist - het is een extra getal bij elke set en
+niet iedereen wil elke set een cijfer geven.
+
+Wat niet klopte: als je hem aanzet en je scoort je sets, staat dat cijfer
+daarna nergens waar je terugkijkt. Het detailscherm van een oefening en dat van
+een workout tonen per set alleen gewicht, reps, tijd of afstand. De ene
+aantekening die zegt of die 100 kg × 5 een opwarmer of je laatste rep was,
+zat in de database en nergens anders.
+
+`setSummary` schrijft de RPE er nu achter zoals ze uitgesproken wordt:
+100 kg × 5 @8. Dat is één regel per set in beide terugkijkschermen en in de
+tekst die je deelt. Een set zonder getallen maar mét een RPE toont "@9" in
+plaats van een streepje: dat je hem zwaar vond is ook iets.
+
+Niet gedaan: de kolom "vorige" tijdens een workout. Daar past het niet zonder
+de rest af te kappen, en een afgekapt gewicht is erger dan een ontbrekende RPE.

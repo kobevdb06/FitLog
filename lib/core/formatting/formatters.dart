@@ -58,25 +58,34 @@ class Formatters {
   /// Not every exercise is weight times reps: a plank is a time, a run is a
   /// distance and a time. Those are read off the values that are actually
   /// there, so the same summary works for all of them.
+  /// An [rpe] is written the way it is said in a gym: 100 kg × 5 @8.
+  ///
+  /// It is what the numbers cannot say. The same 100 kg for 5 is a warm-up on
+  /// one day and everything you had on another, and looking back at a row of
+  /// identical sets is exactly where you want to know which it was.
   String setSummary({
     double? weightKg,
     int? reps,
     int? durationSeconds,
     double? distanceM,
+    double? rpe,
   }) {
+    final effort = rpe == null ? '' : ' @${rpeValue(rpe)}';
     if (distanceM != null) {
       final run = distance(distanceM);
       return durationSeconds == null
-          ? run
-          : '$run · ${duration(durationSeconds)}';
+          ? '$run$effort'
+          : '$run · ${duration(durationSeconds)}$effort';
     }
     if (durationSeconds != null && weightKg == null && reps == null) {
-      return duration(durationSeconds);
+      return '${duration(durationSeconds)}$effort';
     }
-    if (weightKg == null && reps == null) return '-';
-    if (weightKg == null) return '$reps reps';
-    if (reps == null) return weight(weightKg);
-    return '${weight(weightKg)} × $reps';
+    if (weightKg == null && reps == null) {
+      return rpe == null ? '-' : '@${rpeValue(rpe)}';
+    }
+    if (weightKg == null) return '$reps reps$effort';
+    if (reps == null) return '${weight(weightKg)}$effort';
+    return '${weight(weightKg)} × $reps$effort';
   }
 
   /// `8` or `8,5` - never `8.0`, which reads as a measurement rather than a

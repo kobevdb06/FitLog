@@ -340,6 +340,7 @@ class _HistoryTab extends ConsumerWidget {
                                 durationSeconds:
                                     session.sets[i].durationSeconds,
                                 distanceM: session.sets[i].distanceM,
+                                rpe: session.sets[i].rpe,
                               ),
                             ),
                           ],

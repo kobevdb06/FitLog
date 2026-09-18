@@ -669,7 +669,7 @@ class WorkoutController {
       for (final s in exercise.sets.where((s) => s.isCompleted)) {
         final marker = SetType.fromWire(s.setType).marker ?? '${index++}';
         buffer.writeln(
-          '  $marker  ${formatters.setSummary(weightKg: s.weightKg, reps: s.reps, durationSeconds: s.durationSeconds, distanceM: s.distanceM)}',
+          '  $marker  ${formatters.setSummary(weightKg: s.weightKg, reps: s.reps, durationSeconds: s.durationSeconds, distanceM: s.distanceM, rpe: s.rpe)}',
         );
       }
       buffer.writeln();

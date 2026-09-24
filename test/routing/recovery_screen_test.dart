@@ -91,8 +91,11 @@ void main() {
     }
   }
 
-  Future<void> pumpApp(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1100, 2400);
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    Size size = const Size(1100, 2400),
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
@@ -382,6 +385,41 @@ void main() {
       );
       expect(find.text('2 glazen'), findsOneWidget);
     });
+  });
+
+  testWidgets('en op een smalle gsm past alles, met alles aan', (tester) async {
+    // De andere tests draaien breed. Een rij die niet past, geeft op 360
+    // pixels een fout - en die faalt deze test.
+    await db.settingsDao.updateSettings(
+      const AppSettingsTableCompanion(
+        trackSleepStages: Value(true),
+        trackAlcohol: Value(true),
+      ),
+    );
+    await trainedLegs();
+    await pumpApp(tester, size: const Size(360, 780));
+    container!.read(routerProvider).push(Routes.muscleRecovery);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Pijnlijk'));
+    await tester.pumpAndSettle();
+
+    final button = find.text('Afgelopen nacht invullen');
+    await tester.scrollUntilVisible(
+      button,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(RecoveryScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Diep'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 

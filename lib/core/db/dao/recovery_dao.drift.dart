@@ -7,6 +7,7 @@ mixin _$RecoveryDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.sorenessChecksTable;
   $SleepEntriesTableTable get sleepEntriesTable =>
       attachedDatabase.sleepEntriesTable;
+  $DrinkDaysTableTable get drinkDaysTable => attachedDatabase.drinkDaysTable;
   RecoveryDaoManager get managers => RecoveryDaoManager(this);
 }
 
@@ -22,5 +23,10 @@ class RecoveryDaoManager {
       $$SleepEntriesTableTableTableManager(
         _db.attachedDatabase,
         _db.sleepEntriesTable,
+      );
+  $$DrinkDaysTableTableTableManager get drinkDaysTable =>
+      $$DrinkDaysTableTableTableManager(
+        _db.attachedDatabase,
+        _db.drinkDaysTable,
       );
 }

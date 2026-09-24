@@ -587,6 +587,77 @@ void main() {
     });
   });
 
+  group('alcohol', () {
+    test('onder de drempel voor je gewicht verandert het niets', () {
+      // Een halve gram per kilo gaf in het onderzoek geen meetbaar verschil:
+      // voor 80 kg is dat vier glazen.
+      expect(alcoholFactor(0, bodyWeightKg: 80), 1);
+      expect(alcoholFactor(4, bodyWeightKg: 80), 1);
+    });
+
+    test('daarboven rekt het, naar de hoeveelheid', () {
+      final six = alcoholFactor(6, bodyWeightKg: 80);
+      final ten = alcoholFactor(10, bodyWeightKg: 80);
+
+      expect(six, greaterThan(1));
+      expect(ten, greaterThan(six));
+    });
+
+    test('tot een plafond', () {
+      expect(alcoholFactor(30, bodyWeightKg: 80), kMaxAlcoholFactor);
+    });
+
+    test('en wie lichter is, zit er sneller aan', () {
+      expect(
+        alcoholFactor(6, bodyWeightKg: 60),
+        greaterThan(alcoholFactor(6, bodyWeightKg: 90)),
+      );
+    });
+
+    group('in de schatting', () {
+      List<RecoverySet> weeks() => [
+        for (var i = 0; i < 4; i++)
+          set(
+            workoutId: 'h$i',
+            at: monday.subtract(Duration(days: 7 * (4 - i))),
+          ),
+        set(workoutId: 'today', at: monday),
+      ];
+
+      RecoveryEstimate estimate(List<DrinkDay> drinks) => estimateRecovery(
+        muscleSessions(weeks()),
+        drinks: drinks,
+        bodyWeightKg: 80,
+      ).single;
+
+      test('telt de dag waarop je trainde', () {
+        final plain = estimate(const []);
+        final evening = estimate([
+          DrinkDay(
+            day: DateTime(monday.year, monday.month, monday.day),
+            drinks: 8,
+          ),
+        ]);
+
+        expect(evening.drinks, 8);
+        expect(evening.alcoholFactor, greaterThan(1));
+        expect(evening.recovery, greaterThan(plain.recovery));
+      });
+
+      test('en niet de dag ervoor', () {
+        final dayBefore = estimate([
+          DrinkDay(
+            day: DateTime(monday.year, monday.month, monday.day - 1),
+            drinks: 8,
+          ),
+        ]);
+
+        expect(dayBefore.drinks, 0);
+        expect(dayBefore.alcoholFactor, 1);
+      });
+    });
+  });
+
   group('reading the stored muscle list', () {
     test('reads a JSON array', () {
       expect(decodeMuscleList('["borst", "triceps"]'), ['borst', 'triceps']);

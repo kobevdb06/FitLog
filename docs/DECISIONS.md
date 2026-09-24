@@ -2744,3 +2744,30 @@ Invoer die niet kan kloppen wordt geweigerd met uitleg in plaats van
 bewaard: een nacht korter dan een uur of langer dan zestien (bijna altijd een
 tijd aan de verkeerde kant van middernacht), en fasen die samen meer dan een
 kwartier langer zijn dan de nacht zelf.
+
+## 156. Alcohol: de moeite, maar alleen boven een drempel
+
+Gevraagd was of alcohol bijhouden zin heeft, voor een dag waarop je traint en
+drinkt. Het onderzoek geeft een duidelijk antwoord met een drempel erin.
+Ongeveer 1,5 gram alcohol per kilo lichaamsgewicht na een training remde de
+aanmaak van spiereiwit met zo'n kwart tot een derde, ook met eiwit erbij. Een
+gram per kilo na zware, excentrische training liet in de dagen erna meer
+krachtverlies achter. Een halve gram per kilo gaf geen meetbaar verschil.
+
+Dus telt het pas boven die halve gram, en in verhouding tot je gewicht - voor
+iemand van 75 kilo drie à vier standaardglazen. Van daar loopt het op tot een
+vijfde langer bij anderhalve gram per kilo, en verder niet. Je gewicht komt
+uit je laatste meting; zonder meting staat er 75 kilo voor in, zoals bij
+lichaamsgewichtoefeningen.
+
+Het telt voor de dag waarop je trainde en niet voor de dag ervoor: dat is de
+situatie waar het onderzoek over gaat, en de situatie waarnaar gevraagd werd.
+Glazen worden per dag bewaard; nul is geen rij, want niets ingevuld en niets
+gedronken zeggen hetzelfde tegen de schatting.
+
+Het staat achter een schakelaar, standaard uit, net als RPE en de slaapfasen.
+Voor herstel maakt het alleen bij grotere hoeveelheden uit, en een teller voor
+glazen is niet iets om zonder vragen voor iedereen neer te zetten die zijn
+trainingen bijhoudt. Het herstelscherm toont twee tellers - vandaag en
+gisteren - omdat de trainingsdag de enige is die telt en de ochtend erna het
+moment is waarop je hem invult.

@@ -733,6 +733,21 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _trackAlcoholMeta = const VerificationMeta(
+    'trackAlcohol',
+  );
+  @override
+  late final GeneratedColumn<bool> trackAlcohol = GeneratedColumn<bool>(
+    'track_alcohol',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("track_alcohol" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _defaultWarmupSetsMeta = const VerificationMeta(
     'defaultWarmupSets',
   );
@@ -914,6 +929,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     availablePlatesKg,
     trackRpe,
     trackSleepStages,
+    trackAlcohol,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -1099,6 +1115,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         trackSleepStages.isAcceptableOrUnknown(
           data['track_sleep_stages']!,
           _trackSleepStagesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('track_alcohol')) {
+      context.handle(
+        _trackAlcoholMeta,
+        trackAlcohol.isAcceptableOrUnknown(
+          data['track_alcohol']!,
+          _trackAlcoholMeta,
         ),
       );
     }
@@ -1310,6 +1335,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}track_sleep_stages'],
       )!,
+      trackAlcohol: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}track_alcohol'],
+      )!,
       defaultWarmupSets: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}default_warmup_sets'],
@@ -1444,6 +1473,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// keep them here too.
   final bool trackSleepStages;
 
+  /// Whether the recovery screen asks how much you drank.
+  ///
+  /// Off by default. It matters for recovery only in larger amounts, and a
+  /// drinks counter is not something to put in front of everyone who opens a
+  /// training log.
+  final bool trackAlcohol;
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   final int defaultWarmupSets;
 
@@ -1541,6 +1577,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.availablePlatesKg,
     required this.trackRpe,
     required this.trackSleepStages,
+    required this.trackAlcohol,
     required this.defaultWarmupSets,
     required this.prDefaultWarmupSets,
     required this.prDefaultExtraAttempts,
@@ -1585,6 +1622,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['available_plates_kg'] = Variable<String>(availablePlatesKg);
     map['track_rpe'] = Variable<bool>(trackRpe);
     map['track_sleep_stages'] = Variable<bool>(trackSleepStages);
+    map['track_alcohol'] = Variable<bool>(trackAlcohol);
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
     map['pr_default_extra_attempts'] = Variable<int>(prDefaultExtraAttempts);
@@ -1648,6 +1686,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       availablePlatesKg: Value(availablePlatesKg),
       trackRpe: Value(trackRpe),
       trackSleepStages: Value(trackSleepStages),
+      trackAlcohol: Value(trackAlcohol),
       defaultWarmupSets: Value(defaultWarmupSets),
       prDefaultWarmupSets: Value(prDefaultWarmupSets),
       prDefaultExtraAttempts: Value(prDefaultExtraAttempts),
@@ -1711,6 +1750,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       availablePlatesKg: serializer.fromJson<String>(json['availablePlatesKg']),
       trackRpe: serializer.fromJson<bool>(json['trackRpe']),
       trackSleepStages: serializer.fromJson<bool>(json['trackSleepStages']),
+      trackAlcohol: serializer.fromJson<bool>(json['trackAlcohol']),
       defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
       prDefaultWarmupSets: serializer.fromJson<int>(
         json['prDefaultWarmupSets'],
@@ -1755,6 +1795,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'availablePlatesKg': serializer.toJson<String>(availablePlatesKg),
       'trackRpe': serializer.toJson<bool>(trackRpe),
       'trackSleepStages': serializer.toJson<bool>(trackSleepStages),
+      'trackAlcohol': serializer.toJson<bool>(trackAlcohol),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
       'prDefaultExtraAttempts': serializer.toJson<int>(prDefaultExtraAttempts),
@@ -1793,6 +1834,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     String? availablePlatesKg,
     bool? trackRpe,
     bool? trackSleepStages,
+    bool? trackAlcohol,
     int? defaultWarmupSets,
     int? prDefaultWarmupSets,
     int? prDefaultExtraAttempts,
@@ -1832,6 +1874,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
     trackRpe: trackRpe ?? this.trackRpe,
     trackSleepStages: trackSleepStages ?? this.trackSleepStages,
+    trackAlcohol: trackAlcohol ?? this.trackAlcohol,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
     prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
     prDefaultExtraAttempts:
@@ -1912,6 +1955,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       trackSleepStages: data.trackSleepStages.present
           ? data.trackSleepStages.value
           : this.trackSleepStages,
+      trackAlcohol: data.trackAlcohol.present
+          ? data.trackAlcohol.value
+          : this.trackAlcohol,
       defaultWarmupSets: data.defaultWarmupSets.present
           ? data.defaultWarmupSets.value
           : this.defaultWarmupSets,
@@ -1976,6 +2022,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('trackRpe: $trackRpe, ')
           ..write('trackSleepStages: $trackSleepStages, ')
+          ..write('trackAlcohol: $trackAlcohol, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -2016,6 +2063,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     availablePlatesKg,
     trackRpe,
     trackSleepStages,
+    trackAlcohol,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -2055,6 +2103,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.availablePlatesKg == this.availablePlatesKg &&
           other.trackRpe == this.trackRpe &&
           other.trackSleepStages == this.trackSleepStages &&
+          other.trackAlcohol == this.trackAlcohol &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
           other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
           other.prDefaultExtraAttempts == this.prDefaultExtraAttempts &&
@@ -2092,6 +2141,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<String> availablePlatesKg;
   final Value<bool> trackRpe;
   final Value<bool> trackSleepStages;
+  final Value<bool> trackAlcohol;
   final Value<int> defaultWarmupSets;
   final Value<int> prDefaultWarmupSets;
   final Value<int> prDefaultExtraAttempts;
@@ -2128,6 +2178,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.availablePlatesKg = const Value.absent(),
     this.trackRpe = const Value.absent(),
     this.trackSleepStages = const Value.absent(),
+    this.trackAlcohol = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2165,6 +2216,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.availablePlatesKg = const Value.absent(),
     this.trackRpe = const Value.absent(),
     this.trackSleepStages = const Value.absent(),
+    this.trackAlcohol = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2203,6 +2255,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<String>? availablePlatesKg,
     Expression<bool>? trackRpe,
     Expression<bool>? trackSleepStages,
+    Expression<bool>? trackAlcohol,
     Expression<int>? defaultWarmupSets,
     Expression<int>? prDefaultWarmupSets,
     Expression<int>? prDefaultExtraAttempts,
@@ -2242,6 +2295,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (availablePlatesKg != null) 'available_plates_kg': availablePlatesKg,
       if (trackRpe != null) 'track_rpe': trackRpe,
       if (trackSleepStages != null) 'track_sleep_stages': trackSleepStages,
+      if (trackAlcohol != null) 'track_alcohol': trackAlcohol,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
       if (prDefaultWarmupSets != null)
         'pr_default_warmup_sets': prDefaultWarmupSets,
@@ -2283,6 +2337,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<String>? availablePlatesKg,
     Value<bool>? trackRpe,
     Value<bool>? trackSleepStages,
+    Value<bool>? trackAlcohol,
     Value<int>? defaultWarmupSets,
     Value<int>? prDefaultWarmupSets,
     Value<int>? prDefaultExtraAttempts,
@@ -2320,6 +2375,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
       trackRpe: trackRpe ?? this.trackRpe,
       trackSleepStages: trackSleepStages ?? this.trackSleepStages,
+      trackAlcohol: trackAlcohol ?? this.trackAlcohol,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
       prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
       prDefaultExtraAttempts:
@@ -2404,6 +2460,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (trackSleepStages.present) {
       map['track_sleep_stages'] = Variable<bool>(trackSleepStages.value);
     }
+    if (trackAlcohol.present) {
+      map['track_alcohol'] = Variable<bool>(trackAlcohol.value);
+    }
     if (defaultWarmupSets.present) {
       map['default_warmup_sets'] = Variable<int>(defaultWarmupSets.value);
     }
@@ -2477,6 +2536,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('trackRpe: $trackRpe, ')
           ..write('trackSleepStages: $trackSleepStages, ')
+          ..write('trackAlcohol: $trackAlcohol, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -11317,6 +11377,267 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
   }
 }
 
+class $DrinkDaysTableTable extends DrinkDaysTable
+    with TableInfo<$DrinkDaysTableTable, DrinkDayRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DrinkDaysTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<int> day = GeneratedColumn<int>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _drinksMeta = const VerificationMeta('drinks');
+  @override
+  late final GeneratedColumn<int> drinks = GeneratedColumn<int>(
+    'drinks',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, day, drinks];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'drink_days';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DrinkDayRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('drinks')) {
+      context.handle(
+        _drinksMeta,
+        drinks.isAcceptableOrUnknown(data['drinks']!, _drinksMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_drinksMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DrinkDayRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DrinkDayRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day'],
+      )!,
+      drinks: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}drinks'],
+      )!,
+    );
+  }
+
+  @override
+  $DrinkDaysTableTable createAlias(String alias) {
+    return $DrinkDaysTableTable(attachedDatabase, alias);
+  }
+}
+
+class DrinkDayRow extends DataClass implements Insertable<DrinkDayRow> {
+  /// The day, `yyyymmdd`.
+  final String id;
+
+  /// Midnight at the start of that day, for reading a range back.
+  final int day;
+
+  /// Standard drinks of about ten grams of alcohol each.
+  final int drinks;
+  const DrinkDayRow({
+    required this.id,
+    required this.day,
+    required this.drinks,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['day'] = Variable<int>(day);
+    map['drinks'] = Variable<int>(drinks);
+    return map;
+  }
+
+  DrinkDaysTableCompanion toCompanion(bool nullToAbsent) {
+    return DrinkDaysTableCompanion(
+      id: Value(id),
+      day: Value(day),
+      drinks: Value(drinks),
+    );
+  }
+
+  factory DrinkDayRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DrinkDayRow(
+      id: serializer.fromJson<String>(json['id']),
+      day: serializer.fromJson<int>(json['day']),
+      drinks: serializer.fromJson<int>(json['drinks']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'day': serializer.toJson<int>(day),
+      'drinks': serializer.toJson<int>(drinks),
+    };
+  }
+
+  DrinkDayRow copyWith({String? id, int? day, int? drinks}) => DrinkDayRow(
+    id: id ?? this.id,
+    day: day ?? this.day,
+    drinks: drinks ?? this.drinks,
+  );
+  DrinkDayRow copyWithCompanion(DrinkDaysTableCompanion data) {
+    return DrinkDayRow(
+      id: data.id.present ? data.id.value : this.id,
+      day: data.day.present ? data.day.value : this.day,
+      drinks: data.drinks.present ? data.drinks.value : this.drinks,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DrinkDayRow(')
+          ..write('id: $id, ')
+          ..write('day: $day, ')
+          ..write('drinks: $drinks')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, day, drinks);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DrinkDayRow &&
+          other.id == this.id &&
+          other.day == this.day &&
+          other.drinks == this.drinks);
+}
+
+class DrinkDaysTableCompanion extends UpdateCompanion<DrinkDayRow> {
+  final Value<String> id;
+  final Value<int> day;
+  final Value<int> drinks;
+  final Value<int> rowid;
+  const DrinkDaysTableCompanion({
+    this.id = const Value.absent(),
+    this.day = const Value.absent(),
+    this.drinks = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DrinkDaysTableCompanion.insert({
+    required String id,
+    required int day,
+    required int drinks,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       day = Value(day),
+       drinks = Value(drinks);
+  static Insertable<DrinkDayRow> custom({
+    Expression<String>? id,
+    Expression<int>? day,
+    Expression<int>? drinks,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (day != null) 'day': day,
+      if (drinks != null) 'drinks': drinks,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DrinkDaysTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? day,
+    Value<int>? drinks,
+    Value<int>? rowid,
+  }) {
+    return DrinkDaysTableCompanion(
+      id: id ?? this.id,
+      day: day ?? this.day,
+      drinks: drinks ?? this.drinks,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<int>(day.value);
+    }
+    if (drinks.present) {
+      map['drinks'] = Variable<int>(drinks.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DrinkDaysTableCompanion(')
+          ..write('id: $id, ')
+          ..write('day: $day, ')
+          ..write('drinks: $drinks, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11362,6 +11683,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $SorenessChecksTableTable(this);
   late final $SleepEntriesTableTable sleepEntriesTable =
       $SleepEntriesTableTable(this);
+  late final $DrinkDaysTableTable drinkDaysTable = $DrinkDaysTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -11438,6 +11760,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     progressPhotosTable,
     sorenessChecksTable,
     sleepEntriesTable,
+    drinkDaysTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxWorkoutsStartedAt,
@@ -11793,6 +12116,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<String> availablePlatesKg,
       Value<bool> trackRpe,
       Value<bool> trackSleepStages,
+      Value<bool> trackAlcohol,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -11831,6 +12155,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<String> availablePlatesKg,
       Value<bool> trackRpe,
       Value<bool> trackSleepStages,
+      Value<bool> trackAlcohol,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -11954,6 +12279,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get trackSleepStages => $composableBuilder(
     column: $table.trackSleepStages,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get trackAlcohol => $composableBuilder(
+    column: $table.trackAlcohol,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12137,6 +12467,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get trackAlcohol => $composableBuilder(
+    column: $table.trackAlcohol,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => ColumnOrderings(column),
@@ -12309,6 +12644,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get trackAlcohol => $composableBuilder(
+    column: $table.trackAlcohol,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => column,
@@ -12433,6 +12773,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<bool> trackRpe = const Value.absent(),
                 Value<bool> trackSleepStages = const Value.absent(),
+                Value<bool> trackAlcohol = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -12469,6 +12810,7 @@ class $$AppSettingsTableTableTableManager
                 availablePlatesKg: availablePlatesKg,
                 trackRpe: trackRpe,
                 trackSleepStages: trackSleepStages,
+                trackAlcohol: trackAlcohol,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -12507,6 +12849,7 @@ class $$AppSettingsTableTableTableManager
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<bool> trackRpe = const Value.absent(),
                 Value<bool> trackSleepStages = const Value.absent(),
+                Value<bool> trackAlcohol = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -12543,6 +12886,7 @@ class $$AppSettingsTableTableTableManager
                 availablePlatesKg: availablePlatesKg,
                 trackRpe: trackRpe,
                 trackSleepStages: trackSleepStages,
+                trackAlcohol: trackAlcohol,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -19821,6 +20165,170 @@ typedef $$SleepEntriesTableTableProcessedTableManager =
       SleepEntryRow,
       PrefetchHooks Function()
     >;
+typedef $$DrinkDaysTableTableCreateCompanionBuilder =
+    DrinkDaysTableCompanion Function({
+      required String id,
+      required int day,
+      required int drinks,
+      Value<int> rowid,
+    });
+typedef $$DrinkDaysTableTableUpdateCompanionBuilder =
+    DrinkDaysTableCompanion Function({
+      Value<String> id,
+      Value<int> day,
+      Value<int> drinks,
+      Value<int> rowid,
+    });
+
+class $$DrinkDaysTableTableFilterComposer
+    extends Composer<_$AppDatabase, $DrinkDaysTableTable> {
+  $$DrinkDaysTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get drinks => $composableBuilder(
+    column: $table.drinks,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DrinkDaysTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $DrinkDaysTableTable> {
+  $$DrinkDaysTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get drinks => $composableBuilder(
+    column: $table.drinks,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DrinkDaysTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DrinkDaysTableTable> {
+  $$DrinkDaysTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<int> get drinks =>
+      $composableBuilder(column: $table.drinks, builder: (column) => column);
+}
+
+class $$DrinkDaysTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DrinkDaysTableTable,
+          DrinkDayRow,
+          $$DrinkDaysTableTableFilterComposer,
+          $$DrinkDaysTableTableOrderingComposer,
+          $$DrinkDaysTableTableAnnotationComposer,
+          $$DrinkDaysTableTableCreateCompanionBuilder,
+          $$DrinkDaysTableTableUpdateCompanionBuilder,
+          (
+            DrinkDayRow,
+            BaseReferences<_$AppDatabase, $DrinkDaysTableTable, DrinkDayRow>,
+          ),
+          DrinkDayRow,
+          PrefetchHooks Function()
+        > {
+  $$DrinkDaysTableTableTableManager(
+    _$AppDatabase db,
+    $DrinkDaysTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DrinkDaysTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DrinkDaysTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DrinkDaysTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> day = const Value.absent(),
+                Value<int> drinks = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DrinkDaysTableCompanion(
+                id: id,
+                day: day,
+                drinks: drinks,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int day,
+                required int drinks,
+                Value<int> rowid = const Value.absent(),
+              }) => DrinkDaysTableCompanion.insert(
+                id: id,
+                day: day,
+                drinks: drinks,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DrinkDaysTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DrinkDaysTableTable,
+      DrinkDayRow,
+      $$DrinkDaysTableTableFilterComposer,
+      $$DrinkDaysTableTableOrderingComposer,
+      $$DrinkDaysTableTableAnnotationComposer,
+      $$DrinkDaysTableTableCreateCompanionBuilder,
+      $$DrinkDaysTableTableUpdateCompanionBuilder,
+      (
+        DrinkDayRow,
+        BaseReferences<_$AppDatabase, $DrinkDaysTableTable, DrinkDayRow>,
+      ),
+      DrinkDayRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -19865,4 +20373,6 @@ class $AppDatabaseManager {
       $$SorenessChecksTableTableTableManager(_db, _db.sorenessChecksTable);
   $$SleepEntriesTableTableTableManager get sleepEntriesTable =>
       $$SleepEntriesTableTableTableManager(_db, _db.sleepEntriesTable);
+  $$DrinkDaysTableTableTableManager get drinkDaysTable =>
+      $$DrinkDaysTableTableTableManager(_db, _db.drinkDaysTable);
 }

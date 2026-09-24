@@ -42,6 +42,13 @@ SleepNight sleepNightOf(SleepEntryRow row) => SleepNight(
   duration: Duration(milliseconds: row.wokeAt - row.fellAsleepAt),
 );
 
+/// The days you drank on, over the stretch the estimate looks at.
+@riverpod
+Stream<List<DrinkDayRow>> drinkDays(Ref ref) {
+  final since = DateTime.now().subtract(kRecoveryHistoryWindow);
+  return ref.watch(databaseProvider).recoveryDao.watchDrinksSince(since);
+}
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
@@ -57,6 +64,13 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
     for (final row in ref.watch(sleepEntriesProvider).value ?? const [])
       sleepNightOf(row),
   ];
+  final drinks = [
+    for (final row in ref.watch(drinkDaysProvider).value ?? const [])
+      DrinkDay(
+        day: DateTime.fromMillisecondsSinceEpoch(row.day),
+        drinks: row.drinks,
+      ),
+  ];
 
   return db.workoutsDao.watchRecoverySets(since: since).asyncMap((sets) async {
     // Bodyweight work carries no weight in the log, so the user's own weight
@@ -66,6 +80,8 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
       muscleSessions(sets, bodyWeightKg: weight?.value),
       checks: checks,
       nights: nights,
+      drinks: drinks,
+      bodyWeightKg: weight?.value,
     );
   });
 }
@@ -128,6 +144,10 @@ class RecoveryActions {
 
   Future<void> forgetNight(DateTime wokeAt) =>
       ref.read(databaseProvider).recoveryDao.clearSleep(wokeAt);
+
+  /// Sets how many standard drinks there were on the day of [day].
+  Future<void> drank(DateTime day, int drinks) =>
+      ref.read(databaseProvider).recoveryDao.setDrinks(day, drinks);
 
   /// Takes back today's answer for [muscle].
   Future<void> unfeel(String muscle, {DateTime? at}) => ref

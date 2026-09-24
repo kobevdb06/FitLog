@@ -127,4 +127,27 @@ void main() {
       );
     });
   });
+
+  group('glazen', () {
+    final day = DateTime(2026, 3, 3, 21, 15);
+
+    test('een rij per dag, met het aantal', () async {
+      await db.recoveryDao.setDrinks(day, 3);
+      await db.recoveryDao.setDrinks(day.add(const Duration(hours: 1)), 5);
+
+      final rows = await db.select(db.drinkDaysTable).get();
+      expect(rows.single.drinks, 5);
+      // Opgeslagen als het begin van die dag, niet als het uur.
+      expect(rows.single.day, DateTime(2026, 3, 3).millisecondsSinceEpoch);
+    });
+
+    test('en nul is geen rij', () async {
+      // Niets ingevuld en niets gedronken zeggen hetzelfde tegen de
+      // schatting, dus wordt nul ook niet bewaard.
+      await db.recoveryDao.setDrinks(day, 3);
+      await db.recoveryDao.setDrinks(day, 0);
+
+      expect(await db.select(db.drinkDaysTable).get(), isEmpty);
+    });
+  });
 }

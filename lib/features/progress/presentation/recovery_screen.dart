@@ -5,6 +5,8 @@ import '../../../core/calc/recovery.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/providers/core_providers.dart';
+import 'alcohol_section.dart';
 import 'recovery_providers.dart';
 import 'recovery_view.dart';
 import 'sleep_section.dart';
@@ -83,6 +85,12 @@ class RecoveryScreen extends ConsumerWidget {
               ),
           const SectionHeader('Slaap'),
           const SleepSection(),
+          // Only for whoever asked for it: a drinks counter is not something
+          // to put in front of everyone who opens a training log.
+          if (ref.watch(settingsProvider).value?.trackAlcohol ?? false) ...[
+            const SectionHeader('Alcohol'),
+            const AlcoholSection(),
+          ],
           const Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg,
@@ -170,6 +178,13 @@ List<String> recoveryReasons(RecoveryEstimate estimate, {DateTime? now}) {
 
   final carried = estimate.carryover.inHours;
   if (carried > 0) reasons.add('+$carried u van je vorige sessie');
+
+  if (estimate.alcoholFactor > 1) {
+    reasons.add(
+      'alcohol op je trainingsdag '
+      '(${estimate.drinks == 1 ? '1 glas' : '${estimate.drinks} glazen'})',
+    );
+  }
 
   if (estimate.sleepFactor > 1 && estimate.averageSleep != null) {
     reasons.add('korte nachten (${nightLength(estimate.averageSleep!)})');

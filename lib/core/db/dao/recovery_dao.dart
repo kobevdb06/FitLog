@@ -9,7 +9,9 @@ part 'recovery_dao.drift.dart';
 /// Kept apart from the workouts on purpose: none of this is training, and all
 /// of it is optional. An empty table here is the normal state, and the
 /// estimate works without it - it just knows less.
-@DriftAccessor(tables: [SorenessChecksTable, SleepEntriesTable])
+@DriftAccessor(
+  tables: [SorenessChecksTable, SleepEntriesTable, DrinkDaysTable],
+)
 class RecoveryDao extends DatabaseAccessor<AppDatabase>
     with _$RecoveryDaoMixin {
   RecoveryDao(super.db);
@@ -87,4 +89,33 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
   Future<void> clearSleep(DateTime wokeAt) =>
       (delete(sleepEntriesTable)..where((t) => t.id.equals(dayKey(wokeAt))))
           .go();
+
+  /// Days with drinks on them from [since] on, oldest first.
+  Stream<List<DrinkDayRow>> watchDrinksSince(DateTime since) =>
+      (select(drinkDaysTable)
+            ..where(
+              (t) => t.day.isBiggerOrEqualValue(
+                DateTime(since.year, since.month, since.day)
+                    .millisecondsSinceEpoch,
+              ),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.day)]))
+          .watch();
+
+  /// Sets how much was drunk on the day of [day]. Zero removes the day.
+  Future<void> setDrinks(DateTime day, int drinks) async {
+    if (drinks <= 0) {
+      await (delete(
+        drinkDaysTable,
+      )..where((t) => t.id.equals(dayKey(day)))).go();
+      return;
+    }
+    await into(drinkDaysTable).insertOnConflictUpdate(
+      DrinkDaysTableCompanion.insert(
+        id: dayKey(day),
+        day: DateTime(day.year, day.month, day.day).millisecondsSinceEpoch,
+        drinks: drinks,
+      ),
+    );
+  }
 }

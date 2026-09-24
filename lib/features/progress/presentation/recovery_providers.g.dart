@@ -103,6 +103,52 @@ final class SleepEntriesProvider
 
 String _$sleepEntriesHash() => r'8af3b153027e6cce1fda3d4ce1022b3b40744ccb';
 
+/// The days you drank on, over the stretch the estimate looks at.
+
+@ProviderFor(drinkDays)
+final drinkDaysProvider = DrinkDaysProvider._();
+
+/// The days you drank on, over the stretch the estimate looks at.
+
+final class DrinkDaysProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<DrinkDayRow>>,
+          List<DrinkDayRow>,
+          Stream<List<DrinkDayRow>>
+        >
+    with
+        $FutureModifier<List<DrinkDayRow>>,
+        $StreamProvider<List<DrinkDayRow>> {
+  /// The days you drank on, over the stretch the estimate looks at.
+  DrinkDaysProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'drinkDaysProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$drinkDaysHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<DrinkDayRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<DrinkDayRow>> create(Ref ref) {
+    return drinkDays(ref);
+  }
+}
+
+String _$drinkDaysHash() => r'19da07709daee8e761b86891eb480bef40bd9a41';
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
@@ -162,7 +208,7 @@ final class RecoveryEstimatesProvider
   }
 }
 
-String _$recoveryEstimatesHash() => r'9f70bd42c9f624c67fe2740919fd9f76b8998f69';
+String _$recoveryEstimatesHash() => r'66b71690ed36343efacee9d954e955adde613bde';
 
 /// The muscles one particular session left behind.
 ///

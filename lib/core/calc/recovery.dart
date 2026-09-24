@@ -103,6 +103,24 @@ const double kMaxSleepFactor = 1.25;
 /// How many nights after a session speak for it.
 const int kNightsAfterSession = 3;
 
+/// About ten grams of alcohol: a pint of pils, a glass of wine, a shot. A
+/// strong Belgian beer is closer to two.
+const double kGramsPerStandardDrink = 10;
+
+/// Alcohol per kilo of body weight, in grams, below which no difference in
+/// recovery was measured, and at which the effect found in the studies is
+/// fully reached.
+///
+/// Half a gram per kilo after heavy training changed nothing measurable; one
+/// gram left more strength lost in the days after; one and a half cut muscle
+/// protein synthesis by roughly a quarter to a third. For someone of 75 kg the
+/// threshold is three or four drinks, and the full effect about eleven.
+const double kAlcoholNoEffectBelow = 0.5;
+const double kAlcoholFullEffectAt = 1.5;
+
+/// The most a day of drinking adds to a session's estimate.
+const double kMaxAlcoholFactor = 1.2;
+
 /// The estimate never leaves this range, whatever the arithmetic says.
 const double kMinRecoveryHours = 24;
 const double kMaxRecoveryHours = 96;
@@ -186,6 +204,29 @@ double sleepFactor(Iterable<SleepNight> nights) {
     1.0,
     kMaxSleepFactor,
   );
+}
+
+/// How much was drunk on one day, in standard drinks.
+class DrinkDay {
+  const DrinkDay({required this.day, required this.drinks});
+
+  final DateTime day;
+  final int drinks;
+}
+
+/// What drinking on the day of a session does to its recovery: nothing below
+/// the threshold for your weight, rising to [kMaxAlcoholFactor] at the amount
+/// the studies found a clear effect at.
+double alcoholFactor(int drinks, {double? bodyWeightKg}) {
+  if (drinks <= 0) return 1;
+  final body = bodyWeightKg ?? kAssumedBodyWeightKg;
+  final perKg = drinks * kGramsPerStandardDrink / body;
+  if (perKg <= kAlcoholNoEffectBelow) return 1;
+  final share =
+      ((perKg - kAlcoholNoEffectBelow) /
+              (kAlcoholFullEffectAt - kAlcoholNoEffectBelow))
+          .clamp(0.0, 1.0);
+  return 1 + share * (kMaxAlcoholFactor - 1);
 }
 
 /// One answer to "how does this muscle feel?".
@@ -286,6 +327,8 @@ class RecoveryEstimate {
     this.checkedAt,
     this.sleepFactor = 1,
     this.averageSleep,
+    this.alcoholFactor = 1,
+    this.drinks = 0,
   });
 
   final String muscle;
@@ -324,6 +367,11 @@ class RecoveryEstimate {
 
   /// How long those nights were on average, when any were filled in.
   final Duration? averageSleep;
+
+  /// What drinking on the day of this session did to [recovery], and how
+  /// much it was.
+  final double alcoholFactor;
+  final int drinks;
 
   DateTime get readyAt => trainedAt.add(recovery);
 
@@ -458,8 +506,11 @@ List<RecoveryEstimate> estimateRecovery(
   List<MuscleSession> sessions, {
   Iterable<SorenessCheck> checks = const [],
   Iterable<SleepNight> nights = const [],
+  Iterable<DrinkDay> drinks = const [],
+  double? bodyWeightKg,
 }) {
   final slept = nights.toList()..sort((a, b) => a.wokeAt.compareTo(b.wokeAt));
+  final drank = drinks.toList();
   final byMuscle = <String, List<MuscleSession>>{};
   for (final session in sessions) {
     byMuscle.putIfAbsent(session.muscle, () => []).add(session);
@@ -477,11 +528,23 @@ List<RecoveryEstimate> estimateRecovery(
 
     // First what the table would say, then what your own answers say about
     // the table, then the table again with that correction in it.
-    final plain = _chain(ordered, factor: 1, nights: slept);
+    final plain = _chain(
+      ordered,
+      factor: 1,
+      nights: slept,
+      drinks: drank,
+      bodyWeightKg: bodyWeightKg,
+    );
     final factor = _personalFactor(plain, said);
     final chain = factor == 1
         ? plain
-        : _chain(ordered, factor: factor, nights: slept);
+        : _chain(
+            ordered,
+            factor: factor,
+            nights: slept,
+            drinks: drank,
+            bodyWeightKg: bodyWeightKg,
+          );
 
     estimates.add(_withCheck(chain.last, said));
   }
@@ -499,6 +562,8 @@ List<RecoveryEstimate> _chain(
   List<MuscleSession> ordered, {
   required double factor,
   List<SleepNight> nights = const [],
+  List<DrinkDay> drinks = const [],
+  double? bodyWeightKg,
 }) {
   final chain = <RecoveryEstimate>[];
   final floor = Duration(minutes: (kMinRecoveryHours * 60).round());
@@ -535,9 +600,22 @@ List<RecoveryEstimate> _chain(
     ].take(kNightsAfterSession).toList();
     final sleep = sleepFactor(after);
 
+    // Drinking on the day you trained: that day, and not the one before.
+    var drunk = 0;
+    for (final day in drinks) {
+      if (day.day.year == session.at.year &&
+          day.day.month == session.at.month &&
+          day.day.day == session.at.day) {
+        drunk += day.drinks;
+      }
+    }
+    final alcohol = alcoholFactor(drunk, bodyWeightKg: bodyWeightKg);
+
     // Your own pace and your nights, kept inside the same range as
     // everything else.
-    var own = Duration(minutes: (table.inMinutes * factor * sleep).round());
+    var own = Duration(
+      minutes: (table.inMinutes * factor * sleep * alcohol).round(),
+    );
     if (own < floor) own = floor;
     if (own > ceiling) own = ceiling;
 
@@ -563,6 +641,8 @@ List<RecoveryEstimate> _chain(
         carryover: total - own,
         personalFactor: factor,
         sleepFactor: sleep,
+        alcoholFactor: alcohol,
+        drinks: drunk,
         averageSleep: after.isEmpty
             ? null
             : Duration(
@@ -668,6 +748,8 @@ RecoveryEstimate _withCheck(RecoveryEstimate latest, List<SorenessCheck> said) {
     checkedAt: newest.at,
     sleepFactor: latest.sleepFactor,
     averageSleep: latest.averageSleep,
+    alcoholFactor: latest.alcoholFactor,
+    drinks: latest.drinks,
   );
 }
 

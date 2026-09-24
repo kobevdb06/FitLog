@@ -336,6 +336,53 @@ void main() {
       expect(await db.select(db.sleepEntriesTable).get(), isEmpty);
     });
   });
+
+  group('alcohol', () {
+    Future<void> openRecovery(WidgetTester tester) async {
+      await pumpApp(tester);
+      container!.read(routerProvider).push(Routes.muscleRecovery);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('staat er niet tot je erom vraagt', (tester) async {
+      await openRecovery(tester);
+
+      expect(find.text('ALCOHOL'), findsNothing);
+      expect(find.text('Vandaag'), findsNothing);
+    });
+
+    testWidgets('en met de schakelaar aan tel je de glazen', (tester) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(trackAlcohol: Value(true)),
+      );
+      await openRecovery(tester);
+
+      final plus = find.byTooltip('Een glas meer').first;
+      await tester.scrollUntilVisible(
+        plus,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(RecoveryScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(plus);
+      await tester.pumpAndSettle();
+      await tester.tap(plus);
+      await tester.pumpAndSettle();
+
+      final row = (await db.select(db.drinkDaysTable).get()).single;
+      expect(row.drinks, 2);
+      final now = DateTime.now();
+      expect(
+        row.day,
+        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch,
+      );
+      expect(find.text('2 glazen'), findsOneWidget);
+    });
+  });
 }
 
 class _Ready extends AppController {

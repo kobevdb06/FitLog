@@ -119,6 +119,15 @@ class AppSettingsTable extends Table {
       .named('track_sleep_stages')
       .withDefault(const Constant(false))();
 
+  /// Whether the recovery screen asks how much you drank.
+  ///
+  /// Off by default. It matters for recovery only in larger amounts, and a
+  /// drinks counter is not something to put in front of everyone who opens a
+  /// training log.
+  BoolColumn get trackAlcohol => boolean()
+      .named('track_alcohol')
+      .withDefault(const Constant(false))();
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   IntColumn get defaultWarmupSets =>
       integer().named('default_warmup_sets').withDefault(const Constant(0))();
@@ -775,6 +784,29 @@ class SleepEntriesTable extends Table {
   IntColumn get lightMinutes => integer().named('light_minutes').nullable()();
   IntColumn get remMinutes => integer().named('rem_minutes').nullable()();
   IntColumn get deepMinutes => integer().named('deep_minutes').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// How much you drank on a day, in standard drinks.
+///
+/// One row per day, and only for days with something on them: a day you did
+/// not fill in and a day you drank nothing say the same thing to the
+/// estimate, so zero is stored as no row at all.
+@DataClassName('DrinkDayRow')
+class DrinkDaysTable extends Table {
+  @override
+  String get tableName => 'drink_days';
+
+  /// The day, `yyyymmdd`.
+  TextColumn get id => text()();
+
+  /// Midnight at the start of that day, for reading a range back.
+  IntColumn get day => integer()();
+
+  /// Standard drinks of about ten grams of alcohol each.
+  IntColumn get drinks => integer()();
 
   @override
   Set<Column> get primaryKey => {id};

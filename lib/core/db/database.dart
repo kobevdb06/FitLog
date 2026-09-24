@@ -42,6 +42,7 @@ part 'database.drift.dart';
     ProgressPhotosTable,
     SorenessChecksTable,
     SleepEntriesTable,
+    DrinkDaysTable,
   ],
   daos: [
     SettingsDao,
@@ -57,7 +58,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -288,6 +289,12 @@ class AppDatabase extends _$AppDatabase {
           // the stages off: nobody filled any in before there was a place.
           await m.createTable(sleepEntriesTable);
           await m.addColumn(appSettingsTable, appSettingsTable.trackSleepStages);
+        }
+        if (from < 31) {
+          // Drinks per day, and the switch that asks for them - off, as it
+          // was for everyone before there was a place to put them.
+          await m.createTable(drinkDaysTable);
+          await m.addColumn(appSettingsTable, appSettingsTable.trackAlcohol);
         }
       });
 

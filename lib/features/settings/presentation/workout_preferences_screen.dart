@@ -105,6 +105,16 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
               AppSettingsTableCompanion(trackSleepStages: Value(value)),
             ),
           ),
+          SwitchListTile(
+            title: const Text('Alcohol bijhouden'),
+            subtitle: const Text(
+              'Op het herstelscherm: hoeveel glazen vandaag en gisteren. Pas '
+              'vanaf een paar glazen op een trainingsdag rekt het je herstel.',
+            ),
+            value: settings.trackAlcohol,
+            onChanged: (value) =>
+                update(AppSettingsTableCompanion(trackAlcohol: Value(value))),
+          ),
           const SectionHeader('Feedback'),
           SwitchListTile(
             title: const Text('Klik bij het afvinken van een set'),

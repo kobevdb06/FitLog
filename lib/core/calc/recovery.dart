@@ -278,7 +278,7 @@ List<MuscleSession> muscleSessions(
       if (muscle.isEmpty) return;
       byKey
           .putIfAbsent(
-            '${set.workoutId} $muscle',
+            '${set.workoutId}\u0000$muscle',
             () => _Accumulator(
               muscle: muscle,
               workoutId: set.workoutId,

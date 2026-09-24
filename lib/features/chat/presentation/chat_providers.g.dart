@@ -912,7 +912,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'749095d4a700c590e8f5f3f0f649bd532a9df972';
+String _$coachControllerHash() => r'8a8cddf0b3dda33dd267b995ace44dc2772d6a35';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

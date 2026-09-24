@@ -10509,6 +10509,317 @@ class ProgressPhotosTableCompanion extends UpdateCompanion<ProgressPhotoRow> {
   }
 }
 
+class $SorenessChecksTableTable extends SorenessChecksTable
+    with TableInfo<$SorenessChecksTableTable, SorenessCheckRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SorenessChecksTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _muscleMeta = const VerificationMeta('muscle');
+  @override
+  late final GeneratedColumn<String> muscle = GeneratedColumn<String>(
+    'muscle',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _checkedAtMeta = const VerificationMeta(
+    'checkedAt',
+  );
+  @override
+  late final GeneratedColumn<int> checkedAt = GeneratedColumn<int>(
+    'checked_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _levelMeta = const VerificationMeta('level');
+  @override
+  late final GeneratedColumn<String> level = GeneratedColumn<String>(
+    'level',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, muscle, checkedAt, level];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'soreness_checks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SorenessCheckRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('muscle')) {
+      context.handle(
+        _muscleMeta,
+        muscle.isAcceptableOrUnknown(data['muscle']!, _muscleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_muscleMeta);
+    }
+    if (data.containsKey('checked_at')) {
+      context.handle(
+        _checkedAtMeta,
+        checkedAt.isAcceptableOrUnknown(data['checked_at']!, _checkedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_checkedAtMeta);
+    }
+    if (data.containsKey('level')) {
+      context.handle(
+        _levelMeta,
+        level.isAcceptableOrUnknown(data['level']!, _levelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_levelMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SorenessCheckRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SorenessCheckRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      muscle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}muscle'],
+      )!,
+      checkedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}checked_at'],
+      )!,
+      level: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}level'],
+      )!,
+    );
+  }
+
+  @override
+  $SorenessChecksTableTable createAlias(String alias) {
+    return $SorenessChecksTableTable(attachedDatabase, alias);
+  }
+}
+
+class SorenessCheckRow extends DataClass
+    implements Insertable<SorenessCheckRow> {
+  final String id;
+  final String muscle;
+
+  /// When it was said, which is what the estimate measures against.
+  final int checkedAt;
+
+  /// `fresh` | `stiff` | `sore`.
+  final String level;
+  const SorenessCheckRow({
+    required this.id,
+    required this.muscle,
+    required this.checkedAt,
+    required this.level,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['muscle'] = Variable<String>(muscle);
+    map['checked_at'] = Variable<int>(checkedAt);
+    map['level'] = Variable<String>(level);
+    return map;
+  }
+
+  SorenessChecksTableCompanion toCompanion(bool nullToAbsent) {
+    return SorenessChecksTableCompanion(
+      id: Value(id),
+      muscle: Value(muscle),
+      checkedAt: Value(checkedAt),
+      level: Value(level),
+    );
+  }
+
+  factory SorenessCheckRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SorenessCheckRow(
+      id: serializer.fromJson<String>(json['id']),
+      muscle: serializer.fromJson<String>(json['muscle']),
+      checkedAt: serializer.fromJson<int>(json['checkedAt']),
+      level: serializer.fromJson<String>(json['level']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'muscle': serializer.toJson<String>(muscle),
+      'checkedAt': serializer.toJson<int>(checkedAt),
+      'level': serializer.toJson<String>(level),
+    };
+  }
+
+  SorenessCheckRow copyWith({
+    String? id,
+    String? muscle,
+    int? checkedAt,
+    String? level,
+  }) => SorenessCheckRow(
+    id: id ?? this.id,
+    muscle: muscle ?? this.muscle,
+    checkedAt: checkedAt ?? this.checkedAt,
+    level: level ?? this.level,
+  );
+  SorenessCheckRow copyWithCompanion(SorenessChecksTableCompanion data) {
+    return SorenessCheckRow(
+      id: data.id.present ? data.id.value : this.id,
+      muscle: data.muscle.present ? data.muscle.value : this.muscle,
+      checkedAt: data.checkedAt.present ? data.checkedAt.value : this.checkedAt,
+      level: data.level.present ? data.level.value : this.level,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SorenessCheckRow(')
+          ..write('id: $id, ')
+          ..write('muscle: $muscle, ')
+          ..write('checkedAt: $checkedAt, ')
+          ..write('level: $level')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, muscle, checkedAt, level);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SorenessCheckRow &&
+          other.id == this.id &&
+          other.muscle == this.muscle &&
+          other.checkedAt == this.checkedAt &&
+          other.level == this.level);
+}
+
+class SorenessChecksTableCompanion extends UpdateCompanion<SorenessCheckRow> {
+  final Value<String> id;
+  final Value<String> muscle;
+  final Value<int> checkedAt;
+  final Value<String> level;
+  final Value<int> rowid;
+  const SorenessChecksTableCompanion({
+    this.id = const Value.absent(),
+    this.muscle = const Value.absent(),
+    this.checkedAt = const Value.absent(),
+    this.level = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SorenessChecksTableCompanion.insert({
+    required String id,
+    required String muscle,
+    required int checkedAt,
+    required String level,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       muscle = Value(muscle),
+       checkedAt = Value(checkedAt),
+       level = Value(level);
+  static Insertable<SorenessCheckRow> custom({
+    Expression<String>? id,
+    Expression<String>? muscle,
+    Expression<int>? checkedAt,
+    Expression<String>? level,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (muscle != null) 'muscle': muscle,
+      if (checkedAt != null) 'checked_at': checkedAt,
+      if (level != null) 'level': level,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SorenessChecksTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? muscle,
+    Value<int>? checkedAt,
+    Value<String>? level,
+    Value<int>? rowid,
+  }) {
+    return SorenessChecksTableCompanion(
+      id: id ?? this.id,
+      muscle: muscle ?? this.muscle,
+      checkedAt: checkedAt ?? this.checkedAt,
+      level: level ?? this.level,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (muscle.present) {
+      map['muscle'] = Variable<String>(muscle.value);
+    }
+    if (checkedAt.present) {
+      map['checked_at'] = Variable<int>(checkedAt.value);
+    }
+    if (level.present) {
+      map['level'] = Variable<String>(level.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SorenessChecksTableCompanion(')
+          ..write('id: $id, ')
+          ..write('muscle: $muscle, ')
+          ..write('checkedAt: $checkedAt, ')
+          ..write('level: $level, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10550,6 +10861,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $BodyMeasurementsTableTable(this);
   late final $ProgressPhotosTableTable progressPhotosTable =
       $ProgressPhotosTableTable(this);
+  late final $SorenessChecksTableTable sorenessChecksTable =
+      $SorenessChecksTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -10586,12 +10899,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_progress_photos_taken_at',
     'CREATE INDEX idx_progress_photos_taken_at ON progress_photos (taken_at)',
   );
+  late final Index idxSorenessCheckedAt = Index(
+    'idx_soreness_checked_at',
+    'CREATE INDEX idx_soreness_checked_at ON soreness_checks (checked_at)',
+  );
   late final SettingsDao settingsDao = SettingsDao(this as AppDatabase);
   late final ExercisesDao exercisesDao = ExercisesDao(this as AppDatabase);
   late final RoutinesDao routinesDao = RoutinesDao(this as AppDatabase);
   late final WorkoutsDao workoutsDao = WorkoutsDao(this as AppDatabase);
   late final RecordsDao recordsDao = RecordsDao(this as AppDatabase);
   late final ChatDao chatDao = ChatDao(this as AppDatabase);
+  late final RecoveryDao recoveryDao = RecoveryDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10615,6 +10933,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     personalRecordsTable,
     bodyMeasurementsTable,
     progressPhotosTable,
+    sorenessChecksTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxWorkoutsStartedAt,
@@ -10624,6 +10943,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxPersonalRecordsExerciseType,
     idxBodyMeasurementsTypeDate,
     idxProgressPhotosTakenAt,
+    idxSorenessCheckedAt,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -18542,6 +18862,203 @@ typedef $$ProgressPhotosTableTableProcessedTableManager =
       ProgressPhotoRow,
       PrefetchHooks Function({bool workoutId})
     >;
+typedef $$SorenessChecksTableTableCreateCompanionBuilder =
+    SorenessChecksTableCompanion Function({
+      required String id,
+      required String muscle,
+      required int checkedAt,
+      required String level,
+      Value<int> rowid,
+    });
+typedef $$SorenessChecksTableTableUpdateCompanionBuilder =
+    SorenessChecksTableCompanion Function({
+      Value<String> id,
+      Value<String> muscle,
+      Value<int> checkedAt,
+      Value<String> level,
+      Value<int> rowid,
+    });
+
+class $$SorenessChecksTableTableFilterComposer
+    extends Composer<_$AppDatabase, $SorenessChecksTableTable> {
+  $$SorenessChecksTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get muscle => $composableBuilder(
+    column: $table.muscle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get checkedAt => $composableBuilder(
+    column: $table.checkedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get level => $composableBuilder(
+    column: $table.level,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SorenessChecksTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $SorenessChecksTableTable> {
+  $$SorenessChecksTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get muscle => $composableBuilder(
+    column: $table.muscle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get checkedAt => $composableBuilder(
+    column: $table.checkedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get level => $composableBuilder(
+    column: $table.level,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SorenessChecksTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SorenessChecksTableTable> {
+  $$SorenessChecksTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get muscle =>
+      $composableBuilder(column: $table.muscle, builder: (column) => column);
+
+  GeneratedColumn<int> get checkedAt =>
+      $composableBuilder(column: $table.checkedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get level =>
+      $composableBuilder(column: $table.level, builder: (column) => column);
+}
+
+class $$SorenessChecksTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SorenessChecksTableTable,
+          SorenessCheckRow,
+          $$SorenessChecksTableTableFilterComposer,
+          $$SorenessChecksTableTableOrderingComposer,
+          $$SorenessChecksTableTableAnnotationComposer,
+          $$SorenessChecksTableTableCreateCompanionBuilder,
+          $$SorenessChecksTableTableUpdateCompanionBuilder,
+          (
+            SorenessCheckRow,
+            BaseReferences<
+              _$AppDatabase,
+              $SorenessChecksTableTable,
+              SorenessCheckRow
+            >,
+          ),
+          SorenessCheckRow,
+          PrefetchHooks Function()
+        > {
+  $$SorenessChecksTableTableTableManager(
+    _$AppDatabase db,
+    $SorenessChecksTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SorenessChecksTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SorenessChecksTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$SorenessChecksTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> muscle = const Value.absent(),
+                Value<int> checkedAt = const Value.absent(),
+                Value<String> level = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SorenessChecksTableCompanion(
+                id: id,
+                muscle: muscle,
+                checkedAt: checkedAt,
+                level: level,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String muscle,
+                required int checkedAt,
+                required String level,
+                Value<int> rowid = const Value.absent(),
+              }) => SorenessChecksTableCompanion.insert(
+                id: id,
+                muscle: muscle,
+                checkedAt: checkedAt,
+                level: level,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SorenessChecksTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SorenessChecksTableTable,
+      SorenessCheckRow,
+      $$SorenessChecksTableTableFilterComposer,
+      $$SorenessChecksTableTableOrderingComposer,
+      $$SorenessChecksTableTableAnnotationComposer,
+      $$SorenessChecksTableTableCreateCompanionBuilder,
+      $$SorenessChecksTableTableUpdateCompanionBuilder,
+      (
+        SorenessCheckRow,
+        BaseReferences<
+          _$AppDatabase,
+          $SorenessChecksTableTable,
+          SorenessCheckRow
+        >,
+      ),
+      SorenessCheckRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -18582,4 +19099,6 @@ class $AppDatabaseManager {
       $$BodyMeasurementsTableTableTableManager(_db, _db.bodyMeasurementsTable);
   $$ProgressPhotosTableTableTableManager get progressPhotosTable =>
       $$ProgressPhotosTableTableTableManager(_db, _db.progressPhotosTable);
+  $$SorenessChecksTableTableTableManager get sorenessChecksTable =>
+      $$SorenessChecksTableTableTableManager(_db, _db.sorenessChecksTable);
 }

@@ -8,11 +8,58 @@ part of 'recovery_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// What you said about your muscles over the stretch the estimate looks at.
+
+@ProviderFor(sorenessChecks)
+final sorenessChecksProvider = SorenessChecksProvider._();
+
+/// What you said about your muscles over the stretch the estimate looks at.
+
+final class SorenessChecksProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<SorenessCheck>>,
+          List<SorenessCheck>,
+          Stream<List<SorenessCheck>>
+        >
+    with
+        $FutureModifier<List<SorenessCheck>>,
+        $StreamProvider<List<SorenessCheck>> {
+  /// What you said about your muscles over the stretch the estimate looks at.
+  SorenessChecksProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sorenessChecksProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sorenessChecksHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<SorenessCheck>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<SorenessCheck>> create(Ref ref) {
+    return sorenessChecks(ref);
+  }
+}
+
+String _$sorenessChecksHash() => r'7a639aa2091ad7b6d4d114fc2161305ab543996b';
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
 /// rating a session all change the answer, and drift re-runs the query when
-/// the tables behind it change.
+/// the tables behind it change. So does saying how a muscle feels: the
+/// answers are watched here, and a new one rebuilds the estimate.
 
 @ProviderFor(recoveryEstimates)
 final recoveryEstimatesProvider = RecoveryEstimatesProvider._();
@@ -21,7 +68,8 @@ final recoveryEstimatesProvider = RecoveryEstimatesProvider._();
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
 /// rating a session all change the answer, and drift re-runs the query when
-/// the tables behind it change.
+/// the tables behind it change. So does saying how a muscle feels: the
+/// answers are watched here, and a new one rebuilds the estimate.
 
 final class RecoveryEstimatesProvider
     extends
@@ -37,7 +85,8 @@ final class RecoveryEstimatesProvider
   ///
   /// A stream rather than a future: finishing a workout, editing a set and
   /// rating a session all change the answer, and drift re-runs the query when
-  /// the tables behind it change.
+  /// the tables behind it change. So does saying how a muscle feels: the
+  /// answers are watched here, and a new one rebuilds the estimate.
   RecoveryEstimatesProvider._()
     : super(
         from: null,
@@ -64,7 +113,7 @@ final class RecoveryEstimatesProvider
   }
 }
 
-String _$recoveryEstimatesHash() => r'857c51675757df89088a50f1280d64882c10b9d1';
+String _$recoveryEstimatesHash() => r'1403b0d6d7d7e36d6ecb4439305d66e6c486aae1';
 
 /// The muscles one particular session left behind.
 ///

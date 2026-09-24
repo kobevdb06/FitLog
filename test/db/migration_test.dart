@@ -112,7 +112,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 28);
+    expect(raw.select('PRAGMA user_version').first.values.first, 29);
     raw.close();
   });
 
@@ -205,6 +205,9 @@ void main() {
     // v28: materiaal mee tekenen is aan zolang niemand iets koos, want dat is
     // wat elke tekening tot nu toe probeerde.
     expect(settings.imageEquipment, isNull);
+    // v29: hoe een spier voelde. Niemand werd het eerder gevraagd, dus er is
+    // nog niets gezegd - en de tabel bestaat, zodat er wel iets kan.
+    expect(await db.select(db.sorenessChecksTable).get(), isEmpty);
     expect(settings.imageAccountId, isNull);
     expect(
       DrawingService.fromWire(settings.imageProvider),
@@ -286,7 +289,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 28);
+    expect(db.schemaVersion, 29);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

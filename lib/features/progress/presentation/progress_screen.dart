@@ -9,6 +9,7 @@ import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
 import '../../../routing/routes.dart';
 import 'progress_providers.dart';
+import 'recovery_providers.dart';
 
 /// The Voortgang tab: body weight, weekly load, and the way in to everything
 /// else that tracks progress.
@@ -109,6 +110,7 @@ class ProgressScreen extends ConsumerWidget {
             ),
           ),
           const SectionHeader('Meer'),
+          const _RecoveryTile(),
           ListTile(
             leading: const Icon(Icons.show_chart),
             title: const Text('Grafiek per oefening'),
@@ -141,6 +143,32 @@ class ProgressScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The way into Herstel, saying in passing how things stand.
+class _RecoveryTile extends ConsumerWidget {
+  const _RecoveryTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final estimates = ref.watch(recoveryEstimatesProvider).value ?? const [];
+    final now = DateTime.now();
+    final recovering = estimates.where((e) => !e.isReadyAt(now)).length;
+
+    return ListTile(
+      leading: const Icon(Icons.healing_outlined),
+      title: const Text('Herstel'),
+      subtitle: Text(
+        recovering == 0
+            ? 'Alles hersteld'
+            : recovering == 1
+            ? '1 spiergroep herstelt nog'
+            : '$recovering spiergroepen herstellen nog',
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(Routes.muscleRecovery),
     );
   }
 }

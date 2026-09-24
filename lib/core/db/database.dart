@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'dao/chat_dao.dart';
 import 'dao/exercises_dao.dart';
 import 'dao/records_dao.dart';
+import 'dao/recovery_dao.dart';
 import 'dao/routines_dao.dart';
 import 'dao/settings_dao.dart';
 import 'dao/workouts_dao.dart';
@@ -39,6 +40,7 @@ part 'database.drift.dart';
     PersonalRecordsTable,
     BodyMeasurementsTable,
     ProgressPhotosTable,
+    SorenessChecksTable,
   ],
   daos: [
     SettingsDao,
@@ -47,13 +49,14 @@ part 'database.drift.dart';
     WorkoutsDao,
     RecordsDao,
     ChatDao,
+    RecoveryDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 28;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -272,6 +275,12 @@ class AppDatabase extends _$AppDatabase {
           // Whether the kit may be drawn along with the movement. Null means
           // yes: that is what every drawing so far tried to do.
           await m.addColumn(appSettingsTable, appSettingsTable.imageEquipment);
+        }
+        if (from < 29) {
+          // How a muscle felt, in your own words. Empty: nobody was asked
+          // before, and an estimate without an answer is what every database
+          // so far has had.
+          await m.createTable(sorenessChecksTable);
         }
       });
 

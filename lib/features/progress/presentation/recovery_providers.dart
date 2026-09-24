@@ -6,15 +6,38 @@ import '../../../core/db/enums.dart';
 
 part 'recovery_providers.g.dart';
 
+/// What you said about your muscles over the stretch the estimate looks at.
+@riverpod
+Stream<List<SorenessCheck>> sorenessChecks(Ref ref) {
+  final since = DateTime.now().subtract(kRecoveryHistoryWindow);
+  return ref
+      .watch(databaseProvider)
+      .recoveryDao
+      .watchSorenessSince(since)
+      .map(
+        (rows) => [
+          for (final row in rows)
+            if (SorenessLevel.fromWire(row.level) case final level?)
+              SorenessCheck(
+                muscle: row.muscle,
+                at: DateTime.fromMillisecondsSinceEpoch(row.checkedAt),
+                level: level,
+              ),
+        ],
+      );
+}
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
 /// rating a session all change the answer, and drift re-runs the query when
-/// the tables behind it change.
+/// the tables behind it change. So does saying how a muscle feels: the
+/// answers are watched here, and a new one rebuilds the estimate.
 @riverpod
 Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
   final db = ref.watch(databaseProvider);
   final since = DateTime.now().subtract(kRecoveryHistoryWindow);
+  final checks = ref.watch(sorenessChecksProvider).value ?? const [];
 
   return db.workoutsDao.watchRecoverySets(since: since).asyncMap((sets) async {
     // Bodyweight work carries no weight in the log, so the user's own weight
@@ -22,6 +45,7 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
     final weight = await db.recordsDao.weightNearest(DateTime.now());
     return estimateRecovery(
       muscleSessions(sets, bodyWeightKg: weight?.value),
+      checks: checks,
     );
   });
 }
@@ -58,4 +82,16 @@ class RecoveryActions {
         workoutId,
         effort,
       );
+
+  /// Says how [muscle] feels now. Said again today, it replaces the answer.
+  Future<void> feel(String muscle, SorenessLevel level, {DateTime? at}) => ref
+      .read(databaseProvider)
+      .recoveryDao
+      .setSoreness(muscle, level, at: at ?? DateTime.now());
+
+  /// Takes back today's answer for [muscle].
+  Future<void> unfeel(String muscle, {DateTime? at}) => ref
+      .read(databaseProvider)
+      .recoveryDao
+      .clearSoreness(muscle, at: at ?? DateTime.now());
 }

@@ -25,6 +25,7 @@ import '../features/photos/presentation/photo_compare_screen.dart';
 import '../features/photos/presentation/photos_screen.dart';
 import '../features/progress/presentation/exercise_chart_screen.dart';
 import '../features/progress/presentation/progress_screen.dart';
+import '../features/progress/presentation/recovery_screen.dart';
 import '../features/progress/presentation/records_screen.dart';
 import '../features/routines/presentation/routine_detail_screen.dart';
 import '../features/routines/presentation/routine_editor_screen.dart';
@@ -148,6 +149,14 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
             appPage(state, const CoachSettingsScreen()),
+      ),
+      // Opened from the Start tab and from Voortgang alike, so it lives at the
+      // root for the same reason as the coach's settings.
+      GoRoute(
+        path: Routes.muscleRecovery,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) =>
+            appPage(state, const RecoveryScreen()),
       ),
       GoRoute(
         path: Routes.exercises,

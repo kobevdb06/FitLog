@@ -382,6 +382,145 @@ void main() {
     });
   });
 
+  group('wat je zelf zegt over je spieren', () {
+    // Vier gewone weken en dan vandaag: een schatting met een vast ijkpunt.
+    List<RecoverySet> weeks() => [
+      for (var i = 0; i < 4; i++)
+        set(
+          workoutId: 'h$i',
+          at: monday.subtract(Duration(days: 7 * (4 - i))),
+        ),
+      set(workoutId: 'today', at: monday),
+    ];
+
+    RecoveryEstimate estimate([List<SorenessCheck> checks = const []]) =>
+        estimateRecovery(muscleSessions(weeks()), checks: checks).single;
+
+    SorenessCheck said(Duration after, SorenessLevel level, {DateTime? from}) =>
+        SorenessCheck(
+          muscle: 'quadriceps',
+          at: (from ?? monday).add(after),
+          level: level,
+        );
+
+    test('pijnlijk houdt je nog een dag tegen, wat de rekensom ook zegt', () {
+      final plain = estimate();
+      // Een uur na het moment dat de app "klaar" zei.
+      final after = plain.recovery + const Duration(hours: 1);
+
+      final sore = estimate([said(after, SorenessLevel.sore)]);
+
+      expect(sore.check, SorenessLevel.sore);
+      expect(sore.readyAt, monday.add(after).add(kSoreAtLeast));
+      expect(sore.isReadyAt(plain.readyAt), isFalse);
+    });
+
+    test('stijf is bijna: een halve dag', () {
+      final plain = estimate();
+      final after = plain.recovery;
+
+      final stiff = estimate([said(after, SorenessLevel.stiff)]);
+
+      expect(stiff.readyAt, monday.add(after).add(kStiffAtLeast));
+    });
+
+    test('fris een dag later haalt de schatting naar nu', () {
+      final fresh = estimate([
+        said(const Duration(hours: 30), SorenessLevel.fresh),
+      ]);
+
+      expect(fresh.readyAt, monday.add(const Duration(hours: 30)));
+    });
+
+    test('maar fris op de avond zelf zegt nog niets', () {
+      // Spierpijn komt meestal de dag erna. Wie zich twee uur na de training
+      // fris voelt, weet dat nog niet.
+      final plain = estimate();
+      final early = estimate([
+        said(const Duration(hours: 2), SorenessLevel.fresh),
+      ]);
+
+      expect(
+        early.readyAt.isBefore(monday.add(kFreshMeansSomethingAfter)),
+        isFalse,
+      );
+      expect(early.readyAt.isAfter(plain.readyAt), isFalse);
+    });
+
+    test('een antwoord van voor de laatste sessie geldt niet meer', () {
+      final plain = estimate();
+      final old = estimate([
+        said(
+          const Duration(hours: 100),
+          SorenessLevel.sore,
+          from: monday.subtract(const Duration(days: 7)),
+        ),
+      ]);
+
+      expect(old.check, isNull);
+      // Eén oud antwoord is ook te weinig om iets uit te leren.
+      expect(old.personalFactor, 1);
+      expect(old.recovery, plain.recovery);
+    });
+
+    group('en daar leert de app van', () {
+      List<SorenessCheck> afterEachWeek(
+        Duration after,
+        SorenessLevel level, {
+        int weeks = 4,
+      }) => [
+        for (var i = 0; i < weeks; i++)
+          said(
+            after,
+            level,
+            from: monday.subtract(Duration(days: 7 * (4 - i))),
+          ),
+      ];
+
+      test('wie telkens nog pijn heeft, herstelt trager dan de tabel', () {
+        final plain = estimate();
+        final slow = estimate(
+          afterEachWeek(const Duration(hours: 100), SorenessLevel.sore),
+        );
+
+        expect(slow.personalFactor, greaterThan(1));
+        expect(slow.recovery, greaterThan(plain.recovery));
+      });
+
+      test('wie telkens al na een dag fris is, sneller', () {
+        final plain = estimate();
+        final quick = estimate(
+          afterEachWeek(const Duration(hours: 30), SorenessLevel.fresh),
+        );
+
+        expect(quick.personalFactor, lessThan(1));
+        expect(quick.recovery, lessThan(plain.recovery));
+      });
+
+      test('maar niet voordat er een patroon is', () {
+        final twice = estimate(
+          afterEachWeek(
+            const Duration(hours: 100),
+            SorenessLevel.sore,
+            weeks: kChecksForPersonalFactor - 1,
+          ),
+        );
+
+        expect(twice.personalFactor, 1);
+      });
+
+      test('en nooit buiten de grenzen', () {
+        // Nog pijnlijk vlak voor de volgende week: meer dan twee keer zo
+        // traag als de tabel, en toch blijft het bij de bovengrens.
+        final extreme = estimate(
+          afterEachWeek(const Duration(hours: 160), SorenessLevel.sore),
+        );
+
+        expect(extreme.personalFactor, kMaxPersonalFactor);
+      });
+    });
+  });
+
   group('reading the stored muscle list', () {
     test('reads a JSON array', () {
       expect(decodeMuscleList('["borst", "triceps"]'), ['borst', 'triceps']);

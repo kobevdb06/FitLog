@@ -47,6 +47,13 @@ abstract final class Routes {
       '$photoCompare?fotos=${photoIds.join(',')}';
   static const records = '/voortgang/records';
 
+  /// How far each muscle is, and where to say how it feels.
+  ///
+  /// At the root, not under Voortgang: the Start tab opens it too, and one
+  /// branch cannot push a route that lives in another. Not to be confused with
+  /// [recovery], which is getting back into a locked app.
+  static const muscleRecovery = '/herstel';
+
   // Profile and settings
   static const settings = '/profiel/instellingen';
   static const settingsCatalogue = '/profiel/instellingen/catalogus';

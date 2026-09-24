@@ -97,6 +97,29 @@ enum PerceivedEffort {
   }
 }
 
+/// How a muscle feels, as the user says it.
+///
+/// Three answers and no more. A scale of ten would ask for a precision nobody
+/// has about their own hamstrings, and the three that remain each mean
+/// something different for the estimate: ready, nearly, not yet.
+enum SorenessLevel {
+  fresh('fresh', 'Fris'),
+  stiff('stiff', 'Stijf'),
+  sore('sore', 'Pijnlijk');
+
+  const SorenessLevel(this.wire, this.label);
+
+  final String wire;
+  final String label;
+
+  static SorenessLevel? fromWire(String? value) {
+    for (final level in values) {
+      if (level.wire == value) return level;
+    }
+    return null;
+  }
+}
+
 /// What the app was picking when it was pushed out of memory.
 ///
 /// Written down before the camera opens, so a photo Android hands back on the

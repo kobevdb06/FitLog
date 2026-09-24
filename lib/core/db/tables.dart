@@ -713,3 +713,31 @@ class ProgressPhotosTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// How a muscle felt on a given day, in the user's own words.
+///
+/// The one thing in the recovery estimate that is observed rather than
+/// derived. Everything else - load, RPE, failure sets - is a reason to expect
+/// soreness; this is whether there was any.
+///
+/// One per muscle per day: asked again the same day, the newer answer
+/// replaces the older one. The id says so - `<muscle>|<yyyymmdd>` - so a
+/// second answer can never become a second row.
+@TableIndex(name: 'idx_soreness_checked_at', columns: {#checkedAt})
+@DataClassName('SorenessCheckRow')
+class SorenessChecksTable extends Table {
+  @override
+  String get tableName => 'soreness_checks';
+
+  TextColumn get id => text()();
+  TextColumn get muscle => text()();
+
+  /// When it was said, which is what the estimate measures against.
+  IntColumn get checkedAt => integer().named('checked_at')();
+
+  /// `fresh` | `stiff` | `sore`.
+  TextColumn get level => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

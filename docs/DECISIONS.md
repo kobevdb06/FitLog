@@ -2685,3 +2685,34 @@ Het plafond van 96 uur blijft staan. Drie zware dagen na elkaar mogen de
 schatting rekken, niet laten weglopen. Wat er door de opstapeling bijkwam
 staat als `carryover` bij de schatting, zodat het scherm kan zeggen waarom het
 langer duurt.
+
+## 154. Het herstelscherm, en het enige wat de app echt meet
+
+Alles in de herstelschatting was afgeleid: volume, RPE, falen, een nieuwe
+oefening. Allemaal redenen om spierpijn te verwachten, niets over of die er
+ook was. Het herstelscherm vraagt het: per spiergroep die je de laatste vier
+dagen trainde drie knoppen, Fris, Stijf en Pijnlijk. Eén antwoord per spier
+per dag; een tweede antwoord die dag vervangt het eerste, nog eens tikken
+neemt het terug.
+
+Een antwoord gaat voor op de rekensom, in beide richtingen. Pijnlijk houdt de
+spier nog minstens 24 uur tegen, stijf 12, wat de tabel ook zei. Fris zet ze
+op klaar - maar pas een dag na de sessie, want iedereen voelt zich fris op
+de avond zelf en spierpijn komt meestal de dag erna. Een antwoord mag
+buiten de 24-96 uur van de rekensom vallen: dat is een grens voor
+rekenwerk, niet voor wat je zelf voelt.
+
+En de app leert eruit. Elk antwoord wordt naast de voorspelling gelegd van de
+sessie ervoor, en alleen gelezen in de richting waarin het iets kan zeggen:
+na het voorspelde moment bevestigt fris, en zeggen stijf of pijnlijk dat het
+te kort was; ervoor zeggen stijf of pijnlijk niets (dat verwachtte de tabel
+al) en zegt fris dat je sneller was - weer pas na een dag. Het midden van de
+laatste acht antwoorden wordt een factor per spier, tussen 0,75 en 1,5, en
+pas vanaf drie antwoorden. Eén slechte nacht mag niet herschrijven hoe de app
+naar je benen kijkt.
+
+Waarom het een eigen scherm is en geen instelling: je beantwoordt het naast
+de schatting die het verandert. Het opent vanaf het blok op het startscherm
+(beide maten) en vanaf een rij in Voortgang, en staat daarom op de wortel van
+de router - vanuit twee takken pushen is precies hoe er ooit een wit scherm
+ontstond. Een test via de echte router loopt beide wegen af.

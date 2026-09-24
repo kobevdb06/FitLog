@@ -62,6 +62,29 @@ const double kUnaccustomedBonusHours = 12;
 /// is a starting point, not a measurement.
 const double kCarryoverShare = 0.5;
 
+/// How long a muscle still needs at least, after you said it is stiff or
+/// sore.
+///
+/// An answer is an observation and outranks the arithmetic: if the estimate
+/// said ready and you say sore, you are not ready. Stiff is nearly there, sore
+/// is a day off.
+const Duration kStiffAtLeast = Duration(hours: 12);
+const Duration kSoreAtLeast = Duration(hours: 24);
+
+/// Before this, feeling fresh says nothing: muscle soreness usually arrives a
+/// day after the session, not during the evening of it. An early "fresh" can
+/// neither pull the estimate in nor teach the app that you recover fast.
+const Duration kFreshMeansSomethingAfter = Duration(hours: 24);
+
+/// How far your own pace may move the estimate for a muscle, either way.
+const double kMinPersonalFactor = 0.75;
+const double kMaxPersonalFactor = 1.5;
+
+/// How many answers a muscle needs before the app believes a pattern in them,
+/// and how many recent ones it listens to.
+const int kChecksForPersonalFactor = 3;
+const int kChecksRemembered = 8;
+
 /// The estimate never leaves this range, whatever the arithmetic says.
 const double kMinRecoveryHours = 24;
 const double kMaxRecoveryHours = 96;
@@ -116,6 +139,19 @@ List<String> decodeMuscleList(String raw) {
       .map((s) => s.trim().replaceAll('"', ''))
       .where((s) => s.isNotEmpty)
       .toList();
+}
+
+/// One answer to "how does this muscle feel?".
+class SorenessCheck {
+  const SorenessCheck({
+    required this.muscle,
+    required this.at,
+    required this.level,
+  });
+
+  final String muscle;
+  final DateTime at;
+  final SorenessLevel level;
 }
 
 /// One completed working set, with everything the estimate needs about the
@@ -198,6 +234,9 @@ class RecoveryEstimate {
     required this.loadRatio,
     required this.provisional,
     this.carryover = Duration.zero,
+    this.personalFactor = 1,
+    this.check,
+    this.checkedAt,
   });
 
   final String muscle;
@@ -219,6 +258,16 @@ class RecoveryEstimate {
   /// What an earlier session still owed when this one started, already
   /// included in [recovery]. Zero when the muscle had fully recovered.
   final Duration carryover;
+
+  /// How much faster or slower than the table this muscle recovers for you,
+  /// learned from what you said about it before. 1 until there is enough to
+  /// go on.
+  final double personalFactor;
+
+  /// What you said about this muscle since it was last trained, if anything,
+  /// and when. Already applied to [recovery].
+  final SorenessLevel? check;
+  final DateTime? checkedAt;
 
   DateTime get readyAt => trainedAt.add(recovery);
 
@@ -347,49 +396,87 @@ Duration recoveryDuration({
 /// One estimate per muscle, based on the most recent session for each.
 ///
 /// [sessions] is everything inside [kRecoveryHistoryWindow]; the earlier
-/// sessions are what the latest one is measured against.
-List<RecoveryEstimate> estimateRecovery(List<MuscleSession> sessions) {
+/// sessions are what the latest one is measured against. [checks] is what the
+/// user said about how their muscles felt over the same stretch.
+List<RecoveryEstimate> estimateRecovery(
+  List<MuscleSession> sessions, {
+  Iterable<SorenessCheck> checks = const [],
+}) {
   final byMuscle = <String, List<MuscleSession>>{};
   for (final session in sessions) {
     byMuscle.putIfAbsent(session.muscle, () => []).add(session);
+  }
+  final checksByMuscle = <String, List<SorenessCheck>>{};
+  for (final check in checks) {
+    checksByMuscle.putIfAbsent(check.muscle, () => []).add(check);
   }
 
   final estimates = <RecoveryEstimate>[];
   for (final entry in byMuscle.entries) {
     final ordered = entry.value.toList()..sort((a, b) => a.at.compareTo(b.at));
+    final said = (checksByMuscle[entry.key] ?? const <SorenessCheck>[]).toList()
+      ..sort((a, b) => a.at.compareTo(b.at));
 
-    // Every session in turn, not only the last one: the last one inherits
-    // whatever the one before it had not finished, and that one inherited from
-    // the one before. Looking at the newest session alone forgot that Monday
-    // was still open on Wednesday.
-    RecoveryEstimate? previous;
-    for (var i = 0; i < ordered.length; i++) {
-      final session = ordered[i];
-      final earlier = ordered.sublist(0, i);
+    // First what the table would say, then what your own answers say about
+    // the table, then the table again with that correction in it.
+    final plain = _chain(ordered, factor: 1);
+    final factor = _personalFactor(plain, said);
+    final chain = factor == 1 ? plain : _chain(ordered, factor: factor);
 
-      final baseline = earlier.isEmpty
-          ? null
-          : _median(earlier.map((s) => s.loadKg).toList());
+    estimates.add(_withCheck(chain.last, said));
+  }
 
-      final own = recoveryDuration(
-        muscle: session.muscle,
-        loadKg: session.loadKg,
-        baselineLoadKg: baseline,
-        hadFailureSets: session.hadFailureSets,
-        wasPrAttempt: session.wasPrAttempt,
-        unaccustomed: _isUnaccustomed(session, earlier),
-        effort: session.effort,
-        averageRpe: session.averageRpe,
-      );
+  estimates.sort((a, b) => b.readyAt.compareTo(a.readyAt));
+  return estimates;
+}
 
-      final open = previous?.remainingAt(session.at) ?? Duration.zero;
-      final carryover = Duration(
-        minutes: (open.inMinutes * kCarryoverShare).round(),
-      );
-      final ceiling = Duration(minutes: (kMaxRecoveryHours * 60).round());
-      final total = own + carryover > ceiling ? ceiling : own + carryover;
+/// Every session of one muscle in turn, each inheriting what the one before
+/// it had not finished.
+///
+/// Every session, not only the last one: looking at the newest session alone
+/// forgot that Monday was still open on Wednesday.
+List<RecoveryEstimate> _chain(
+  List<MuscleSession> ordered, {
+  required double factor,
+}) {
+  final chain = <RecoveryEstimate>[];
+  final floor = Duration(minutes: (kMinRecoveryHours * 60).round());
+  final ceiling = Duration(minutes: (kMaxRecoveryHours * 60).round());
 
-      previous = RecoveryEstimate(
+  for (var i = 0; i < ordered.length; i++) {
+    final session = ordered[i];
+    final earlier = ordered.sublist(0, i);
+
+    final baseline = earlier.isEmpty
+        ? null
+        : _median(earlier.map((s) => s.loadKg).toList());
+
+    final table = recoveryDuration(
+      muscle: session.muscle,
+      loadKg: session.loadKg,
+      baselineLoadKg: baseline,
+      hadFailureSets: session.hadFailureSets,
+      wasPrAttempt: session.wasPrAttempt,
+      unaccustomed: _isUnaccustomed(session, earlier),
+      effort: session.effort,
+      averageRpe: session.averageRpe,
+    );
+
+    // Your own pace, kept inside the same range as everything else.
+    var own = Duration(minutes: (table.inMinutes * factor).round());
+    if (own < floor) own = floor;
+    if (own > ceiling) own = ceiling;
+
+    final open = chain.isEmpty
+        ? Duration.zero
+        : chain.last.remainingAt(session.at);
+    final carried = Duration(
+      minutes: (open.inMinutes * kCarryoverShare).round(),
+    );
+    final total = own + carried > ceiling ? ceiling : own + carried;
+
+    chain.add(
+      RecoveryEstimate(
         muscle: session.muscle,
         workoutId: session.workoutId,
         trainedAt: session.at,
@@ -400,13 +487,101 @@ List<RecoveryEstimate> estimateRecovery(List<MuscleSession> sessions) {
         provisional: earlier.length < kSessionsForBaseline,
         // What actually made it in, after the ceiling.
         carryover: total - own,
-      );
+        personalFactor: factor,
+      ),
+    );
+  }
+  return chain;
+}
+
+/// How your answers compare with what the table predicted, per muscle.
+///
+/// Each answer is matched with the session before it and read only in the
+/// direction it can actually tell something:
+///
+/// - after the predicted moment, "fresh" confirms it; "stiff" or "sore" say
+///   it was too short, by at least as long as that answer implies;
+/// - before it, "stiff" or "sore" is what the table expected and says
+///   nothing; "fresh" says you were quicker - but only a day in, because
+///   everyone feels fresh the evening of a session.
+///
+/// The middle of the recent answers, kept within bounds, and only once there
+/// are a few: one bad night should not rewrite how the app sees your legs.
+double _personalFactor(List<RecoveryEstimate> plain, List<SorenessCheck> said) {
+  final ratios = <double>[];
+  for (final check in said) {
+    RecoveryEstimate? session;
+    for (final estimate in plain) {
+      if (estimate.trainedAt.isAfter(check.at)) break;
+      session = estimate;
     }
-    estimates.add(previous!);
+    if (session == null) continue;
+
+    final predicted = session.recovery.inMinutes / 60;
+    if (predicted <= 0) continue;
+    final elapsed = check.at.difference(session.trainedAt).inMinutes / 60;
+    final ready = elapsed >= predicted;
+
+    final ratio = switch (check.level) {
+      SorenessLevel.fresh =>
+        ready
+            ? 1.0
+            : elapsed * 60 >= kFreshMeansSomethingAfter.inMinutes
+            ? elapsed / predicted
+            : null,
+      SorenessLevel.stiff =>
+        ready ? (elapsed + kStiffAtLeast.inMinutes / 60) / predicted : null,
+      SorenessLevel.sore =>
+        ready ? (elapsed + kSoreAtLeast.inMinutes / 60) / predicted : null,
+    };
+    if (ratio != null) ratios.add(ratio);
   }
 
-  estimates.sort((a, b) => b.readyAt.compareTo(a.readyAt));
-  return estimates;
+  final recent = ratios.length > kChecksRemembered
+      ? ratios.sublist(ratios.length - kChecksRemembered)
+      : ratios;
+  if (recent.length < kChecksForPersonalFactor) return 1;
+  return _median(recent).clamp(kMinPersonalFactor, kMaxPersonalFactor);
+}
+
+/// The newest answer since the muscle was last trained, applied on top.
+///
+/// An observation outranks the arithmetic, in both directions: said sore, it
+/// is not ready for another day whatever the table thinks; said fresh a day
+/// or more after the session, it is ready now.
+RecoveryEstimate _withCheck(RecoveryEstimate latest, List<SorenessCheck> said) {
+  SorenessCheck? newest;
+  for (final check in said) {
+    if (check.at.isAfter(latest.trainedAt)) newest = check;
+  }
+  if (newest == null) return latest;
+
+  var readyAt = latest.readyAt;
+  switch (newest.level) {
+    case SorenessLevel.fresh:
+      final earliest = latest.trainedAt.add(kFreshMeansSomethingAfter);
+      final candidate = newest.at.isBefore(earliest) ? earliest : newest.at;
+      if (candidate.isBefore(readyAt)) readyAt = candidate;
+    case SorenessLevel.stiff:
+      final atLeast = newest.at.add(kStiffAtLeast);
+      if (atLeast.isAfter(readyAt)) readyAt = atLeast;
+    case SorenessLevel.sore:
+      final atLeast = newest.at.add(kSoreAtLeast);
+      if (atLeast.isAfter(readyAt)) readyAt = atLeast;
+  }
+
+  return RecoveryEstimate(
+    muscle: latest.muscle,
+    workoutId: latest.workoutId,
+    trainedAt: latest.trainedAt,
+    recovery: readyAt.difference(latest.trainedAt),
+    loadRatio: latest.loadRatio,
+    provisional: latest.provisional,
+    carryover: latest.carryover,
+    personalFactor: latest.personalFactor,
+    check: newest.level,
+    checkedAt: newest.at,
+  );
 }
 
 /// True when the session contained an exercise the user had not done for this

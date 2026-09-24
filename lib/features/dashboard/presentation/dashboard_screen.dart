@@ -1092,7 +1092,7 @@ class _RecoveryBlock extends ConsumerWidget {
     if (size == HomeBlockSize.small) {
       return _BlockCard(
         title: 'Herstel',
-        onTap: () => context.go(Routes.progress),
+        onTap: () => context.push(Routes.muscleRecovery),
         child: recovering.isEmpty
             ? Row(
                 children: [
@@ -1133,6 +1133,7 @@ class _RecoveryBlock extends ConsumerWidget {
 
     return _BlockCard(
       title: 'Herstel',
+      onTap: () => context.push(Routes.muscleRecovery),
       child: recovering.isEmpty
           ? Row(
               children: [

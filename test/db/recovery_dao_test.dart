@@ -88,4 +88,43 @@ void main() {
     final since = await db.recoveryDao.watchSorenessSince(evening).first;
     expect(since.single.level, SorenessLevel.fresh.wire);
   });
+
+  group('nachten', () {
+    final asleep = DateTime(2026, 3, 2, 23, 30);
+    final woke = DateTime(2026, 3, 3, 7);
+
+    test('een nacht per ochtend: opnieuw invullen verbetert hem', () async {
+      await db.recoveryDao.setSleep(fellAsleepAt: asleep, wokeAt: woke);
+      await db.recoveryDao.setSleep(
+        fellAsleepAt: asleep.add(const Duration(minutes: 30)),
+        wokeAt: woke,
+        deepMinutes: 80,
+      );
+
+      final rows = await db.select(db.sleepEntriesTable).get();
+      expect(
+        rows.single.fellAsleepAt,
+        asleep.add(const Duration(minutes: 30)).millisecondsSinceEpoch,
+      );
+      expect(rows.single.deepMinutes, 80);
+      // Niet ingevuld blijft niet ingevuld, geen nul.
+      expect(rows.single.lightMinutes, isNull);
+    });
+
+    test('en verwijderen haalt alleen die ochtend weg', () async {
+      await db.recoveryDao.setSleep(fellAsleepAt: asleep, wokeAt: woke);
+      await db.recoveryDao.setSleep(
+        fellAsleepAt: asleep.add(const Duration(days: 1)),
+        wokeAt: woke.add(const Duration(days: 1)),
+      );
+
+      await db.recoveryDao.clearSleep(woke);
+
+      final rows = await db.select(db.sleepEntriesTable).get();
+      expect(
+        rows.single.wokeAt,
+        woke.add(const Duration(days: 1)).millisecondsSinceEpoch,
+      );
+    });
+  });
 }

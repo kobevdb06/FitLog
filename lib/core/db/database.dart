@@ -41,6 +41,7 @@ part 'database.drift.dart';
     BodyMeasurementsTable,
     ProgressPhotosTable,
     SorenessChecksTable,
+    SleepEntriesTable,
   ],
   daos: [
     SettingsDao,
@@ -56,7 +57,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 29;
+  int get schemaVersion => 30;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -281,6 +282,12 @@ class AppDatabase extends _$AppDatabase {
           // before, and an estimate without an answer is what every database
           // so far has had.
           await m.createTable(sorenessChecksTable);
+        }
+        if (from < 30) {
+          // Nights, and whether to ask for their stages. No nights yet, and
+          // the stages off: nobody filled any in before there was a place.
+          await m.createTable(sleepEntriesTable);
+          await m.addColumn(appSettingsTable, appSettingsTable.trackSleepStages);
         }
       });
 

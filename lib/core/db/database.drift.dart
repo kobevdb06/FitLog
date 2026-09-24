@@ -718,6 +718,21 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _trackSleepStagesMeta = const VerificationMeta(
+    'trackSleepStages',
+  );
+  @override
+  late final GeneratedColumn<bool> trackSleepStages = GeneratedColumn<bool>(
+    'track_sleep_stages',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("track_sleep_stages" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _defaultWarmupSetsMeta = const VerificationMeta(
     'defaultWarmupSets',
   );
@@ -898,6 +913,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     barWeightKg,
     availablePlatesKg,
     trackRpe,
+    trackSleepStages,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -1075,6 +1091,15 @@ class $AppSettingsTableTable extends AppSettingsTable
       context.handle(
         _trackRpeMeta,
         trackRpe.isAcceptableOrUnknown(data['track_rpe']!, _trackRpeMeta),
+      );
+    }
+    if (data.containsKey('track_sleep_stages')) {
+      context.handle(
+        _trackSleepStagesMeta,
+        trackSleepStages.isAcceptableOrUnknown(
+          data['track_sleep_stages']!,
+          _trackSleepStagesMeta,
+        ),
       );
     }
     if (data.containsKey('default_warmup_sets')) {
@@ -1281,6 +1306,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}track_rpe'],
       )!,
+      trackSleepStages: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}track_sleep_stages'],
+      )!,
       defaultWarmupSets: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}default_warmup_sets'],
@@ -1408,6 +1437,13 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// a muscle needs starts listening to it.
   final bool trackRpe;
 
+  /// Whether a night asks for its light, REM and deep sleep as well.
+  ///
+  /// Off by default: most people know when they went to bed and when they got
+  /// up, and nothing more. Whoever has a watch that reports the stages can
+  /// keep them here too.
+  final bool trackSleepStages;
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   final int defaultWarmupSets;
 
@@ -1504,6 +1540,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.barWeightKg,
     required this.availablePlatesKg,
     required this.trackRpe,
+    required this.trackSleepStages,
     required this.defaultWarmupSets,
     required this.prDefaultWarmupSets,
     required this.prDefaultExtraAttempts,
@@ -1547,6 +1584,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['bar_weight_kg'] = Variable<double>(barWeightKg);
     map['available_plates_kg'] = Variable<String>(availablePlatesKg);
     map['track_rpe'] = Variable<bool>(trackRpe);
+    map['track_sleep_stages'] = Variable<bool>(trackSleepStages);
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
     map['pr_default_extra_attempts'] = Variable<int>(prDefaultExtraAttempts);
@@ -1609,6 +1647,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       barWeightKg: Value(barWeightKg),
       availablePlatesKg: Value(availablePlatesKg),
       trackRpe: Value(trackRpe),
+      trackSleepStages: Value(trackSleepStages),
       defaultWarmupSets: Value(defaultWarmupSets),
       prDefaultWarmupSets: Value(prDefaultWarmupSets),
       prDefaultExtraAttempts: Value(prDefaultExtraAttempts),
@@ -1671,6 +1710,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       barWeightKg: serializer.fromJson<double>(json['barWeightKg']),
       availablePlatesKg: serializer.fromJson<String>(json['availablePlatesKg']),
       trackRpe: serializer.fromJson<bool>(json['trackRpe']),
+      trackSleepStages: serializer.fromJson<bool>(json['trackSleepStages']),
       defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
       prDefaultWarmupSets: serializer.fromJson<int>(
         json['prDefaultWarmupSets'],
@@ -1714,6 +1754,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'barWeightKg': serializer.toJson<double>(barWeightKg),
       'availablePlatesKg': serializer.toJson<String>(availablePlatesKg),
       'trackRpe': serializer.toJson<bool>(trackRpe),
+      'trackSleepStages': serializer.toJson<bool>(trackSleepStages),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
       'prDefaultExtraAttempts': serializer.toJson<int>(prDefaultExtraAttempts),
@@ -1751,6 +1792,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     double? barWeightKg,
     String? availablePlatesKg,
     bool? trackRpe,
+    bool? trackSleepStages,
     int? defaultWarmupSets,
     int? prDefaultWarmupSets,
     int? prDefaultExtraAttempts,
@@ -1789,6 +1831,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     barWeightKg: barWeightKg ?? this.barWeightKg,
     availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
     trackRpe: trackRpe ?? this.trackRpe,
+    trackSleepStages: trackSleepStages ?? this.trackSleepStages,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
     prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
     prDefaultExtraAttempts:
@@ -1866,6 +1909,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ? data.availablePlatesKg.value
           : this.availablePlatesKg,
       trackRpe: data.trackRpe.present ? data.trackRpe.value : this.trackRpe,
+      trackSleepStages: data.trackSleepStages.present
+          ? data.trackSleepStages.value
+          : this.trackSleepStages,
       defaultWarmupSets: data.defaultWarmupSets.present
           ? data.defaultWarmupSets.value
           : this.defaultWarmupSets,
@@ -1929,6 +1975,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('trackRpe: $trackRpe, ')
+          ..write('trackSleepStages: $trackSleepStages, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -1968,6 +2015,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     barWeightKg,
     availablePlatesKg,
     trackRpe,
+    trackSleepStages,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -2006,6 +2054,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.barWeightKg == this.barWeightKg &&
           other.availablePlatesKg == this.availablePlatesKg &&
           other.trackRpe == this.trackRpe &&
+          other.trackSleepStages == this.trackSleepStages &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
           other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
           other.prDefaultExtraAttempts == this.prDefaultExtraAttempts &&
@@ -2042,6 +2091,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<double> barWeightKg;
   final Value<String> availablePlatesKg;
   final Value<bool> trackRpe;
+  final Value<bool> trackSleepStages;
   final Value<int> defaultWarmupSets;
   final Value<int> prDefaultWarmupSets;
   final Value<int> prDefaultExtraAttempts;
@@ -2077,6 +2127,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
     this.trackRpe = const Value.absent(),
+    this.trackSleepStages = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2113,6 +2164,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.barWeightKg = const Value.absent(),
     this.availablePlatesKg = const Value.absent(),
     this.trackRpe = const Value.absent(),
+    this.trackSleepStages = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2150,6 +2202,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<double>? barWeightKg,
     Expression<String>? availablePlatesKg,
     Expression<bool>? trackRpe,
+    Expression<bool>? trackSleepStages,
     Expression<int>? defaultWarmupSets,
     Expression<int>? prDefaultWarmupSets,
     Expression<int>? prDefaultExtraAttempts,
@@ -2188,6 +2241,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (barWeightKg != null) 'bar_weight_kg': barWeightKg,
       if (availablePlatesKg != null) 'available_plates_kg': availablePlatesKg,
       if (trackRpe != null) 'track_rpe': trackRpe,
+      if (trackSleepStages != null) 'track_sleep_stages': trackSleepStages,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
       if (prDefaultWarmupSets != null)
         'pr_default_warmup_sets': prDefaultWarmupSets,
@@ -2228,6 +2282,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<double>? barWeightKg,
     Value<String>? availablePlatesKg,
     Value<bool>? trackRpe,
+    Value<bool>? trackSleepStages,
     Value<int>? defaultWarmupSets,
     Value<int>? prDefaultWarmupSets,
     Value<int>? prDefaultExtraAttempts,
@@ -2264,6 +2319,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       barWeightKg: barWeightKg ?? this.barWeightKg,
       availablePlatesKg: availablePlatesKg ?? this.availablePlatesKg,
       trackRpe: trackRpe ?? this.trackRpe,
+      trackSleepStages: trackSleepStages ?? this.trackSleepStages,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
       prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
       prDefaultExtraAttempts:
@@ -2345,6 +2401,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (trackRpe.present) {
       map['track_rpe'] = Variable<bool>(trackRpe.value);
     }
+    if (trackSleepStages.present) {
+      map['track_sleep_stages'] = Variable<bool>(trackSleepStages.value);
+    }
     if (defaultWarmupSets.present) {
       map['default_warmup_sets'] = Variable<int>(defaultWarmupSets.value);
     }
@@ -2417,6 +2476,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('barWeightKg: $barWeightKg, ')
           ..write('availablePlatesKg: $availablePlatesKg, ')
           ..write('trackRpe: $trackRpe, ')
+          ..write('trackSleepStages: $trackSleepStages, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -10820,6 +10880,443 @@ class SorenessChecksTableCompanion extends UpdateCompanion<SorenessCheckRow> {
   }
 }
 
+class $SleepEntriesTableTable extends SleepEntriesTable
+    with TableInfo<$SleepEntriesTableTable, SleepEntryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SleepEntriesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fellAsleepAtMeta = const VerificationMeta(
+    'fellAsleepAt',
+  );
+  @override
+  late final GeneratedColumn<int> fellAsleepAt = GeneratedColumn<int>(
+    'fell_asleep_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _wokeAtMeta = const VerificationMeta('wokeAt');
+  @override
+  late final GeneratedColumn<int> wokeAt = GeneratedColumn<int>(
+    'woke_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lightMinutesMeta = const VerificationMeta(
+    'lightMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> lightMinutes = GeneratedColumn<int>(
+    'light_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _remMinutesMeta = const VerificationMeta(
+    'remMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> remMinutes = GeneratedColumn<int>(
+    'rem_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deepMinutesMeta = const VerificationMeta(
+    'deepMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> deepMinutes = GeneratedColumn<int>(
+    'deep_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    fellAsleepAt,
+    wokeAt,
+    lightMinutes,
+    remMinutes,
+    deepMinutes,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sleep_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SleepEntryRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('fell_asleep_at')) {
+      context.handle(
+        _fellAsleepAtMeta,
+        fellAsleepAt.isAcceptableOrUnknown(
+          data['fell_asleep_at']!,
+          _fellAsleepAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fellAsleepAtMeta);
+    }
+    if (data.containsKey('woke_at')) {
+      context.handle(
+        _wokeAtMeta,
+        wokeAt.isAcceptableOrUnknown(data['woke_at']!, _wokeAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wokeAtMeta);
+    }
+    if (data.containsKey('light_minutes')) {
+      context.handle(
+        _lightMinutesMeta,
+        lightMinutes.isAcceptableOrUnknown(
+          data['light_minutes']!,
+          _lightMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rem_minutes')) {
+      context.handle(
+        _remMinutesMeta,
+        remMinutes.isAcceptableOrUnknown(data['rem_minutes']!, _remMinutesMeta),
+      );
+    }
+    if (data.containsKey('deep_minutes')) {
+      context.handle(
+        _deepMinutesMeta,
+        deepMinutes.isAcceptableOrUnknown(
+          data['deep_minutes']!,
+          _deepMinutesMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SleepEntryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SleepEntryRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      fellAsleepAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fell_asleep_at'],
+      )!,
+      wokeAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}woke_at'],
+      )!,
+      lightMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}light_minutes'],
+      ),
+      remMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rem_minutes'],
+      ),
+      deepMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deep_minutes'],
+      ),
+    );
+  }
+
+  @override
+  $SleepEntriesTableTable createAlias(String alias) {
+    return $SleepEntriesTableTable(attachedDatabase, alias);
+  }
+}
+
+class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
+  final String id;
+  final int fellAsleepAt;
+  final int wokeAt;
+
+  /// Minutes in each stage, when known. Null is "not filled in", which is
+  /// something else than zero.
+  final int? lightMinutes;
+  final int? remMinutes;
+  final int? deepMinutes;
+  const SleepEntryRow({
+    required this.id,
+    required this.fellAsleepAt,
+    required this.wokeAt,
+    this.lightMinutes,
+    this.remMinutes,
+    this.deepMinutes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['fell_asleep_at'] = Variable<int>(fellAsleepAt);
+    map['woke_at'] = Variable<int>(wokeAt);
+    if (!nullToAbsent || lightMinutes != null) {
+      map['light_minutes'] = Variable<int>(lightMinutes);
+    }
+    if (!nullToAbsent || remMinutes != null) {
+      map['rem_minutes'] = Variable<int>(remMinutes);
+    }
+    if (!nullToAbsent || deepMinutes != null) {
+      map['deep_minutes'] = Variable<int>(deepMinutes);
+    }
+    return map;
+  }
+
+  SleepEntriesTableCompanion toCompanion(bool nullToAbsent) {
+    return SleepEntriesTableCompanion(
+      id: Value(id),
+      fellAsleepAt: Value(fellAsleepAt),
+      wokeAt: Value(wokeAt),
+      lightMinutes: lightMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lightMinutes),
+      remMinutes: remMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remMinutes),
+      deepMinutes: deepMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deepMinutes),
+    );
+  }
+
+  factory SleepEntryRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SleepEntryRow(
+      id: serializer.fromJson<String>(json['id']),
+      fellAsleepAt: serializer.fromJson<int>(json['fellAsleepAt']),
+      wokeAt: serializer.fromJson<int>(json['wokeAt']),
+      lightMinutes: serializer.fromJson<int?>(json['lightMinutes']),
+      remMinutes: serializer.fromJson<int?>(json['remMinutes']),
+      deepMinutes: serializer.fromJson<int?>(json['deepMinutes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'fellAsleepAt': serializer.toJson<int>(fellAsleepAt),
+      'wokeAt': serializer.toJson<int>(wokeAt),
+      'lightMinutes': serializer.toJson<int?>(lightMinutes),
+      'remMinutes': serializer.toJson<int?>(remMinutes),
+      'deepMinutes': serializer.toJson<int?>(deepMinutes),
+    };
+  }
+
+  SleepEntryRow copyWith({
+    String? id,
+    int? fellAsleepAt,
+    int? wokeAt,
+    Value<int?> lightMinutes = const Value.absent(),
+    Value<int?> remMinutes = const Value.absent(),
+    Value<int?> deepMinutes = const Value.absent(),
+  }) => SleepEntryRow(
+    id: id ?? this.id,
+    fellAsleepAt: fellAsleepAt ?? this.fellAsleepAt,
+    wokeAt: wokeAt ?? this.wokeAt,
+    lightMinutes: lightMinutes.present ? lightMinutes.value : this.lightMinutes,
+    remMinutes: remMinutes.present ? remMinutes.value : this.remMinutes,
+    deepMinutes: deepMinutes.present ? deepMinutes.value : this.deepMinutes,
+  );
+  SleepEntryRow copyWithCompanion(SleepEntriesTableCompanion data) {
+    return SleepEntryRow(
+      id: data.id.present ? data.id.value : this.id,
+      fellAsleepAt: data.fellAsleepAt.present
+          ? data.fellAsleepAt.value
+          : this.fellAsleepAt,
+      wokeAt: data.wokeAt.present ? data.wokeAt.value : this.wokeAt,
+      lightMinutes: data.lightMinutes.present
+          ? data.lightMinutes.value
+          : this.lightMinutes,
+      remMinutes: data.remMinutes.present
+          ? data.remMinutes.value
+          : this.remMinutes,
+      deepMinutes: data.deepMinutes.present
+          ? data.deepMinutes.value
+          : this.deepMinutes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SleepEntryRow(')
+          ..write('id: $id, ')
+          ..write('fellAsleepAt: $fellAsleepAt, ')
+          ..write('wokeAt: $wokeAt, ')
+          ..write('lightMinutes: $lightMinutes, ')
+          ..write('remMinutes: $remMinutes, ')
+          ..write('deepMinutes: $deepMinutes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    fellAsleepAt,
+    wokeAt,
+    lightMinutes,
+    remMinutes,
+    deepMinutes,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SleepEntryRow &&
+          other.id == this.id &&
+          other.fellAsleepAt == this.fellAsleepAt &&
+          other.wokeAt == this.wokeAt &&
+          other.lightMinutes == this.lightMinutes &&
+          other.remMinutes == this.remMinutes &&
+          other.deepMinutes == this.deepMinutes);
+}
+
+class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
+  final Value<String> id;
+  final Value<int> fellAsleepAt;
+  final Value<int> wokeAt;
+  final Value<int?> lightMinutes;
+  final Value<int?> remMinutes;
+  final Value<int?> deepMinutes;
+  final Value<int> rowid;
+  const SleepEntriesTableCompanion({
+    this.id = const Value.absent(),
+    this.fellAsleepAt = const Value.absent(),
+    this.wokeAt = const Value.absent(),
+    this.lightMinutes = const Value.absent(),
+    this.remMinutes = const Value.absent(),
+    this.deepMinutes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SleepEntriesTableCompanion.insert({
+    required String id,
+    required int fellAsleepAt,
+    required int wokeAt,
+    this.lightMinutes = const Value.absent(),
+    this.remMinutes = const Value.absent(),
+    this.deepMinutes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       fellAsleepAt = Value(fellAsleepAt),
+       wokeAt = Value(wokeAt);
+  static Insertable<SleepEntryRow> custom({
+    Expression<String>? id,
+    Expression<int>? fellAsleepAt,
+    Expression<int>? wokeAt,
+    Expression<int>? lightMinutes,
+    Expression<int>? remMinutes,
+    Expression<int>? deepMinutes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (fellAsleepAt != null) 'fell_asleep_at': fellAsleepAt,
+      if (wokeAt != null) 'woke_at': wokeAt,
+      if (lightMinutes != null) 'light_minutes': lightMinutes,
+      if (remMinutes != null) 'rem_minutes': remMinutes,
+      if (deepMinutes != null) 'deep_minutes': deepMinutes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SleepEntriesTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? fellAsleepAt,
+    Value<int>? wokeAt,
+    Value<int?>? lightMinutes,
+    Value<int?>? remMinutes,
+    Value<int?>? deepMinutes,
+    Value<int>? rowid,
+  }) {
+    return SleepEntriesTableCompanion(
+      id: id ?? this.id,
+      fellAsleepAt: fellAsleepAt ?? this.fellAsleepAt,
+      wokeAt: wokeAt ?? this.wokeAt,
+      lightMinutes: lightMinutes ?? this.lightMinutes,
+      remMinutes: remMinutes ?? this.remMinutes,
+      deepMinutes: deepMinutes ?? this.deepMinutes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (fellAsleepAt.present) {
+      map['fell_asleep_at'] = Variable<int>(fellAsleepAt.value);
+    }
+    if (wokeAt.present) {
+      map['woke_at'] = Variable<int>(wokeAt.value);
+    }
+    if (lightMinutes.present) {
+      map['light_minutes'] = Variable<int>(lightMinutes.value);
+    }
+    if (remMinutes.present) {
+      map['rem_minutes'] = Variable<int>(remMinutes.value);
+    }
+    if (deepMinutes.present) {
+      map['deep_minutes'] = Variable<int>(deepMinutes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SleepEntriesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('fellAsleepAt: $fellAsleepAt, ')
+          ..write('wokeAt: $wokeAt, ')
+          ..write('lightMinutes: $lightMinutes, ')
+          ..write('remMinutes: $remMinutes, ')
+          ..write('deepMinutes: $deepMinutes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10863,6 +11360,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ProgressPhotosTableTable(this);
   late final $SorenessChecksTableTable sorenessChecksTable =
       $SorenessChecksTableTable(this);
+  late final $SleepEntriesTableTable sleepEntriesTable =
+      $SleepEntriesTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -10903,6 +11402,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_soreness_checked_at',
     'CREATE INDEX idx_soreness_checked_at ON soreness_checks (checked_at)',
   );
+  late final Index idxSleepWokeAt = Index(
+    'idx_sleep_woke_at',
+    'CREATE INDEX idx_sleep_woke_at ON sleep_entries (woke_at)',
+  );
   late final SettingsDao settingsDao = SettingsDao(this as AppDatabase);
   late final ExercisesDao exercisesDao = ExercisesDao(this as AppDatabase);
   late final RoutinesDao routinesDao = RoutinesDao(this as AppDatabase);
@@ -10934,6 +11437,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     bodyMeasurementsTable,
     progressPhotosTable,
     sorenessChecksTable,
+    sleepEntriesTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxWorkoutsStartedAt,
@@ -10944,6 +11448,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxBodyMeasurementsTypeDate,
     idxProgressPhotosTakenAt,
     idxSorenessCheckedAt,
+    idxSleepWokeAt,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -11287,6 +11792,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
       Value<bool> trackRpe,
+      Value<bool> trackSleepStages,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -11324,6 +11830,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<double> barWeightKg,
       Value<String> availablePlatesKg,
       Value<bool> trackRpe,
+      Value<bool> trackSleepStages,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -11442,6 +11949,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get trackRpe => $composableBuilder(
     column: $table.trackRpe,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get trackSleepStages => $composableBuilder(
+    column: $table.trackSleepStages,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11620,6 +12132,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get trackSleepStages => $composableBuilder(
+    column: $table.trackSleepStages,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => ColumnOrderings(column),
@@ -11787,6 +12304,11 @@ class $$AppSettingsTableTableAnnotationComposer
   GeneratedColumn<bool> get trackRpe =>
       $composableBuilder(column: $table.trackRpe, builder: (column) => column);
 
+  GeneratedColumn<bool> get trackSleepStages => $composableBuilder(
+    column: $table.trackSleepStages,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => column,
@@ -11910,6 +12432,7 @@ class $$AppSettingsTableTableTableManager
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<bool> trackRpe = const Value.absent(),
+                Value<bool> trackSleepStages = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -11945,6 +12468,7 @@ class $$AppSettingsTableTableTableManager
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
                 trackRpe: trackRpe,
+                trackSleepStages: trackSleepStages,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -11982,6 +12506,7 @@ class $$AppSettingsTableTableTableManager
                 Value<double> barWeightKg = const Value.absent(),
                 Value<String> availablePlatesKg = const Value.absent(),
                 Value<bool> trackRpe = const Value.absent(),
+                Value<bool> trackSleepStages = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -12017,6 +12542,7 @@ class $$AppSettingsTableTableTableManager
                 barWeightKg: barWeightKg,
                 availablePlatesKg: availablePlatesKg,
                 trackRpe: trackRpe,
+                trackSleepStages: trackSleepStages,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -19059,6 +19585,242 @@ typedef $$SorenessChecksTableTableProcessedTableManager =
       SorenessCheckRow,
       PrefetchHooks Function()
     >;
+typedef $$SleepEntriesTableTableCreateCompanionBuilder =
+    SleepEntriesTableCompanion Function({
+      required String id,
+      required int fellAsleepAt,
+      required int wokeAt,
+      Value<int?> lightMinutes,
+      Value<int?> remMinutes,
+      Value<int?> deepMinutes,
+      Value<int> rowid,
+    });
+typedef $$SleepEntriesTableTableUpdateCompanionBuilder =
+    SleepEntriesTableCompanion Function({
+      Value<String> id,
+      Value<int> fellAsleepAt,
+      Value<int> wokeAt,
+      Value<int?> lightMinutes,
+      Value<int?> remMinutes,
+      Value<int?> deepMinutes,
+      Value<int> rowid,
+    });
+
+class $$SleepEntriesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $SleepEntriesTableTable> {
+  $$SleepEntriesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fellAsleepAt => $composableBuilder(
+    column: $table.fellAsleepAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get wokeAt => $composableBuilder(
+    column: $table.wokeAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lightMinutes => $composableBuilder(
+    column: $table.lightMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get remMinutes => $composableBuilder(
+    column: $table.remMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deepMinutes => $composableBuilder(
+    column: $table.deepMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SleepEntriesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $SleepEntriesTableTable> {
+  $$SleepEntriesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fellAsleepAt => $composableBuilder(
+    column: $table.fellAsleepAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get wokeAt => $composableBuilder(
+    column: $table.wokeAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lightMinutes => $composableBuilder(
+    column: $table.lightMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get remMinutes => $composableBuilder(
+    column: $table.remMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deepMinutes => $composableBuilder(
+    column: $table.deepMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SleepEntriesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SleepEntriesTableTable> {
+  $$SleepEntriesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get fellAsleepAt => $composableBuilder(
+    column: $table.fellAsleepAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get wokeAt =>
+      $composableBuilder(column: $table.wokeAt, builder: (column) => column);
+
+  GeneratedColumn<int> get lightMinutes => $composableBuilder(
+    column: $table.lightMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get remMinutes => $composableBuilder(
+    column: $table.remMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deepMinutes => $composableBuilder(
+    column: $table.deepMinutes,
+    builder: (column) => column,
+  );
+}
+
+class $$SleepEntriesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SleepEntriesTableTable,
+          SleepEntryRow,
+          $$SleepEntriesTableTableFilterComposer,
+          $$SleepEntriesTableTableOrderingComposer,
+          $$SleepEntriesTableTableAnnotationComposer,
+          $$SleepEntriesTableTableCreateCompanionBuilder,
+          $$SleepEntriesTableTableUpdateCompanionBuilder,
+          (
+            SleepEntryRow,
+            BaseReferences<
+              _$AppDatabase,
+              $SleepEntriesTableTable,
+              SleepEntryRow
+            >,
+          ),
+          SleepEntryRow,
+          PrefetchHooks Function()
+        > {
+  $$SleepEntriesTableTableTableManager(
+    _$AppDatabase db,
+    $SleepEntriesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SleepEntriesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SleepEntriesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SleepEntriesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> fellAsleepAt = const Value.absent(),
+                Value<int> wokeAt = const Value.absent(),
+                Value<int?> lightMinutes = const Value.absent(),
+                Value<int?> remMinutes = const Value.absent(),
+                Value<int?> deepMinutes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SleepEntriesTableCompanion(
+                id: id,
+                fellAsleepAt: fellAsleepAt,
+                wokeAt: wokeAt,
+                lightMinutes: lightMinutes,
+                remMinutes: remMinutes,
+                deepMinutes: deepMinutes,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int fellAsleepAt,
+                required int wokeAt,
+                Value<int?> lightMinutes = const Value.absent(),
+                Value<int?> remMinutes = const Value.absent(),
+                Value<int?> deepMinutes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SleepEntriesTableCompanion.insert(
+                id: id,
+                fellAsleepAt: fellAsleepAt,
+                wokeAt: wokeAt,
+                lightMinutes: lightMinutes,
+                remMinutes: remMinutes,
+                deepMinutes: deepMinutes,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SleepEntriesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SleepEntriesTableTable,
+      SleepEntryRow,
+      $$SleepEntriesTableTableFilterComposer,
+      $$SleepEntriesTableTableOrderingComposer,
+      $$SleepEntriesTableTableAnnotationComposer,
+      $$SleepEntriesTableTableCreateCompanionBuilder,
+      $$SleepEntriesTableTableUpdateCompanionBuilder,
+      (
+        SleepEntryRow,
+        BaseReferences<_$AppDatabase, $SleepEntriesTableTable, SleepEntryRow>,
+      ),
+      SleepEntryRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -19101,4 +19863,6 @@ class $AppDatabaseManager {
       $$ProgressPhotosTableTableTableManager(_db, _db.progressPhotosTable);
   $$SorenessChecksTableTableTableManager get sorenessChecksTable =>
       $$SorenessChecksTableTableTableManager(_db, _db.sorenessChecksTable);
+  $$SleepEntriesTableTableTableManager get sleepEntriesTable =>
+      $$SleepEntriesTableTableTableManager(_db, _db.sleepEntriesTable);
 }

@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import 'recovery_providers.dart';
 import 'recovery_view.dart';
+import 'sleep_section.dart';
 
 /// Herstel: how far each muscle is, and the place to say how it feels.
 ///
@@ -80,10 +81,12 @@ class RecoveryScreen extends ConsumerWidget {
                 ),
                 child: _MuscleCard(estimate: estimate, now: now),
               ),
+          const SectionHeader('Slaap'),
+          const SleepSection(),
           const Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg,
-              AppSpacing.md,
+              AppSpacing.lg,
               AppSpacing.lg,
               0,
             ),
@@ -167,6 +170,10 @@ List<String> recoveryReasons(RecoveryEstimate estimate, {DateTime? now}) {
 
   final carried = estimate.carryover.inHours;
   if (carried > 0) reasons.add('+$carried u van je vorige sessie');
+
+  if (estimate.sleepFactor > 1 && estimate.averageSleep != null) {
+    reasons.add('korte nachten (${nightLength(estimate.averageSleep!)})');
+  }
 
   final factor = estimate.personalFactor;
   if (factor > 1.05) {

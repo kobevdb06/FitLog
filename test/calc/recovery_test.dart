@@ -521,6 +521,72 @@ void main() {
     });
   });
 
+  group('slaap', () {
+    List<RecoverySet> weeks() => [
+      for (var i = 0; i < 4; i++)
+        set(
+          workoutId: 'h$i',
+          at: monday.subtract(Duration(days: 7 * (4 - i))),
+        ),
+      set(workoutId: 'today', at: monday),
+    ];
+
+    /// Nachten na de training van maandagavond, telkens om zeven uur op.
+    List<SleepNight> nights(double hours, {int count = 3}) => [
+      for (var n = 1; n <= count; n++)
+        SleepNight(
+          wokeAt: DateTime(monday.year, monday.month, monday.day + n, 7),
+          duration: Duration(minutes: (hours * 60).round()),
+        ),
+    ];
+
+    RecoveryEstimate estimate([List<SleepNight> slept = const []]) =>
+        estimateRecovery(muscleSessions(weeks()), nights: slept).single;
+
+    test('niets ingevuld verandert niets', () {
+      expect(estimate().sleepFactor, 1);
+      expect(estimate().averageSleep, isNull);
+    });
+
+    test('genoeg geslapen verandert ook niets', () {
+      // Langer slapen dan genoeg maakt het niet korter: daar is te weinig
+      // bewijs voor.
+      final plain = estimate();
+      final rested = estimate(nights(9));
+
+      expect(rested.sleepFactor, 1);
+      expect(rested.recovery, plain.recovery);
+    });
+
+    test('korte nachten rekken de schatting', () {
+      final plain = estimate();
+      final short = estimate(nights(5));
+
+      expect(
+        short.sleepFactor,
+        closeTo(1 + 2 * kSleepCostPerMissingHour, 1e-9),
+      );
+      expect(short.recovery, greaterThan(plain.recovery));
+      expect(short.averageSleep, const Duration(hours: 5));
+    });
+
+    test('maar nooit onbeperkt', () {
+      expect(estimate(nights(1)).sleepFactor, kMaxSleepFactor);
+    });
+
+    test('alleen de nachten na die sessie tellen', () {
+      // Een korte nacht voor de training zegt niets over het herstel ervan.
+      final before = estimate([
+        SleepNight(
+          wokeAt: monday.subtract(const Duration(hours: 11)),
+          duration: const Duration(hours: 4),
+        ),
+      ]);
+
+      expect(before.sleepFactor, 1);
+    });
+  });
+
   group('reading the stored muscle list', () {
     test('reads a JSON array', () {
       expect(decodeMuscleList('["borst", "triceps"]'), ['borst', 'triceps']);

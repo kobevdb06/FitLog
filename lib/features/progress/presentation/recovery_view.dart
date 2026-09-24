@@ -84,8 +84,9 @@ class RecoveryDisclaimer extends StatelessWidget {
     final theme = Theme.of(context);
     return Text(
       'Een schatting uit je eigen logboek: hoe zwaar deze sessie was ten '
-      'opzichte van je gewoonte, en hoe je hem beoordeelde. Slaap, eten en '
-      'stress wegen zwaarder mee dan de app kan zien.',
+      'opzichte van je gewoonte, hoe je hem beoordeelde, en hoe je spieren en '
+      'je nachten waren als je dat invulde. Eten en stress wegen zwaarder mee '
+      'dan de app kan zien.',
       style: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
       ),

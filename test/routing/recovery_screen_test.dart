@@ -253,6 +253,89 @@ void main() {
       expect(await db.select(db.sorenessChecksTable).get(), isEmpty);
     });
   });
+
+  group('slaap', () {
+    Future<void> openRecovery(WidgetTester tester) async {
+      await pumpApp(tester);
+      container!.read(routerProvider).push(Routes.muscleRecovery);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> openSheet(WidgetTester tester) async {
+      final button = find.text('Afgelopen nacht invullen');
+      await tester.scrollUntilVisible(
+        button,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(RecoveryScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('een nacht is twee tijden, en meer niet', (tester) async {
+      await openRecovery(tester);
+      await openSheet(tester);
+
+      expect(find.text('In slaap gevallen'), findsOneWidget);
+      expect(find.text('Wakker geworden'), findsOneWidget);
+      // Zonder de schakelaar geen fasen.
+      expect(find.text('Diep'), findsNothing);
+
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      final row = (await db.select(db.sleepEntriesTable).get()).single;
+      expect(
+        Duration(milliseconds: row.wokeAt - row.fellAsleepAt),
+        const Duration(hours: 8),
+      );
+      // En de knop is weg: die nacht staat erin.
+      expect(find.text('Afgelopen nacht invullen'), findsNothing);
+      expect(find.textContaining('8 u'), findsWidgets);
+    });
+
+    testWidgets('met de schakelaar aan vraagt ze ook de fasen', (tester) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(trackSleepStages: Value(true)),
+      );
+      await openRecovery(tester);
+      await openSheet(tester);
+
+      expect(find.text('Licht'), findsOneWidget);
+      expect(find.text('REM'), findsOneWidget);
+      expect(find.text('Diep'), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextField, 'Diep'), '1:20');
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      final row = (await db.select(db.sleepEntriesTable).get()).single;
+      expect(row.deepMinutes, 80);
+      expect(row.lightMinutes, isNull);
+    });
+
+    testWidgets('en fasen die langer zijn dan de nacht worden geweigerd', (
+      tester,
+    ) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(trackSleepStages: Value(true)),
+      );
+      await openRecovery(tester);
+      await openSheet(tester);
+
+      await tester.enterText(find.widgetWithText(TextField, 'Diep'), '9:00');
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('langer dan de nacht'), findsOneWidget);
+      expect(await db.select(db.sleepEntriesTable).get(), isEmpty);
+    });
+  });
 }
 
 class _Ready extends AppController {

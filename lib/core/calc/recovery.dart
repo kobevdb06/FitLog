@@ -85,6 +85,24 @@ const double kMaxPersonalFactor = 1.5;
 const int kChecksForPersonalFactor = 3;
 const int kChecksRemembered = 8;
 
+/// How much sleep counts as enough, in hours.
+///
+/// Below it recovery is measurably slower; above it the evidence that more
+/// sleep speeds anything up is thin. So short nights stretch the estimate and
+/// long ones do not shorten it.
+const double kEnoughSleepHours = 7;
+
+/// How much each hour short of [kEnoughSleepHours] stretches the estimate,
+/// averaged over the nights after a session, and the most it ever adds.
+///
+/// Five hours a night for three nights takes a 72-hour estimate to about 81.
+/// A starting point, not a measurement - like every other number here.
+const double kSleepCostPerMissingHour = 0.06;
+const double kMaxSleepFactor = 1.25;
+
+/// How many nights after a session speak for it.
+const int kNightsAfterSession = 3;
+
 /// The estimate never leaves this range, whatever the arithmetic says.
 const double kMinRecoveryHours = 24;
 const double kMaxRecoveryHours = 96;
@@ -139,6 +157,35 @@ List<String> decodeMuscleList(String raw) {
       .map((s) => s.trim().replaceAll('"', ''))
       .where((s) => s.isNotEmpty)
       .toList();
+}
+
+/// One night, as far as the estimate is concerned: when it ended and how
+/// long it was.
+///
+/// Only the length. Watches that report light, REM and deep sleep estimate
+/// those stages poorly compared with a sleep lab; they are kept and shown, but
+/// an estimate that leaned on them would lean on a guess about a guess.
+class SleepNight {
+  const SleepNight({required this.wokeAt, required this.duration});
+
+  final DateTime wokeAt;
+  final Duration duration;
+}
+
+/// What the nights after a session do to its recovery: nothing when they were
+/// long enough, a stretch when they were short.
+double sleepFactor(Iterable<SleepNight> nights) {
+  final list = nights.toList();
+  if (list.isEmpty) return 1;
+  final hours =
+      list.fold<int>(0, (sum, n) => sum + n.duration.inMinutes) /
+      60 /
+      list.length;
+  if (hours >= kEnoughSleepHours) return 1;
+  return (1 + (kEnoughSleepHours - hours) * kSleepCostPerMissingHour).clamp(
+    1.0,
+    kMaxSleepFactor,
+  );
 }
 
 /// One answer to "how does this muscle feel?".
@@ -237,6 +284,8 @@ class RecoveryEstimate {
     this.personalFactor = 1,
     this.check,
     this.checkedAt,
+    this.sleepFactor = 1,
+    this.averageSleep,
   });
 
   final String muscle;
@@ -268,6 +317,13 @@ class RecoveryEstimate {
   /// and when. Already applied to [recovery].
   final SorenessLevel? check;
   final DateTime? checkedAt;
+
+  /// What the nights since this session did to [recovery]: 1 when they were
+  /// long enough or not filled in, more when they were short.
+  final double sleepFactor;
+
+  /// How long those nights were on average, when any were filled in.
+  final Duration? averageSleep;
 
   DateTime get readyAt => trainedAt.add(recovery);
 
@@ -401,7 +457,9 @@ Duration recoveryDuration({
 List<RecoveryEstimate> estimateRecovery(
   List<MuscleSession> sessions, {
   Iterable<SorenessCheck> checks = const [],
+  Iterable<SleepNight> nights = const [],
 }) {
+  final slept = nights.toList()..sort((a, b) => a.wokeAt.compareTo(b.wokeAt));
   final byMuscle = <String, List<MuscleSession>>{};
   for (final session in sessions) {
     byMuscle.putIfAbsent(session.muscle, () => []).add(session);
@@ -419,9 +477,11 @@ List<RecoveryEstimate> estimateRecovery(
 
     // First what the table would say, then what your own answers say about
     // the table, then the table again with that correction in it.
-    final plain = _chain(ordered, factor: 1);
+    final plain = _chain(ordered, factor: 1, nights: slept);
     final factor = _personalFactor(plain, said);
-    final chain = factor == 1 ? plain : _chain(ordered, factor: factor);
+    final chain = factor == 1
+        ? plain
+        : _chain(ordered, factor: factor, nights: slept);
 
     estimates.add(_withCheck(chain.last, said));
   }
@@ -438,6 +498,7 @@ List<RecoveryEstimate> estimateRecovery(
 List<RecoveryEstimate> _chain(
   List<MuscleSession> ordered, {
   required double factor,
+  List<SleepNight> nights = const [],
 }) {
   final chain = <RecoveryEstimate>[];
   final floor = Duration(minutes: (kMinRecoveryHours * 60).round());
@@ -462,8 +523,21 @@ List<RecoveryEstimate> _chain(
       averageRpe: session.averageRpe,
     );
 
-    // Your own pace, kept inside the same range as everything else.
-    var own = Duration(minutes: (table.inMinutes * factor).round());
+    // The nights that followed, up to the next session or as long as any
+    // session could keep a muscle busy.
+    final until = i + 1 < ordered.length
+        ? ordered[i + 1].at
+        : session.at.add(Duration(minutes: (kMaxRecoveryHours * 60).round()));
+    final after = [
+      for (final night in nights)
+        if (night.wokeAt.isAfter(session.at) && !night.wokeAt.isAfter(until))
+          night,
+    ].take(kNightsAfterSession).toList();
+    final sleep = sleepFactor(after);
+
+    // Your own pace and your nights, kept inside the same range as
+    // everything else.
+    var own = Duration(minutes: (table.inMinutes * factor * sleep).round());
     if (own < floor) own = floor;
     if (own > ceiling) own = ceiling;
 
@@ -488,6 +562,17 @@ List<RecoveryEstimate> _chain(
         // What actually made it in, after the ceiling.
         carryover: total - own,
         personalFactor: factor,
+        sleepFactor: sleep,
+        averageSleep: after.isEmpty
+            ? null
+            : Duration(
+                minutes:
+                    after.fold<int>(
+                      0,
+                      (sum, n) => sum + n.duration.inMinutes,
+                    ) ~/
+                    after.length,
+              ),
       ),
     );
   }
@@ -581,6 +666,8 @@ RecoveryEstimate _withCheck(RecoveryEstimate latest, List<SorenessCheck> said) {
     personalFactor: latest.personalFactor,
     check: newest.level,
     checkedAt: newest.at,
+    sleepFactor: latest.sleepFactor,
+    averageSleep: latest.averageSleep,
   );
 }
 

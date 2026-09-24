@@ -110,6 +110,15 @@ class AppSettingsTable extends Table {
   BoolColumn get trackRpe =>
       boolean().named('track_rpe').withDefault(const Constant(false))();
 
+  /// Whether a night asks for its light, REM and deep sleep as well.
+  ///
+  /// Off by default: most people know when they went to bed and when they got
+  /// up, and nothing more. Whoever has a watch that reports the stages can
+  /// keep them here too.
+  BoolColumn get trackSleepStages => boolean()
+      .named('track_sleep_stages')
+      .withDefault(const Constant(false))();
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   IntColumn get defaultWarmupSets =>
       integer().named('default_warmup_sets').withDefault(const Constant(0))();
@@ -737,6 +746,35 @@ class SorenessChecksTable extends Table {
 
   /// `fresh` | `stiff` | `sore`.
   TextColumn get level => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One night: when you fell asleep and when you woke up.
+///
+/// Those two a person knows without a device, and they are what the recovery
+/// estimate listens to. The stages - light, REM, deep - are there for whoever
+/// has a watch that reports them and switched on the setting to fill them in;
+/// they are kept and shown, not counted (see DECISIONS).
+///
+/// One per morning: the id is the day you woke up, `yyyymmdd`, so filling a
+/// night in twice corrects it instead of adding a second one.
+@TableIndex(name: 'idx_sleep_woke_at', columns: {#wokeAt})
+@DataClassName('SleepEntryRow')
+class SleepEntriesTable extends Table {
+  @override
+  String get tableName => 'sleep_entries';
+
+  TextColumn get id => text()();
+  IntColumn get fellAsleepAt => integer().named('fell_asleep_at')();
+  IntColumn get wokeAt => integer().named('woke_at')();
+
+  /// Minutes in each stage, when known. Null is "not filled in", which is
+  /// something else than zero.
+  IntColumn get lightMinutes => integer().named('light_minutes').nullable()();
+  IntColumn get remMinutes => integer().named('rem_minutes').nullable()();
+  IntColumn get deepMinutes => integer().named('deep_minutes').nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

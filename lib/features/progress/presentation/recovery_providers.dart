@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/recovery.dart';
-import '../../../core/db/enums.dart';
+import '../../../core/db/database.dart';
 
 part 'recovery_providers.g.dart';
 
@@ -27,6 +27,21 @@ Stream<List<SorenessCheck>> sorenessChecks(Ref ref) {
       );
 }
 
+/// The nights you filled in over the stretch the estimate looks at, oldest
+/// first - as stored, stages and all, for the screen that shows them.
+@riverpod
+Stream<List<SleepEntryRow>> sleepEntries(Ref ref) {
+  final since = DateTime.now().subtract(kRecoveryHistoryWindow);
+  return ref.watch(databaseProvider).recoveryDao.watchSleepSince(since);
+}
+
+/// The same nights, the way the estimate reads them: when it ended and how
+/// long it was.
+SleepNight sleepNightOf(SleepEntryRow row) => SleepNight(
+  wokeAt: DateTime.fromMillisecondsSinceEpoch(row.wokeAt),
+  duration: Duration(milliseconds: row.wokeAt - row.fellAsleepAt),
+);
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
@@ -38,6 +53,10 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
   final db = ref.watch(databaseProvider);
   final since = DateTime.now().subtract(kRecoveryHistoryWindow);
   final checks = ref.watch(sorenessChecksProvider).value ?? const [];
+  final nights = [
+    for (final row in ref.watch(sleepEntriesProvider).value ?? const [])
+      sleepNightOf(row),
+  ];
 
   return db.workoutsDao.watchRecoverySets(since: since).asyncMap((sets) async {
     // Bodyweight work carries no weight in the log, so the user's own weight
@@ -46,6 +65,7 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
     return estimateRecovery(
       muscleSessions(sets, bodyWeightKg: weight?.value),
       checks: checks,
+      nights: nights,
     );
   });
 }
@@ -77,17 +97,37 @@ class RecoveryActions {
 
   final Ref ref;
 
-  Future<void> rate(String workoutId, PerceivedEffort? effort) =>
-      ref.read(databaseProvider).workoutsDao.setPerceivedEffort(
-        workoutId,
-        effort,
-      );
+  Future<void> rate(String workoutId, PerceivedEffort? effort) => ref
+      .read(databaseProvider)
+      .workoutsDao
+      .setPerceivedEffort(workoutId, effort);
 
   /// Says how [muscle] feels now. Said again today, it replaces the answer.
   Future<void> feel(String muscle, SorenessLevel level, {DateTime? at}) => ref
       .read(databaseProvider)
       .recoveryDao
       .setSoreness(muscle, level, at: at ?? DateTime.now());
+
+  /// Stores one night; filling in the same morning again corrects it.
+  Future<void> sleep({
+    required DateTime fellAsleepAt,
+    required DateTime wokeAt,
+    int? lightMinutes,
+    int? remMinutes,
+    int? deepMinutes,
+  }) => ref
+      .read(databaseProvider)
+      .recoveryDao
+      .setSleep(
+        fellAsleepAt: fellAsleepAt,
+        wokeAt: wokeAt,
+        lightMinutes: lightMinutes,
+        remMinutes: remMinutes,
+        deepMinutes: deepMinutes,
+      );
+
+  Future<void> forgetNight(DateTime wokeAt) =>
+      ref.read(databaseProvider).recoveryDao.clearSleep(wokeAt);
 
   /// Takes back today's answer for [muscle].
   Future<void> unfeel(String muscle, {DateTime? at}) => ref

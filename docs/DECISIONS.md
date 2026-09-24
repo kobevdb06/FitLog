@@ -2716,3 +2716,31 @@ de schatting die het verandert. Het opent vanaf het blok op het startscherm
 (beide maten) en vanaf een rij in Voortgang, en staat daarom op de wortel van
 de router - vanuit twee takken pushen is precies hoe er ooit een wit scherm
 ontstond. Een test via de echte router loopt beide wegen af.
+
+## 155. Slaap: twee tijden die je weet, en fasen die je mag bewaren
+
+Wanneer je in slaap viel en wanneer je wakker werd weet iedereen, zonder
+toestel. Dat zijn de twee dingen die de app vraagt, per ochtend één nacht;
+dezelfde ochtend opnieuw invullen verbetert hem. Welke datum bij "half
+twaalf" hoort rekent de app zelf uit: in slaap later op de dag dan wakker is
+de avond ervoor.
+
+Wat het met de schatting doet: het gemiddelde van de nachten na een sessie
+(tot drie, tot de volgende sessie). Onder zeven uur rekt het de schatting met
+6% per uur tekort, hooguit 25%. Vijf uur per nacht maakt van 72 uur ongeveer
+81. Boven zeven uur doet het niets: dat korte nachten herstel vertragen is
+goed onderbouwd, dat extra slaap het versnelt veel minder. Een nacht vóór de
+training telt niet mee voor die training.
+
+De fasen - licht, REM, diep - kunnen erbij, met een schakelaar onder
+Workout-voorkeuren, uit tot je ze aanzet. Ze worden bewaard en naast de
+nacht getoond, maar de schatting leest ze niet. Horloges schatten slaap zelf
+redelijk, maar hoe die slaap over de fasen verdeeld is aanzienlijk minder
+betrouwbaar dan in een slaaplabo; een herstelschatting die daarop leunt,
+leunt op een gok over een gok. Wie wil dat ze meetellen: het is één regel in
+`sleepFactor`, maar dan wel een bewuste.
+
+Invoer die niet kan kloppen wordt geweigerd met uitleg in plaats van
+bewaard: een nacht korter dan een uur of langer dan zestien (bijna altijd een
+tijd aan de verkeerde kant van middernacht), en fasen die samen meer dan een
+kwartier langer zijn dan de nacht zelf.

@@ -92,6 +92,19 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
             onChanged: (value) =>
                 update(AppSettingsTableCompanion(trackRpe: Value(value))),
           ),
+          const SectionHeader('Herstel'),
+          SwitchListTile(
+            title: const Text('Slaapfasen invullen'),
+            subtitle: const Text(
+              'Bij een nacht ook lichte, REM- en diepe slaap, als je die van '
+              'je horloge weet. Ze worden bewaard en getoond; de schatting '
+              'kijkt naar hoe lang je sliep.',
+            ),
+            value: settings.trackSleepStages,
+            onChanged: (value) => update(
+              AppSettingsTableCompanion(trackSleepStages: Value(value)),
+            ),
+          ),
           const SectionHeader('Feedback'),
           SwitchListTile(
             title: const Text('Klik bij het afvinken van een set'),

@@ -54,6 +54,55 @@ final class SorenessChecksProvider
 
 String _$sorenessChecksHash() => r'7a639aa2091ad7b6d4d114fc2161305ab543996b';
 
+/// The nights you filled in over the stretch the estimate looks at, oldest
+/// first - as stored, stages and all, for the screen that shows them.
+
+@ProviderFor(sleepEntries)
+final sleepEntriesProvider = SleepEntriesProvider._();
+
+/// The nights you filled in over the stretch the estimate looks at, oldest
+/// first - as stored, stages and all, for the screen that shows them.
+
+final class SleepEntriesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<SleepEntryRow>>,
+          List<SleepEntryRow>,
+          Stream<List<SleepEntryRow>>
+        >
+    with
+        $FutureModifier<List<SleepEntryRow>>,
+        $StreamProvider<List<SleepEntryRow>> {
+  /// The nights you filled in over the stretch the estimate looks at, oldest
+  /// first - as stored, stages and all, for the screen that shows them.
+  SleepEntriesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sleepEntriesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sleepEntriesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<SleepEntryRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<SleepEntryRow>> create(Ref ref) {
+    return sleepEntries(ref);
+  }
+}
+
+String _$sleepEntriesHash() => r'8af3b153027e6cce1fda3d4ce1022b3b40744ccb';
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
@@ -113,7 +162,7 @@ final class RecoveryEstimatesProvider
   }
 }
 
-String _$recoveryEstimatesHash() => r'1403b0d6d7d7e36d6ecb4439305d66e6c486aae1';
+String _$recoveryEstimatesHash() => r'9f70bd42c9f624c67fe2740919fd9f76b8998f69';
 
 /// The muscles one particular session left behind.
 ///

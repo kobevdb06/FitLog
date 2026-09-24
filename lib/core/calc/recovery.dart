@@ -53,6 +53,15 @@ const double kFailureBonusHours = 12;
 const double kPrAttemptBonusHours = 12;
 const double kUnaccustomedBonusHours = 12;
 
+/// How much of an earlier session's unfinished recovery is carried into the
+/// next one.
+///
+/// Train legs on Monday and again on Wednesday, and Monday was not done yet:
+/// a day of it was still open. That day does not vanish because you trained
+/// again, but it does not stack in full either - the two repairs overlap. Half
+/// is a starting point, not a measurement.
+const double kCarryoverShare = 0.5;
+
 /// The estimate never leaves this range, whatever the arithmetic says.
 const double kMinRecoveryHours = 24;
 const double kMaxRecoveryHours = 96;
@@ -188,6 +197,7 @@ class RecoveryEstimate {
     required this.recovery,
     required this.loadRatio,
     required this.provisional,
+    this.carryover = Duration.zero,
   });
 
   final String muscle;
@@ -205,6 +215,10 @@ class RecoveryEstimate {
   /// True while the muscle has too little history for the baseline to mean
   /// anything, so the estimate is the starting point and little more.
   final bool provisional;
+
+  /// What an earlier session still owed when this one started, already
+  /// included in [recovery]. Zero when the muscle had fully recovered.
+  final Duration carryover;
 
   DateTime get readyAt => trainedAt.add(recovery);
 
@@ -343,36 +357,52 @@ List<RecoveryEstimate> estimateRecovery(List<MuscleSession> sessions) {
   final estimates = <RecoveryEstimate>[];
   for (final entry in byMuscle.entries) {
     final ordered = entry.value.toList()..sort((a, b) => a.at.compareTo(b.at));
-    final latest = ordered.last;
-    final earlier = ordered.sublist(0, ordered.length - 1);
 
-    final baseline = earlier.isEmpty
-        ? null
-        : _median(earlier.map((s) => s.loadKg).toList());
+    // Every session in turn, not only the last one: the last one inherits
+    // whatever the one before it had not finished, and that one inherited from
+    // the one before. Looking at the newest session alone forgot that Monday
+    // was still open on Wednesday.
+    RecoveryEstimate? previous;
+    for (var i = 0; i < ordered.length; i++) {
+      final session = ordered[i];
+      final earlier = ordered.sublist(0, i);
 
-    final recovery = recoveryDuration(
-      muscle: latest.muscle,
-      loadKg: latest.loadKg,
-      baselineLoadKg: baseline,
-      hadFailureSets: latest.hadFailureSets,
-      wasPrAttempt: latest.wasPrAttempt,
-      unaccustomed: _isUnaccustomed(latest, earlier),
-      effort: latest.effort,
-      averageRpe: latest.averageRpe,
-    );
+      final baseline = earlier.isEmpty
+          ? null
+          : _median(earlier.map((s) => s.loadKg).toList());
 
-    estimates.add(
-      RecoveryEstimate(
-        muscle: latest.muscle,
-        workoutId: latest.workoutId,
-        trainedAt: latest.at,
-        recovery: recovery,
+      final own = recoveryDuration(
+        muscle: session.muscle,
+        loadKg: session.loadKg,
+        baselineLoadKg: baseline,
+        hadFailureSets: session.hadFailureSets,
+        wasPrAttempt: session.wasPrAttempt,
+        unaccustomed: _isUnaccustomed(session, earlier),
+        effort: session.effort,
+        averageRpe: session.averageRpe,
+      );
+
+      final open = previous?.remainingAt(session.at) ?? Duration.zero;
+      final carryover = Duration(
+        minutes: (open.inMinutes * kCarryoverShare).round(),
+      );
+      final ceiling = Duration(minutes: (kMaxRecoveryHours * 60).round());
+      final total = own + carryover > ceiling ? ceiling : own + carryover;
+
+      previous = RecoveryEstimate(
+        muscle: session.muscle,
+        workoutId: session.workoutId,
+        trainedAt: session.at,
+        recovery: total,
         loadRatio: baseline == null || baseline <= 0
             ? 1
-            : latest.loadKg / baseline,
+            : session.loadKg / baseline,
         provisional: earlier.length < kSessionsForBaseline,
-      ),
-    );
+        // What actually made it in, after the ceiling.
+        carryover: total - own,
+      );
+    }
+    estimates.add(previous!);
   }
 
   estimates.sort((a, b) => b.readyAt.compareTo(a.readyAt));

@@ -2667,3 +2667,21 @@ plaats van een streepje: dat je hem zwaar vond is ook iets.
 
 Niet gedaan: de kolom "vorige" tijdens een workout. Daar past het niet zonder
 de rest af te kappen, en een afgekapt gewicht is erger dan een ontbrekende RPE.
+
+## 153. Vermoeidheid van gisteren verdwijnt niet omdat je vandaag weer traint
+
+De schatting keek per spier alleen naar de laatste sessie. Train je maandag en
+woensdag benen, dan was maandag op woensdag nog niet verwerkt - er stond nog
+een dag open - en de schatting van woensdag wist daar niets van. Ze rekende
+alsof je fris begon.
+
+Nu wordt elke sessie van die spier op volgorde berekend, en neemt elke sessie
+mee wat de vorige nog niet af had: de helft van wat er openstond
+(`kCarryoverShare`). Niet het geheel, want twee herstelperiodes die elkaar
+overlappen lopen deels samen op; niet niets, want dat was de fout. De helft is
+een beginpunt, geen meting.
+
+Het plafond van 96 uur blijft staan. Drie zware dagen na elkaar mogen de
+schatting rekken, niet laten weglopen. Wat er door de opstapeling bijkwam
+staat als `carryover` bij de schatting, zodat het scherm kan zeggen waarom het
+langer duurt.

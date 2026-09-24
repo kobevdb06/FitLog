@@ -85,10 +85,7 @@ void main() {
     });
 
     test('is nothing for work without reps', () {
-      expect(
-        setLoadKg(set(category: ExerciseCategory.cardio, reps: null)),
-        0,
-      );
+      expect(setLoadKg(set(category: ExerciseCategory.cardio, reps: null)), 0);
     });
   });
 
@@ -211,12 +208,18 @@ void main() {
 
     test('failure, a PR attempt and novelty each add on top', () {
       final plain = hoursFor(muscle: 'biceps').inHours;
-      expect(hoursFor(muscle: 'biceps', failure: true).inHours,
-          plain + kFailureBonusHours);
-      expect(hoursFor(muscle: 'biceps', pr: true).inHours,
-          plain + kPrAttemptBonusHours);
-      expect(hoursFor(muscle: 'biceps', unaccustomed: true).inHours,
-          plain + kUnaccustomedBonusHours);
+      expect(
+        hoursFor(muscle: 'biceps', failure: true).inHours,
+        plain + kFailureBonusHours,
+      );
+      expect(
+        hoursFor(muscle: 'biceps', pr: true).inHours,
+        plain + kPrAttemptBonusHours,
+      );
+      expect(
+        hoursFor(muscle: 'biceps', unaccustomed: true).inHours,
+        plain + kUnaccustomedBonusHours,
+      );
     });
 
     test('it never leaves the sane range', () {
@@ -270,10 +273,7 @@ void main() {
     });
 
     test('a new exercise counts as unaccustomed', () {
-      final familiar = [
-        ...weekly(4),
-        set(workoutId: 'today', at: monday),
-      ];
+      final familiar = [...weekly(4), set(workoutId: 'today', at: monday)];
       final withNovelty = [
         ...weekly(4),
         set(workoutId: 'today', at: monday, exerciseId: 'hack squat'),
@@ -313,6 +313,72 @@ void main() {
       expect(estimate.isReadyAt(after), isTrue);
       expect(estimate.remainingAt(after), Duration.zero);
       expect(estimate.progressAt(after), 1);
+    });
+  });
+
+  group('vermoeidheid die zich opstapelt', () {
+    // Vier gewone weken ervoor, zodat geen van deze sessies als nieuw telt en
+    // alleen de opstapeling het verschil maakt.
+    List<RecoverySet> history() => [
+      for (var i = 0; i < 4; i++)
+        set(
+          workoutId: 'h$i',
+          at: monday.subtract(Duration(days: 7 * (4 - i))),
+        ),
+    ];
+    final wednesday = monday.add(const Duration(days: 2));
+
+    test('een tweede sessie voor de eerste verwerkt is, duurt langer', () {
+      // Maandag benen, woensdag weer. Maandag had 72 uur nodig; woensdag is
+      // er daar nog 24 van over, en die verdwijnen niet omdat je opnieuw
+      // traint.
+      final alone = estimateRecovery(
+        muscleSessions([...history(), set(workoutId: 'wed', at: wednesday)]),
+      ).single;
+      final stacked = estimateRecovery(
+        muscleSessions([
+          ...history(),
+          set(workoutId: 'mon', at: monday),
+          set(workoutId: 'wed', at: wednesday),
+        ]),
+      ).single;
+
+      expect(stacked.workoutId, 'wed');
+      expect(stacked.recovery, greaterThan(alone.recovery));
+      // De helft van wat er nog openstond.
+      expect(stacked.carryover, const Duration(hours: 12));
+      expect(stacked.recovery - alone.recovery, stacked.carryover);
+    });
+
+    test('sessies ver genoeg uit elkaar stapelen niet', () {
+      final estimate = estimateRecovery(
+        muscleSessions([
+          ...history(),
+          set(workoutId: 'mon', at: monday),
+          set(workoutId: 'next', at: monday.add(const Duration(days: 7))),
+        ]),
+      ).single;
+
+      expect(estimate.carryover, Duration.zero);
+    });
+
+    test('en het plafond blijft het plafond', () {
+      // Drie zware dagen na elkaar mogen de schatting rekken, niet laten
+      // weglopen.
+      final estimate = estimateRecovery(
+        muscleSessions([
+          ...history(),
+          for (var d = 0; d < 3; d++)
+            set(
+              workoutId: 'd$d',
+              at: monday.add(Duration(days: d)),
+              weightKg: 200,
+              type: SetType.failure,
+            ),
+        ]),
+      ).single;
+
+      expect(estimate.recovery, lessThanOrEqualTo(const Duration(hours: 96)));
     });
   });
 

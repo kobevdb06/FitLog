@@ -14,6 +14,7 @@ class ExerciseFilter {
     this.categories = const {},
     this.customCategories = const {},
     this.customOnly = false,
+    this.favouritesOnly = false,
     this.includeArchived = false,
   });
 
@@ -26,6 +27,9 @@ class ExerciseFilter {
   /// label rather than on the built-in category underneath it.
   final Set<String> customCategories;
   final bool customOnly;
+
+  /// Only the exercises you starred.
+  final bool favouritesOnly;
   final bool includeArchived;
 
   bool get isEmpty =>
@@ -34,7 +38,8 @@ class ExerciseFilter {
       equipment.isEmpty &&
       categories.isEmpty &&
       customCategories.isEmpty &&
-      !customOnly;
+      !customOnly &&
+      !favouritesOnly;
 
   ExerciseFilter copyWith({
     String? query,
@@ -43,6 +48,7 @@ class ExerciseFilter {
     Set<String>? categories,
     Set<String>? customCategories,
     bool? customOnly,
+    bool? favouritesOnly,
     bool? includeArchived,
   }) {
     return ExerciseFilter(
@@ -52,6 +58,7 @@ class ExerciseFilter {
       categories: categories ?? this.categories,
       customCategories: customCategories ?? this.customCategories,
       customOnly: customOnly ?? this.customOnly,
+      favouritesOnly: favouritesOnly ?? this.favouritesOnly,
       includeArchived: includeArchived ?? this.includeArchived,
     );
   }
@@ -141,6 +148,9 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
     }
     if (filter.customOnly) {
       q.where((t) => t.isCustom.equals(true));
+    }
+    if (filter.favouritesOnly) {
+      q.where((t) => t.isFavourite.equals(true));
     }
 
     q.orderBy([(t) => OrderingTerm.asc(t.name)]);
@@ -398,6 +408,28 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
         categoryOverridden: const Value(true),
       ),
     );
+  }
+
+  Future<void> setFavourite(String id, {required bool favourite}) async {
+    await (update(exercisesTable)..where((t) => t.id.equals(id))).write(
+      ExercisesTableCompanion(isFavourite: Value(favourite)),
+    );
+  }
+
+  /// Whether any exercise that is still in use carries a star.
+  ///
+  /// What decides whether the filter for them is worth a place: a chip that
+  /// can only ever show an empty list is clutter.
+  Stream<bool> watchHasFavourites() {
+    final count = exercisesTable.id.count();
+    return (selectOnly(exercisesTable)
+          ..addColumns([count])
+          ..where(
+            exercisesTable.isFavourite.equals(true) &
+                exercisesTable.isArchived.equals(false),
+          ))
+        .watchSingle()
+        .map((row) => (row.read(count) ?? 0) > 0);
   }
 
   Future<void> setArchived(String id, {required bool archived}) async {

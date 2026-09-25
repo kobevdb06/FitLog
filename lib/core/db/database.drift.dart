@@ -2740,6 +2740,21 @@ class $ExercisesTableTable extends ExercisesTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isFavouriteMeta = const VerificationMeta(
+    'isFavourite',
+  );
+  @override
+  late final GeneratedColumn<bool> isFavourite = GeneratedColumn<bool>(
+    'is_favourite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_favourite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2768,6 +2783,7 @@ class $ExercisesTableTable extends ExercisesTable
     imagesGenerated,
     categoryOverridden,
     isArchived,
+    isFavourite,
     createdAt,
   ];
   @override
@@ -2901,6 +2917,15 @@ class $ExercisesTableTable extends ExercisesTable
         isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
       );
     }
+    if (data.containsKey('is_favourite')) {
+      context.handle(
+        _isFavouriteMeta,
+        isFavourite.isAcceptableOrUnknown(
+          data['is_favourite']!,
+          _isFavouriteMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2978,6 +3003,10 @@ class $ExercisesTableTable extends ExercisesTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_archived'],
       )!,
+      isFavourite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favourite'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -3037,6 +3066,13 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
   /// leaves it alone rather than quietly undoing it.
   final bool categoryOverridden;
   final bool isArchived;
+
+  /// Starred by the user, from the catalogue or from the exercise itself.
+  ///
+  /// A way to find back the handful you actually do among the hundreds the
+  /// catalogue has. The seeder never writes this column after the first
+  /// fill, so a catalogue update cannot take a star away.
+  final bool isFavourite;
   final int createdAt;
   const ExerciseRow({
     required this.id,
@@ -3054,6 +3090,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     required this.imagesGenerated,
     required this.categoryOverridden,
     required this.isArchived,
+    required this.isFavourite,
     required this.createdAt,
   });
   @override
@@ -3086,6 +3123,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     map['images_generated'] = Variable<bool>(imagesGenerated);
     map['category_overridden'] = Variable<bool>(categoryOverridden);
     map['is_archived'] = Variable<bool>(isArchived);
+    map['is_favourite'] = Variable<bool>(isFavourite);
     map['created_at'] = Variable<int>(createdAt);
     return map;
   }
@@ -3119,6 +3157,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       imagesGenerated: Value(imagesGenerated),
       categoryOverridden: Value(categoryOverridden),
       isArchived: Value(isArchived),
+      isFavourite: Value(isFavourite),
       createdAt: Value(createdAt),
     );
   }
@@ -3144,6 +3183,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       imagesGenerated: serializer.fromJson<bool>(json['imagesGenerated']),
       categoryOverridden: serializer.fromJson<bool>(json['categoryOverridden']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
+      isFavourite: serializer.fromJson<bool>(json['isFavourite']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
     );
   }
@@ -3166,6 +3206,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       'imagesGenerated': serializer.toJson<bool>(imagesGenerated),
       'categoryOverridden': serializer.toJson<bool>(categoryOverridden),
       'isArchived': serializer.toJson<bool>(isArchived),
+      'isFavourite': serializer.toJson<bool>(isFavourite),
       'createdAt': serializer.toJson<int>(createdAt),
     };
   }
@@ -3186,6 +3227,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     bool? imagesGenerated,
     bool? categoryOverridden,
     bool? isArchived,
+    bool? isFavourite,
     int? createdAt,
   }) => ExerciseRow(
     id: id ?? this.id,
@@ -3207,6 +3249,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     imagesGenerated: imagesGenerated ?? this.imagesGenerated,
     categoryOverridden: categoryOverridden ?? this.categoryOverridden,
     isArchived: isArchived ?? this.isArchived,
+    isFavourite: isFavourite ?? this.isFavourite,
     createdAt: createdAt ?? this.createdAt,
   );
   ExerciseRow copyWithCompanion(ExercisesTableCompanion data) {
@@ -3246,6 +3289,9 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
       isArchived: data.isArchived.present
           ? data.isArchived.value
           : this.isArchived,
+      isFavourite: data.isFavourite.present
+          ? data.isFavourite.value
+          : this.isFavourite,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -3268,6 +3314,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           ..write('imagesGenerated: $imagesGenerated, ')
           ..write('categoryOverridden: $categoryOverridden, ')
           ..write('isArchived: $isArchived, ')
+          ..write('isFavourite: $isFavourite, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -3290,6 +3337,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
     imagesGenerated,
     categoryOverridden,
     isArchived,
+    isFavourite,
     createdAt,
   );
   @override
@@ -3311,6 +3359,7 @@ class ExerciseRow extends DataClass implements Insertable<ExerciseRow> {
           other.imagesGenerated == this.imagesGenerated &&
           other.categoryOverridden == this.categoryOverridden &&
           other.isArchived == this.isArchived &&
+          other.isFavourite == this.isFavourite &&
           other.createdAt == this.createdAt);
 }
 
@@ -3330,6 +3379,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
   final Value<bool> imagesGenerated;
   final Value<bool> categoryOverridden;
   final Value<bool> isArchived;
+  final Value<bool> isFavourite;
   final Value<int> createdAt;
   final Value<int> rowid;
   const ExercisesTableCompanion({
@@ -3348,6 +3398,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.imagesGenerated = const Value.absent(),
     this.categoryOverridden = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.isFavourite = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -3367,6 +3418,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     this.imagesGenerated = const Value.absent(),
     this.categoryOverridden = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.isFavourite = const Value.absent(),
     required int createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -3390,6 +3442,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Expression<bool>? imagesGenerated,
     Expression<bool>? categoryOverridden,
     Expression<bool>? isArchived,
+    Expression<bool>? isFavourite,
     Expression<int>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -3409,6 +3462,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       if (imagesGenerated != null) 'images_generated': imagesGenerated,
       if (categoryOverridden != null) 'category_overridden': categoryOverridden,
       if (isArchived != null) 'is_archived': isArchived,
+      if (isFavourite != null) 'is_favourite': isFavourite,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3430,6 +3484,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     Value<bool>? imagesGenerated,
     Value<bool>? categoryOverridden,
     Value<bool>? isArchived,
+    Value<bool>? isFavourite,
     Value<int>? createdAt,
     Value<int>? rowid,
   }) {
@@ -3449,6 +3504,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
       imagesGenerated: imagesGenerated ?? this.imagesGenerated,
       categoryOverridden: categoryOverridden ?? this.categoryOverridden,
       isArchived: isArchived ?? this.isArchived,
+      isFavourite: isFavourite ?? this.isFavourite,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -3502,6 +3558,9 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
     if (isArchived.present) {
       map['is_archived'] = Variable<bool>(isArchived.value);
     }
+    if (isFavourite.present) {
+      map['is_favourite'] = Variable<bool>(isFavourite.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -3529,6 +3588,7 @@ class ExercisesTableCompanion extends UpdateCompanion<ExerciseRow> {
           ..write('imagesGenerated: $imagesGenerated, ')
           ..write('categoryOverridden: $categoryOverridden, ')
           ..write('isArchived: $isArchived, ')
+          ..write('isFavourite: $isFavourite, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -12945,6 +13005,7 @@ typedef $$ExercisesTableTableCreateCompanionBuilder =
       Value<bool> imagesGenerated,
       Value<bool> categoryOverridden,
       Value<bool> isArchived,
+      Value<bool> isFavourite,
       required int createdAt,
       Value<int> rowid,
     });
@@ -12965,6 +13026,7 @@ typedef $$ExercisesTableTableUpdateCompanionBuilder =
       Value<bool> imagesGenerated,
       Value<bool> categoryOverridden,
       Value<bool> isArchived,
+      Value<bool> isFavourite,
       Value<int> createdAt,
       Value<int> rowid,
     });
@@ -13137,6 +13199,11 @@ class $$ExercisesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isFavourite => $composableBuilder(
+    column: $table.isFavourite,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -13304,6 +13371,11 @@ class $$ExercisesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isFavourite => $composableBuilder(
+    column: $table.isFavourite,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -13381,6 +13453,11 @@ class $$ExercisesTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isFavourite => $composableBuilder(
+    column: $table.isFavourite,
     builder: (column) => column,
   );
 
@@ -13515,6 +13592,7 @@ class $$ExercisesTableTableTableManager
                 Value<bool> imagesGenerated = const Value.absent(),
                 Value<bool> categoryOverridden = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<bool> isFavourite = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExercisesTableCompanion(
@@ -13533,6 +13611,7 @@ class $$ExercisesTableTableTableManager
                 imagesGenerated: imagesGenerated,
                 categoryOverridden: categoryOverridden,
                 isArchived: isArchived,
+                isFavourite: isFavourite,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -13553,6 +13632,7 @@ class $$ExercisesTableTableTableManager
                 Value<bool> imagesGenerated = const Value.absent(),
                 Value<bool> categoryOverridden = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<bool> isFavourite = const Value.absent(),
                 required int createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => ExercisesTableCompanion.insert(
@@ -13571,6 +13651,7 @@ class $$ExercisesTableTableTableManager
                 imagesGenerated: imagesGenerated,
                 categoryOverridden: categoryOverridden,
                 isArchived: isArchived,
+                isFavourite: isFavourite,
                 createdAt: createdAt,
                 rowid: rowid,
               ),

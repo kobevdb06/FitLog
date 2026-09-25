@@ -141,6 +141,7 @@ void main() {
       imagesGenerated: false,
       categoryOverridden: false,
       isArchived: false,
+      isFavourite: false,
       createdAt: 0,
     );
 

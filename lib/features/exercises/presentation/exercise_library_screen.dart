@@ -127,7 +127,8 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                   filter.muscles.isNotEmpty ||
                   filter.equipment.isNotEmpty ||
                   filter.categories.isNotEmpty ||
-                  filter.customOnly,
+                  filter.customOnly ||
+                  filter.favouritesOnly,
               child: const Icon(Icons.tune),
             ),
           ),
@@ -264,6 +265,12 @@ class _FilterChips extends ConsumerWidget {
     final notifier = ref.read(exerciseFilterControllerProvider.notifier);
     final muscles = ref.watch(muscleOptionsProvider).value ?? const [];
     final equipment = ref.watch(equipmentOptionsProvider).value ?? const [];
+    // Shown once there is a star to filter on - and kept while the filter is
+    // on, so unstarring the last one never strands you in an empty list with
+    // no way back out.
+    final showFavourites =
+        (ref.watch(hasFavouriteExercisesProvider).value ?? false) ||
+        filter.favouritesOnly;
     final ownCategories = [
       for (final choice in ref.watch(categoryOptionsProvider).value ?? const [])
         if (choice.isOwn) choice,
@@ -278,6 +285,15 @@ class _FilterChips extends ConsumerWidget {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
+                if (showFavourites) ...[
+                  FilterChip(
+                    avatar: const Icon(Icons.star, size: 18),
+                    label: const Text('Favoriet'),
+                    selected: filter.favouritesOnly,
+                    onSelected: notifier.setFavouritesOnly,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
                 FilterChip(
                   label: const Text('Eigen'),
                   selected: filter.customOnly,
@@ -336,7 +352,7 @@ class _FilterChips extends ConsumerWidget {
   }
 }
 
-class _ExerciseTile extends StatelessWidget {
+class _ExerciseTile extends ConsumerWidget {
   const _ExerciseTile({
     required this.exercise,
     required this.manifest,
@@ -359,7 +375,24 @@ class _ExerciseTile extends StatelessWidget {
   final VoidCallback onPreview;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Browsing, the star sits on every row: that is where you see the one
+    // you want to find back. Picking, the row already has two controls, and
+    // the filter chip is the way to your starred ones.
+    final star = IconButton(
+      tooltip: exercise.isFavourite
+          ? 'Uit je favorieten halen'
+          : 'Als favoriet bewaren',
+      onPressed: () => ref
+          .read(exerciseEditorProvider)
+          .setFavourite(exercise.id, favourite: !exercise.isFavourite),
+      icon: Icon(
+        exercise.isFavourite ? Icons.star : Icons.star_border,
+        color: exercise.isFavourite ? Colors.amber : null,
+      ),
+      visualDensity: VisualDensity.compact,
+    );
+
     return ListTile(
       onTap: onTap,
       leading: ExerciseThumb(
@@ -392,12 +425,19 @@ class _ExerciseTile extends StatelessWidget {
                 ),
               ],
             )
-          : (exercise.isCustom
-                ? const Chip(
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                star,
+                if (exercise.isCustom)
+                  const Chip(
                     label: Text('Eigen'),
                     visualDensity: VisualDensity.compact,
                   )
-                : const Icon(Icons.chevron_right)),
+                else
+                  const Icon(Icons.chevron_right),
+              ],
+            ),
     );
   }
 }

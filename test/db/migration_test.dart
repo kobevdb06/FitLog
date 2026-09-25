@@ -112,7 +112,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 31);
+    expect(raw.select('PRAGMA user_version').first.values.first, 32);
     raw.close();
   });
 
@@ -198,6 +198,8 @@ void main() {
     expect(migratedExercise.customCategory, isNull);
     // v26: een tekening bij een oefening is iets nieuws, dus niets is er een.
     expect(migratedExercise.imagesGenerated, isFalse);
+    // v32: sterren op oefeningen. Nog geen enkele: er was geen plek voor.
+    expect(migratedExercise.isFavourite, isFalse);
     expect(settings.imageApiKey, isNull);
     // v27: er is nu keuze uit twee tekenaars. Niets gekozen betekent Hugging
     // Face, de enige die er was, en er is geen account bij.
@@ -295,7 +297,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 31);
+    expect(db.schemaVersion, 32);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

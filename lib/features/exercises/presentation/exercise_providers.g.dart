@@ -48,7 +48,7 @@ final class ExerciseFilterControllerProvider
 }
 
 String _$exerciseFilterControllerHash() =>
-    r'5e847e40d44aebe16f2419ccdf5f6c6b9ea3f5b8';
+    r'2b07e1f761af5c48e2ef9f045f5e3ba34bbf4c6f';
 
 /// The filter the exercise list is showing. Lives above the list so the search
 /// field and the chips stay in sync.
@@ -186,6 +186,48 @@ final class ExerciseByIdFamily extends $Family
   @override
   String toString() => r'exerciseByIdProvider';
 }
+
+/// Whether any exercise carries a star, which is when the filter for them
+/// earns its place among the others.
+
+@ProviderFor(hasFavouriteExercises)
+final hasFavouriteExercisesProvider = HasFavouriteExercisesProvider._();
+
+/// Whether any exercise carries a star, which is when the filter for them
+/// earns its place among the others.
+
+final class HasFavouriteExercisesProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, Stream<bool>>
+    with $FutureModifier<bool>, $StreamProvider<bool> {
+  /// Whether any exercise carries a star, which is when the filter for them
+  /// earns its place among the others.
+  HasFavouriteExercisesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'hasFavouriteExercisesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$hasFavouriteExercisesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<bool> create(Ref ref) {
+    return hasFavouriteExercises(ref);
+  }
+}
+
+String _$hasFavouriteExercisesHash() =>
+    r'c1222ae8160d92b61be0212dc73f5f3af042eba5';
 
 /// Watched rather than read once: adding a muscle group from the picker has to
 /// show up in the list you are looking at.

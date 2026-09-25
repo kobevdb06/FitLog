@@ -58,7 +58,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 32;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -295,6 +295,10 @@ class AppDatabase extends _$AppDatabase {
           // was for everyone before there was a place to put them.
           await m.createTable(drinkDaysTable);
           await m.addColumn(appSettingsTable, appSettingsTable.trackAlcohol);
+        }
+        if (from < 32) {
+          // Stars on exercises. None yet: there was nowhere to put one.
+          await m.addColumn(exercisesTable, exercisesTable.isFavourite);
         }
       });
 

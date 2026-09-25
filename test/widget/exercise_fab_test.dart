@@ -121,4 +121,30 @@ void main() {
       reason: 'er valt geen record te vestigen op iets dat niet bestaat',
     );
   });
+
+  testWidgets('de ster bovenaan maakt haar een favoriet, en terug', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrapWithContainer(
+        container,
+        const ExerciseDetailScreen(exerciseId: 'ex-bench'),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.byTooltip('Als favoriet bewaren'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect((await db.exercisesDao.getById('ex-bench'))!.isFavourite, isTrue);
+    expect(find.byTooltip('Uit je favorieten halen'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Uit je favorieten halen'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect((await db.exercisesDao.getById('ex-bench'))!.isFavourite, isFalse);
+  });
 }

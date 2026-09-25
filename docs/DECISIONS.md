@@ -2771,3 +2771,23 @@ glazen is niet iets om zonder vragen voor iedereen neer te zetten die zijn
 trainingen bijhoudt. Het herstelscherm toont twee tellers - vandaag en
 gisteren - omdat de trainingsdag de enige is die telt en de ochtend erna het
 moment is waarop je hem invult.
+
+## 157. Een ster op een oefening, en een filter dat pas verschijnt als het iets doet
+
+De catalogus heeft honderden oefeningen en de meeste mensen doen er een
+dozijn. Een ster (`exercises.is_favourite`) markeert dat dozijn, en het filter
+*Favoriet* toont alleen dat.
+
+De ster staat op elke rij als je door de catalogus bladert, en bovenaan de
+pagina van een oefening. Niet op de rijen als je oefeningen kiest voor een
+routine: die rij heeft daar al twee knoppen (bekijken en aanvinken), en daar
+is het filter de weg naar je favorieten - dat werkt in beide standen.
+
+Het filter staat vooraan en verschijnt pas zodra er een ster is: een knop die
+alleen een lege lijst kan opleveren is rommel. Een verborgen oefening (een
+verwijderde die in je geschiedenis staat) telt daarvoor niet mee. En staat
+het filter aan terwijl je de laatste ster weghaalt, dan blijft de knop staan
+tot je hem uitzet - anders zat je in een lege lijst zonder weg terug.
+
+Een catalogus-update neemt geen sterren af: de seeder schrijft een oefening
+alleen in een lege database, en past daarna nooit meer dan de categorie aan.

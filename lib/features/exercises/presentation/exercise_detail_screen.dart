@@ -92,6 +92,18 @@ class ExerciseDetailScreen extends ConsumerWidget {
           title: Text(row?.name ?? 'Oefening'),
           actions: [
             if (row != null) ...[
+              IconButton(
+                tooltip: row.isFavourite
+                    ? 'Uit je favorieten halen'
+                    : 'Als favoriet bewaren',
+                onPressed: () => ref
+                    .read(exerciseEditorProvider)
+                    .setFavourite(row.id, favourite: !row.isFavourite),
+                icon: Icon(
+                  row.isFavourite ? Icons.star : Icons.star_border,
+                  color: row.isFavourite ? Colors.amber : null,
+                ),
+              ),
               if (row.isCustom)
                 IconButton(
                   tooltip: 'Bewerken',

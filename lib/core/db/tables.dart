@@ -400,6 +400,14 @@ class ExercisesTable extends Table {
       .withDefault(const Constant(false))();
   BoolColumn get isArchived =>
       boolean().named('is_archived').withDefault(const Constant(false))();
+
+  /// Starred by the user, from the catalogue or from the exercise itself.
+  ///
+  /// A way to find back the handful you actually do among the hundreds the
+  /// catalogue has. The seeder never writes this column after the first
+  /// fill, so a catalogue update cannot take a star away.
+  BoolColumn get isFavourite =>
+      boolean().named('is_favourite').withDefault(const Constant(false))();
   IntColumn get createdAt => integer().named('created_at')();
 
   @override

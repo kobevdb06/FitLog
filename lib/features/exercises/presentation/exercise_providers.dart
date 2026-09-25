@@ -61,6 +61,9 @@ class ExerciseFilterController extends _$ExerciseFilterController {
 
   void setCustomOnly(bool value) => state = state.copyWith(customOnly: value);
 
+  void setFavouritesOnly(bool value) =>
+      state = state.copyWith(favouritesOnly: value);
+
   void clear() => state = const ExerciseFilter();
 }
 
@@ -73,6 +76,12 @@ Stream<List<ExerciseRow>> filteredExercises(Ref ref) {
 @riverpod
 Stream<ExerciseRow?> exerciseById(Ref ref, String id) =>
     ref.watch(databaseProvider).exercisesDao.watchById(id);
+
+/// Whether any exercise carries a star, which is when the filter for them
+/// earns its place among the others.
+@riverpod
+Stream<bool> hasFavouriteExercises(Ref ref) =>
+    ref.watch(databaseProvider).exercisesDao.watchHasFavourites();
 
 /// Watched rather than read once: adding a muscle group from the picker has to
 /// show up in the list you are looking at.
@@ -497,6 +506,13 @@ class ExerciseEditor {
       generator.close();
     }
   }
+
+  /// Stars or unstars an exercise - one from the catalogue as much as one
+  /// you made yourself.
+  Future<void> setFavourite(String id, {required bool favourite}) => ref
+      .read(databaseProvider)
+      .exercisesDao
+      .setFavourite(id, favourite: favourite);
 
   Future<void> discardFrame(String fileName) async {
     final paths = await ref.read(appPathsProvider.future);

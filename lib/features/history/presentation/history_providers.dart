@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
+import '../../health/presentation/health_providers.dart';
 import '../../workout/presentation/workout_providers.dart';
 
 part 'history_providers.g.dart';
@@ -59,6 +60,10 @@ class HistoryActions {
     if (deleted.wasRunning) {
       await ref.read(restTimerProvider.notifier).skip();
       ref.read(appControllerProvider.notifier).workoutInProgress = false;
+    }
+    // Gone here, so gone from the other health apps too.
+    if (deleted.healthConnectId case final id?) {
+      await ref.read(healthSyncProvider.notifier).forgetWorkout(id);
     }
   }
 

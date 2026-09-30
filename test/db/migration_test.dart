@@ -112,7 +112,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 33);
+    expect(raw.select('PRAGMA user_version').first.values.first, 34);
     raw.close();
   });
 
@@ -216,6 +216,20 @@ void main() {
     // v31: glazen per dag, en de vraag ernaar staat uit.
     expect(await db.select(db.drinkDaysTable).get(), isEmpty);
     expect(settings.trackAlcohol, isFalse);
+    // v33: Health Connect. Niet verbonden, niets opgehaald, en wat er al
+    // stond heb je zelf ingevuld.
+    expect(settings.healthConnectEnabled, isFalse);
+    expect(settings.healthConnectSyncedAt, isNull);
+    expect(
+      (await db.select(db.bodyMeasurementsTable).get()).single.source,
+      isNull,
+    );
+    expect(await db.select(db.dailyVitalsTable).get(), isEmpty);
+    expect(await db.select(db.cardioSessionsTable).get(), isEmpty);
+    // v34: trainingen terugschrijven staat uit, en er is nog niets
+    // geschreven.
+    expect(settings.healthConnectWriteWorkouts, isFalse);
+    expect(workout.workout.healthConnectId, isNull);
     expect(settings.imageAccountId, isNull);
     expect(
       DrawingService.fromWire(settings.imageProvider),
@@ -297,7 +311,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 33);
+    expect(db.schemaVersion, 34);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

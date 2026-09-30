@@ -14,14 +14,17 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
-    <!-- Health Connect: exactly what FitLog reads, and nothing it does not
-         use. Each is its own line on Health Connect's permission screen, and
-         the user grants them one by one. All of it stays on the phone. -->
+    <!-- Health Connect: exactly what FitLog reads and writes, and nothing it
+         does not use. Each is its own line on Health Connect's permission
+         screen, and the user grants them one by one. All of it stays on the
+         phone. -->
     <uses-permission android:name="android.permission.health.READ_SLEEP"/>
     <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY"/>
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE"/>
     <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
     <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
+    <!-- Only asked for when the user switches on writing sessions back. -->
+    <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
 
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application

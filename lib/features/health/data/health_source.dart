@@ -8,7 +8,8 @@ import '../../../core/db/enums.dart';
 /// of the code.
 ///
 /// Nothing here touches the network. Health Connect is a store on the phone
-/// itself; reading from it is a question to another app on the same device.
+/// itself; reading from it or writing to it is a question to another app on
+/// the same device.
 abstract class HealthSource {
   /// Whether Health Connect is on this phone and up to date.
   Future<HealthAvailability> availability();
@@ -28,6 +29,21 @@ abstract class HealthSource {
 
   /// Everything FitLog uses, between [from] and [to].
   Future<HealthSnapshot> read({required DateTime from, required DateTime to});
+
+  /// Shows Health Connect's permission screen for writing sessions. True
+  /// when the user allowed it.
+  Future<bool> requestWriteAccess();
+
+  /// Writes one finished session as strength training, and returns the id
+  /// Health Connect gave it - or null when it was not written.
+  Future<String?> writeWorkout({
+    required DateTime start,
+    required DateTime end,
+    required String title,
+  });
+
+  /// Takes a session FitLog wrote out of Health Connect again.
+  Future<void> deleteWorkout(String id);
 }
 
 enum HealthAvailability {

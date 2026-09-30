@@ -83,6 +83,8 @@ class HealthConnectScreen extends ConsumerWidget {
               _ => const Center(child: CircularProgressIndicator()),
             },
           ),
+          if (enabled && availability.value == HealthAvailability.available)
+            const _WriteSwitch(),
           if (sync.summary case final summary?)
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -319,6 +321,37 @@ class _Connected extends ConsumerWidget {
           child: const Text('Ontkoppelen'),
         ),
       ],
+    );
+  }
+}
+
+/// Writing finished sessions back, so other health apps see them too.
+class _WriteSwitch extends ConsumerWidget {
+  const _WriteSwitch();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final on = ref.watch(healthConnectWritesWorkoutsProvider);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: SwitchListTile(
+        secondary: const Icon(Icons.upload_outlined),
+        title: const Text('Trainingen ook naar Health Connect'),
+        subtitle: const Text(
+          'Een afgewerkte training verschijnt dan ook in apps als Google '
+          'Health en Samsung Health, als krachttraining. Alleen de naam, het '
+          'begin en het einde - geen oefeningen, sets of gewichten.',
+        ),
+        value: on,
+        onChanged: (value) {
+          final sync = ref.read(healthSyncProvider.notifier);
+          if (value) {
+            sync.startWriting();
+          } else {
+            sync.stopWriting();
+          }
+        },
+      ),
     );
   }
 }

@@ -14,6 +14,7 @@ class DeletedWorkout {
     required this.existed,
     required this.wasRunning,
     required this.exerciseIds,
+    this.healthConnectId,
   });
 
   final bool existed;
@@ -23,6 +24,10 @@ class DeletedWorkout {
   final bool wasRunning;
 
   final Set<String> exerciseIds;
+
+  /// Where the session lives in Health Connect, when FitLog wrote it there,
+  /// so it can be taken out there as well.
+  final String? healthConnectId;
 }
 
 const _uuid = Uuid();
@@ -1083,6 +1088,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
         existed: true,
         wasRunning: workout.endedAt == null,
         exerciseIds: exerciseIds,
+        healthConnectId: workout.healthConnectId,
       );
     });
   }

@@ -62,7 +62,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -292,7 +292,10 @@ class AppDatabase extends _$AppDatabase {
           // Nights, and whether to ask for their stages. No nights yet, and
           // the stages off: nobody filled any in before there was a place.
           await m.createTable(sleepEntriesTable);
-          await m.addColumn(appSettingsTable, appSettingsTable.trackSleepStages);
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.trackSleepStages,
+          );
         }
         if (from < 31) {
           // Drinks per day, and the switch that asks for them - off, as it
@@ -314,7 +317,10 @@ class AppDatabase extends _$AppDatabase {
           if (from >= 30) {
             await m.addColumn(sleepEntriesTable, sleepEntriesTable.source);
           }
-          await m.addColumn(bodyMeasurementsTable, bodyMeasurementsTable.source);
+          await m.addColumn(
+            bodyMeasurementsTable,
+            bodyMeasurementsTable.source,
+          );
           await m.createTable(dailyVitalsTable);
           await m.createTable(cardioSessionsTable);
           await m.addColumn(
@@ -324,6 +330,14 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(
             appSettingsTable,
             appSettingsTable.healthConnectSyncedAt,
+          );
+        }
+        if (from < 34) {
+          // Writing sessions to Health Connect: off, and nothing written yet.
+          await m.addColumn(workoutsTable, workoutsTable.healthConnectId);
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.healthConnectWriteWorkouts,
           );
         }
       });

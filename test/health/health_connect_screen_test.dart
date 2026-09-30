@@ -6,6 +6,8 @@ import 'package:fitlog/core/security/key_manager.dart';
 import 'package:fitlog/features/health/data/health_source.dart';
 import 'package:fitlog/features/health/presentation/health_connect_screen.dart';
 import 'package:fitlog/features/health/presentation/health_providers.dart';
+import 'package:fitlog/features/history/presentation/history_providers.dart';
+import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../widget/helpers.dart';
 
 /// Health Connect as the user meets it: missing, not yet connected,
-/// connected - and the import behind the button.
+/// connected - the import behind the button, and sessions written back.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(initialiseTestLocale);
@@ -124,6 +126,207 @@ void main() {
     });
   });
 
+  group('trainingen terugschrijven', () {
+    Future<void> connect({bool write = false}) async {
+      await db.settingsDao.updateSettings(
+        AppSettingsTableCompanion(
+          healthConnectEnabled: const Value(true),
+          healthConnectWriteWorkouts: Value(write),
+        ),
+      );
+    }
+
+    /// A finished session, [daysAgo] days back, an hour long.
+    Future<String> finished(String id, {int daysAgo = 1, String? name}) async {
+      final start = DateTime.now().subtract(Duration(days: daysAgo));
+      await db
+          .into(db.workoutsTable)
+          .insert(
+            WorkoutsTableCompanion.insert(
+              id: id,
+              name: name ?? 'Benen',
+              startedAt: start.millisecondsSinceEpoch,
+              endedAt: Value(
+                start.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+              ),
+            ),
+          );
+      return id;
+    }
+
+    Future<String?> writtenId(String workoutId) async =>
+        (await db.workoutsDao.getWorkoutDetail(workoutId))!
+            .workout
+            .healthConnectId;
+
+    testWidgets('de schakelaar vraagt toestemming en schrijft de laatste '
+        'maand', (tester) async {
+      await tester.runAsync(() async {
+        await finished('w-recent', daysAgo: 3, name: 'Push');
+        await finished('w-old', daysAgo: 45);
+      });
+      await pumpScreen(tester);
+      await tester.tap(find.text('Verbinden'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Trainingen ook naar Health Connect'));
+      await tester.pumpAndSettle();
+
+      expect(
+        (await db.settingsDao.getSettings()).healthConnectWriteWorkouts,
+        isTrue,
+      );
+      expect(health.written.single.title, 'Push');
+      expect(
+        health.written.single.end.difference(health.written.single.start),
+        const Duration(hours: 1),
+      );
+      expect(await writtenId('w-recent'), 'hc-1');
+      expect(await writtenId('w-old'), isNull);
+    });
+
+    testWidgets('niet verbonden: dan is er ook geen schakelaar', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+
+      expect(find.text('Trainingen ook naar Health Connect'), findsNothing);
+    });
+
+    testWidgets('geen toestemming: dan blijft hij uit', (tester) async {
+      health.grantWrite = false;
+      await tester.runAsync(() => finished('w-1'));
+      await pumpScreen(tester);
+      await tester.tap(find.text('Verbinden'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Trainingen ook naar Health Connect'));
+      await tester.pumpAndSettle();
+
+      expect(
+        (await db.settingsDao.getSettings()).healthConnectWriteWorkouts,
+        isFalse,
+      );
+      expect(health.written, isEmpty);
+      expect(find.textContaining('geen toestemming'), findsOneWidget);
+    });
+
+    test('elke training één keer', () async {
+      await connect(write: true);
+      await finished('w-1');
+      final sync = container.read(healthSyncProvider.notifier);
+
+      expect(await sync.writeWorkouts(), 1);
+      expect(await sync.writeWorkouts(), 0);
+      expect(health.written, hasLength(1));
+    });
+
+    test('uit, of niet verbonden: niets', () async {
+      await finished('w-1');
+      final sync = container.read(healthSyncProvider.notifier);
+
+      await connect();
+      expect(await sync.writeWorkouts(), 0);
+
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          healthConnectEnabled: Value(false),
+          healthConnectWriteWorkouts: Value(true),
+        ),
+      );
+      expect(await sync.writeWorkouts(), 0);
+      expect(health.written, isEmpty);
+    });
+
+    test('een training die bezig is, gaat niet mee', () async {
+      await connect(write: true);
+      await db
+          .into(db.workoutsTable)
+          .insert(
+            WorkoutsTableCompanion.insert(
+              id: 'running',
+              name: 'Bezig',
+              startedAt: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+
+      expect(
+        await container.read(healthSyncProvider.notifier).writeWorkouts(),
+        0,
+      );
+    });
+
+    test('afwerken schrijft de training meteen', () async {
+      await connect(write: true);
+      final controller = container.read(workoutControllerProvider);
+      final id = await controller.startEmpty(name: 'Rug');
+      // Een uur geleden begonnen, zodat de sessie een lengte heeft.
+      await db.customStatement(
+        'UPDATE workouts SET started_at = ? WHERE id = ?',
+        [
+          DateTime.now()
+              .subtract(const Duration(hours: 1))
+              .millisecondsSinceEpoch,
+          id,
+        ],
+      );
+
+      await controller.finish(id, discardPending: true);
+
+      expect(health.written.single.title, 'Rug');
+      expect(await writtenId(id), 'hc-1');
+    });
+
+    test('een mislukte schrijfpoging houdt het afwerken niet tegen, en '
+        'wordt later opnieuw geprobeerd', () async {
+      await connect(write: true);
+      health.failingWrites = 1;
+      final controller = container.read(workoutControllerProvider);
+      final id = await controller.startEmpty(name: 'Rug');
+      await db.customStatement(
+        'UPDATE workouts SET started_at = ? WHERE id = ?',
+        [
+          DateTime.now()
+              .subtract(const Duration(hours: 1))
+              .millisecondsSinceEpoch,
+          id,
+        ],
+      );
+
+      await controller.finish(id, discardPending: true);
+      final row = (await db.workoutsDao.getWorkoutDetail(id))!.workout;
+      expect(row.endedAt, isNotNull);
+      expect(row.healthConnectId, isNull);
+      expect(container.read(healthSyncProvider).error, isNotNull);
+
+      await container.read(healthSyncProvider.notifier).sync(force: true);
+      expect(await writtenId(id), 'hc-1');
+    });
+
+    test('een training die je hier wist, verdwijnt ook daar', () async {
+      await connect(write: true);
+      await finished('w-1');
+      await container.read(healthSyncProvider.notifier).writeWorkouts();
+
+      await container.read(historyActionsProvider).deleteWorkout('w-1');
+
+      expect(health.deleted, ['hc-1']);
+    });
+
+    test('ontkoppelen zet het schrijven ook uit', () async {
+      await connect(write: true);
+
+      await container
+          .read(healthSyncProvider.notifier)
+          .disconnect(forget: false);
+
+      expect(
+        (await db.settingsDao.getSettings()).healthConnectWriteWorkouts,
+        isFalse,
+      );
+    });
+  });
+
   group('het ophalen', () {
     Future<void> connect() async {
       await db.settingsDao.updateSettings(
@@ -177,7 +380,13 @@ void main() {
 class _FakeHealth implements HealthSource {
   HealthAvailability availabilityAnswer = HealthAvailability.available;
   bool grant = true;
+  bool grantWrite = true;
   HealthSnapshot snapshot = const HealthSnapshot();
+
+  /// How many writes fail before they start working.
+  int failingWrites = 0;
+  final List<({DateTime start, DateTime end, String title})> written = [];
+  final List<String> deleted = [];
 
   bool installOpened = false;
   bool accessRequested = false;
@@ -214,6 +423,26 @@ class _FakeHealth implements HealthSource {
     lastTo = to;
     return snapshot;
   }
+
+  @override
+  Future<bool> requestWriteAccess() async => grantWrite;
+
+  @override
+  Future<String?> writeWorkout({
+    required DateTime start,
+    required DateTime end,
+    required String title,
+  }) async {
+    if (failingWrites > 0) {
+      failingWrites--;
+      throw StateError('Health Connect is busy');
+    }
+    written.add((start: start, end: end, title: title));
+    return 'hc-${written.length}';
+  }
+
+  @override
+  Future<void> deleteWorkout(String id) async => deleted.add(id);
 }
 
 class _Ready extends AppController {

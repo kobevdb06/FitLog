@@ -2887,3 +2887,38 @@ FitLog logt, en een loop verschuift ze alleen.
 de lopen tot je laatste antwoord over de spier, dan dat antwoord - dat alles
 ervoor overstemt - en dan de lopen daarna. Wie na een loop zegt dat zijn
 benen fris zijn, is fris; wie daarna nog eens gaat lopen, niet meer.
+
+## 160. Trainingen terugschrijven naar Health Connect: alleen het omhulsel
+
+Met een schakelaar op het Health Connect-scherm, standaard uit, schrijft
+FitLog afgewerkte trainingen ook naar Health Connect, zodat apps als Google
+Health en Samsung Health ze zien. De toestemming om te schrijven wordt pas
+gevraagd bij het aanzetten, niet bij het verbinden: wie alleen wil lezen,
+krijgt die vraag nooit.
+
+**Alleen naam, begin en einde, als krachttraining.** Geen oefeningen, sets
+of gewichten. Health Connect heeft geen plek voor sets en gewichten, en een
+calorie-inschatting zou een verzonnen getal zijn dat in andere apps als een
+meting verschijnt. Het wordt geschreven als handmatige invoer: de sets zijn
+ingetikt, niet gemeten.
+
+**Eén keer, en weg als je hem hier wist.** De id die Health Connect
+teruggeeft, komt op de training (`workouts.health_connect_id`, schema 34).
+Een training met een id wordt nooit opnieuw geschreven, ook niet als je hem
+in Health Connect zelf verwijdert - dat is dan jouw keuze daar. Wis je een
+training in FitLog, dan haalt FitLog hem ook uit Health Connect. Een
+naamswijziging achteraf gaat niet mee: de titel is die van het moment van
+schrijven.
+
+**Wanneer.** Meteen bij het afwerken, en daarna bij elke import voor wat
+toen niet lukte. Bij het aanzetten gaat de laatste maand mee - dezelfde
+maand die de eerste import terug reikt - en niets ouder: honderden oude
+trainingen in één keer in andere apps laten opduiken is geen vraag die een
+schakelaar zou moeten beantwoorden. Het afwerken wacht hooguit vijf
+seconden op Health Connect en faalt nooit door een schrijffout; die
+verschijnt op het Health Connect-scherm.
+
+**Uitzetten en ontkoppelen** stoppen het schrijven. Wat al geschreven is,
+blijft in Health Connect staan: het zijn jouw trainingen, waar je ze ook
+bekijkt. FitLog leest zijn eigen trainingen nooit terug als cardio (DECISIONS
+158).

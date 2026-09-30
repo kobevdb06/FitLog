@@ -94,6 +94,41 @@ class HealthConnectSource implements HealthSource {
     }
     return snapshotFromPoints(points);
   }
+
+  @override
+  Future<bool> requestWriteAccess() async {
+    await _ready();
+    return _health.requestAuthorization(
+      const [HealthDataType.WORKOUT],
+      permissions: const [HealthDataAccess.WRITE],
+    );
+  }
+
+  @override
+  Future<String?> writeWorkout({
+    required DateTime start,
+    required DateTime end,
+    required String title,
+  }) async {
+    await _ready();
+    final id = await _health.writeWorkoutDataUUID(
+      activityType: HealthWorkoutActivityType.STRENGTH_TRAINING,
+      start: start,
+      end: end,
+      title: title,
+      // Typed in set by set, not measured by a sensor.
+      recordingMethod: RecordingMethod.manual,
+    );
+    // The plugin answers with an empty string, or "null", when nothing was
+    // inserted.
+    return id == null || id.isEmpty || id == 'null' ? null : id;
+  }
+
+  @override
+  Future<void> deleteWorkout(String id) async {
+    await _ready();
+    await _health.deleteByUUID(uuid: id, type: HealthDataType.WORKOUT);
+  }
 }
 
 /// Shortest session that counts as a night. A nap is sleep, but it is not

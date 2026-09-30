@@ -9,6 +9,7 @@ import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../core/util/notification_service.dart';
+import '../../health/presentation/health_providers.dart';
 import '../domain/pr_ramp.dart';
 import '../domain/set_columns.dart';
 import '../domain/rest_timer.dart';
@@ -606,6 +607,9 @@ class WorkoutController {
       notes: notes,
     );
     await ref.read(restTimerProvider.notifier).skip();
+    // Into Health Connect too, when you asked for that. It gives up after a
+    // few seconds and never throws, so it cannot hold up the finish.
+    await ref.read(healthSyncProvider.notifier).writeWorkouts();
   }
 
   Future<void> cancel(String workoutId) async {

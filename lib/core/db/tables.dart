@@ -124,9 +124,8 @@ class AppSettingsTable extends Table {
   /// Off by default. It matters for recovery only in larger amounts, and a
   /// drinks counter is not something to put in front of everyone who opens a
   /// training log.
-  BoolColumn get trackAlcohol => boolean()
-      .named('track_alcohol')
-      .withDefault(const Constant(false))();
+  BoolColumn get trackAlcohol =>
+      boolean().named('track_alcohol').withDefault(const Constant(false))();
 
   /// Whether the user connected Health Connect. Off until they do, and the
   /// app never asks Health Connect anything before that.
@@ -138,6 +137,12 @@ class AppSettingsTable extends Table {
   /// new - and a couple of days before it, for data a watch sends late.
   IntColumn get healthConnectSyncedAt =>
       integer().named('health_connect_synced_at').nullable()();
+
+  /// Whether finished sessions are written to Health Connect as well, so
+  /// other health apps see them. Off until you turn it on.
+  BoolColumn get healthConnectWriteWorkouts => boolean()
+      .named('health_connect_write_workouts')
+      .withDefault(const Constant(false))();
 
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   IntColumn get defaultWarmupSets =>
@@ -186,8 +191,7 @@ class AppSettingsTable extends Table {
   ///
   /// Null means Hugging Face, which is what every database that had a drawing
   /// token before this column was using.
-  TextColumn get imageProvider =>
-      text().named('image_provider').nullable()();
+  TextColumn get imageProvider => text().named('image_provider').nullable()();
 
   /// The account a Cloudflare token belongs to.
   ///
@@ -565,6 +569,12 @@ class WorkoutsTable extends Table {
   IntColumn get colorIndex => integer().named('color_index').nullable()();
   IntColumn get durationSeconds =>
       integer().named('duration_seconds').withDefault(const Constant(0))();
+
+  /// The id Health Connect gave this session when FitLog wrote it there, so
+  /// it is written once and can be taken out again when you delete it here.
+  /// Null for everything that was never written.
+  TextColumn get healthConnectId =>
+      text().named('health_connect_id').nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

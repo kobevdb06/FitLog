@@ -151,6 +151,54 @@ final class HealthConnectEnabledProvider
 String _$healthConnectEnabledHash() =>
     r'5b83ed74522b7956ce6f535610e90b7fd54d97f7';
 
+/// Whether finished sessions are written to it as well.
+
+@ProviderFor(healthConnectWritesWorkouts)
+final healthConnectWritesWorkoutsProvider =
+    HealthConnectWritesWorkoutsProvider._();
+
+/// Whether finished sessions are written to it as well.
+
+final class HealthConnectWritesWorkoutsProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// Whether finished sessions are written to it as well.
+  HealthConnectWritesWorkoutsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'healthConnectWritesWorkoutsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$healthConnectWritesWorkoutsHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return healthConnectWritesWorkouts(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$healthConnectWritesWorkoutsHash() =>
+    r'29cb9ff1b6c938caf6f4e37277f8af8ffa1bffe8';
+
 /// Connecting, importing and disconnecting.
 
 @ProviderFor(HealthSync)
@@ -187,7 +235,7 @@ final class HealthSyncProvider
   }
 }
 
-String _$healthSyncHash() => r'35fd2b7640643b039ce94fec31caec6587083d8e';
+String _$healthSyncHash() => r'4e70d6a2a8c3d5be2f156e7ade7c419246a1924d';
 
 /// Connecting, importing and disconnecting.
 

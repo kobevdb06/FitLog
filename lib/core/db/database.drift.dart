@@ -772,6 +772,21 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _healthConnectWriteWorkoutsMeta =
+      const VerificationMeta('healthConnectWriteWorkouts');
+  @override
+  late final GeneratedColumn<bool> healthConnectWriteWorkouts =
+      GeneratedColumn<bool>(
+        'health_connect_write_workouts',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("health_connect_write_workouts" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   static const VerificationMeta _defaultWarmupSetsMeta = const VerificationMeta(
     'defaultWarmupSets',
   );
@@ -956,6 +971,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     trackAlcohol,
     healthConnectEnabled,
     healthConnectSyncedAt,
+    healthConnectWriteWorkouts,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -1168,6 +1184,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         healthConnectSyncedAt.isAcceptableOrUnknown(
           data['health_connect_synced_at']!,
           _healthConnectSyncedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('health_connect_write_workouts')) {
+      context.handle(
+        _healthConnectWriteWorkoutsMeta,
+        healthConnectWriteWorkouts.isAcceptableOrUnknown(
+          data['health_connect_write_workouts']!,
+          _healthConnectWriteWorkoutsMeta,
         ),
       );
     }
@@ -1391,6 +1416,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}health_connect_synced_at'],
       ),
+      healthConnectWriteWorkouts: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}health_connect_write_workouts'],
+      )!,
       defaultWarmupSets: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}default_warmup_sets'],
@@ -1540,6 +1569,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// new - and a couple of days before it, for data a watch sends late.
   final int? healthConnectSyncedAt;
 
+  /// Whether finished sessions are written to Health Connect as well, so
+  /// other health apps see them. Off until you turn it on.
+  final bool healthConnectWriteWorkouts;
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   final int defaultWarmupSets;
 
@@ -1640,6 +1673,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.trackAlcohol,
     required this.healthConnectEnabled,
     this.healthConnectSyncedAt,
+    required this.healthConnectWriteWorkouts,
     required this.defaultWarmupSets,
     required this.prDefaultWarmupSets,
     required this.prDefaultExtraAttempts,
@@ -1689,6 +1723,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     if (!nullToAbsent || healthConnectSyncedAt != null) {
       map['health_connect_synced_at'] = Variable<int>(healthConnectSyncedAt);
     }
+    map['health_connect_write_workouts'] = Variable<bool>(
+      healthConnectWriteWorkouts,
+    );
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
     map['pr_default_extra_attempts'] = Variable<int>(prDefaultExtraAttempts);
@@ -1757,6 +1794,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       healthConnectSyncedAt: healthConnectSyncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(healthConnectSyncedAt),
+      healthConnectWriteWorkouts: Value(healthConnectWriteWorkouts),
       defaultWarmupSets: Value(defaultWarmupSets),
       prDefaultWarmupSets: Value(prDefaultWarmupSets),
       prDefaultExtraAttempts: Value(prDefaultExtraAttempts),
@@ -1827,6 +1865,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       healthConnectSyncedAt: serializer.fromJson<int?>(
         json['healthConnectSyncedAt'],
       ),
+      healthConnectWriteWorkouts: serializer.fromJson<bool>(
+        json['healthConnectWriteWorkouts'],
+      ),
       defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
       prDefaultWarmupSets: serializer.fromJson<int>(
         json['prDefaultWarmupSets'],
@@ -1874,6 +1915,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'trackAlcohol': serializer.toJson<bool>(trackAlcohol),
       'healthConnectEnabled': serializer.toJson<bool>(healthConnectEnabled),
       'healthConnectSyncedAt': serializer.toJson<int?>(healthConnectSyncedAt),
+      'healthConnectWriteWorkouts': serializer.toJson<bool>(
+        healthConnectWriteWorkouts,
+      ),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
       'prDefaultExtraAttempts': serializer.toJson<int>(prDefaultExtraAttempts),
@@ -1915,6 +1959,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? trackAlcohol,
     bool? healthConnectEnabled,
     Value<int?> healthConnectSyncedAt = const Value.absent(),
+    bool? healthConnectWriteWorkouts,
     int? defaultWarmupSets,
     int? prDefaultWarmupSets,
     int? prDefaultExtraAttempts,
@@ -1959,6 +2004,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     healthConnectSyncedAt: healthConnectSyncedAt.present
         ? healthConnectSyncedAt.value
         : this.healthConnectSyncedAt,
+    healthConnectWriteWorkouts:
+        healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
     prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
     prDefaultExtraAttempts:
@@ -2048,6 +2095,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       healthConnectSyncedAt: data.healthConnectSyncedAt.present
           ? data.healthConnectSyncedAt.value
           : this.healthConnectSyncedAt,
+      healthConnectWriteWorkouts: data.healthConnectWriteWorkouts.present
+          ? data.healthConnectWriteWorkouts.value
+          : this.healthConnectWriteWorkouts,
       defaultWarmupSets: data.defaultWarmupSets.present
           ? data.defaultWarmupSets.value
           : this.defaultWarmupSets,
@@ -2115,6 +2165,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('trackAlcohol: $trackAlcohol, ')
           ..write('healthConnectEnabled: $healthConnectEnabled, ')
           ..write('healthConnectSyncedAt: $healthConnectSyncedAt, ')
+          ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -2158,6 +2209,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     trackAlcohol,
     healthConnectEnabled,
     healthConnectSyncedAt,
+    healthConnectWriteWorkouts,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -2200,6 +2252,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.trackAlcohol == this.trackAlcohol &&
           other.healthConnectEnabled == this.healthConnectEnabled &&
           other.healthConnectSyncedAt == this.healthConnectSyncedAt &&
+          other.healthConnectWriteWorkouts == this.healthConnectWriteWorkouts &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
           other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
           other.prDefaultExtraAttempts == this.prDefaultExtraAttempts &&
@@ -2240,6 +2293,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> trackAlcohol;
   final Value<bool> healthConnectEnabled;
   final Value<int?> healthConnectSyncedAt;
+  final Value<bool> healthConnectWriteWorkouts;
   final Value<int> defaultWarmupSets;
   final Value<int> prDefaultWarmupSets;
   final Value<int> prDefaultExtraAttempts;
@@ -2279,6 +2333,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.trackAlcohol = const Value.absent(),
     this.healthConnectEnabled = const Value.absent(),
     this.healthConnectSyncedAt = const Value.absent(),
+    this.healthConnectWriteWorkouts = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2319,6 +2374,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.trackAlcohol = const Value.absent(),
     this.healthConnectEnabled = const Value.absent(),
     this.healthConnectSyncedAt = const Value.absent(),
+    this.healthConnectWriteWorkouts = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2360,6 +2416,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? trackAlcohol,
     Expression<bool>? healthConnectEnabled,
     Expression<int>? healthConnectSyncedAt,
+    Expression<bool>? healthConnectWriteWorkouts,
     Expression<int>? defaultWarmupSets,
     Expression<int>? prDefaultWarmupSets,
     Expression<int>? prDefaultExtraAttempts,
@@ -2404,6 +2461,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         'health_connect_enabled': healthConnectEnabled,
       if (healthConnectSyncedAt != null)
         'health_connect_synced_at': healthConnectSyncedAt,
+      if (healthConnectWriteWorkouts != null)
+        'health_connect_write_workouts': healthConnectWriteWorkouts,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
       if (prDefaultWarmupSets != null)
         'pr_default_warmup_sets': prDefaultWarmupSets,
@@ -2448,6 +2507,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? trackAlcohol,
     Value<bool>? healthConnectEnabled,
     Value<int?>? healthConnectSyncedAt,
+    Value<bool>? healthConnectWriteWorkouts,
     Value<int>? defaultWarmupSets,
     Value<int>? prDefaultWarmupSets,
     Value<int>? prDefaultExtraAttempts,
@@ -2489,6 +2549,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       healthConnectEnabled: healthConnectEnabled ?? this.healthConnectEnabled,
       healthConnectSyncedAt:
           healthConnectSyncedAt ?? this.healthConnectSyncedAt,
+      healthConnectWriteWorkouts:
+          healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
       prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
       prDefaultExtraAttempts:
@@ -2586,6 +2648,11 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         healthConnectSyncedAt.value,
       );
     }
+    if (healthConnectWriteWorkouts.present) {
+      map['health_connect_write_workouts'] = Variable<bool>(
+        healthConnectWriteWorkouts.value,
+      );
+    }
     if (defaultWarmupSets.present) {
       map['default_warmup_sets'] = Variable<int>(defaultWarmupSets.value);
     }
@@ -2662,6 +2729,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('trackAlcohol: $trackAlcohol, ')
           ..write('healthConnectEnabled: $healthConnectEnabled, ')
           ..write('healthConnectSyncedAt: $healthConnectSyncedAt, ')
+          ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -7548,6 +7616,17 @@ class $WorkoutsTableTable extends WorkoutsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _healthConnectIdMeta = const VerificationMeta(
+    'healthConnectId',
+  );
+  @override
+  late final GeneratedColumn<String> healthConnectId = GeneratedColumn<String>(
+    'health_connect_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7561,6 +7640,7 @@ class $WorkoutsTableTable extends WorkoutsTable
     perceivedEffort,
     colorIndex,
     durationSeconds,
+    healthConnectId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7652,6 +7732,15 @@ class $WorkoutsTableTable extends WorkoutsTable
         ),
       );
     }
+    if (data.containsKey('health_connect_id')) {
+      context.handle(
+        _healthConnectIdMeta,
+        healthConnectId.isAcceptableOrUnknown(
+          data['health_connect_id']!,
+          _healthConnectIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -7705,6 +7794,10 @@ class $WorkoutsTableTable extends WorkoutsTable
         DriftSqlType.int,
         data['${effectivePrefix}duration_seconds'],
       )!,
+      healthConnectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}health_connect_id'],
+      ),
     );
   }
 
@@ -7734,6 +7827,11 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
   /// recoloured or deleted afterwards.
   final int? colorIndex;
   final int durationSeconds;
+
+  /// The id Health Connect gave this session when FitLog wrote it there, so
+  /// it is written once and can be taken out again when you delete it here.
+  /// Null for everything that was never written.
+  final String? healthConnectId;
   const WorkoutRow({
     required this.id,
     this.routineId,
@@ -7746,6 +7844,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     this.perceivedEffort,
     this.colorIndex,
     required this.durationSeconds,
+    this.healthConnectId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7771,6 +7870,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       map['color_index'] = Variable<int>(colorIndex);
     }
     map['duration_seconds'] = Variable<int>(durationSeconds);
+    if (!nullToAbsent || healthConnectId != null) {
+      map['health_connect_id'] = Variable<String>(healthConnectId);
+    }
     return map;
   }
 
@@ -7797,6 +7899,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ? const Value.absent()
           : Value(colorIndex),
       durationSeconds: Value(durationSeconds),
+      healthConnectId: healthConnectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(healthConnectId),
     );
   }
 
@@ -7817,6 +7922,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       perceivedEffort: serializer.fromJson<String?>(json['perceivedEffort']),
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
+      healthConnectId: serializer.fromJson<String?>(json['healthConnectId']),
     );
   }
   @override
@@ -7834,6 +7940,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       'perceivedEffort': serializer.toJson<String?>(perceivedEffort),
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'durationSeconds': serializer.toJson<int>(durationSeconds),
+      'healthConnectId': serializer.toJson<String?>(healthConnectId),
     };
   }
 
@@ -7849,6 +7956,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     Value<String?> perceivedEffort = const Value.absent(),
     Value<int?> colorIndex = const Value.absent(),
     int? durationSeconds,
+    Value<String?> healthConnectId = const Value.absent(),
   }) => WorkoutRow(
     id: id ?? this.id,
     routineId: routineId.present ? routineId.value : this.routineId,
@@ -7863,6 +7971,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
         : this.perceivedEffort,
     colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
     durationSeconds: durationSeconds ?? this.durationSeconds,
+    healthConnectId: healthConnectId.present
+        ? healthConnectId.value
+        : this.healthConnectId,
   );
   WorkoutRow copyWithCompanion(WorkoutsTableCompanion data) {
     return WorkoutRow(
@@ -7885,6 +7996,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       durationSeconds: data.durationSeconds.present
           ? data.durationSeconds.value
           : this.durationSeconds,
+      healthConnectId: data.healthConnectId.present
+          ? data.healthConnectId.value
+          : this.healthConnectId,
     );
   }
 
@@ -7901,7 +8015,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ..write('totalSets: $totalSets, ')
           ..write('perceivedEffort: $perceivedEffort, ')
           ..write('colorIndex: $colorIndex, ')
-          ..write('durationSeconds: $durationSeconds')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('healthConnectId: $healthConnectId')
           ..write(')'))
         .toString();
   }
@@ -7919,6 +8034,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     perceivedEffort,
     colorIndex,
     durationSeconds,
+    healthConnectId,
   );
   @override
   bool operator ==(Object other) =>
@@ -7934,7 +8050,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           other.totalSets == this.totalSets &&
           other.perceivedEffort == this.perceivedEffort &&
           other.colorIndex == this.colorIndex &&
-          other.durationSeconds == this.durationSeconds);
+          other.durationSeconds == this.durationSeconds &&
+          other.healthConnectId == this.healthConnectId);
 }
 
 class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
@@ -7949,6 +8066,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
   final Value<String?> perceivedEffort;
   final Value<int?> colorIndex;
   final Value<int> durationSeconds;
+  final Value<String?> healthConnectId;
   final Value<int> rowid;
   const WorkoutsTableCompanion({
     this.id = const Value.absent(),
@@ -7962,6 +8080,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.perceivedEffort = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.durationSeconds = const Value.absent(),
+    this.healthConnectId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkoutsTableCompanion.insert({
@@ -7976,6 +8095,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.perceivedEffort = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.durationSeconds = const Value.absent(),
+    this.healthConnectId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -7992,6 +8112,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Expression<String>? perceivedEffort,
     Expression<int>? colorIndex,
     Expression<int>? durationSeconds,
+    Expression<String>? healthConnectId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8006,6 +8127,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       if (perceivedEffort != null) 'perceived_effort': perceivedEffort,
       if (colorIndex != null) 'color_index': colorIndex,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (healthConnectId != null) 'health_connect_id': healthConnectId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8022,6 +8144,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Value<String?>? perceivedEffort,
     Value<int?>? colorIndex,
     Value<int>? durationSeconds,
+    Value<String?>? healthConnectId,
     Value<int>? rowid,
   }) {
     return WorkoutsTableCompanion(
@@ -8036,6 +8159,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       perceivedEffort: perceivedEffort ?? this.perceivedEffort,
       colorIndex: colorIndex ?? this.colorIndex,
       durationSeconds: durationSeconds ?? this.durationSeconds,
+      healthConnectId: healthConnectId ?? this.healthConnectId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8076,6 +8200,9 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     if (durationSeconds.present) {
       map['duration_seconds'] = Variable<int>(durationSeconds.value);
     }
+    if (healthConnectId.present) {
+      map['health_connect_id'] = Variable<String>(healthConnectId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8096,6 +8223,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
           ..write('perceivedEffort: $perceivedEffort, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('durationSeconds: $durationSeconds, ')
+          ..write('healthConnectId: $healthConnectId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -13099,6 +13227,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> trackAlcohol,
       Value<bool> healthConnectEnabled,
       Value<int?> healthConnectSyncedAt,
+      Value<bool> healthConnectWriteWorkouts,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -13140,6 +13269,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> trackAlcohol,
       Value<bool> healthConnectEnabled,
       Value<int?> healthConnectSyncedAt,
+      Value<bool> healthConnectWriteWorkouts,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -13278,6 +13408,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<int> get healthConnectSyncedAt => $composableBuilder(
     column: $table.healthConnectSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get healthConnectWriteWorkouts => $composableBuilder(
+    column: $table.healthConnectWriteWorkouts,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13476,6 +13611,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get healthConnectWriteWorkouts => $composableBuilder(
+    column: $table.healthConnectWriteWorkouts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => ColumnOrderings(column),
@@ -13663,6 +13803,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get healthConnectWriteWorkouts => $composableBuilder(
+    column: $table.healthConnectWriteWorkouts,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => column,
@@ -13790,6 +13935,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> trackAlcohol = const Value.absent(),
                 Value<bool> healthConnectEnabled = const Value.absent(),
                 Value<int?> healthConnectSyncedAt = const Value.absent(),
+                Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -13829,6 +13975,7 @@ class $$AppSettingsTableTableTableManager
                 trackAlcohol: trackAlcohol,
                 healthConnectEnabled: healthConnectEnabled,
                 healthConnectSyncedAt: healthConnectSyncedAt,
+                healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -13870,6 +14017,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> trackAlcohol = const Value.absent(),
                 Value<bool> healthConnectEnabled = const Value.absent(),
                 Value<int?> healthConnectSyncedAt = const Value.absent(),
+                Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -13909,6 +14057,7 @@ class $$AppSettingsTableTableTableManager
                 trackAlcohol: trackAlcohol,
                 healthConnectEnabled: healthConnectEnabled,
                 healthConnectSyncedAt: healthConnectSyncedAt,
+                healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -17876,6 +18025,7 @@ typedef $$WorkoutsTableTableCreateCompanionBuilder =
       Value<String?> perceivedEffort,
       Value<int?> colorIndex,
       Value<int> durationSeconds,
+      Value<String?> healthConnectId,
       Value<int> rowid,
     });
 typedef $$WorkoutsTableTableUpdateCompanionBuilder =
@@ -17891,6 +18041,7 @@ typedef $$WorkoutsTableTableUpdateCompanionBuilder =
       Value<String?> perceivedEffort,
       Value<int?> colorIndex,
       Value<int> durationSeconds,
+      Value<String?> healthConnectId,
       Value<int> rowid,
     });
 
@@ -18022,6 +18173,11 @@ class $$WorkoutsTableTableFilterComposer
 
   ColumnFilters<int> get durationSeconds => $composableBuilder(
     column: $table.durationSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get healthConnectId => $composableBuilder(
+    column: $table.healthConnectId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18159,6 +18315,11 @@ class $$WorkoutsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get healthConnectId => $composableBuilder(
+    column: $table.healthConnectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutinesTableTableOrderingComposer get routineId {
     final $$RoutinesTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -18227,6 +18388,11 @@ class $$WorkoutsTableTableAnnotationComposer
 
   GeneratedColumn<int> get durationSeconds => $composableBuilder(
     column: $table.durationSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get healthConnectId => $composableBuilder(
+    column: $table.healthConnectId,
     builder: (column) => column,
   );
 
@@ -18349,6 +18515,7 @@ class $$WorkoutsTableTableTableManager
                 Value<String?> perceivedEffort = const Value.absent(),
                 Value<int?> colorIndex = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
+                Value<String?> healthConnectId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion(
                 id: id,
@@ -18362,6 +18529,7 @@ class $$WorkoutsTableTableTableManager
                 perceivedEffort: perceivedEffort,
                 colorIndex: colorIndex,
                 durationSeconds: durationSeconds,
+                healthConnectId: healthConnectId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18377,6 +18545,7 @@ class $$WorkoutsTableTableTableManager
                 Value<String?> perceivedEffort = const Value.absent(),
                 Value<int?> colorIndex = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
+                Value<String?> healthConnectId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion.insert(
                 id: id,
@@ -18390,6 +18559,7 @@ class $$WorkoutsTableTableTableManager
                 perceivedEffort: perceivedEffort,
                 colorIndex: colorIndex,
                 durationSeconds: durationSeconds,
+                healthConnectId: healthConnectId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

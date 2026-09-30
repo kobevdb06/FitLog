@@ -20,6 +20,7 @@ part 'health_dao.drift.dart';
     BodyMeasurementsTable,
     DailyVitalsTable,
     CardioSessionsTable,
+    WorkoutsTable,
   ],
 )
 class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
@@ -149,11 +150,37 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
   Stream<List<CardioSessionRow>> watchCardioSince(DateTime since) =>
       (select(cardioSessionsTable)
             ..where(
-              (t) =>
-                  t.startedAt.isBiggerOrEqualValue(since.millisecondsSinceEpoch),
+              (t) => t.startedAt.isBiggerOrEqualValue(
+                since.millisecondsSinceEpoch,
+              ),
             )
             ..orderBy([(t) => OrderingTerm.asc(t.startedAt)]))
           .watch();
+
+  /// Finished sessions since [since] that were never written to Health
+  /// Connect, oldest first.
+  ///
+  /// Only sessions with a real length: Health Connect refuses one that ends
+  /// where it starts.
+  Future<List<WorkoutRow>> workoutsToWrite(DateTime since) =>
+      (select(workoutsTable)
+            ..where(
+              (t) =>
+                  t.endedAt.isNotNull() &
+                  t.healthConnectId.isNull() &
+                  t.startedAt.isBiggerOrEqualValue(
+                    since.millisecondsSinceEpoch,
+                  ) &
+                  t.endedAt.isBiggerThan(t.startedAt),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.startedAt)]))
+          .get();
+
+  /// Remembers the id Health Connect gave a session FitLog wrote there.
+  Future<void> markWritten(String workoutId, String healthConnectId) =>
+      (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
+        WorkoutsTableCompanion(healthConnectId: Value(healthConnectId)),
+      );
 
   /// Forgets everything that ever came in from Health Connect, and nothing
   /// you entered yourself.

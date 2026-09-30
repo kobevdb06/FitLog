@@ -374,7 +374,7 @@ class _SleepSheetState extends State<_SleepSheet> {
       nightFromTimes(wakeDay: widget.wakeDay, asleep: _asleep, woke: _woke);
 
   Future<void> _pick({required bool asleep}) async {
-    final picked = await showTimePicker(
+    final picked = await showDayTimePicker(
       context: context,
       initialTime: asleep ? _asleep : _woke,
       helpText: asleep ? 'In slaap gevallen' : 'Wakker geworden',

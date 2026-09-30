@@ -327,6 +327,28 @@ void main() {
       expect(find.textContaining('slaapscore 100'), findsOneWidget);
     });
 
+    testWidgets('een uur na twaalf typ je ook op een gsm met AM en PM', (
+      tester,
+    ) async {
+      // Een toestel op 12 uur tijd liet het getypte 23 weigeren: de klok
+      // toonde 24 uur, maar het invoerveld hield zich aan AM en PM.
+      await openRecovery(tester);
+      await openSheet(tester);
+      await tester.tap(find.text('In slaap gevallen'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.keyboard_outlined));
+      await tester.pumpAndSettle();
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '23');
+      await tester.enterText(fields.at(1), '15');
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Geef een geldige tijd op'), findsNothing);
+      expect(find.textContaining('23:15'), findsWidgets);
+    });
+
     testWidgets('met de schakelaar aan vraagt ze ook de fasen', (tester) async {
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(trackSleepStages: Value(true)),

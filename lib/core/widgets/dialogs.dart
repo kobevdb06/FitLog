@@ -1092,3 +1092,23 @@ String setTypeDescription(SetType type) => switch (type) {
   SetType.drop => 'Direct verder met minder gewicht',
   SetType.failure => 'Doorgegaan tot je er geen meer kon',
 };
+
+/// A time picker that is 24 hours throughout, like the rest of the app.
+///
+/// Flutter draws the dial from the language - Dutch, so 24 hours - but checks
+/// a typed hour against the phone's own clock setting. On a phone set to AM
+/// and PM that refused "23" while the dial showed 23. The app is Dutch-only,
+/// so the picker is told outright that it is 24 hours.
+Future<TimeOfDay?> showDayTimePicker({
+  required BuildContext context,
+  required TimeOfDay initialTime,
+  String? helpText,
+}) => showTimePicker(
+  context: context,
+  initialTime: initialTime,
+  helpText: helpText,
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+    child: child!,
+  ),
+);

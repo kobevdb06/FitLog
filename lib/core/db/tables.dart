@@ -904,3 +904,43 @@ class CardioSessionsTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// One morning report: what the night and the recovery looked like, and the
+/// few sentences the coach wrote about it.
+///
+/// One per morning, keyed `yyyymmdd`: making it again that day replaces it.
+/// The facts are kept as they were that morning, not recomputed later - a
+/// report is a note of what was known then.
+@DataClassName('MorningReportRow')
+class MorningReportsTable extends Table {
+  @override
+  String get tableName => 'morning_reports';
+
+  /// The day, `yyyymmdd`.
+  TextColumn get id => text()();
+
+  IntColumn get createdAt => integer().named('created_at')();
+
+  /// The facts, as JSON: the night, its score, the heart readings and the
+  /// muscles still recovering.
+  TextColumn get facts => text()();
+
+  /// What the coach wrote. Null without a coach, or when asking it failed.
+  TextColumn get coachText => text().named('coach_text').nullable()();
+
+  /// Why there is no coach text although the coach is on.
+  TextColumn get coachError => text().named('coach_error').nullable()();
+
+  /// Why Health Connect could not be read just before, if it could not. The
+  /// report is then made from what was already there.
+  TextColumn get importError => text().named('import_error').nullable()();
+
+  /// What asking the coach cost, for the daily bar. Null when it was not
+  /// asked.
+  IntColumn get requests => integer().nullable()();
+  IntColumn get inputTokens => integer().named('input_tokens').nullable()();
+  IntColumn get outputTokens => integer().named('output_tokens').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

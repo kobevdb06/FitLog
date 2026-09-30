@@ -12733,6 +12733,602 @@ class CardioSessionsTableCompanion extends UpdateCompanion<CardioSessionRow> {
   }
 }
 
+class $MorningReportsTableTable extends MorningReportsTable
+    with TableInfo<$MorningReportsTableTable, MorningReportRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MorningReportsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _factsMeta = const VerificationMeta('facts');
+  @override
+  late final GeneratedColumn<String> facts = GeneratedColumn<String>(
+    'facts',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _coachTextMeta = const VerificationMeta(
+    'coachText',
+  );
+  @override
+  late final GeneratedColumn<String> coachText = GeneratedColumn<String>(
+    'coach_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coachErrorMeta = const VerificationMeta(
+    'coachError',
+  );
+  @override
+  late final GeneratedColumn<String> coachError = GeneratedColumn<String>(
+    'coach_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _importErrorMeta = const VerificationMeta(
+    'importError',
+  );
+  @override
+  late final GeneratedColumn<String> importError = GeneratedColumn<String>(
+    'import_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsMeta = const VerificationMeta(
+    'requests',
+  );
+  @override
+  late final GeneratedColumn<int> requests = GeneratedColumn<int>(
+    'requests',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _inputTokensMeta = const VerificationMeta(
+    'inputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> inputTokens = GeneratedColumn<int>(
+    'input_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outputTokensMeta = const VerificationMeta(
+    'outputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> outputTokens = GeneratedColumn<int>(
+    'output_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    facts,
+    coachText,
+    coachError,
+    importError,
+    requests,
+    inputTokens,
+    outputTokens,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'morning_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MorningReportRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('facts')) {
+      context.handle(
+        _factsMeta,
+        facts.isAcceptableOrUnknown(data['facts']!, _factsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_factsMeta);
+    }
+    if (data.containsKey('coach_text')) {
+      context.handle(
+        _coachTextMeta,
+        coachText.isAcceptableOrUnknown(data['coach_text']!, _coachTextMeta),
+      );
+    }
+    if (data.containsKey('coach_error')) {
+      context.handle(
+        _coachErrorMeta,
+        coachError.isAcceptableOrUnknown(data['coach_error']!, _coachErrorMeta),
+      );
+    }
+    if (data.containsKey('import_error')) {
+      context.handle(
+        _importErrorMeta,
+        importError.isAcceptableOrUnknown(
+          data['import_error']!,
+          _importErrorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requests')) {
+      context.handle(
+        _requestsMeta,
+        requests.isAcceptableOrUnknown(data['requests']!, _requestsMeta),
+      );
+    }
+    if (data.containsKey('input_tokens')) {
+      context.handle(
+        _inputTokensMeta,
+        inputTokens.isAcceptableOrUnknown(
+          data['input_tokens']!,
+          _inputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('output_tokens')) {
+      context.handle(
+        _outputTokensMeta,
+        outputTokens.isAcceptableOrUnknown(
+          data['output_tokens']!,
+          _outputTokensMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MorningReportRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MorningReportRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      facts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}facts'],
+      )!,
+      coachText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_text'],
+      ),
+      coachError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_error'],
+      ),
+      importError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}import_error'],
+      ),
+      requests: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests'],
+      ),
+      inputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}input_tokens'],
+      ),
+      outputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}output_tokens'],
+      ),
+    );
+  }
+
+  @override
+  $MorningReportsTableTable createAlias(String alias) {
+    return $MorningReportsTableTable(attachedDatabase, alias);
+  }
+}
+
+class MorningReportRow extends DataClass
+    implements Insertable<MorningReportRow> {
+  /// The day, `yyyymmdd`.
+  final String id;
+  final int createdAt;
+
+  /// The facts, as JSON: the night, its score, the heart readings and the
+  /// muscles still recovering.
+  final String facts;
+
+  /// What the coach wrote. Null without a coach, or when asking it failed.
+  final String? coachText;
+
+  /// Why there is no coach text although the coach is on.
+  final String? coachError;
+
+  /// Why Health Connect could not be read just before, if it could not. The
+  /// report is then made from what was already there.
+  final String? importError;
+
+  /// What asking the coach cost, for the daily bar. Null when it was not
+  /// asked.
+  final int? requests;
+  final int? inputTokens;
+  final int? outputTokens;
+  const MorningReportRow({
+    required this.id,
+    required this.createdAt,
+    required this.facts,
+    this.coachText,
+    this.coachError,
+    this.importError,
+    this.requests,
+    this.inputTokens,
+    this.outputTokens,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<int>(createdAt);
+    map['facts'] = Variable<String>(facts);
+    if (!nullToAbsent || coachText != null) {
+      map['coach_text'] = Variable<String>(coachText);
+    }
+    if (!nullToAbsent || coachError != null) {
+      map['coach_error'] = Variable<String>(coachError);
+    }
+    if (!nullToAbsent || importError != null) {
+      map['import_error'] = Variable<String>(importError);
+    }
+    if (!nullToAbsent || requests != null) {
+      map['requests'] = Variable<int>(requests);
+    }
+    if (!nullToAbsent || inputTokens != null) {
+      map['input_tokens'] = Variable<int>(inputTokens);
+    }
+    if (!nullToAbsent || outputTokens != null) {
+      map['output_tokens'] = Variable<int>(outputTokens);
+    }
+    return map;
+  }
+
+  MorningReportsTableCompanion toCompanion(bool nullToAbsent) {
+    return MorningReportsTableCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      facts: Value(facts),
+      coachText: coachText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachText),
+      coachError: coachError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachError),
+      importError: importError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(importError),
+      requests: requests == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requests),
+      inputTokens: inputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputTokens),
+      outputTokens: outputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputTokens),
+    );
+  }
+
+  factory MorningReportRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MorningReportRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      facts: serializer.fromJson<String>(json['facts']),
+      coachText: serializer.fromJson<String?>(json['coachText']),
+      coachError: serializer.fromJson<String?>(json['coachError']),
+      importError: serializer.fromJson<String?>(json['importError']),
+      requests: serializer.fromJson<int?>(json['requests']),
+      inputTokens: serializer.fromJson<int?>(json['inputTokens']),
+      outputTokens: serializer.fromJson<int?>(json['outputTokens']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'facts': serializer.toJson<String>(facts),
+      'coachText': serializer.toJson<String?>(coachText),
+      'coachError': serializer.toJson<String?>(coachError),
+      'importError': serializer.toJson<String?>(importError),
+      'requests': serializer.toJson<int?>(requests),
+      'inputTokens': serializer.toJson<int?>(inputTokens),
+      'outputTokens': serializer.toJson<int?>(outputTokens),
+    };
+  }
+
+  MorningReportRow copyWith({
+    String? id,
+    int? createdAt,
+    String? facts,
+    Value<String?> coachText = const Value.absent(),
+    Value<String?> coachError = const Value.absent(),
+    Value<String?> importError = const Value.absent(),
+    Value<int?> requests = const Value.absent(),
+    Value<int?> inputTokens = const Value.absent(),
+    Value<int?> outputTokens = const Value.absent(),
+  }) => MorningReportRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    facts: facts ?? this.facts,
+    coachText: coachText.present ? coachText.value : this.coachText,
+    coachError: coachError.present ? coachError.value : this.coachError,
+    importError: importError.present ? importError.value : this.importError,
+    requests: requests.present ? requests.value : this.requests,
+    inputTokens: inputTokens.present ? inputTokens.value : this.inputTokens,
+    outputTokens: outputTokens.present ? outputTokens.value : this.outputTokens,
+  );
+  MorningReportRow copyWithCompanion(MorningReportsTableCompanion data) {
+    return MorningReportRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      facts: data.facts.present ? data.facts.value : this.facts,
+      coachText: data.coachText.present ? data.coachText.value : this.coachText,
+      coachError: data.coachError.present
+          ? data.coachError.value
+          : this.coachError,
+      importError: data.importError.present
+          ? data.importError.value
+          : this.importError,
+      requests: data.requests.present ? data.requests.value : this.requests,
+      inputTokens: data.inputTokens.present
+          ? data.inputTokens.value
+          : this.inputTokens,
+      outputTokens: data.outputTokens.present
+          ? data.outputTokens.value
+          : this.outputTokens,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MorningReportRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('importError: $importError, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    facts,
+    coachText,
+    coachError,
+    importError,
+    requests,
+    inputTokens,
+    outputTokens,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MorningReportRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.facts == this.facts &&
+          other.coachText == this.coachText &&
+          other.coachError == this.coachError &&
+          other.importError == this.importError &&
+          other.requests == this.requests &&
+          other.inputTokens == this.inputTokens &&
+          other.outputTokens == this.outputTokens);
+}
+
+class MorningReportsTableCompanion extends UpdateCompanion<MorningReportRow> {
+  final Value<String> id;
+  final Value<int> createdAt;
+  final Value<String> facts;
+  final Value<String?> coachText;
+  final Value<String?> coachError;
+  final Value<String?> importError;
+  final Value<int?> requests;
+  final Value<int?> inputTokens;
+  final Value<int?> outputTokens;
+  final Value<int> rowid;
+  const MorningReportsTableCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.facts = const Value.absent(),
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.importError = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MorningReportsTableCompanion.insert({
+    required String id,
+    required int createdAt,
+    required String facts,
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.importError = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       facts = Value(facts);
+  static Insertable<MorningReportRow> custom({
+    Expression<String>? id,
+    Expression<int>? createdAt,
+    Expression<String>? facts,
+    Expression<String>? coachText,
+    Expression<String>? coachError,
+    Expression<String>? importError,
+    Expression<int>? requests,
+    Expression<int>? inputTokens,
+    Expression<int>? outputTokens,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (facts != null) 'facts': facts,
+      if (coachText != null) 'coach_text': coachText,
+      if (coachError != null) 'coach_error': coachError,
+      if (importError != null) 'import_error': importError,
+      if (requests != null) 'requests': requests,
+      if (inputTokens != null) 'input_tokens': inputTokens,
+      if (outputTokens != null) 'output_tokens': outputTokens,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MorningReportsTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? createdAt,
+    Value<String>? facts,
+    Value<String?>? coachText,
+    Value<String?>? coachError,
+    Value<String?>? importError,
+    Value<int?>? requests,
+    Value<int?>? inputTokens,
+    Value<int?>? outputTokens,
+    Value<int>? rowid,
+  }) {
+    return MorningReportsTableCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      facts: facts ?? this.facts,
+      coachText: coachText ?? this.coachText,
+      coachError: coachError ?? this.coachError,
+      importError: importError ?? this.importError,
+      requests: requests ?? this.requests,
+      inputTokens: inputTokens ?? this.inputTokens,
+      outputTokens: outputTokens ?? this.outputTokens,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (facts.present) {
+      map['facts'] = Variable<String>(facts.value);
+    }
+    if (coachText.present) {
+      map['coach_text'] = Variable<String>(coachText.value);
+    }
+    if (coachError.present) {
+      map['coach_error'] = Variable<String>(coachError.value);
+    }
+    if (importError.present) {
+      map['import_error'] = Variable<String>(importError.value);
+    }
+    if (requests.present) {
+      map['requests'] = Variable<int>(requests.value);
+    }
+    if (inputTokens.present) {
+      map['input_tokens'] = Variable<int>(inputTokens.value);
+    }
+    if (outputTokens.present) {
+      map['output_tokens'] = Variable<int>(outputTokens.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MorningReportsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('importError: $importError, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -12784,6 +13380,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $CardioSessionsTableTable cardioSessionsTable =
       $CardioSessionsTableTable(this);
+  late final $MorningReportsTableTable morningReportsTable =
+      $MorningReportsTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -12840,6 +13438,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ChatDao chatDao = ChatDao(this as AppDatabase);
   late final RecoveryDao recoveryDao = RecoveryDao(this as AppDatabase);
   late final HealthDao healthDao = HealthDao(this as AppDatabase);
+  late final ReportsDao reportsDao = ReportsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -12868,6 +13467,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     drinkDaysTable,
     dailyVitalsTable,
     cardioSessionsTable,
+    morningReportsTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxWorkoutsStartedAt,
@@ -21983,6 +22583,306 @@ typedef $$CardioSessionsTableTableProcessedTableManager =
       CardioSessionRow,
       PrefetchHooks Function()
     >;
+typedef $$MorningReportsTableTableCreateCompanionBuilder =
+    MorningReportsTableCompanion Function({
+      required String id,
+      required int createdAt,
+      required String facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<String?> importError,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+typedef $$MorningReportsTableTableUpdateCompanionBuilder =
+    MorningReportsTableCompanion Function({
+      Value<String> id,
+      Value<int> createdAt,
+      Value<String> facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<String?> importError,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+
+class $$MorningReportsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MorningReportsTableTable> {
+  $$MorningReportsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get importError => $composableBuilder(
+    column: $table.importError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MorningReportsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MorningReportsTableTable> {
+  $$MorningReportsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get importError => $composableBuilder(
+    column: $table.importError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MorningReportsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MorningReportsTableTable> {
+  $$MorningReportsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get facts =>
+      $composableBuilder(column: $table.facts, builder: (column) => column);
+
+  GeneratedColumn<String> get coachText =>
+      $composableBuilder(column: $table.coachText, builder: (column) => column);
+
+  GeneratedColumn<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get importError => $composableBuilder(
+    column: $table.importError,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requests =>
+      $composableBuilder(column: $table.requests, builder: (column) => column);
+
+  GeneratedColumn<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => column,
+  );
+}
+
+class $$MorningReportsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MorningReportsTableTable,
+          MorningReportRow,
+          $$MorningReportsTableTableFilterComposer,
+          $$MorningReportsTableTableOrderingComposer,
+          $$MorningReportsTableTableAnnotationComposer,
+          $$MorningReportsTableTableCreateCompanionBuilder,
+          $$MorningReportsTableTableUpdateCompanionBuilder,
+          (
+            MorningReportRow,
+            BaseReferences<
+              _$AppDatabase,
+              $MorningReportsTableTable,
+              MorningReportRow
+            >,
+          ),
+          MorningReportRow,
+          PrefetchHooks Function()
+        > {
+  $$MorningReportsTableTableTableManager(
+    _$AppDatabase db,
+    $MorningReportsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MorningReportsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MorningReportsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$MorningReportsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<String> facts = const Value.absent(),
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<String?> importError = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MorningReportsTableCompanion(
+                id: id,
+                createdAt: createdAt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                importError: importError,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int createdAt,
+                required String facts,
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<String?> importError = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MorningReportsTableCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                importError: importError,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MorningReportsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MorningReportsTableTable,
+      MorningReportRow,
+      $$MorningReportsTableTableFilterComposer,
+      $$MorningReportsTableTableOrderingComposer,
+      $$MorningReportsTableTableAnnotationComposer,
+      $$MorningReportsTableTableCreateCompanionBuilder,
+      $$MorningReportsTableTableUpdateCompanionBuilder,
+      (
+        MorningReportRow,
+        BaseReferences<
+          _$AppDatabase,
+          $MorningReportsTableTable,
+          MorningReportRow
+        >,
+      ),
+      MorningReportRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -22033,4 +22933,6 @@ class $AppDatabaseManager {
       $$DailyVitalsTableTableTableManager(_db, _db.dailyVitalsTable);
   $$CardioSessionsTableTableTableManager get cardioSessionsTable =>
       $$CardioSessionsTableTableTableManager(_db, _db.cardioSessionsTable);
+  $$MorningReportsTableTableTableManager get morningReportsTable =>
+      $$MorningReportsTableTableTableManager(_db, _db.morningReportsTable);
 }

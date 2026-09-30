@@ -6,8 +6,17 @@ import '../../../core/app/app_state.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
 import '../data/health_connect_source.dart';
+import '../data/health_import.dart';
 import '../data/health_importer.dart';
 import '../data/health_source.dart';
+
+export '../data/health_import.dart'
+    show
+        kFirstImportReach,
+        kImportInterval,
+        kImportOverlap,
+        kWriteReach,
+        kWriteTimeout;
 
 part 'health_providers.g.dart';
 
@@ -33,25 +42,6 @@ bool healthConnectWritesWorkouts(Ref ref) {
   return (settings?.healthConnectEnabled ?? false) &&
       (settings?.healthConnectWriteWorkouts ?? false);
 }
-
-/// How far back the first import reaches. Health Connect itself only hands
-/// an app the month before it was granted access, unless it asks for more.
-const Duration kFirstImportReach = Duration(days: 30);
-
-/// How far before the last import the next one starts again. A watch often
-/// hands its night over hours later, when it next meets the phone.
-const Duration kImportOverlap = Duration(days: 2);
-
-/// Imports at most this often on their own. Pressing the button always does.
-const Duration kImportInterval = Duration(minutes: 15);
-
-/// How far back sessions are written when writing is switched on - the same
-/// month the first import reaches. Older ones stay in FitLog only.
-const Duration kWriteReach = Duration(days: 30);
-
-/// How long one write may take before FitLog stops waiting. It runs right
-/// after finishing a session, and must never hold that up.
-const Duration kWriteTimeout = Duration(seconds: 5);
 
 class HealthSyncState {
   const HealthSyncState({this.busy = false, this.summary, this.error});
@@ -107,36 +97,16 @@ class HealthSync extends _$HealthSync {
   /// ago. Safe to call from anywhere, as often as you like.
   Future<void> sync({bool force = false, DateTime? now}) async {
     if (!_appOpen || state.busy) return;
-    final db = ref.read(databaseProvider);
+    final moment = now ?? DateTime.now();
     // Straight from the database: the settings stream may have nobody
     // listening, and then it answers "still loading" (DECISIONS 130).
-    final settings = await db.settingsDao.getSettings();
-    if (!settings.healthConnectEnabled) return;
-
-    final moment = now ?? DateTime.now();
-    final last = settings.healthConnectSyncedAt == null
-        ? null
-        : DateTime.fromMillisecondsSinceEpoch(settings.healthConnectSyncedAt!);
-    if (!force && last != null && moment.difference(last) < kImportInterval) {
-      return;
-    }
-
-    final earliest = moment.subtract(kFirstImportReach);
-    var from = last == null ? earliest : last.subtract(kImportOverlap);
-    if (from.isBefore(earliest)) from = earliest;
-    from = DateTime(from.year, from.month, from.day);
+    final import = _import();
+    final window = await import.due(now: moment, force: force);
+    if (window == null) return;
 
     state = HealthSyncState(busy: true, summary: state.summary);
     try {
-      final snapshot = await ref
-          .read(healthSourceProvider)
-          .read(from: from, to: moment);
-      final summary = await HealthImporter(db).apply(snapshot);
-      await db.settingsDao.updateSettings(
-        AppSettingsTableCompanion(
-          healthConnectSyncedAt: Value(moment.millisecondsSinceEpoch),
-        ),
-      );
+      final summary = await import.fetch(from: window.from, to: window.to);
       state = HealthSyncState(summary: summary);
     } on Object catch (error) {
       state = HealthSyncState(
@@ -202,29 +172,7 @@ class HealthSync extends _$HealthSync {
   /// session failed. What did not make it is tried again at the next import.
   Future<int> writeWorkouts({DateTime? now}) async {
     try {
-      final db = ref.read(databaseProvider);
-      final settings = await db.settingsDao.getSettings();
-      if (!settings.healthConnectEnabled ||
-          !settings.healthConnectWriteWorkouts) {
-        return 0;
-      }
-      final source = ref.read(healthSourceProvider);
-      final since = (now ?? DateTime.now()).subtract(kWriteReach);
-
-      var written = 0;
-      for (final workout in await db.healthDao.workoutsToWrite(since)) {
-        final id = await source
-            .writeWorkout(
-              start: DateTime.fromMillisecondsSinceEpoch(workout.startedAt),
-              end: DateTime.fromMillisecondsSinceEpoch(workout.endedAt!),
-              title: workout.name,
-            )
-            .timeout(kWriteTimeout);
-        if (id == null) continue;
-        await db.healthDao.markWritten(workout.id, id);
-        written++;
-      }
-      return written;
+      return await _import().writeWorkouts(now: now ?? DateTime.now());
     } on Object catch (error) {
       state = HealthSyncState(
         summary: state.summary,
@@ -233,6 +181,9 @@ class HealthSync extends _$HealthSync {
       return 0;
     }
   }
+
+  HealthImport _import() =>
+      HealthImport(ref.read(databaseProvider), ref.read(healthSourceProvider));
 
   /// Takes a deleted session out of Health Connect as well. A courtesy: when
   /// it fails, the session stays there until you remove it in Health Connect

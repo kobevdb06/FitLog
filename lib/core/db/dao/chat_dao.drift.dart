@@ -7,6 +7,8 @@ mixin _$ChatDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.chatThreadsTable;
   $ChatMessagesTableTable get chatMessagesTable =>
       attachedDatabase.chatMessagesTable;
+  $MorningReportsTableTable get morningReportsTable =>
+      attachedDatabase.morningReportsTable;
   ChatDaoManager get managers => ChatDaoManager(this);
 }
 
@@ -22,5 +24,10 @@ class ChatDaoManager {
       $$ChatMessagesTableTableTableManager(
         _db.attachedDatabase,
         _db.chatMessagesTable,
+      );
+  $$MorningReportsTableTableTableManager get morningReportsTable =>
+      $$MorningReportsTableTableTableManager(
+        _db.attachedDatabase,
+        _db.morningReportsTable,
       );
 }

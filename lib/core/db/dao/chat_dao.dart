@@ -9,7 +9,9 @@ part 'chat_dao.drift.dart';
 /// Nothing here is read unless the user has entered an API key: without one
 /// the coach does not exist, and these tables stay empty for the whole life of
 /// the app.
-@DriftAccessor(tables: [ChatThreadsTable, ChatMessagesTable])
+@DriftAccessor(
+  tables: [ChatThreadsTable, ChatMessagesTable, MorningReportsTable],
+)
 class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   ChatDao(super.db);
 
@@ -136,6 +138,23 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     await delete(chatThreadsTable).go();
   }
 
+  /// Every answer since a moment, from the chat and from the morning
+  /// reports alike: a report the coach wrote is a request on the same key,
+  /// and the daily bar has to count it.
+  static const String _usageSql =
+      'SELECT COUNT(*) AS answers, '
+      'COALESCE(SUM(requests), 0) AS requests, '
+      'COALESCE(SUM(input_tokens), 0) AS input_tokens, '
+      'COALESCE(SUM(output_tokens), 0) AS output_tokens FROM ('
+      'SELECT COALESCE(requests, 1) AS requests, '
+      'COALESCE(input_tokens, 0) AS input_tokens, '
+      'COALESCE(output_tokens, 0) AS output_tokens '
+      "FROM chat_messages WHERE role = 'assistant' AND created_at >= ? "
+      'UNION ALL '
+      'SELECT requests, COALESCE(input_tokens, 0), COALESCE(output_tokens, 0) '
+      'FROM morning_reports WHERE requests IS NOT NULL AND created_at >= ?'
+      ')';
+
   /// What was spent since [since]: calls, answers and tokens.
   ///
   /// An answer from before the app counted calls has no number; it is read as
@@ -143,13 +162,12 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   Future<({int requests, int answers, int inputTokens, int outputTokens})>
   usageSince(DateTime since) async {
     final row = await customSelect(
-      'SELECT COUNT(*) AS answers, '
-      'COALESCE(SUM(COALESCE(requests, 1)), 0) AS requests, '
-      'COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens, '
-      'COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens '
-      "FROM chat_messages WHERE role = 'assistant' AND created_at >= ?",
-      variables: [Variable.withInt(since.millisecondsSinceEpoch)],
-      readsFrom: {chatMessagesTable},
+      _usageSql,
+      variables: [
+        Variable.withInt(since.millisecondsSinceEpoch),
+        Variable.withInt(since.millisecondsSinceEpoch),
+      ],
+      readsFrom: {chatMessagesTable, morningReportsTable},
     ).getSingle();
 
     return (
@@ -165,13 +183,12 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   Stream<({int requests, int answers, int inputTokens, int outputTokens})>
   watchUsageSince(DateTime since) =>
       customSelect(
-        'SELECT COUNT(*) AS answers, '
-        'COALESCE(SUM(COALESCE(requests, 1)), 0) AS requests, '
-        'COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens, '
-        'COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens '
-        "FROM chat_messages WHERE role = 'assistant' AND created_at >= ?",
-        variables: [Variable.withInt(since.millisecondsSinceEpoch)],
-        readsFrom: {chatMessagesTable},
+        _usageSql,
+        variables: [
+          Variable.withInt(since.millisecondsSinceEpoch),
+          Variable.withInt(since.millisecondsSinceEpoch),
+        ],
+        readsFrom: {chatMessagesTable, morningReportsTable},
       ).watchSingle().map(
         (row) => (
           requests: row.read<int>('requests'),

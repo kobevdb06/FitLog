@@ -3003,3 +3003,40 @@ De herstelschatting in één keer inlezen - wat de opzoeking nodig heeft, en
 straks het ochtendrapport - gebeurt in `recovery_loader.dart`, met dezelfde
 omzettingen als het scherm, zodat de coach en het scherm nooit een andere
 schatting zien.
+
+## 164. Het ochtendrapport: de app rekent, de coach verwoordt
+
+Gevraagd: een kort rapport met je slaap (een slaapscore), hoeveel spieren
+nog herstellen en dergelijke, opgesteld met de coach, onder Herstel.
+
+**De cijfers zijn van de app.** Nacht, slaapscore (DECISIONS 162), HRV en
+rusthartslag tegenover je gewone, en welke spiergroepen nog herstellen of
+klaar zijn, rekent FitLog uit - met dezelfde schatting als het scherm
+(`recovery_loader.dart`). De coach krijgt die feiten in één bericht en
+schrijft er hoogstens drie zinnen van, met een eigen, korte opdracht zonder
+tools: hij hoeft niets op te zoeken, en elke ochtend een reeks opzoekingen
+zou elke ochtend geld kosten. Hij mag niets verzinnen wat er niet in staat.
+
+**Zonder coach is er ook een rapport.** Zonder sleutel, aan de daglimiet of
+als de coach faalt, schrijft FitLog het zelf in gewone zinnen, en staat
+erbij waarom de coach het niet deed. Het rapport is er dus altijd; de coach
+maakt het alleen menselijker.
+
+**De coachvraag telt mee op de dagteller.** Rapporten bewaren wat ze kostten
+(`morning_reports.requests` en tokens) en de teller telt ze op bij de chat,
+zodat de balk in de instellingen de waarheid blijft zeggen.
+
+**Eén rapport per dag, bewaard zoals het toen was.** Opnieuw opstellen
+vervangt dat van vandaag. De feiten worden als JSON bewaard en niet later
+opnieuw berekend: een rapport is een notitie van wat die ochtend bekend
+was, niet van wat er achteraf bijkwam.
+
+**Eerst ophalen.** Opstellen haalt eerst op wat het horloge vannacht aan
+Health Connect gaf (en schrijft wachtende trainingen weg), zodat het rapport
+over de nacht van vannacht gaat. Lukt dat niet, dan wordt het rapport toch
+gemaakt uit wat er al was, en staat erbij waarom de nacht kan ontbreken.
+
+**Het herstelscherm** begint nu met het rapport (*Vandaag*), daarna de
+spiergroepen, slaap en alcohol; de vorige rapporten staan ingeklapt
+onderaan. Het rapport is het antwoord op "kan ik vandaag trainen", de rest
+is de uitleg erachter.

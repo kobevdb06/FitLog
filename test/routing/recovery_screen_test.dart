@@ -5,6 +5,7 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/security/key_manager.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:fitlog/features/morning/presentation/morning_providers.dart';
 import 'package:fitlog/features/progress/presentation/progress_screen.dart';
 import 'package:fitlog/features/progress/presentation/recovery_screen.dart';
 import 'package:fitlog/routing/routes.dart';
@@ -195,6 +196,28 @@ void main() {
 
       expect(find.textContaining('Nog niets om te herstellen'), findsOneWidget);
       expect(find.byType(ChoiceChip), findsNothing);
+    });
+
+    testWidgets('bovenaan staat het rapport van vandaag, op verzoek', (
+      tester,
+    ) async {
+      await trainedLegs();
+      await openRecovery(tester);
+      expect(find.text('Nog geen rapport van vandaag'), findsOneWidget);
+
+      // Wat de knop doet, met echte tijd: het rapport leest de hele
+      // herstelschatting in, en dat loopt niet op de klok van de test.
+      await tester.runAsync(
+        () => container!.read(morningControllerProvider.notifier).makeNow(),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nog geen rapport van vandaag'), findsNothing);
+      expect(find.text('slaapscore'), findsOneWidget);
+      expect(find.text('1 in herstel'), findsOneWidget);
+      expect(find.textContaining('Nog in herstel: quadriceps'), findsOneWidget);
+      expect(find.text('Opnieuw opstellen'), findsOneWidget);
+      expect(await db.select(db.morningReportsTable).get(), hasLength(1));
     });
 
     testWidgets('met een training vraagt het hoe die spier voelt', (
@@ -403,7 +426,11 @@ void main() {
     container!.read(routerProvider).push(Routes.muscleRecovery);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Pijnlijk'));
+    // Het rapport staat bovenaan; de spiergroepen staan eronder.
+    final sore = find.widgetWithText(ChoiceChip, 'Pijnlijk');
+    await tester.ensureVisible(sore);
+    await tester.pumpAndSettle();
+    await tester.tap(sore);
     await tester.pumpAndSettle();
 
     final button = find.text('Afgelopen nacht invullen');
@@ -417,6 +444,8 @@ void main() {
           )
           .first,
     );
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
     await tester.tap(button);
     await tester.pumpAndSettle();
 

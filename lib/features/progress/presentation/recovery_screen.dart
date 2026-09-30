@@ -7,17 +7,21 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../morning/presentation/morning_report_card.dart';
 import 'alcohol_section.dart';
 import 'recovery_providers.dart';
 import 'recovery_view.dart';
 import 'sleep_section.dart';
 
-/// Herstel: how far each muscle is, and the place to say how it feels.
+/// Herstel: this morning's report, how far each muscle is, and the place to
+/// say how it feels.
 ///
-/// Everything else in the estimate is a reason to expect soreness. This
-/// screen is where the user says whether there was any - the one thing the app
-/// can observe rather than work out - so it asks for it next to the estimate
-/// it changes, not tucked away in a setting.
+/// The report comes first: it is the answer to "can I train today", and the
+/// rest of the screen is the detail behind it. Everything else in the
+/// estimate is a reason to expect soreness. This screen is where the user
+/// says whether there was any - the one thing the app can observe rather than
+/// work out - so it asks for it next to the estimate it changes, not tucked
+/// away in a setting.
 class RecoveryScreen extends ConsumerWidget {
   const RecoveryScreen({super.key});
 
@@ -43,12 +47,15 @@ class RecoveryScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
+          const SectionHeader('Vandaag'),
+          const MorningReportCard(),
+          const SectionHeader('Per spiergroep'),
           const Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
               0,
+              AppSpacing.lg,
+              AppSpacing.md,
             ),
             child: InfoBanner(
               icon: Icons.touch_app_outlined,
@@ -59,7 +66,6 @@ class RecoveryScreen extends ConsumerWidget {
                   'herstelt.',
             ),
           ),
-          const SectionHeader('Per spiergroep'),
           if (recent.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -92,6 +98,8 @@ class RecoveryScreen extends ConsumerWidget {
             const SectionHeader('Alcohol'),
             const AlcoholSection(),
           ],
+          const SizedBox(height: AppSpacing.lg),
+          const EarlierReports(),
           const Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg,

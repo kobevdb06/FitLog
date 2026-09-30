@@ -5,6 +5,7 @@ import 'dao/exercises_dao.dart';
 import 'dao/health_dao.dart';
 import 'dao/records_dao.dart';
 import 'dao/recovery_dao.dart';
+import 'dao/reports_dao.dart';
 import 'dao/routines_dao.dart';
 import 'dao/settings_dao.dart';
 import 'dao/workouts_dao.dart';
@@ -46,6 +47,7 @@ part 'database.drift.dart';
     DrinkDaysTable,
     DailyVitalsTable,
     CardioSessionsTable,
+    MorningReportsTable,
   ],
   daos: [
     SettingsDao,
@@ -56,13 +58,14 @@ part 'database.drift.dart';
     ChatDao,
     RecoveryDao,
     HealthDao,
+    ReportsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 34;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -339,6 +342,10 @@ class AppDatabase extends _$AppDatabase {
             appSettingsTable,
             appSettingsTable.healthConnectWriteWorkouts,
           );
+        }
+        if (from < 35) {
+          // Morning reports. None yet: there was nothing that wrote one.
+          await m.createTable(morningReportsTable);
         }
       });
 

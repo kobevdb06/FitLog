@@ -112,7 +112,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 34);
+    expect(raw.select('PRAGMA user_version').first.values.first, 35);
     raw.close();
   });
 
@@ -230,6 +230,8 @@ void main() {
     // geschreven.
     expect(settings.healthConnectWriteWorkouts, isFalse);
     expect(workout.workout.healthConnectId, isNull);
+    // v35: ochtendrapporten. Nog geen enkel, en de tabel bestaat.
+    expect(await db.select(db.morningReportsTable).get(), isEmpty);
     expect(settings.imageAccountId, isNull);
     expect(
       DrawingService.fromWire(settings.imageProvider),
@@ -311,7 +313,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 34);
+    expect(db.schemaVersion, 35);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

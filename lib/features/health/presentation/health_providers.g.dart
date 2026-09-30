@@ -235,7 +235,7 @@ final class HealthSyncProvider
   }
 }
 
-String _$healthSyncHash() => r'4e70d6a2a8c3d5be2f156e7ade7c419246a1924d';
+String _$healthSyncHash() => r'ad225da47a583a43efda23b237bf6faddc322269';
 
 /// Connecting, importing and disconnecting.
 

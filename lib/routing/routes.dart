@@ -34,7 +34,7 @@ abstract final class Routes {
   static String workoutDetail(String id) => '/voortgang/geschiedenis/$id';
 
   // Progress
-  static const exerciseChart = '/voortgang/grafiek';
+  static const health = '/voortgang/gezondheid';
   static const measurements = '/voortgang/metingen';
   static const photos = '/voortgang/fotos';
   static const photoCompare = '/voortgang/fotos/vergelijken';

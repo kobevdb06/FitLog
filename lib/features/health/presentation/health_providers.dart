@@ -38,6 +38,11 @@ Future<List<String>> healthMissingAccess(Ref ref) async {
   return ref.watch(healthSourceProvider).missingAccess();
 }
 
+/// The newest sessions with the heart rate a watch measured during them.
+@riverpod
+Stream<List<WorkoutRow>> workoutHeartRates(Ref ref) =>
+    ref.watch(databaseProvider).healthDao.watchWorkoutHeartRates();
+
 /// Whether the user connected it.
 @riverpod
 bool healthConnectEnabled(Ref ref) =>

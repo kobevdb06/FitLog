@@ -152,6 +152,50 @@ final class HealthMissingAccessProvider
 String _$healthMissingAccessHash() =>
     r'dee521003d5c3d82e8bf1dfeb347711f2a68a58a';
 
+/// The newest sessions with the heart rate a watch measured during them.
+
+@ProviderFor(workoutHeartRates)
+final workoutHeartRatesProvider = WorkoutHeartRatesProvider._();
+
+/// The newest sessions with the heart rate a watch measured during them.
+
+final class WorkoutHeartRatesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<WorkoutRow>>,
+          List<WorkoutRow>,
+          Stream<List<WorkoutRow>>
+        >
+    with $FutureModifier<List<WorkoutRow>>, $StreamProvider<List<WorkoutRow>> {
+  /// The newest sessions with the heart rate a watch measured during them.
+  WorkoutHeartRatesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'workoutHeartRatesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$workoutHeartRatesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<WorkoutRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<WorkoutRow>> create(Ref ref) {
+    return workoutHeartRates(ref);
+  }
+}
+
+String _$workoutHeartRatesHash() => r'8aa11500d25ddf49304b6b2dfff5c7af2a785da3';
+
 /// Whether the user connected it.
 
 @ProviderFor(healthConnectEnabled)

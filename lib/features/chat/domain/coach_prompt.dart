@@ -18,7 +18,7 @@ import 'dart:convert';
 const String _appFacts = '''
 FitLog is een offline logboek voor krachttraining op Android.
 - Tabbladen: Start (vandaag, je week, herstel, records, volume), Trainen
-  (routines in mappen), Voortgang (grafieken, records, lichaamsmetingen,
+  (routines in mappen), Voortgang (gezondheid, records, lichaamsmetingen,
   foto's) en Profiel (instellingen).
 - Een routine is een sjabloon met oefeningen, sets en optioneel een doel per
   set. Routines kan je op weekdagen plannen; het startscherm toont wat er

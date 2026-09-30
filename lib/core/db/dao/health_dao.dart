@@ -198,6 +198,14 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
     ),
   );
 
+  /// The newest sessions a watch measured the heart rate of, newest first.
+  Stream<List<WorkoutRow>> watchWorkoutHeartRates({int limit = 10}) =>
+      (select(workoutsTable)
+            ..where((t) => t.avgHeartRate.isNotNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
+            ..limit(limit))
+          .watch();
+
   /// Remembers the id Health Connect gave a session FitLog wrote there.
   Future<void> markWritten(String workoutId, String healthConnectId) =>
       (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(

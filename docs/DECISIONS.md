@@ -3124,3 +3124,32 @@ weigert, ziet het daar staan, en de rest werkt gewoon zonder.
 trainingen zelf zijn van jou en blijven. De coach ziet de hartslag bij
 `recent_workouts`; de workoutdetails tonen hem onder de duur, het volume en
 de sets.
+
+## 167. Gezondheid in de plaats van "Grafiek per oefening"
+
+Gevraagd: een scherm waar je hartslag en de andere gezondheidsgegevens te
+zien zijn, in de plaats van "Grafiek per oefening" onder Voortgang - dat
+werd niet gebruikt, en dezelfde grafieken staan op de pagina van elke
+oefening, waar mensen ze ook openen. Het scherm en zijn route zijn weg; de
+grafieken op de oefeningpagina blijven.
+
+**Gezondheid, niet "Health".** Gevraagd was "health" met het icoontje van
+health. De rest van de app is Nederlands (Voortgang, Herstel, Trainen), dus
+heet de knop *Gezondheid*, met een hartje als icoon.
+
+**Wat erop staat,** over de laatste 30 dagen: de laatste nacht met zijn
+slaapscore, het gemiddelde en een staaf per nacht (twee weken, meer is op
+een gsm niet leesbaar); HRV en rusthartslag met de laatste waarde, het
+midden van de maand als "gewoonlijk" en een lijn; de hartslag bij je
+laatste trainingen, met een tik naar die training; je gewicht; en je lopen
+en ritten. De getallen komen uit dezelfde berekeningen als de rest - de
+slaapscore van DECISIONS 162, de gegevens van Health Connect uit de eigen
+database - zodat dit scherm nooit iets anders zegt dan Herstel of de coach.
+
+**Wat alleen een horloge meet,** staat er alleen als Health Connect
+verbonden is of er al gegevens zijn: zonder horloge zou het een rij lege
+kaarten zijn. Het scherm zegt dan bovenaan hoe je ze krijgt; slaap en
+gewicht, die je ook zelf invult, staan er altijd.
+
+Naar beneden trekken of het pijltje haalt meteen op; het tandwiel gaat naar
+de instellingen van Health Connect.

@@ -5,6 +5,7 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/security/key_manager.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:fitlog/features/health/presentation/health_overview_screen.dart';
 import 'package:fitlog/features/morning/presentation/morning_providers.dart';
 import 'package:fitlog/features/progress/presentation/progress_screen.dart';
 import 'package:fitlog/features/progress/presentation/recovery_screen.dart';
@@ -152,6 +153,35 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(RecoveryScreen), findsOneWidget);
+    });
+
+    testWidgets('en Gezondheid staat ernaast, in plaats van de grafiek', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tester.tap(find.text('Voortgang').last);
+      await tester.pumpAndSettle();
+
+      final entry = find.descendant(
+        of: find.byType(ProgressScreen),
+        matching: find.text('Gezondheid'),
+      );
+      await tester.scrollUntilVisible(
+        entry,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(ProgressScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(find.text('Grafiek per oefening'), findsNothing);
+
+      await tester.tap(entry);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HealthOverviewScreen), findsOneWidget);
     });
 
     testWidgets('en vanaf het blok op het startscherm', (tester) async {

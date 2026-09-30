@@ -45,9 +45,9 @@ class ProgressScreen extends ConsumerWidget {
                           'Nog geen metingen',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
                       ),
@@ -112,10 +112,11 @@ class ProgressScreen extends ConsumerWidget {
           const SectionHeader('Meer'),
           const _RecoveryTile(),
           ListTile(
-            leading: const Icon(Icons.show_chart),
-            title: const Text('Grafiek per oefening'),
+            leading: const Icon(Icons.favorite_border),
+            title: const Text('Gezondheid'),
+            subtitle: const Text('Slaap, HRV, hartslag, gewicht en lopen'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.exerciseChart),
+            onTap: () => context.push(Routes.health),
           ),
           ListTile(
             leading: const Icon(Icons.history),

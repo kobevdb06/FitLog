@@ -52,7 +52,7 @@ final class SorenessChecksProvider
   }
 }
 
-String _$sorenessChecksHash() => r'7a639aa2091ad7b6d4d114fc2161305ab543996b';
+String _$sorenessChecksHash() => r'1f15fc7329e522c1f9f6d8bc1a133b2cddffc054';
 
 /// The nights you filled in over the stretch the estimate looks at, oldest
 /// first - as stored, stages and all, for the screen that shows them.
@@ -197,7 +197,7 @@ final class VitalsDaysProvider
   }
 }
 
-String _$vitalsDaysHash() => r'88ebca800badfce7222c62f87c8d940b0a8b9715';
+String _$vitalsDaysHash() => r'5164bb11cab1b107958f1702c2e43e5db2117bc5';
 
 /// The runs and rides another app recorded, over the stretch the estimate
 /// looks at. Empty without Health Connect.
@@ -246,7 +246,7 @@ final class CardioSessionsProvider
   }
 }
 
-String _$cardioSessionsHash() => r'2d910ed017dcd30adaba701ad73fd8572d104fc0';
+String _$cardioSessionsHash() => r'5a568b26e43ead080bb402e4f53b98580af232a2';
 
 /// One estimate per muscle group, newest session first.
 ///
@@ -307,7 +307,7 @@ final class RecoveryEstimatesProvider
   }
 }
 
-String _$recoveryEstimatesHash() => r'5ab10ed9f20e2e0a54054649ac60a2e2750f0d85';
+String _$recoveryEstimatesHash() => r'747babe877dc67902d56977a536c213789a3c10b';
 
 /// The muscles one particular session left behind.
 ///

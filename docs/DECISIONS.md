@@ -2972,3 +2972,34 @@ is dan het gewogen gemiddelde van wat er wel is. Wie alleen zijn uren
 intypt, krijgt dus een score die alleen over de duur gaat - eerlijk, en
 vergelijkbaar met zichzelf. Het getal staat bij elke nacht, en komt terug in
 het ochtendrapport.
+
+## 163. De coach mag alles zien wat de herstelschatting ziet
+
+Gevraagd: de coach mag alles zien. Hij krijgt daarvoor vijf opzoekingen
+bij: je nachten (met fasen, slaapscore en of ze van een horloge kwamen),
+HRV en rusthartslag per dag met je gewone niveau, je loop- en fietssessies,
+de herstelschatting per spiergroep met wat haar verschoof, en je glazen per
+dag. Dezelfde regels als voor de rest: niets gaat vooraf mee, alleen wat hij
+opvraagt; elke opzoeking laat een regel in gewone taal achter onder het
+antwoord; hoogstens veertig rijen per keer.
+
+Eén uitzondering op "datums als dag": bij een nacht gaan het uur van inslapen
+en wakker worden mee. Slaapadvies gaat daar precies over, en "ga vroeger
+slapen" zonder te weten wanneer iemand slaapt, is gokken - wat de coach
+uitdrukkelijk niet mag.
+
+Gewichten uit Health Connect stonden al tussen de lichaamsmetingen en waren
+dus al zichtbaar; nu is de rest dat ook. Health Connect zelf zegt daar niets
+over bij de toestemming, dus zegt FitLog het: het Health Connect-scherm en
+de handleiding noemen het, in plaats van "hier gaat niets over het
+internet", wat met de coach aan niet meer klopt. Zonder coach blijft het
+waar.
+
+De systeemprompt blijft zoals hij was: hij gaat mee met elke vraag en heeft
+een budget (coach_test). De beschrijvingen van de opzoekingen zeggen zelf wat
+er te halen valt.
+
+De herstelschatting in één keer inlezen - wat de opzoeking nodig heeft, en
+straks het ochtendrapport - gebeurt in `recovery_loader.dart`, met dezelfde
+omzettingen als het scherm, zodat de coach en het scherm nooit een andere
+schatting zien.

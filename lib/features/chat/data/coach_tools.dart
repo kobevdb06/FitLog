@@ -12,11 +12,14 @@ library;
 
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Variable;
+import 'package:drift/drift.dart' show OrderingTerm, Variable;
 
+import '../../../core/calc/recovery.dart';
+import '../../../core/calc/sleep_score.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../exercises/presentation/exercise_providers.dart';
+import '../../progress/data/recovery_loader.dart';
 import '../domain/coach_proposal.dart';
 
 /// The result of one lookup: what goes back to the model, and what the user
@@ -234,6 +237,67 @@ class CoachTools {
         },
       },
     },
+    {
+      'name': 'sleep',
+      'description':
+          'De laatste nachten van de gebruiker: wanneer in slaap en wakker, '
+          'hoe lang, de lichte, REM- en diepe slaap als die bekend zijn, de '
+          'slaapscore van FitLog (0-100) en of de nacht van een horloge kwam '
+          '(Health Connect) of zelf ingevuld is.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'limit': {'type': 'integer', 'description': 'Hoeveel nachten.'},
+        },
+      },
+    },
+    {
+      'name': 'heart_readings',
+      'description':
+          'HRV (RMSSD, ms) en rusthartslag (slagen per minuut) per dag, van '
+          'het horloge van de gebruiker via Health Connect, met het gewone '
+          'niveau: de mediaan van de vier weken voor vandaag.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'limit': {'type': 'integer', 'description': 'Hoeveel dagen.'},
+        },
+      },
+    },
+    {
+      'name': 'cardio_sessions',
+      'description':
+          'Loop- en fietssessies die een andere app opnam en via Health '
+          'Connect binnenkwamen: datum, soort en duur.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'limit': {'type': 'integer', 'description': 'Hoeveel sessies.'},
+        },
+      },
+    },
+    {
+      'name': 'recovery',
+      'description':
+          'De herstelschatting van FitLog per spiergroep die de laatste '
+          'dagen getraind is: wanneer, of ze klaar is, hoeveel uur nog, en '
+          'wat de schatting verschoof (belasting tegenover gewoonlijk, '
+          'overgedragen herstel, eigen tempo, slaap, HRV en rusthartslag, '
+          'alcohol, een loop of rit, wat de gebruiker zelf zei).',
+      'input_schema': {'type': 'object', 'properties': {}},
+    },
+    {
+      'name': 'drinks',
+      'description':
+          'Hoeveel standaardglazen alcohol de gebruiker per dag noteerde. '
+          'Een dag zonder rij is een dag zonder glazen of zonder invoer.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'limit': {'type': 'integer', 'description': 'Hoeveel dagen.'},
+        },
+      },
+    },
   ];
 
   static const Set<String> names = {
@@ -246,6 +310,11 @@ class CoachTools {
     'routines',
     'weekly_volume',
     'body_measurements',
+    'sleep',
+    'heart_readings',
+    'cardio_sessions',
+    'recovery',
+    'drinks',
   };
 
   /// Runs one lookup. An unknown name is an answer, not a crash: the model
@@ -261,6 +330,11 @@ class CoachTools {
       'routines' => _routines(),
       'weekly_volume' => _weeklyVolume(input),
       'body_measurements' => _bodyMeasurements(input),
+      'sleep' => _sleep(input),
+      'heart_readings' => _heartReadings(input),
+      'cardio_sessions' => _cardioSessions(input),
+      'recovery' => _recovery(),
+      'drinks' => _drinks(input),
       _ => CoachLookup(
         json: jsonEncode({'error': 'onbekende tool: $name'}),
         summary: 'een opzoeking die niet bestaat ($name)',
@@ -733,6 +807,208 @@ class CoachTools {
       }),
       summary: type == null ? 'je lichaamsmetingen' : 'je metingen van $type',
     );
+  }
+
+  Future<CoachLookup> _sleep(Map<String, Object?> input) async {
+    final limit = _limit(input['limit'], 7);
+    final nights =
+        await (db.select(db.sleepEntriesTable)
+              ..orderBy([(t) => OrderingTerm.desc(t.wokeAt)])
+              ..limit(limit))
+            .get();
+
+    // The score of a night needs the four weeks of readings before it.
+    final vitals = nights.isEmpty
+        ? const <VitalsDay>[]
+        : [
+            for (final row
+                in await db.healthDao
+                    .watchVitalsSince(
+                      DateTime.fromMillisecondsSinceEpoch(nights.last.wokeAt)
+                          .subtract(kVitalsBaselineWindow),
+                    )
+                    .first)
+              vitalsDayOf(row),
+          ];
+
+    return CoachLookup(
+      json: jsonEncode({
+        'nights': [
+          for (final night in nights)
+            {
+              'morning': _day(night.wokeAt),
+              'asleep': _clock(night.fellAsleepAt),
+              'woke': _clock(night.wokeAt),
+              'minutes': (night.wokeAt - night.fellAsleepAt) ~/ 60000,
+              'light_minutes': ?night.lightMinutes,
+              'rem_minutes': ?night.remMinutes,
+              'deep_minutes': ?night.deepMinutes,
+              'score': _nightScore(night, vitals).value,
+              'from': night.source == null ? 'zelf ingevuld' : 'Health Connect',
+            },
+        ],
+      }),
+      summary: 'je laatste ${nights.length} nachten',
+    );
+  }
+
+  static SleepScore _nightScore(SleepEntryRow night, List<VitalsDay> vitals) {
+    final morning = morningAgainstUsual(
+      DateTime.fromMillisecondsSinceEpoch(night.wokeAt),
+      vitals,
+    );
+    return sleepScore(
+      asleep: Duration(milliseconds: night.wokeAt - night.fellAsleepAt),
+      deepMinutes: night.deepMinutes,
+      remMinutes: night.remMinutes,
+      hrvDrop: morning.hrvDrop,
+      restingHrRise: morning.restingHrRise,
+    );
+  }
+
+  Future<CoachLookup> _heartReadings(Map<String, Object?> input) async {
+    final limit = _limit(input['limit'], 14);
+    final today = DateTime.now();
+    final days =
+        await (db.select(db.dailyVitalsTable)
+              ..orderBy([(t) => OrderingTerm.desc(t.day)])
+              ..limit(limit))
+            .get();
+    final month = await db.healthDao
+        .watchVitalsSince(today.subtract(kVitalsBaselineWindow))
+        .first;
+
+    double? median(Iterable<double?> values) {
+      final sorted = [for (final v in values) ?v]..sort();
+      if (sorted.isEmpty) return null;
+      final mid = sorted.length ~/ 2;
+      return sorted.length.isOdd
+          ? sorted[mid]
+          : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    double? round(double? value) =>
+        value == null ? null : (value * 10).round() / 10;
+
+    return CoachLookup(
+      json: jsonEncode({
+        'usual': {
+          'hrv_ms': ?round(median(month.map((d) => d.hrvMs))),
+          'resting_hr': ?round(median(month.map((d) => d.restingHr))),
+        },
+        'days': [
+          for (final day in days)
+            {
+              'date': _day(day.day),
+              'hrv_ms': ?round(day.hrvMs),
+              'resting_hr': ?round(day.restingHr),
+            },
+        ],
+      }),
+      summary: 'je HRV en rusthartslag',
+    );
+  }
+
+  Future<CoachLookup> _cardioSessions(Map<String, Object?> input) async {
+    final limit = _limit(input['limit'], 10);
+    final rows =
+        await (db.select(db.cardioSessionsTable)
+              ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
+              ..limit(limit))
+            .get();
+
+    return CoachLookup(
+      json: jsonEncode({
+        'sessions': [
+          for (final row in rows)
+            {
+              'date': _day(row.startedAt),
+              'kind': CardioKind.fromWire(row.kind)?.label ?? row.kind,
+              'minutes': (row.endedAt - row.startedAt) ~/ 60000,
+            },
+        ],
+      }),
+      summary: 'je loop- en fietssessies',
+    );
+  }
+
+  Future<CoachLookup> _recovery() async {
+    final now = DateTime.now();
+    final estimates = await loadRecoveryEstimates(db, now: now);
+    const shown = Duration(hours: 96);
+
+    String percent(double factor) => '+${((factor - 1) * 100).round()}%';
+
+    return CoachLookup(
+      json: jsonEncode({
+        'muscles': [
+          for (final e in estimates)
+            if (!e.isReadyAt(now) || now.difference(e.trainedAt) < shown)
+              {
+                'muscle': e.muscle,
+                'trained': _day(e.trainedAt.millisecondsSinceEpoch),
+                'ready': e.isReadyAt(now),
+                if (!e.isReadyAt(now))
+                  'hours_left': e.remainingAt(now).inMinutes ~/ 60,
+                'estimate_hours': e.recovery.inMinutes ~/ 60,
+                'load_vs_usual': (e.loadRatio * 100).round() / 100,
+                if (e.provisional) 'provisional': true,
+                if (e.carryover > Duration.zero)
+                  'carried_over_hours': e.carryover.inMinutes ~/ 60,
+                if (e.personalFactor != 1)
+                  'own_pace': (e.personalFactor * 100).round() / 100,
+                if (e.sleepFactor > 1) 'short_nights': percent(e.sleepFactor),
+                if (e.vitalsFactor > 1) 'heart': percent(e.vitalsFactor),
+                if (e.hrvDrop case final drop?)
+                  'hrv_vs_usual': '${(-drop * 100).round()}%',
+                if (e.restingHrRise case final rise?)
+                  'resting_hr_vs_usual': rise.round(),
+                if (e.alcoholFactor > 1) ...{
+                  'alcohol': percent(e.alcoholFactor),
+                  'drinks': e.drinks,
+                },
+                if (e.cardio case final run?)
+                  'held_back_by': {
+                    'kind': run.kind.label,
+                    'date': _day(run.end.millisecondsSinceEpoch),
+                    'minutes': run.duration.inMinutes,
+                  },
+                if (e.check case final level?)
+                  'user_said': {
+                    'feels': level.label,
+                    'date': _day(e.checkedAt!.millisecondsSinceEpoch),
+                  },
+              },
+        ],
+      }),
+      summary: 'je herstel per spiergroep',
+    );
+  }
+
+  Future<CoachLookup> _drinks(Map<String, Object?> input) async {
+    final limit = _limit(input['limit'], 14);
+    final rows =
+        await (db.select(db.drinkDaysTable)
+              ..orderBy([(t) => OrderingTerm.desc(t.day)])
+              ..limit(limit))
+            .get();
+
+    return CoachLookup(
+      json: jsonEncode({
+        'days': [
+          for (final row in rows) {'date': _day(row.day), 'drinks': row.drinks},
+        ],
+      }),
+      summary: 'je glazen per dag',
+    );
+  }
+
+  /// The hour of a night, `23:40`. Only for sleep: when you went to bed is
+  /// what advice about sleep is about.
+  static String _clock(int millis) {
+    final at = DateTime.fromMillisecondsSinceEpoch(millis);
+    return '${at.hour.toString().padLeft(2, '0')}:'
+        '${at.minute.toString().padLeft(2, '0')}';
   }
 
   /// Dates go out as plain days. The model never needs the hour someone

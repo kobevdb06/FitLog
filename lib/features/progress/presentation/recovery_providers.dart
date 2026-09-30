@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/db/database.dart';
+import '../data/recovery_loader.dart';
 
 part 'recovery_providers.g.dart';
 
@@ -14,17 +15,7 @@ Stream<List<SorenessCheck>> sorenessChecks(Ref ref) {
       .watch(databaseProvider)
       .recoveryDao
       .watchSorenessSince(since)
-      .map(
-        (rows) => [
-          for (final row in rows)
-            if (SorenessLevel.fromWire(row.level) case final level?)
-              SorenessCheck(
-                muscle: row.muscle,
-                at: DateTime.fromMillisecondsSinceEpoch(row.checkedAt),
-                level: level,
-              ),
-        ],
-      );
+      .map((rows) => [for (final row in rows) ?sorenessCheckOf(row)]);
 }
 
 /// The nights you filled in over the stretch the estimate looks at, oldest
@@ -34,13 +25,6 @@ Stream<List<SleepEntryRow>> sleepEntries(Ref ref) {
   final since = DateTime.now().subtract(kRecoveryHistoryWindow);
   return ref.watch(databaseProvider).recoveryDao.watchSleepSince(since);
 }
-
-/// The same nights, the way the estimate reads them: when it ended and how
-/// long it was.
-SleepNight sleepNightOf(SleepEntryRow row) => SleepNight(
-  wokeAt: DateTime.fromMillisecondsSinceEpoch(row.wokeAt),
-  duration: Duration(milliseconds: row.wokeAt - row.fellAsleepAt),
-);
 
 /// The days you drank on, over the stretch the estimate looks at.
 @riverpod
@@ -61,16 +45,7 @@ Stream<List<VitalsDay>> vitalsDays(Ref ref) {
       .watch(databaseProvider)
       .healthDao
       .watchVitalsSince(since)
-      .map(
-        (rows) => [
-          for (final row in rows)
-            VitalsDay(
-              day: DateTime.fromMillisecondsSinceEpoch(row.day),
-              hrvMs: row.hrvMs,
-              restingHr: row.restingHr,
-            ),
-        ],
-      );
+      .map((rows) => [for (final row in rows) vitalsDayOf(row)]);
 }
 
 /// The runs and rides another app recorded, over the stretch the estimate
@@ -82,17 +57,7 @@ Stream<List<CardioSession>> cardioSessions(Ref ref) {
       .watch(databaseProvider)
       .healthDao
       .watchCardioSince(since)
-      .map(
-        (rows) => [
-          for (final row in rows)
-            if (CardioKind.fromWire(row.kind) case final kind?)
-              CardioSession(
-                start: DateTime.fromMillisecondsSinceEpoch(row.startedAt),
-                end: DateTime.fromMillisecondsSinceEpoch(row.endedAt),
-                kind: kind,
-              ),
-        ],
-      );
+      .map((rows) => [for (final row in rows) ?cardioSessionOf(row)]);
 }
 
 /// One estimate per muscle group, newest session first.
@@ -112,10 +77,7 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
   ];
   final drinks = [
     for (final row in ref.watch(drinkDaysProvider).value ?? const [])
-      DrinkDay(
-        day: DateTime.fromMillisecondsSinceEpoch(row.day),
-        drinks: row.drinks,
-      ),
+      drinkDayOf(row),
   ];
   final vitals = ref.watch(vitalsDaysProvider).value ?? const [];
   final cardio = ref.watch(cardioSessionsProvider).value ?? const [];

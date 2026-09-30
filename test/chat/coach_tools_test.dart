@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/chat/data/coach_tools.dart';
+import 'package:fitlog/features/health/data/health_importer.dart';
+import 'package:fitlog/features/health/data/health_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../widget/helpers.dart';
@@ -269,6 +271,130 @@ void main() {
       expect(record['exercise'], 'Bench Press');
       expect(record['value'], 100);
       expect(lookup.summary, 'je persoonlijke records');
+    });
+  });
+
+  group('wat je horloge en je herstel zeggen', () {
+    test('nachten, met hun fasen, score en waar ze vandaan kwamen', () async {
+      await db.recoveryDao.setSleep(
+        fellAsleepAt: DateTime(2026, 3, 1, 23, 30),
+        wokeAt: DateTime(2026, 3, 2, 7, 30),
+      );
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          nights: [
+            ImportedNight(
+              fellAsleepAt: DateTime(2026, 3, 2, 23),
+              wokeAt: DateTime(2026, 3, 3, 5),
+              source: 'com.example.watch',
+              deepMinutes: 60,
+              remMinutes: 60,
+            ),
+          ],
+        ),
+      );
+
+      final lookup = await tools.run('sleep', const {});
+      final nights = (decode(lookup)['nights']! as List)
+          .cast<Map<String, Object?>>();
+
+      expect(nights, hasLength(2));
+      // De nieuwste eerst.
+      expect(nights.first['morning'], '2026-03-03');
+      expect(nights.first['asleep'], '23:00');
+      expect(nights.first['minutes'], 360);
+      expect(nights.first['deep_minutes'], 60);
+      expect(nights.first['from'], 'Health Connect');
+      expect(nights.first['score'], isA<int>());
+      expect(nights.last['from'], 'zelf ingevuld');
+      expect(nights.last.containsKey('deep_minutes'), isFalse);
+      expect(nights.last['score'], 100);
+      expect(lookup.summary, 'je laatste 2 nachten');
+    });
+
+    test('HRV en rusthartslag per dag, met het gewone erbij', () async {
+      final today = DateTime.now();
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          hrv: [
+            for (var d = 1; d <= 3; d++)
+              ImportedReading(
+                at: DateTime(today.year, today.month, today.day - d, 3),
+                value: 40.0 + d,
+              ),
+          ],
+          restingHr: [
+            ImportedReading(
+              at: DateTime(today.year, today.month, today.day - 1, 8),
+              value: 54,
+            ),
+          ],
+        ),
+      );
+
+      final lookup = await tools.run('heart_readings', const {});
+      final json = decode(lookup);
+      final days = (json['days']! as List).cast<Map<String, Object?>>();
+
+      expect(days, hasLength(3));
+      expect(days.first['hrv_ms'], 41);
+      expect(days.first['resting_hr'], 54);
+      expect((json['usual']! as Map)['hrv_ms'], 42);
+      expect(lookup.summary, 'je HRV en rusthartslag');
+    });
+
+    test('lopen en ritten, met hun duur', () async {
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          cardio: [
+            ImportedCardio(
+              id: 'r1',
+              start: DateTime(2026, 3, 4, 18),
+              end: DateTime(2026, 3, 4, 18, 42),
+              kind: CardioKind.running,
+              source: 'com.strava',
+            ),
+          ],
+        ),
+      );
+
+      final lookup = await tools.run('cardio_sessions', const {});
+      final session = (decode(lookup)['sessions']! as List).single as Map;
+
+      expect(session['kind'], 'loop');
+      expect(session['minutes'], 42);
+      expect(session['date'], '2026-03-04');
+    });
+
+    test('het herstel per spiergroep, met wat het verschoof', () async {
+      await logSet(
+        exerciseId: 'ex-squat',
+        on: DateTime.now().subtract(const Duration(hours: 20)),
+        weight: 100,
+      );
+      await db.recoveryDao.setSoreness(
+        'quadriceps',
+        SorenessLevel.sore,
+        at: DateTime.now(),
+      );
+
+      final lookup = await tools.run('recovery', const {});
+      final muscle = (decode(lookup)['muscles']! as List).single as Map;
+
+      expect(muscle['muscle'], 'quadriceps');
+      expect(muscle['ready'], isFalse);
+      expect(muscle['hours_left'], greaterThan(0));
+      expect((muscle['user_said']! as Map)['feels'], 'Pijnlijk');
+      expect(lookup.summary, 'je herstel per spiergroep');
+    });
+
+    test('glazen per dag', () async {
+      await db.recoveryDao.setDrinks(DateTime(2026, 3, 1), 4);
+
+      final lookup = await tools.run('drinks', const {});
+      final day = (decode(lookup)['days']! as List).single as Map;
+
+      expect(day, {'date': '2026-03-01', 'drinks': 4});
     });
   });
 

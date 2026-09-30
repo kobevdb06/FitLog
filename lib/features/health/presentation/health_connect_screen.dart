@@ -38,8 +38,9 @@ class HealthConnectScreen extends ConsumerWidget {
               message:
                   'Health Connect is de plek op je gsm waar apps als Samsung '
                   'Health, Google Health en je horloge hun gegevens delen. '
-                  'FitLog leest er alleen uit wat hieronder staat. Alles blijft '
-                  'op je gsm: hier gaat niets over het internet.',
+                  'FitLog leest er alleen uit wat hieronder staat, en het '
+                  'blijft op je gsm - tenzij je de AI-coach gebruikt: die kan '
+                  'het opzoeken als je hem iets vraagt, net als je trainingen.',
             ),
           ),
           const SectionHeader('Wat FitLog leest'),

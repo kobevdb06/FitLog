@@ -1,13 +1,14 @@
 /// Estimates how long a muscle group is likely to need before it is ready
 /// again, from what the user logged and nothing else.
 ///
-/// The estimate is deliberately modest about what it knows. Sleep, food,
-/// stress, age, illness and how sore you actually are all outweigh training
-/// volume, and none of them are in the database. What is in the database is
-/// how hard this session was **compared to your own recent sessions for that
-/// muscle**, which is the only comparison that survives the differences
-/// between people - and, since the user rates the session afterwards, how it
-/// felt.
+/// The estimate is deliberately modest about what it knows. Food, stress, age
+/// and illness all outweigh training volume, and none of them are in the
+/// database. What is in the database is how hard this session was **compared
+/// to your own recent sessions for that muscle**, which is the only
+/// comparison that survives the differences between people - and, since the
+/// user rates the session afterwards, how it felt. Around that come what the
+/// user chose to keep track of: how sore they say they are, their nights,
+/// their drinks, and what a watch reports through Health Connect.
 ///
 /// Nothing here is advice. It is a reading of a logbook.
 library;
@@ -121,6 +122,51 @@ const double kAlcoholFullEffectAt = 1.5;
 /// The most a day of drinking adds to a session's estimate.
 const double kMaxAlcoholFactor = 1.2;
 
+/// How many days before a session make up your usual HRV and resting heart
+/// rate, and how many of them need a reading before "usual" means anything.
+///
+/// Your own usual, not a population norm: a resting heart rate of 48 is
+/// ordinary for one person and a warning for the next.
+const Duration kVitalsBaselineWindow = Duration(days: 28);
+const int kVitalsForBaseline = 7;
+
+/// How many mornings after a session speak for it, averaged: one bad reading
+/// is noise, three in a row is the body saying something.
+const int kVitalsDaysAfterSession = 3;
+
+/// How far below your usual HRV the mornings after a session sit, as a
+/// share of it.
+///
+/// Below the first figure nothing: HRV swings about a tenth from day to day
+/// without anything being wrong. At the second the full effect.
+const double kHrvDropNoEffect = 0.10;
+const double kHrvDropFullEffect = 0.25;
+
+/// How far above your usual resting heart rate those mornings sit, in beats
+/// per minute. A few beats is an ordinary day; ten is a body still busy.
+const double kRestingHrRiseNoEffect = 3;
+const double kRestingHrRiseFullEffect = 10;
+
+/// The most HRV and resting heart rate together add to a session's estimate.
+///
+/// They only ever stretch it. A good morning does not prove a muscle is
+/// repaired - HRV reads the nervous system, not the quadriceps - but a bad
+/// one is a fair sign that the body is not done yet.
+const double kMaxVitalsFactor = 1.2;
+
+/// A run or ride up to this long counts as an ordinary one; longer ones keep
+/// the legs busy for longer.
+const Duration kLongCardio = Duration(minutes: 60);
+
+/// Which muscles a run or a ride tires.
+///
+/// Running takes the whole leg, and the calves take the landing; cycling is
+/// mostly the front of the thigh and the glutes.
+const Map<CardioKind, Set<String>> kCardioMuscles = {
+  CardioKind.running: {'quadriceps', 'hamstrings', 'bilspieren', 'kuiten'},
+  CardioKind.cycling: {'quadriceps', 'bilspieren'},
+};
+
 /// The estimate never leaves this range, whatever the arithmetic says.
 const double kMinRecoveryHours = 24;
 const double kMaxRecoveryHours = 96;
@@ -229,6 +275,126 @@ double alcoholFactor(int drinks, {double? bodyWeightKg}) {
   return 1 + share * (kMaxAlcoholFactor - 1);
 }
 
+/// One day's HRV and resting heart rate, as a watch reported them.
+class VitalsDay {
+  const VitalsDay({required this.day, this.hrvMs, this.restingHr});
+
+  /// Midnight at the start of the day.
+  final DateTime day;
+
+  /// RMSSD in milliseconds.
+  final double? hrvMs;
+
+  /// Beats per minute.
+  final double? restingHr;
+}
+
+/// What the mornings after a session said, against your usual.
+class VitalsEffect {
+  const VitalsEffect({this.factor = 1, this.hrvDrop, this.restingHrRise});
+
+  /// What they do to the session's recovery: 1 or more.
+  final double factor;
+
+  /// How far HRV sat below your usual, as a share of it; negative when it
+  /// sat above. Null without a usual or without mornings to compare.
+  final double? hrvDrop;
+
+  /// How far the resting heart rate sat above your usual, in beats per
+  /// minute. Null likewise.
+  final double? restingHrRise;
+}
+
+/// Compares the mornings after [trainedAt] with the four weeks before it.
+///
+/// The days that count start the day after the session and end at [until]:
+/// the next session of the muscle, whose own mornings they then are.
+VitalsEffect vitalsEffect(
+  DateTime trainedAt,
+  Iterable<VitalsDay> days, {
+  DateTime? until,
+}) {
+  final sessionDay = DateTime(trainedAt.year, trainedAt.month, trainedAt.day);
+  final from = DateTime(
+    sessionDay.year,
+    sessionDay.month,
+    sessionDay.day - kVitalsBaselineWindow.inDays,
+  );
+  final end =
+      until ??
+      trainedAt.add(Duration(minutes: (kMaxRecoveryHours * 60).round()));
+
+  final ordered = days.toList()..sort((a, b) => a.day.compareTo(b.day));
+  final before = [
+    for (final day in ordered)
+      if (!day.day.isBefore(from) && day.day.isBefore(sessionDay)) day,
+  ];
+  final after = [
+    for (final day in ordered)
+      if (day.day.isAfter(sessionDay) && !day.day.isAfter(end)) day,
+  ].take(kVitalsDaysAfterSession).toList();
+  if (after.isEmpty) return const VitalsEffect();
+
+  double? compare(
+    double? Function(VitalsDay) read,
+    double Function(double, double) diff,
+  ) {
+    final usual = [for (final d in before) ?read(d)];
+    final now = [for (final d in after) ?read(d)];
+    if (usual.length < kVitalsForBaseline || now.isEmpty) return null;
+    final baseline = _median(usual);
+    if (baseline <= 0) return null;
+    final mean = now.fold<double>(0, (sum, v) => sum + v) / now.length;
+    return diff(mean, baseline);
+  }
+
+  final hrvDrop = compare((d) => d.hrvMs, (mean, usual) => 1 - mean / usual);
+  final rise = compare((d) => d.restingHr, (mean, usual) => mean - usual);
+
+  double share(double? value, double none, double full) =>
+      value == null ? 0 : ((value - none) / (full - none)).clamp(0.0, 1.0);
+  final worst = [
+    share(hrvDrop, kHrvDropNoEffect, kHrvDropFullEffect),
+    share(rise, kRestingHrRiseNoEffect, kRestingHrRiseFullEffect),
+  ].reduce((a, b) => a > b ? a : b);
+
+  return VitalsEffect(
+    factor: 1 + worst * (kMaxVitalsFactor - 1),
+    hrvDrop: hrvDrop,
+    restingHrRise: rise,
+  );
+}
+
+/// A run or a ride another app recorded.
+class CardioSession {
+  const CardioSession({
+    required this.start,
+    required this.end,
+    required this.kind,
+  });
+
+  final DateTime start;
+  final DateTime end;
+  final CardioKind kind;
+
+  Duration get duration => end.difference(start);
+}
+
+/// How long the muscles a run or ride tired need at least, counted from its
+/// end.
+///
+/// A floor, like "stiff" and "sore": it does not add to a leg day, it keeps
+/// the estimate from saying ready the morning after a long run. Starting
+/// points, not measurements - a run is lighter on the muscles than a squat
+/// session, a ride lighter still.
+Duration cardioAtLeast(CardioSession session) {
+  final long = session.duration > kLongCardio;
+  return switch (session.kind) {
+    CardioKind.running => Duration(hours: long ? 36 : 24),
+    CardioKind.cycling => Duration(hours: long ? 24 : 12),
+  };
+}
+
 /// One answer to "how does this muscle feel?".
 class SorenessCheck {
   const SorenessCheck({
@@ -329,6 +495,10 @@ class RecoveryEstimate {
     this.averageSleep,
     this.alcoholFactor = 1,
     this.drinks = 0,
+    this.vitalsFactor = 1,
+    this.hrvDrop,
+    this.restingHrRise,
+    this.cardio,
   });
 
   final String muscle;
@@ -373,6 +543,24 @@ class RecoveryEstimate {
   final double alcoholFactor;
   final int drinks;
 
+  /// What HRV and resting heart rate in the mornings after this session said,
+  /// against your usual: 1 when they were ordinary or not there.
+  ///
+  /// Not on top of [sleepFactor]: a short night shows up in the next
+  /// morning's HRV, and counting both would count that night twice. Only the
+  /// larger of the two went into [recovery].
+  final double vitalsFactor;
+
+  /// How far HRV sat below your usual, as a share, and how far the resting
+  /// heart rate sat above it, in beats per minute - when there was a usual to
+  /// compare with.
+  final double? hrvDrop;
+  final double? restingHrRise;
+
+  /// The run or ride since this session that holds the muscle back longer
+  /// than the estimate would, if there was one.
+  final CardioSession? cardio;
+
   DateTime get readyAt => trainedAt.add(recovery);
 
   bool isReadyAt(DateTime now) => !now.isBefore(readyAt);
@@ -388,6 +576,32 @@ class RecoveryEstimate {
     final done = now.difference(trainedAt).inSeconds / recovery.inSeconds;
     return done.clamp(0.0, 1.0);
   }
+
+  /// The same estimate, made ready at [readyAt] instead, with what moved it.
+  RecoveryEstimate _movedTo(
+    DateTime readyAt, {
+    SorenessCheck? check,
+    CardioSession? cardio,
+  }) => RecoveryEstimate(
+    muscle: muscle,
+    workoutId: workoutId,
+    trainedAt: trainedAt,
+    recovery: readyAt.difference(trainedAt),
+    loadRatio: loadRatio,
+    provisional: provisional,
+    carryover: carryover,
+    personalFactor: personalFactor,
+    check: check?.level ?? this.check,
+    checkedAt: check?.at ?? checkedAt,
+    sleepFactor: sleepFactor,
+    averageSleep: averageSleep,
+    alcoholFactor: alcoholFactor,
+    drinks: drinks,
+    vitalsFactor: vitalsFactor,
+    hrvDrop: hrvDrop,
+    restingHrRise: restingHrRise,
+    cardio: cardio ?? this.cardio,
+  );
 }
 
 /// The load one set puts on the muscles it works.
@@ -507,10 +721,14 @@ List<RecoveryEstimate> estimateRecovery(
   Iterable<SorenessCheck> checks = const [],
   Iterable<SleepNight> nights = const [],
   Iterable<DrinkDay> drinks = const [],
+  Iterable<VitalsDay> vitals = const [],
+  Iterable<CardioSession> cardio = const [],
   double? bodyWeightKg,
 }) {
   final slept = nights.toList()..sort((a, b) => a.wokeAt.compareTo(b.wokeAt));
   final drank = drinks.toList();
+  final readings = vitals.toList()..sort((a, b) => a.day.compareTo(b.day));
+  final moved = cardio.toList()..sort((a, b) => a.end.compareTo(b.end));
   final byMuscle = <String, List<MuscleSession>>{};
   for (final session in sessions) {
     byMuscle.putIfAbsent(session.muscle, () => []).add(session);
@@ -533,6 +751,7 @@ List<RecoveryEstimate> estimateRecovery(
       factor: 1,
       nights: slept,
       drinks: drank,
+      vitals: readings,
       bodyWeightKg: bodyWeightKg,
     );
     final factor = _personalFactor(plain, said);
@@ -543,10 +762,33 @@ List<RecoveryEstimate> estimateRecovery(
             factor: factor,
             nights: slept,
             drinks: drank,
+            vitals: readings,
             bodyWeightKg: bodyWeightKg,
           );
 
-    estimates.add(_withCheck(chain.last, said));
+    // Then what happened since, in the order it happened: a run floors the
+    // estimate, what you said about the muscle outranks everything before
+    // it, and a run after that answer floors it again.
+    final latest = chain.last;
+    final newest = _newestCheck(latest, said);
+    final runs = [
+      for (final session in moved)
+        if (session.start.isAfter(latest.trainedAt) &&
+            (kCardioMuscles[session.kind]?.contains(entry.key) ?? false))
+          session,
+    ];
+    var estimate = _withCardio(latest, [
+      for (final run in runs)
+        if (newest == null || !run.end.isAfter(newest.at)) run,
+    ]);
+    if (newest != null) {
+      estimate = _withCheck(estimate, newest);
+      estimate = _withCardio(estimate, [
+        for (final run in runs)
+          if (run.end.isAfter(newest.at)) run,
+      ]);
+    }
+    estimates.add(estimate);
   }
 
   estimates.sort((a, b) => b.readyAt.compareTo(a.readyAt));
@@ -563,6 +805,7 @@ List<RecoveryEstimate> _chain(
   required double factor,
   List<SleepNight> nights = const [],
   List<DrinkDay> drinks = const [],
+  List<VitalsDay> vitals = const [],
   double? bodyWeightKg,
 }) {
   final chain = <RecoveryEstimate>[];
@@ -611,10 +854,15 @@ List<RecoveryEstimate> _chain(
     }
     final alcohol = alcoholFactor(drunk, bodyWeightKg: bodyWeightKg);
 
+    // What the watch said about the mornings after. Short nights and a low
+    // HRV are largely the same news, so the larger of the two counts.
+    final body = vitalsEffect(session.at, vitals, until: until);
+    final rest = body.factor > sleep ? body.factor : sleep;
+
     // Your own pace and your nights, kept inside the same range as
     // everything else.
     var own = Duration(
-      minutes: (table.inMinutes * factor * sleep * alcohol).round(),
+      minutes: (table.inMinutes * factor * rest * alcohol).round(),
     );
     if (own < floor) own = floor;
     if (own > ceiling) own = ceiling;
@@ -643,6 +891,9 @@ List<RecoveryEstimate> _chain(
         sleepFactor: sleep,
         alcoholFactor: alcohol,
         drinks: drunk,
+        vitalsFactor: body.factor,
+        hrvDrop: body.hrvDrop,
+        restingHrRise: body.restingHrRise,
         averageSleep: after.isEmpty
             ? null
             : Duration(
@@ -714,13 +965,7 @@ double _personalFactor(List<RecoveryEstimate> plain, List<SorenessCheck> said) {
 /// An observation outranks the arithmetic, in both directions: said sore, it
 /// is not ready for another day whatever the table thinks; said fresh a day
 /// or more after the session, it is ready now.
-RecoveryEstimate _withCheck(RecoveryEstimate latest, List<SorenessCheck> said) {
-  SorenessCheck? newest;
-  for (final check in said) {
-    if (check.at.isAfter(latest.trainedAt)) newest = check;
-  }
-  if (newest == null) return latest;
-
+RecoveryEstimate _withCheck(RecoveryEstimate latest, SorenessCheck newest) {
   var readyAt = latest.readyAt;
   switch (newest.level) {
     case SorenessLevel.fresh:
@@ -735,22 +980,34 @@ RecoveryEstimate _withCheck(RecoveryEstimate latest, List<SorenessCheck> said) {
       if (atLeast.isAfter(readyAt)) readyAt = atLeast;
   }
 
-  return RecoveryEstimate(
-    muscle: latest.muscle,
-    workoutId: latest.workoutId,
-    trainedAt: latest.trainedAt,
-    recovery: readyAt.difference(latest.trainedAt),
-    loadRatio: latest.loadRatio,
-    provisional: latest.provisional,
-    carryover: latest.carryover,
-    personalFactor: latest.personalFactor,
-    check: newest.level,
-    checkedAt: newest.at,
-    sleepFactor: latest.sleepFactor,
-    averageSleep: latest.averageSleep,
-    alcoholFactor: latest.alcoholFactor,
-    drinks: latest.drinks,
-  );
+  return latest._movedTo(readyAt, check: newest);
+}
+
+/// The newest answer about the muscle since it was last trained.
+SorenessCheck? _newestCheck(RecoveryEstimate latest, List<SorenessCheck> said) {
+  SorenessCheck? newest;
+  for (final check in said) {
+    if (check.at.isAfter(latest.trainedAt)) newest = check;
+  }
+  return newest;
+}
+
+/// Runs and rides since the session, each keeping the muscles it tired from
+/// being ready before [cardioAtLeast] has passed.
+///
+/// Only ever later: a short jog does not make a leg day any shorter.
+RecoveryEstimate _withCardio(
+  RecoveryEstimate latest,
+  List<CardioSession> runs,
+) {
+  var estimate = latest;
+  for (final run in runs) {
+    final atLeast = run.end.add(cardioAtLeast(run));
+    if (atLeast.isAfter(estimate.readyAt)) {
+      estimate = estimate._movedTo(atLeast, cardio: run);
+    }
+  }
+  return estimate;
 }
 
 /// True when the session contained an exercise the user had not done for this

@@ -49,6 +49,52 @@ Stream<List<DrinkDayRow>> drinkDays(Ref ref) {
   return ref.watch(databaseProvider).recoveryDao.watchDrinksSince(since);
 }
 
+/// What a watch reported about HRV and resting heart rate, over the stretch
+/// the estimate looks at and the four weeks before it that make up your
+/// usual. Empty without Health Connect.
+@riverpod
+Stream<List<VitalsDay>> vitalsDays(Ref ref) {
+  final since = DateTime.now().subtract(
+    kRecoveryHistoryWindow + kVitalsBaselineWindow,
+  );
+  return ref
+      .watch(databaseProvider)
+      .healthDao
+      .watchVitalsSince(since)
+      .map(
+        (rows) => [
+          for (final row in rows)
+            VitalsDay(
+              day: DateTime.fromMillisecondsSinceEpoch(row.day),
+              hrvMs: row.hrvMs,
+              restingHr: row.restingHr,
+            ),
+        ],
+      );
+}
+
+/// The runs and rides another app recorded, over the stretch the estimate
+/// looks at. Empty without Health Connect.
+@riverpod
+Stream<List<CardioSession>> cardioSessions(Ref ref) {
+  final since = DateTime.now().subtract(kRecoveryHistoryWindow);
+  return ref
+      .watch(databaseProvider)
+      .healthDao
+      .watchCardioSince(since)
+      .map(
+        (rows) => [
+          for (final row in rows)
+            if (CardioKind.fromWire(row.kind) case final kind?)
+              CardioSession(
+                start: DateTime.fromMillisecondsSinceEpoch(row.startedAt),
+                end: DateTime.fromMillisecondsSinceEpoch(row.endedAt),
+                kind: kind,
+              ),
+        ],
+      );
+}
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
@@ -71,6 +117,8 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
         drinks: row.drinks,
       ),
   ];
+  final vitals = ref.watch(vitalsDaysProvider).value ?? const [];
+  final cardio = ref.watch(cardioSessionsProvider).value ?? const [];
 
   return db.workoutsDao.watchRecoverySets(since: since).asyncMap((sets) async {
     // Bodyweight work carries no weight in the log, so the user's own weight
@@ -81,6 +129,8 @@ Stream<List<RecoveryEstimate>> recoveryEstimates(Ref ref) {
       checks: checks,
       nights: nights,
       drinks: drinks,
+      vitals: vitals,
+      cardio: cardio,
       bodyWeightKg: weight?.value,
     );
   });

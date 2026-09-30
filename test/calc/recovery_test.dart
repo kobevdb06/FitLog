@@ -658,6 +658,268 @@ void main() {
     });
   });
 
+  group('HRV en rusthartslag', () {
+    List<RecoverySet> weeks() => [
+      for (var i = 0; i < 4; i++)
+        set(
+          workoutId: 'h$i',
+          at: monday.subtract(Duration(days: 7 * (4 - i))),
+        ),
+      set(workoutId: 'today', at: monday),
+    ];
+
+    DateTime day(int offset) =>
+        DateTime(monday.year, monday.month, monday.day + offset);
+
+    /// Vier gewone weken voor de training: HRV 50, rusthartslag 55.
+    List<VitalsDay> usual({int days = 28}) => [
+      for (var d = 1; d <= days; d++)
+        VitalsDay(day: day(-d), hrvMs: 50, restingHr: 55),
+    ];
+
+    /// De drie ochtenden na de training.
+    List<VitalsDay> after({double? hrv, double? rhr}) => [
+      for (var d = 1; d <= 3; d++)
+        VitalsDay(day: day(d), hrvMs: hrv, restingHr: rhr),
+    ];
+
+    RecoveryEstimate estimate(
+      List<VitalsDay> vitals, {
+      List<SleepNight> nights = const [],
+    }) => estimateRecovery(
+      muscleSessions(weeks()),
+      vitals: vitals,
+      nights: nights,
+    ).single;
+
+    test('zonder horloge verandert er niets', () {
+      final plain = estimate(const []);
+
+      expect(plain.vitalsFactor, 1);
+      expect(plain.hrvDrop, isNull);
+      expect(plain.restingHrRise, isNull);
+    });
+
+    test('een gewone ochtend ook niet', () {
+      // HRV schommelt van dag tot dag met zo'n tiende, zonder dat er iets is.
+      final plain = estimate(const []);
+      final ordinary = estimate([...usual(), ...after(hrv: 47, rhr: 57)]);
+
+      expect(ordinary.hrvDrop, closeTo(0.06, 1e-9));
+      expect(ordinary.restingHrRise, closeTo(2, 1e-9));
+      expect(ordinary.vitalsFactor, 1);
+      expect(ordinary.recovery, plain.recovery);
+    });
+
+    test('een HRV ver onder je gewone rekt de schatting', () {
+      final plain = estimate(const []);
+      final low = estimate([...usual(), ...after(hrv: 40)]);
+
+      // Een vijfde onder je gewone: twee derde van het volle effect.
+      expect(low.hrvDrop, closeTo(0.2, 1e-9));
+      expect(
+        low.vitalsFactor,
+        closeTo(
+          1 +
+              (0.2 - kHrvDropNoEffect) /
+                  (kHrvDropFullEffect - kHrvDropNoEffect) *
+                  (kMaxVitalsFactor - 1),
+          1e-9,
+        ),
+      );
+      expect(low.recovery, greaterThan(plain.recovery));
+    });
+
+    test('een rusthartslag ver erboven ook, tot een plafond', () {
+      final high = estimate([...usual(), ...after(rhr: 70)]);
+
+      expect(high.restingHrRise, closeTo(15, 1e-9));
+      expect(high.vitalsFactor, closeTo(kMaxVitalsFactor, 1e-9));
+    });
+
+    test('maar een goede ochtend maakt het niet korter', () {
+      // HRV leest het zenuwstelsel, niet de quadriceps: een hoge waarde
+      // bewijst niet dat de spier hersteld is.
+      final plain = estimate(const []);
+      final good = estimate([...usual(), ...after(hrv: 70, rhr: 48)]);
+
+      expect(good.hrvDrop, lessThan(0));
+      expect(good.vitalsFactor, 1);
+      expect(good.recovery, plain.recovery);
+    });
+
+    test('pas met een week aan metingen weet de app wat gewoon is', () {
+      final few = estimate([
+        ...usual(days: kVitalsForBaseline - 1),
+        ...after(hrv: 30),
+      ]);
+
+      expect(few.hrvDrop, isNull);
+      expect(few.vitalsFactor, 1);
+    });
+
+    test('de ochtend van de training zelf telt niet', () {
+      // Die nacht ging aan de training vooraf.
+      final sameDay = estimate([...usual(), VitalsDay(day: day(0), hrvMs: 30)]);
+
+      expect(sameDay.hrvDrop, isNull);
+      expect(sameDay.vitalsFactor, 1);
+    });
+
+    test('en de ochtenden na de volgende sessie horen bij die', () {
+      final effect = vitalsEffect(
+        monday,
+        [
+          ...usual(),
+          VitalsDay(day: day(1), hrvMs: 50),
+          VitalsDay(day: day(2), hrvMs: 30),
+          VitalsDay(day: day(3), hrvMs: 30),
+        ],
+        // De volgende sessie, dinsdagavond.
+        until: monday.add(const Duration(days: 1)),
+      );
+
+      expect(effect.hrvDrop, closeTo(0, 1e-9));
+      expect(effect.factor, 1);
+    });
+
+    test('en niet bovenop korte nachten: dat is vaak hetzelfde nieuws', () {
+      final short = [
+        for (var n = 1; n <= 3; n++)
+          SleepNight(
+            wokeAt: DateTime(monday.year, monday.month, monday.day + n, 7),
+            duration: const Duration(hours: 5),
+          ),
+      ];
+      final watchOnly = estimate([...usual(), ...after(rhr: 70)]);
+      final both = estimate([...usual(), ...after(rhr: 70)], nights: short);
+
+      expect(both.sleepFactor, greaterThan(1));
+      expect(both.recovery, watchOnly.recovery);
+    });
+  });
+
+  group('lopen en fietsen', () {
+    List<RecoverySet> weeks(String primary) => [
+      for (var i = 0; i < 4; i++)
+        set(
+          workoutId: 'h$i',
+          primary: primary,
+          at: monday.subtract(Duration(days: 7 * (4 - i))),
+        ),
+      set(workoutId: 'today', primary: primary, at: monday),
+    ];
+
+    RecoveryEstimate estimate(
+      List<CardioSession> cardio, {
+      String primary = 'quadriceps',
+      List<SorenessCheck> checks = const [],
+    }) => estimateRecovery(
+      muscleSessions(weeks(primary)),
+      cardio: cardio,
+      checks: checks,
+    ).single;
+
+    CardioSession run(
+      DateTime start, {
+      int minutes = 45,
+      CardioKind kind = CardioKind.running,
+    }) => CardioSession(
+      start: start,
+      end: start.add(Duration(minutes: minutes)),
+      kind: kind,
+    );
+
+    // Twee dagen na de legday, 's avonds.
+    final wednesday = DateTime(monday.year, monday.month, monday.day + 2, 20);
+
+    test('een loop na je legday houdt je benen minstens een dag tegen', () {
+      final plain = estimate(const []);
+      final ran = estimate([run(wednesday)]);
+      final floor = wednesday.add(const Duration(minutes: 45, hours: 24));
+
+      expect(plain.readyAt.isBefore(floor), isTrue);
+      expect(ran.readyAt, floor);
+      expect(ran.cardio?.kind, CardioKind.running);
+    });
+
+    test('een lange loop langer', () {
+      final long = estimate([run(wednesday, minutes: 90)]);
+
+      expect(
+        long.readyAt,
+        wednesday.add(const Duration(minutes: 90, hours: 36)),
+      );
+    });
+
+    test('een korte loop maakt een legday niet korter', () {
+      final plain = estimate(const []);
+      final jog = estimate([
+        run(DateTime(monday.year, monday.month, monday.day + 1, 7)),
+      ]);
+
+      expect(jog.recovery, plain.recovery);
+      expect(jog.cardio, isNull);
+    });
+
+    test('fietsen raakt je quadriceps', () {
+      final rode = estimate([
+        run(wednesday, minutes: 120, kind: CardioKind.cycling),
+      ]);
+
+      expect(
+        rode.readyAt,
+        wednesday.add(const Duration(minutes: 120, hours: 24)),
+      );
+    });
+
+    test('maar niet je hamstrings', () {
+      final plain = estimate(const [], primary: 'hamstrings');
+      final rode = estimate([
+        run(wednesday, minutes: 120, kind: CardioKind.cycling),
+      ], primary: 'hamstrings');
+
+      expect(rode.recovery, plain.recovery);
+    });
+
+    test('fris gezegd na de loop: dan ben je fris', () {
+      // Wat je zegt, gaat voor de rekensom - ook voor die van de loop.
+      final thursday = DateTime(monday.year, monday.month, monday.day + 3, 9);
+      final fresh = estimate(
+        [run(wednesday)],
+        checks: [
+          SorenessCheck(
+            muscle: 'quadriceps',
+            at: thursday,
+            level: SorenessLevel.fresh,
+          ),
+        ],
+      );
+
+      expect(fresh.readyAt, thursday);
+    });
+
+    test('maar een loop na dat antwoord telt weer', () {
+      final tuesday = DateTime(monday.year, monday.month, monday.day + 1, 20);
+      final ranAfter = estimate(
+        [run(wednesday)],
+        checks: [
+          SorenessCheck(
+            muscle: 'quadriceps',
+            at: tuesday,
+            level: SorenessLevel.fresh,
+          ),
+        ],
+      );
+
+      expect(ranAfter.check, SorenessLevel.fresh);
+      expect(
+        ranAfter.readyAt,
+        wednesday.add(const Duration(minutes: 45, hours: 24)),
+      );
+    });
+  });
+
   group('reading the stored muscle list', () {
     test('reads a JSON array', () {
       expect(decodeMuscleList('["borst", "triceps"]'), ['borst', 'triceps']);

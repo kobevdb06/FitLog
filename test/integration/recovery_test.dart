@@ -2,6 +2,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/calc/recovery.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/features/health/data/health_importer.dart';
+import 'package:fitlog/features/health/data/health_source.dart';
 import 'package:fitlog/features/progress/presentation/recovery_providers.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -147,6 +149,69 @@ void main() {
     expect(sets.single.category, ExerciseCategory.barbell);
     expect(sets.single.effort, isNull);
   });
+
+  test(
+    'a run and a bad morning from Health Connect reach the estimate',
+    () async {
+      final workoutId = await logSquats();
+      // Over three days ago: mornings after it, and nearly recovered by the
+      // time the run comes along.
+      final trainedAt = DateTime.now().subtract(const Duration(hours: 80));
+      await db.customStatement(
+        'UPDATE workouts SET started_at = ? WHERE id = ?',
+        [trainedAt.millisecondsSinceEpoch, workoutId],
+      );
+      DateTime day(int offset) =>
+          DateTime(trainedAt.year, trainedAt.month, trainedAt.day + offset, 3);
+      // Whole milliseconds, as the database keeps them.
+      final ranAt = DateTime.fromMillisecondsSinceEpoch(
+        DateTime.now()
+            .subtract(const Duration(hours: 10))
+            .millisecondsSinceEpoch,
+      );
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          hrv: [
+            for (var d = 1; d <= 10; d++)
+              ImportedReading(at: day(-d), value: 50),
+            ImportedReading(at: day(1), value: 35),
+          ],
+          cardio: [
+            ImportedCardio(
+              id: 'run-1',
+              start: ranAt,
+              end: ranAt.add(const Duration(minutes: 90)),
+              kind: CardioKind.running,
+              source: 'com.strava',
+            ),
+          ],
+        ),
+      );
+
+      final subs = [
+        container.listen(vitalsDaysProvider, (_, _) {}),
+        container.listen(cardioSessionsProvider, (_, _) {}),
+        container.listen(recoveryEstimatesProvider, (_, _) {}),
+      ];
+      addTearDown(() {
+        for (final sub in subs) {
+          sub.close();
+        }
+      });
+      await container.read(vitalsDaysProvider.future);
+      await container.read(cardioSessionsProvider.future);
+      final result = await container.read(recoveryEstimatesProvider.future);
+
+      final quads = result.firstWhere((e) => e.muscle == 'quadriceps');
+      expect(quads.hrvDrop, closeTo(0.3, 1e-9));
+      expect(quads.vitalsFactor, greaterThan(1));
+      expect(quads.cardio?.kind, CardioKind.running);
+      expect(
+        quads.readyAt,
+        ranAt.add(const Duration(minutes: 90)).add(const Duration(hours: 36)),
+      );
+    },
+  );
 
   group('the session rating', () {
     test('a hard session pushes the estimate out', () async {

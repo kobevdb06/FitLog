@@ -2843,3 +2843,47 @@ Android 7 (API 24-25). FitLog ondersteunt daarom vanaf nu Android 8. Dat
 treft een verwaarloosbaar deel van de toestellen, en wie op Android 7 zit
 kan de vorige versie blijven gebruiken: Android weigert daar de nieuwe APK
 te installeren, en raakt de geïnstalleerde app en zijn gegevens niet aan.
+
+## 159. HRV, rusthartslag en cardio in de herstelschatting
+
+**HRV en rusthartslag, tegenover jezelf.** Een rusthartslag van 48 is
+gewoon voor de ene en een waarschuwing voor de andere, dus vergelijkt de
+schatting alleen met je eigen gewone: de mediaan van de vier weken vóór de
+training, en pas als daar minstens zeven metingen in zitten. Daartegenover
+staat het gemiddelde van de (hooguit drie) ochtenden na de training, tot de
+volgende training van die spier - wiens ochtenden het dan zijn. De ochtend
+van de trainingsdag zelf telt niet: die nacht ging eraan vooraf.
+
+Onder een tiende HRV-daling of drie slagen erbij gebeurt niets: zoveel
+schommelt het van dag tot dag zonder dat er iets aan de hand is. Van daar
+loopt het op tot een vijfde langer bij een kwart HRV-daling of tien slagen
+erbij, en verder niet. Het grootste van de twee telt.
+
+Het rekt alleen, het kort nooit in. HRV leest het zenuwstelsel en niet de
+quadriceps: een goede ochtend bewijst niet dat een spier hersteld is, een
+slechte is wel een redelijk teken dat het lichaam nog bezig is. Hetzelfde
+principe als bij slaap.
+
+**Niet bovenop korte nachten.** Een korte nacht is de volgende ochtend in de
+HRV te zien; beide laten meetellen, telt die nacht twee keer. Van de twee
+telt daarom alleen het grootste, en het scherm noemt ook alleen dat. Alcohol
+blijft er wel naast staan: dat gaat over de aanmaak van spiereiwit, niet over
+hoe je nacht was.
+
+**Lopen en fietsen als ondergrens.** Een loop of rit na een training houdt
+de spieren die hij raakt minstens een tijd tegen, gerekend vanaf het einde:
+lopen 24 uur (36 boven het uur) voor quadriceps, hamstrings, bilspieren en
+kuiten; fietsen 12 uur (24 boven het uur) voor quadriceps en bilspieren. Een
+ondergrens en geen optelling, zoals *stijf* en *pijnlijk*: een ochtendjog
+twee dagen na een legday maakt die niet langer, een lange loop de avond voor
+je weer squat wel. Het zijn vertrekpunten, lichter dan een krachttraining
+voor dezelfde benen.
+
+Een loop op zichzelf maakt geen schatting: zonder krachttraining van die
+spier staat hij niet op het herstelscherm. De schatting gaat over wat je in
+FitLog logt, en een loop verschuift ze alleen.
+
+**De volgorde** is de volgorde waarin het gebeurde: eerst de rekensom, dan
+de lopen tot je laatste antwoord over de spier, dan dat antwoord - dat alles
+ervoor overstemt - en dan de lopen daarna. Wie na een loop zegt dat zijn
+benen fris zijn, is fris; wie daarna nog eens gaat lopen, niet meer.

@@ -149,6 +149,105 @@ final class DrinkDaysProvider
 
 String _$drinkDaysHash() => r'19da07709daee8e761b86891eb480bef40bd9a41';
 
+/// What a watch reported about HRV and resting heart rate, over the stretch
+/// the estimate looks at and the four weeks before it that make up your
+/// usual. Empty without Health Connect.
+
+@ProviderFor(vitalsDays)
+final vitalsDaysProvider = VitalsDaysProvider._();
+
+/// What a watch reported about HRV and resting heart rate, over the stretch
+/// the estimate looks at and the four weeks before it that make up your
+/// usual. Empty without Health Connect.
+
+final class VitalsDaysProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<VitalsDay>>,
+          List<VitalsDay>,
+          Stream<List<VitalsDay>>
+        >
+    with $FutureModifier<List<VitalsDay>>, $StreamProvider<List<VitalsDay>> {
+  /// What a watch reported about HRV and resting heart rate, over the stretch
+  /// the estimate looks at and the four weeks before it that make up your
+  /// usual. Empty without Health Connect.
+  VitalsDaysProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vitalsDaysProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vitalsDaysHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<VitalsDay>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<VitalsDay>> create(Ref ref) {
+    return vitalsDays(ref);
+  }
+}
+
+String _$vitalsDaysHash() => r'88ebca800badfce7222c62f87c8d940b0a8b9715';
+
+/// The runs and rides another app recorded, over the stretch the estimate
+/// looks at. Empty without Health Connect.
+
+@ProviderFor(cardioSessions)
+final cardioSessionsProvider = CardioSessionsProvider._();
+
+/// The runs and rides another app recorded, over the stretch the estimate
+/// looks at. Empty without Health Connect.
+
+final class CardioSessionsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CardioSession>>,
+          List<CardioSession>,
+          Stream<List<CardioSession>>
+        >
+    with
+        $FutureModifier<List<CardioSession>>,
+        $StreamProvider<List<CardioSession>> {
+  /// The runs and rides another app recorded, over the stretch the estimate
+  /// looks at. Empty without Health Connect.
+  CardioSessionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'cardioSessionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$cardioSessionsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CardioSession>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CardioSession>> create(Ref ref) {
+    return cardioSessions(ref);
+  }
+}
+
+String _$cardioSessionsHash() => r'2d910ed017dcd30adaba701ad73fd8572d104fc0';
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and
@@ -208,7 +307,7 @@ final class RecoveryEstimatesProvider
   }
 }
 
-String _$recoveryEstimatesHash() => r'66b71690ed36343efacee9d954e955adde613bde';
+String _$recoveryEstimatesHash() => r'5ab10ed9f20e2e0a54054649ac60a2e2750f0d85';
 
 /// The muscles one particular session left behind.
 ///

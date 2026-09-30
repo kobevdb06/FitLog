@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/calc/recovery.dart';
 import '../../../core/db/enums.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/providers/core_providers.dart';
@@ -186,8 +187,38 @@ List<String> recoveryReasons(RecoveryEstimate estimate, {DateTime? now}) {
     );
   }
 
-  if (estimate.sleepFactor > 1 && estimate.averageSleep != null) {
+  // Short nights and a watch's bad morning count once, as the larger of the
+  // two; the screen names the one that counted.
+  final byVitals = estimate.vitalsFactor > estimate.sleepFactor;
+  if (!byVitals && estimate.sleepFactor > 1 && estimate.averageSleep != null) {
     reasons.add('korte nachten (${nightLength(estimate.averageSleep!)})');
+  }
+  if (byVitals && estimate.vitalsFactor > 1) {
+    final drop = estimate.hrvDrop;
+    if (drop != null && drop > kHrvDropNoEffect) {
+      reasons.add('HRV ${(drop * 100).round()}% onder je gewone');
+    }
+    final rise = estimate.restingHrRise;
+    if (rise != null && rise > kRestingHrRiseNoEffect) {
+      reasons.add('rusthartslag ${rise.round()} slagen hoger');
+    }
+  }
+
+  if (estimate.cardio case final run?) {
+    final moment = now ?? DateTime.now();
+    final days = DateTime(
+      moment.year,
+      moment.month,
+      moment.day,
+    ).difference(DateTime(run.end.year, run.end.month, run.end.day)).inDays;
+    final when = days == 0
+        ? 'vandaag'
+        : days < 7
+        ? Formatters.weekday(run.end)
+        : Formatters.dayMonth(run.end);
+    reasons.add(
+      'je ${run.kind.label} van $when (${run.duration.inMinutes} min)',
+    );
   }
 
   final factor = estimate.personalFactor;

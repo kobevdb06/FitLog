@@ -25,6 +25,7 @@ import '../features/photos/presentation/photo_compare_screen.dart';
 import '../features/photos/presentation/photos_screen.dart';
 import '../features/progress/presentation/exercise_chart_screen.dart';
 import '../features/progress/presentation/progress_screen.dart';
+import '../features/health/presentation/health_connect_screen.dart';
 import '../features/progress/presentation/recovery_screen.dart';
 import '../features/progress/presentation/records_screen.dart';
 import '../features/routines/presentation/routine_detail_screen.dart';
@@ -157,6 +158,12 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
             appPage(state, const RecoveryScreen()),
+      ),
+      GoRoute(
+        path: Routes.healthConnect,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) =>
+            appPage(state, const HealthConnectScreen()),
       ),
       GoRoute(
         path: Routes.exercises,

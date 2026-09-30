@@ -82,6 +82,9 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
       lightMinutes: Value(lightMinutes),
       remMinutes: Value(remMinutes),
       deepMinutes: Value(deepMinutes),
+      // Filled in or corrected by hand: yours from now on, and an import
+      // from Health Connect leaves it alone.
+      source: const Value(null),
     ),
   );
 

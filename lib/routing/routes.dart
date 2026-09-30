@@ -54,6 +54,10 @@ abstract final class Routes {
   /// [recovery], which is getting back into a locked app.
   static const muscleRecovery = '/herstel';
 
+  /// Connecting Health Connect. At the root, like Herstel: it is opened from
+  /// the settings and from the sleep part of the recovery screen.
+  static const healthConnect = '/health-connect';
+
   // Profile and settings
   static const settings = '/profiel/instellingen';
   static const settingsCatalogue = '/profiel/instellingen/catalogus';

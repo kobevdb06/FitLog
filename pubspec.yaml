@@ -73,6 +73,7 @@ dependencies:
   qr: ^4.0.0
   quick_actions: ^1.1.1
   http: ^1.6.0
+  health: ^13.3.2
 
 dev_dependencies:
   flutter_test:

@@ -2791,3 +2791,55 @@ tot je hem uitzet - anders zat je in een lege lijst zonder weg terug.
 
 Een catalogus-update neemt geen sterren af: de seeder schrijft een oefening
 alleen in een lege database, en past daarna nooit meer dan de categorie aan.
+
+## 158. Health Connect: lezen naar de eigen database, en wat je zelf invult gaat voor
+
+Health Connect is de plek op Android waar horloges, weegschalen en apps als
+Samsung Health hun gegevens delen. FitLog leest er vijf dingen uit: nachten
+(met de fasen), HRV, rusthartslag, gewicht en loop- en fietssessies. Het is
+een verbinding tussen apps op dezelfde gsm; er gaat niets over het internet,
+en de enige deur naar buiten blijft `ai_client.dart`.
+
+**Kopiëren, niet telkens opvragen.** Wat binnenkomt wordt in FitLog's eigen,
+versleutelde database gezet, en de rest van de app leest alleen die. Zo werkt
+alles - de herstelschatting, de grafieken, een back-up - hetzelfde met of
+zonder Health Connect, en blijft het werken als de verbinding er later af
+gaat. Een nacht of gewicht draagt in `source` de app waar hij vandaan kwam;
+leeg betekent: zelf ingevuld. HRV en rusthartslag komen per dag in
+`daily_vitals` (HRV het daggemiddelde, rusthartslag de laagste van de dag),
+cardio in `cardio_sessions`.
+
+**Wat je zelf invult, gaat voor.** Een nacht die je zelf ingaf, wordt nooit
+overschreven door die van een horloge, en een gewicht dat je zelf in FitLog
+noteerde houdt een geïmporteerd gewicht van dezelfde dag buiten. Pas je een
+geïmporteerde nacht aan, dan wordt hij de jouwe (`source` gaat leeg) en laat
+een volgende import hem staan.
+
+**Twee keer ophalen verandert niets.** Elke rij heeft een sleutel die uit
+de bron volgt - de ochtend voor een nacht, de dag voor HRV en hartslag, het
+id uit Health Connect voor een gewicht of sessie - zodat een import die
+overlapt bijwerkt in plaats van verdubbelt. Dat maakt het ophalen eenvoudig:
+de eerste keer een maand terug (verder geeft Health Connect een app niet
+zonder extra toestemming), daarna vanaf twee dagen vóór de vorige keer,
+omdat een horloge zijn nacht soms pas uren later doorgeeft.
+
+**Wanneer.** Bij verbinden, bij het openen of ontgrendelen van de app, en
+met de knop *Nu ophalen*. Vanzelf hooguit om het kwartier; de knop altijd.
+Geen achtergrondtaak: die zou een extra toestemming en een wekker vragen voor
+gegevens die pas iets betekenen als je de app opent.
+
+**Wat niet meekomt.** Een nacht korter dan drie uur (een dutje zegt niets over
+herstel en zou de nacht van die ochtend verdringen), en een sessie korter dan
+tien minuten. Van meerdere nachten die op dezelfde ochtend eindigen, telt de
+langste. Workouts die FitLog zelf in Health Connect zou zetten, worden bij het
+lezen overgeslagen, zodat een training later niet als cardio terugkomt.
+
+**Ontkoppelen** geeft de toestemmingen terug en stopt het ophalen. Wat al
+binnenkwam kan je houden of wissen; wissen raakt alleen rijen met een bron,
+nooit iets wat je zelf invulde.
+
+**minSdk 26.** De clientbibliotheek van Health Connect draait niet op
+Android 7 (API 24-25). FitLog ondersteunt daarom vanaf nu Android 8. Dat
+treft een verwaarloosbaar deel van de toestellen, en wie op Android 7 zit
+kan de vorige versie blijven gebruiken: Android weigert daar de nieuwe APK
+te installeren, en raakt de geïnstalleerde app en zijn gegevens niet aan.

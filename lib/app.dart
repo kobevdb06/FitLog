@@ -10,6 +10,7 @@ import 'core/db/enums.dart';
 import 'core/providers/core_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/util/notification_service.dart';
+import 'features/health/presentation/health_providers.dart';
 import 'features/routines/domain/quick_start.dart';
 import 'features/routines/presentation/quick_start_providers.dart';
 import 'features/workout/domain/workout_notice.dart';
@@ -58,6 +59,9 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         controller.onPaused();
       case AppLifecycleState.resumed:
         controller.onResumed();
+        // Back in the app: whatever the watch handed Health Connect since.
+        // Does nothing while locked or when Health Connect is not connected.
+        unawaited(ref.read(healthSyncProvider.notifier).sync());
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
@@ -147,6 +151,13 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
+    // The first moment the database is open - right after unlocking - is
+    // when last night's sleep should come in.
+    ref.listen(appControllerProvider, (previous, next) {
+      if (next is AppReady && previous is! AppReady) {
+        unawaited(ref.read(healthSyncProvider.notifier).sync());
+      }
+    });
     _syncWorkoutNotification();
     _syncQuickStart();
     _handleQuickStart();

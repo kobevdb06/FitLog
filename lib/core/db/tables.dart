@@ -128,6 +128,17 @@ class AppSettingsTable extends Table {
       .named('track_alcohol')
       .withDefault(const Constant(false))();
 
+  /// Whether the user connected Health Connect. Off until they do, and the
+  /// app never asks Health Connect anything before that.
+  BoolColumn get healthConnectEnabled => boolean()
+      .named('health_connect_enabled')
+      .withDefault(const Constant(false))();
+
+  /// When the last import finished, so the next one only asks for what is
+  /// new - and a couple of days before it, for data a watch sends late.
+  IntColumn get healthConnectSyncedAt =>
+      integer().named('health_connect_synced_at').nullable()();
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   IntColumn get defaultWarmupSets =>
       integer().named('default_warmup_sets').withDefault(const Constant(0))();
@@ -705,6 +716,11 @@ class BodyMeasurementsTable extends Table {
   RealColumn get value => real()();
   TextColumn get note => text().nullable()();
 
+  /// Null when entered in FitLog; otherwise the app that wrote it to Health
+  /// Connect. An imported row's id is `hc:` and the record's own id, so a
+  /// second import finds it instead of adding it again.
+  TextColumn get source => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -793,6 +809,13 @@ class SleepEntriesTable extends Table {
   IntColumn get remMinutes => integer().named('rem_minutes').nullable()();
   IntColumn get deepMinutes => integer().named('deep_minutes').nullable()();
 
+  /// Where the night came from: null when you filled it in yourself,
+  /// otherwise the app that wrote it to Health Connect.
+  ///
+  /// What you say yourself wins: an import never overwrites a night without a
+  /// source, and correcting an imported night makes it yours.
+  TextColumn get source => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -815,6 +838,58 @@ class DrinkDaysTable extends Table {
 
   /// Standard drinks of about ten grams of alcohol each.
   IntColumn get drinks => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// What a watch said about one day: heart rate variability and resting heart
+/// rate, read from Health Connect.
+///
+/// One row per day, because that is how both are meant to be read: against
+/// your own recent days, not as single measurements. HRV is the average of
+/// the day's readings, resting heart rate the lowest.
+@DataClassName('DailyVitalsRow')
+class DailyVitalsTable extends Table {
+  @override
+  String get tableName => 'daily_vitals';
+
+  /// The day, `yyyymmdd`.
+  TextColumn get id => text()();
+
+  /// Midnight at the start of that day.
+  IntColumn get day => integer()();
+
+  /// RMSSD in milliseconds.
+  RealColumn get hrvMs => real().named('hrv_ms').nullable()();
+
+  /// Beats per minute.
+  RealColumn get restingHr => real().named('resting_hr').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A run or a ride another app recorded, read from Health Connect.
+///
+/// Not a workout in FitLog's sense - no sets, no exercises - but it tires the
+/// legs, and the recovery estimate should know. The id is `hc:` and the
+/// record's own id.
+@TableIndex(name: 'idx_cardio_started_at', columns: {#startedAt})
+@DataClassName('CardioSessionRow')
+class CardioSessionsTable extends Table {
+  @override
+  String get tableName => 'cardio_sessions';
+
+  TextColumn get id => text()();
+  IntColumn get startedAt => integer().named('started_at')();
+  IntColumn get endedAt => integer().named('ended_at')();
+
+  /// `running` or `cycling`.
+  TextColumn get kind => text()();
+
+  /// The app that recorded it.
+  TextColumn get source => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

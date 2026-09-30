@@ -748,6 +748,30 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _healthConnectEnabledMeta =
+      const VerificationMeta('healthConnectEnabled');
+  @override
+  late final GeneratedColumn<bool> healthConnectEnabled = GeneratedColumn<bool>(
+    'health_connect_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("health_connect_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _healthConnectSyncedAtMeta =
+      const VerificationMeta('healthConnectSyncedAt');
+  @override
+  late final GeneratedColumn<int> healthConnectSyncedAt = GeneratedColumn<int>(
+    'health_connect_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _defaultWarmupSetsMeta = const VerificationMeta(
     'defaultWarmupSets',
   );
@@ -930,6 +954,8 @@ class $AppSettingsTableTable extends AppSettingsTable
     trackRpe,
     trackSleepStages,
     trackAlcohol,
+    healthConnectEnabled,
+    healthConnectSyncedAt,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -1124,6 +1150,24 @@ class $AppSettingsTableTable extends AppSettingsTable
         trackAlcohol.isAcceptableOrUnknown(
           data['track_alcohol']!,
           _trackAlcoholMeta,
+        ),
+      );
+    }
+    if (data.containsKey('health_connect_enabled')) {
+      context.handle(
+        _healthConnectEnabledMeta,
+        healthConnectEnabled.isAcceptableOrUnknown(
+          data['health_connect_enabled']!,
+          _healthConnectEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('health_connect_synced_at')) {
+      context.handle(
+        _healthConnectSyncedAtMeta,
+        healthConnectSyncedAt.isAcceptableOrUnknown(
+          data['health_connect_synced_at']!,
+          _healthConnectSyncedAtMeta,
         ),
       );
     }
@@ -1339,6 +1383,14 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}track_alcohol'],
       )!,
+      healthConnectEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}health_connect_enabled'],
+      )!,
+      healthConnectSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}health_connect_synced_at'],
+      ),
       defaultWarmupSets: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}default_warmup_sets'],
@@ -1480,6 +1532,14 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// training log.
   final bool trackAlcohol;
 
+  /// Whether the user connected Health Connect. Off until they do, and the
+  /// app never asks Health Connect anything before that.
+  final bool healthConnectEnabled;
+
+  /// When the last import finished, so the next one only asks for what is
+  /// new - and a couple of days before it, for data a watch sends late.
+  final int? healthConnectSyncedAt;
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   final int defaultWarmupSets;
 
@@ -1578,6 +1638,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.trackRpe,
     required this.trackSleepStages,
     required this.trackAlcohol,
+    required this.healthConnectEnabled,
+    this.healthConnectSyncedAt,
     required this.defaultWarmupSets,
     required this.prDefaultWarmupSets,
     required this.prDefaultExtraAttempts,
@@ -1623,6 +1685,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['track_rpe'] = Variable<bool>(trackRpe);
     map['track_sleep_stages'] = Variable<bool>(trackSleepStages);
     map['track_alcohol'] = Variable<bool>(trackAlcohol);
+    map['health_connect_enabled'] = Variable<bool>(healthConnectEnabled);
+    if (!nullToAbsent || healthConnectSyncedAt != null) {
+      map['health_connect_synced_at'] = Variable<int>(healthConnectSyncedAt);
+    }
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
     map['pr_default_extra_attempts'] = Variable<int>(prDefaultExtraAttempts);
@@ -1687,6 +1753,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       trackRpe: Value(trackRpe),
       trackSleepStages: Value(trackSleepStages),
       trackAlcohol: Value(trackAlcohol),
+      healthConnectEnabled: Value(healthConnectEnabled),
+      healthConnectSyncedAt: healthConnectSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(healthConnectSyncedAt),
       defaultWarmupSets: Value(defaultWarmupSets),
       prDefaultWarmupSets: Value(prDefaultWarmupSets),
       prDefaultExtraAttempts: Value(prDefaultExtraAttempts),
@@ -1751,6 +1821,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       trackRpe: serializer.fromJson<bool>(json['trackRpe']),
       trackSleepStages: serializer.fromJson<bool>(json['trackSleepStages']),
       trackAlcohol: serializer.fromJson<bool>(json['trackAlcohol']),
+      healthConnectEnabled: serializer.fromJson<bool>(
+        json['healthConnectEnabled'],
+      ),
+      healthConnectSyncedAt: serializer.fromJson<int?>(
+        json['healthConnectSyncedAt'],
+      ),
       defaultWarmupSets: serializer.fromJson<int>(json['defaultWarmupSets']),
       prDefaultWarmupSets: serializer.fromJson<int>(
         json['prDefaultWarmupSets'],
@@ -1796,6 +1872,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'trackRpe': serializer.toJson<bool>(trackRpe),
       'trackSleepStages': serializer.toJson<bool>(trackSleepStages),
       'trackAlcohol': serializer.toJson<bool>(trackAlcohol),
+      'healthConnectEnabled': serializer.toJson<bool>(healthConnectEnabled),
+      'healthConnectSyncedAt': serializer.toJson<int?>(healthConnectSyncedAt),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
       'prDefaultExtraAttempts': serializer.toJson<int>(prDefaultExtraAttempts),
@@ -1835,6 +1913,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? trackRpe,
     bool? trackSleepStages,
     bool? trackAlcohol,
+    bool? healthConnectEnabled,
+    Value<int?> healthConnectSyncedAt = const Value.absent(),
     int? defaultWarmupSets,
     int? prDefaultWarmupSets,
     int? prDefaultExtraAttempts,
@@ -1875,6 +1955,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     trackRpe: trackRpe ?? this.trackRpe,
     trackSleepStages: trackSleepStages ?? this.trackSleepStages,
     trackAlcohol: trackAlcohol ?? this.trackAlcohol,
+    healthConnectEnabled: healthConnectEnabled ?? this.healthConnectEnabled,
+    healthConnectSyncedAt: healthConnectSyncedAt.present
+        ? healthConnectSyncedAt.value
+        : this.healthConnectSyncedAt,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
     prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
     prDefaultExtraAttempts:
@@ -1958,6 +2042,12 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       trackAlcohol: data.trackAlcohol.present
           ? data.trackAlcohol.value
           : this.trackAlcohol,
+      healthConnectEnabled: data.healthConnectEnabled.present
+          ? data.healthConnectEnabled.value
+          : this.healthConnectEnabled,
+      healthConnectSyncedAt: data.healthConnectSyncedAt.present
+          ? data.healthConnectSyncedAt.value
+          : this.healthConnectSyncedAt,
       defaultWarmupSets: data.defaultWarmupSets.present
           ? data.defaultWarmupSets.value
           : this.defaultWarmupSets,
@@ -2023,6 +2113,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('trackRpe: $trackRpe, ')
           ..write('trackSleepStages: $trackSleepStages, ')
           ..write('trackAlcohol: $trackAlcohol, ')
+          ..write('healthConnectEnabled: $healthConnectEnabled, ')
+          ..write('healthConnectSyncedAt: $healthConnectSyncedAt, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -2064,6 +2156,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     trackRpe,
     trackSleepStages,
     trackAlcohol,
+    healthConnectEnabled,
+    healthConnectSyncedAt,
     defaultWarmupSets,
     prDefaultWarmupSets,
     prDefaultExtraAttempts,
@@ -2104,6 +2198,8 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.trackRpe == this.trackRpe &&
           other.trackSleepStages == this.trackSleepStages &&
           other.trackAlcohol == this.trackAlcohol &&
+          other.healthConnectEnabled == this.healthConnectEnabled &&
+          other.healthConnectSyncedAt == this.healthConnectSyncedAt &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
           other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
           other.prDefaultExtraAttempts == this.prDefaultExtraAttempts &&
@@ -2142,6 +2238,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> trackRpe;
   final Value<bool> trackSleepStages;
   final Value<bool> trackAlcohol;
+  final Value<bool> healthConnectEnabled;
+  final Value<int?> healthConnectSyncedAt;
   final Value<int> defaultWarmupSets;
   final Value<int> prDefaultWarmupSets;
   final Value<int> prDefaultExtraAttempts;
@@ -2179,6 +2277,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.trackRpe = const Value.absent(),
     this.trackSleepStages = const Value.absent(),
     this.trackAlcohol = const Value.absent(),
+    this.healthConnectEnabled = const Value.absent(),
+    this.healthConnectSyncedAt = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2217,6 +2317,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.trackRpe = const Value.absent(),
     this.trackSleepStages = const Value.absent(),
     this.trackAlcohol = const Value.absent(),
+    this.healthConnectEnabled = const Value.absent(),
+    this.healthConnectSyncedAt = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
     this.prDefaultExtraAttempts = const Value.absent(),
@@ -2256,6 +2358,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? trackRpe,
     Expression<bool>? trackSleepStages,
     Expression<bool>? trackAlcohol,
+    Expression<bool>? healthConnectEnabled,
+    Expression<int>? healthConnectSyncedAt,
     Expression<int>? defaultWarmupSets,
     Expression<int>? prDefaultWarmupSets,
     Expression<int>? prDefaultExtraAttempts,
@@ -2296,6 +2400,10 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (trackRpe != null) 'track_rpe': trackRpe,
       if (trackSleepStages != null) 'track_sleep_stages': trackSleepStages,
       if (trackAlcohol != null) 'track_alcohol': trackAlcohol,
+      if (healthConnectEnabled != null)
+        'health_connect_enabled': healthConnectEnabled,
+      if (healthConnectSyncedAt != null)
+        'health_connect_synced_at': healthConnectSyncedAt,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
       if (prDefaultWarmupSets != null)
         'pr_default_warmup_sets': prDefaultWarmupSets,
@@ -2338,6 +2446,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? trackRpe,
     Value<bool>? trackSleepStages,
     Value<bool>? trackAlcohol,
+    Value<bool>? healthConnectEnabled,
+    Value<int?>? healthConnectSyncedAt,
     Value<int>? defaultWarmupSets,
     Value<int>? prDefaultWarmupSets,
     Value<int>? prDefaultExtraAttempts,
@@ -2376,6 +2486,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       trackRpe: trackRpe ?? this.trackRpe,
       trackSleepStages: trackSleepStages ?? this.trackSleepStages,
       trackAlcohol: trackAlcohol ?? this.trackAlcohol,
+      healthConnectEnabled: healthConnectEnabled ?? this.healthConnectEnabled,
+      healthConnectSyncedAt:
+          healthConnectSyncedAt ?? this.healthConnectSyncedAt,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
       prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
       prDefaultExtraAttempts:
@@ -2463,6 +2576,16 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (trackAlcohol.present) {
       map['track_alcohol'] = Variable<bool>(trackAlcohol.value);
     }
+    if (healthConnectEnabled.present) {
+      map['health_connect_enabled'] = Variable<bool>(
+        healthConnectEnabled.value,
+      );
+    }
+    if (healthConnectSyncedAt.present) {
+      map['health_connect_synced_at'] = Variable<int>(
+        healthConnectSyncedAt.value,
+      );
+    }
     if (defaultWarmupSets.present) {
       map['default_warmup_sets'] = Variable<int>(defaultWarmupSets.value);
     }
@@ -2537,6 +2660,8 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('trackRpe: $trackRpe, ')
           ..write('trackSleepStages: $trackSleepStages, ')
           ..write('trackAlcohol: $trackAlcohol, ')
+          ..write('healthConnectEnabled: $healthConnectEnabled, ')
+          ..write('healthConnectSyncedAt: $healthConnectSyncedAt, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
           ..write('prDefaultExtraAttempts: $prDefaultExtraAttempts, ')
@@ -9964,8 +10089,24 @@ class $BodyMeasurementsTableTable extends BodyMeasurementsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
-  List<GeneratedColumn> get $columns => [id, measuredAt, type, value, note];
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    measuredAt,
+    type,
+    value,
+    note,
+    source,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -10013,6 +10154,12 @@ class $BodyMeasurementsTableTable extends BodyMeasurementsTable
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
     return context;
   }
 
@@ -10042,6 +10189,10 @@ class $BodyMeasurementsTableTable extends BodyMeasurementsTable
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      ),
     );
   }
 
@@ -10063,12 +10214,18 @@ class BodyMeasurementRow extends DataClass
   /// for every circumference.
   final double value;
   final String? note;
+
+  /// Null when entered in FitLog; otherwise the app that wrote it to Health
+  /// Connect. An imported row's id is `hc:` and the record's own id, so a
+  /// second import finds it instead of adding it again.
+  final String? source;
   const BodyMeasurementRow({
     required this.id,
     required this.measuredAt,
     required this.type,
     required this.value,
     this.note,
+    this.source,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -10080,6 +10237,9 @@ class BodyMeasurementRow extends DataClass
     if (!nullToAbsent || note != null) {
       map['note'] = Variable<String>(note);
     }
+    if (!nullToAbsent || source != null) {
+      map['source'] = Variable<String>(source);
+    }
     return map;
   }
 
@@ -10090,6 +10250,9 @@ class BodyMeasurementRow extends DataClass
       type: Value(type),
       value: Value(value),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      source: source == null && nullToAbsent
+          ? const Value.absent()
+          : Value(source),
     );
   }
 
@@ -10104,6 +10267,7 @@ class BodyMeasurementRow extends DataClass
       type: serializer.fromJson<String>(json['type']),
       value: serializer.fromJson<double>(json['value']),
       note: serializer.fromJson<String?>(json['note']),
+      source: serializer.fromJson<String?>(json['source']),
     );
   }
   @override
@@ -10115,6 +10279,7 @@ class BodyMeasurementRow extends DataClass
       'type': serializer.toJson<String>(type),
       'value': serializer.toJson<double>(value),
       'note': serializer.toJson<String?>(note),
+      'source': serializer.toJson<String?>(source),
     };
   }
 
@@ -10124,12 +10289,14 @@ class BodyMeasurementRow extends DataClass
     String? type,
     double? value,
     Value<String?> note = const Value.absent(),
+    Value<String?> source = const Value.absent(),
   }) => BodyMeasurementRow(
     id: id ?? this.id,
     measuredAt: measuredAt ?? this.measuredAt,
     type: type ?? this.type,
     value: value ?? this.value,
     note: note.present ? note.value : this.note,
+    source: source.present ? source.value : this.source,
   );
   BodyMeasurementRow copyWithCompanion(BodyMeasurementsTableCompanion data) {
     return BodyMeasurementRow(
@@ -10140,6 +10307,7 @@ class BodyMeasurementRow extends DataClass
       type: data.type.present ? data.type.value : this.type,
       value: data.value.present ? data.value.value : this.value,
       note: data.note.present ? data.note.value : this.note,
+      source: data.source.present ? data.source.value : this.source,
     );
   }
 
@@ -10150,13 +10318,14 @@ class BodyMeasurementRow extends DataClass
           ..write('measuredAt: $measuredAt, ')
           ..write('type: $type, ')
           ..write('value: $value, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, measuredAt, type, value, note);
+  int get hashCode => Object.hash(id, measuredAt, type, value, note, source);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -10165,7 +10334,8 @@ class BodyMeasurementRow extends DataClass
           other.measuredAt == this.measuredAt &&
           other.type == this.type &&
           other.value == this.value &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.source == this.source);
 }
 
 class BodyMeasurementsTableCompanion
@@ -10175,6 +10345,7 @@ class BodyMeasurementsTableCompanion
   final Value<String> type;
   final Value<double> value;
   final Value<String?> note;
+  final Value<String?> source;
   final Value<int> rowid;
   const BodyMeasurementsTableCompanion({
     this.id = const Value.absent(),
@@ -10182,6 +10353,7 @@ class BodyMeasurementsTableCompanion
     this.type = const Value.absent(),
     this.value = const Value.absent(),
     this.note = const Value.absent(),
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BodyMeasurementsTableCompanion.insert({
@@ -10190,6 +10362,7 @@ class BodyMeasurementsTableCompanion
     required String type,
     required double value,
     this.note = const Value.absent(),
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        measuredAt = Value(measuredAt),
@@ -10201,6 +10374,7 @@ class BodyMeasurementsTableCompanion
     Expression<String>? type,
     Expression<double>? value,
     Expression<String>? note,
+    Expression<String>? source,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10209,6 +10383,7 @@ class BodyMeasurementsTableCompanion
       if (type != null) 'type': type,
       if (value != null) 'value': value,
       if (note != null) 'note': note,
+      if (source != null) 'source': source,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10219,6 +10394,7 @@ class BodyMeasurementsTableCompanion
     Value<String>? type,
     Value<double>? value,
     Value<String?>? note,
+    Value<String?>? source,
     Value<int>? rowid,
   }) {
     return BodyMeasurementsTableCompanion(
@@ -10227,6 +10403,7 @@ class BodyMeasurementsTableCompanion
       type: type ?? this.type,
       value: value ?? this.value,
       note: note ?? this.note,
+      source: source ?? this.source,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -10249,6 +10426,9 @@ class BodyMeasurementsTableCompanion
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -10263,6 +10443,7 @@ class BodyMeasurementsTableCompanion
           ..write('type: $type, ')
           ..write('value: $value, ')
           ..write('note: $note, ')
+          ..write('source: $source, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11068,6 +11249,15 @@ class $SleepEntriesTableTable extends SleepEntriesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -11076,6 +11266,7 @@ class $SleepEntriesTableTable extends SleepEntriesTable
     lightMinutes,
     remMinutes,
     deepMinutes,
+    source,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -11137,6 +11328,12 @@ class $SleepEntriesTableTable extends SleepEntriesTable
         ),
       );
     }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
     return context;
   }
 
@@ -11170,6 +11367,10 @@ class $SleepEntriesTableTable extends SleepEntriesTable
         DriftSqlType.int,
         data['${effectivePrefix}deep_minutes'],
       ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      ),
     );
   }
 
@@ -11189,6 +11390,13 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
   final int? lightMinutes;
   final int? remMinutes;
   final int? deepMinutes;
+
+  /// Where the night came from: null when you filled it in yourself,
+  /// otherwise the app that wrote it to Health Connect.
+  ///
+  /// What you say yourself wins: an import never overwrites a night without a
+  /// source, and correcting an imported night makes it yours.
+  final String? source;
   const SleepEntryRow({
     required this.id,
     required this.fellAsleepAt,
@@ -11196,6 +11404,7 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
     this.lightMinutes,
     this.remMinutes,
     this.deepMinutes,
+    this.source,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -11211,6 +11420,9 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
     }
     if (!nullToAbsent || deepMinutes != null) {
       map['deep_minutes'] = Variable<int>(deepMinutes);
+    }
+    if (!nullToAbsent || source != null) {
+      map['source'] = Variable<String>(source);
     }
     return map;
   }
@@ -11229,6 +11441,9 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
       deepMinutes: deepMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(deepMinutes),
+      source: source == null && nullToAbsent
+          ? const Value.absent()
+          : Value(source),
     );
   }
 
@@ -11244,6 +11459,7 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
       lightMinutes: serializer.fromJson<int?>(json['lightMinutes']),
       remMinutes: serializer.fromJson<int?>(json['remMinutes']),
       deepMinutes: serializer.fromJson<int?>(json['deepMinutes']),
+      source: serializer.fromJson<String?>(json['source']),
     );
   }
   @override
@@ -11256,6 +11472,7 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
       'lightMinutes': serializer.toJson<int?>(lightMinutes),
       'remMinutes': serializer.toJson<int?>(remMinutes),
       'deepMinutes': serializer.toJson<int?>(deepMinutes),
+      'source': serializer.toJson<String?>(source),
     };
   }
 
@@ -11266,6 +11483,7 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
     Value<int?> lightMinutes = const Value.absent(),
     Value<int?> remMinutes = const Value.absent(),
     Value<int?> deepMinutes = const Value.absent(),
+    Value<String?> source = const Value.absent(),
   }) => SleepEntryRow(
     id: id ?? this.id,
     fellAsleepAt: fellAsleepAt ?? this.fellAsleepAt,
@@ -11273,6 +11491,7 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
     lightMinutes: lightMinutes.present ? lightMinutes.value : this.lightMinutes,
     remMinutes: remMinutes.present ? remMinutes.value : this.remMinutes,
     deepMinutes: deepMinutes.present ? deepMinutes.value : this.deepMinutes,
+    source: source.present ? source.value : this.source,
   );
   SleepEntryRow copyWithCompanion(SleepEntriesTableCompanion data) {
     return SleepEntryRow(
@@ -11290,6 +11509,7 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
       deepMinutes: data.deepMinutes.present
           ? data.deepMinutes.value
           : this.deepMinutes,
+      source: data.source.present ? data.source.value : this.source,
     );
   }
 
@@ -11301,7 +11521,8 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
           ..write('wokeAt: $wokeAt, ')
           ..write('lightMinutes: $lightMinutes, ')
           ..write('remMinutes: $remMinutes, ')
-          ..write('deepMinutes: $deepMinutes')
+          ..write('deepMinutes: $deepMinutes, ')
+          ..write('source: $source')
           ..write(')'))
         .toString();
   }
@@ -11314,6 +11535,7 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
     lightMinutes,
     remMinutes,
     deepMinutes,
+    source,
   );
   @override
   bool operator ==(Object other) =>
@@ -11324,7 +11546,8 @@ class SleepEntryRow extends DataClass implements Insertable<SleepEntryRow> {
           other.wokeAt == this.wokeAt &&
           other.lightMinutes == this.lightMinutes &&
           other.remMinutes == this.remMinutes &&
-          other.deepMinutes == this.deepMinutes);
+          other.deepMinutes == this.deepMinutes &&
+          other.source == this.source);
 }
 
 class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
@@ -11334,6 +11557,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
   final Value<int?> lightMinutes;
   final Value<int?> remMinutes;
   final Value<int?> deepMinutes;
+  final Value<String?> source;
   final Value<int> rowid;
   const SleepEntriesTableCompanion({
     this.id = const Value.absent(),
@@ -11342,6 +11566,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
     this.lightMinutes = const Value.absent(),
     this.remMinutes = const Value.absent(),
     this.deepMinutes = const Value.absent(),
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SleepEntriesTableCompanion.insert({
@@ -11351,6 +11576,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
     this.lightMinutes = const Value.absent(),
     this.remMinutes = const Value.absent(),
     this.deepMinutes = const Value.absent(),
+    this.source = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        fellAsleepAt = Value(fellAsleepAt),
@@ -11362,6 +11588,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
     Expression<int>? lightMinutes,
     Expression<int>? remMinutes,
     Expression<int>? deepMinutes,
+    Expression<String>? source,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -11371,6 +11598,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
       if (lightMinutes != null) 'light_minutes': lightMinutes,
       if (remMinutes != null) 'rem_minutes': remMinutes,
       if (deepMinutes != null) 'deep_minutes': deepMinutes,
+      if (source != null) 'source': source,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -11382,6 +11610,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
     Value<int?>? lightMinutes,
     Value<int?>? remMinutes,
     Value<int?>? deepMinutes,
+    Value<String?>? source,
     Value<int>? rowid,
   }) {
     return SleepEntriesTableCompanion(
@@ -11391,6 +11620,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
       lightMinutes: lightMinutes ?? this.lightMinutes,
       remMinutes: remMinutes ?? this.remMinutes,
       deepMinutes: deepMinutes ?? this.deepMinutes,
+      source: source ?? this.source,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -11416,6 +11646,9 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
     if (deepMinutes.present) {
       map['deep_minutes'] = Variable<int>(deepMinutes.value);
     }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -11431,6 +11664,7 @@ class SleepEntriesTableCompanion extends UpdateCompanion<SleepEntryRow> {
           ..write('lightMinutes: $lightMinutes, ')
           ..write('remMinutes: $remMinutes, ')
           ..write('deepMinutes: $deepMinutes, ')
+          ..write('source: $source, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11698,6 +11932,679 @@ class DrinkDaysTableCompanion extends UpdateCompanion<DrinkDayRow> {
   }
 }
 
+class $DailyVitalsTableTable extends DailyVitalsTable
+    with TableInfo<$DailyVitalsTableTable, DailyVitalsRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyVitalsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<int> day = GeneratedColumn<int>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hrvMsMeta = const VerificationMeta('hrvMs');
+  @override
+  late final GeneratedColumn<double> hrvMs = GeneratedColumn<double>(
+    'hrv_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _restingHrMeta = const VerificationMeta(
+    'restingHr',
+  );
+  @override
+  late final GeneratedColumn<double> restingHr = GeneratedColumn<double>(
+    'resting_hr',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, day, hrvMs, restingHr];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_vitals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyVitalsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('hrv_ms')) {
+      context.handle(
+        _hrvMsMeta,
+        hrvMs.isAcceptableOrUnknown(data['hrv_ms']!, _hrvMsMeta),
+      );
+    }
+    if (data.containsKey('resting_hr')) {
+      context.handle(
+        _restingHrMeta,
+        restingHr.isAcceptableOrUnknown(data['resting_hr']!, _restingHrMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DailyVitalsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyVitalsRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}day'],
+      )!,
+      hrvMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}hrv_ms'],
+      ),
+      restingHr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}resting_hr'],
+      ),
+    );
+  }
+
+  @override
+  $DailyVitalsTableTable createAlias(String alias) {
+    return $DailyVitalsTableTable(attachedDatabase, alias);
+  }
+}
+
+class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
+  /// The day, `yyyymmdd`.
+  final String id;
+
+  /// Midnight at the start of that day.
+  final int day;
+
+  /// RMSSD in milliseconds.
+  final double? hrvMs;
+
+  /// Beats per minute.
+  final double? restingHr;
+  const DailyVitalsRow({
+    required this.id,
+    required this.day,
+    this.hrvMs,
+    this.restingHr,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['day'] = Variable<int>(day);
+    if (!nullToAbsent || hrvMs != null) {
+      map['hrv_ms'] = Variable<double>(hrvMs);
+    }
+    if (!nullToAbsent || restingHr != null) {
+      map['resting_hr'] = Variable<double>(restingHr);
+    }
+    return map;
+  }
+
+  DailyVitalsTableCompanion toCompanion(bool nullToAbsent) {
+    return DailyVitalsTableCompanion(
+      id: Value(id),
+      day: Value(day),
+      hrvMs: hrvMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hrvMs),
+      restingHr: restingHr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(restingHr),
+    );
+  }
+
+  factory DailyVitalsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyVitalsRow(
+      id: serializer.fromJson<String>(json['id']),
+      day: serializer.fromJson<int>(json['day']),
+      hrvMs: serializer.fromJson<double?>(json['hrvMs']),
+      restingHr: serializer.fromJson<double?>(json['restingHr']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'day': serializer.toJson<int>(day),
+      'hrvMs': serializer.toJson<double?>(hrvMs),
+      'restingHr': serializer.toJson<double?>(restingHr),
+    };
+  }
+
+  DailyVitalsRow copyWith({
+    String? id,
+    int? day,
+    Value<double?> hrvMs = const Value.absent(),
+    Value<double?> restingHr = const Value.absent(),
+  }) => DailyVitalsRow(
+    id: id ?? this.id,
+    day: day ?? this.day,
+    hrvMs: hrvMs.present ? hrvMs.value : this.hrvMs,
+    restingHr: restingHr.present ? restingHr.value : this.restingHr,
+  );
+  DailyVitalsRow copyWithCompanion(DailyVitalsTableCompanion data) {
+    return DailyVitalsRow(
+      id: data.id.present ? data.id.value : this.id,
+      day: data.day.present ? data.day.value : this.day,
+      hrvMs: data.hrvMs.present ? data.hrvMs.value : this.hrvMs,
+      restingHr: data.restingHr.present ? data.restingHr.value : this.restingHr,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyVitalsRow(')
+          ..write('id: $id, ')
+          ..write('day: $day, ')
+          ..write('hrvMs: $hrvMs, ')
+          ..write('restingHr: $restingHr')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, day, hrvMs, restingHr);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyVitalsRow &&
+          other.id == this.id &&
+          other.day == this.day &&
+          other.hrvMs == this.hrvMs &&
+          other.restingHr == this.restingHr);
+}
+
+class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
+  final Value<String> id;
+  final Value<int> day;
+  final Value<double?> hrvMs;
+  final Value<double?> restingHr;
+  final Value<int> rowid;
+  const DailyVitalsTableCompanion({
+    this.id = const Value.absent(),
+    this.day = const Value.absent(),
+    this.hrvMs = const Value.absent(),
+    this.restingHr = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyVitalsTableCompanion.insert({
+    required String id,
+    required int day,
+    this.hrvMs = const Value.absent(),
+    this.restingHr = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       day = Value(day);
+  static Insertable<DailyVitalsRow> custom({
+    Expression<String>? id,
+    Expression<int>? day,
+    Expression<double>? hrvMs,
+    Expression<double>? restingHr,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (day != null) 'day': day,
+      if (hrvMs != null) 'hrv_ms': hrvMs,
+      if (restingHr != null) 'resting_hr': restingHr,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyVitalsTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? day,
+    Value<double?>? hrvMs,
+    Value<double?>? restingHr,
+    Value<int>? rowid,
+  }) {
+    return DailyVitalsTableCompanion(
+      id: id ?? this.id,
+      day: day ?? this.day,
+      hrvMs: hrvMs ?? this.hrvMs,
+      restingHr: restingHr ?? this.restingHr,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<int>(day.value);
+    }
+    if (hrvMs.present) {
+      map['hrv_ms'] = Variable<double>(hrvMs.value);
+    }
+    if (restingHr.present) {
+      map['resting_hr'] = Variable<double>(restingHr.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyVitalsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('day: $day, ')
+          ..write('hrvMs: $hrvMs, ')
+          ..write('restingHr: $restingHr, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CardioSessionsTableTable extends CardioSessionsTable
+    with TableInfo<$CardioSessionsTableTable, CardioSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CardioSessionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<int> startedAt = GeneratedColumn<int>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<int> endedAt = GeneratedColumn<int>(
+    'ended_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, startedAt, endedAt, kind, source];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cardio_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CardioSessionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CardioSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CardioSessionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      ),
+    );
+  }
+
+  @override
+  $CardioSessionsTableTable createAlias(String alias) {
+    return $CardioSessionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CardioSessionRow extends DataClass
+    implements Insertable<CardioSessionRow> {
+  final String id;
+  final int startedAt;
+  final int endedAt;
+
+  /// `running` or `cycling`.
+  final String kind;
+
+  /// The app that recorded it.
+  final String? source;
+  const CardioSessionRow({
+    required this.id,
+    required this.startedAt,
+    required this.endedAt,
+    required this.kind,
+    this.source,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['started_at'] = Variable<int>(startedAt);
+    map['ended_at'] = Variable<int>(endedAt);
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || source != null) {
+      map['source'] = Variable<String>(source);
+    }
+    return map;
+  }
+
+  CardioSessionsTableCompanion toCompanion(bool nullToAbsent) {
+    return CardioSessionsTableCompanion(
+      id: Value(id),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      kind: Value(kind),
+      source: source == null && nullToAbsent
+          ? const Value.absent()
+          : Value(source),
+    );
+  }
+
+  factory CardioSessionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CardioSessionRow(
+      id: serializer.fromJson<String>(json['id']),
+      startedAt: serializer.fromJson<int>(json['startedAt']),
+      endedAt: serializer.fromJson<int>(json['endedAt']),
+      kind: serializer.fromJson<String>(json['kind']),
+      source: serializer.fromJson<String?>(json['source']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'startedAt': serializer.toJson<int>(startedAt),
+      'endedAt': serializer.toJson<int>(endedAt),
+      'kind': serializer.toJson<String>(kind),
+      'source': serializer.toJson<String?>(source),
+    };
+  }
+
+  CardioSessionRow copyWith({
+    String? id,
+    int? startedAt,
+    int? endedAt,
+    String? kind,
+    Value<String?> source = const Value.absent(),
+  }) => CardioSessionRow(
+    id: id ?? this.id,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt ?? this.endedAt,
+    kind: kind ?? this.kind,
+    source: source.present ? source.value : this.source,
+  );
+  CardioSessionRow copyWithCompanion(CardioSessionsTableCompanion data) {
+    return CardioSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      source: data.source.present ? data.source.value : this.source,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CardioSessionRow(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('kind: $kind, ')
+          ..write('source: $source')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, startedAt, endedAt, kind, source);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CardioSessionRow &&
+          other.id == this.id &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.kind == this.kind &&
+          other.source == this.source);
+}
+
+class CardioSessionsTableCompanion extends UpdateCompanion<CardioSessionRow> {
+  final Value<String> id;
+  final Value<int> startedAt;
+  final Value<int> endedAt;
+  final Value<String> kind;
+  final Value<String?> source;
+  final Value<int> rowid;
+  const CardioSessionsTableCompanion({
+    this.id = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.source = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CardioSessionsTableCompanion.insert({
+    required String id,
+    required int startedAt,
+    required int endedAt,
+    required String kind,
+    this.source = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       startedAt = Value(startedAt),
+       endedAt = Value(endedAt),
+       kind = Value(kind);
+  static Insertable<CardioSessionRow> custom({
+    Expression<String>? id,
+    Expression<int>? startedAt,
+    Expression<int>? endedAt,
+    Expression<String>? kind,
+    Expression<String>? source,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (kind != null) 'kind': kind,
+      if (source != null) 'source': source,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CardioSessionsTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? startedAt,
+    Value<int>? endedAt,
+    Value<String>? kind,
+    Value<String?>? source,
+    Value<int>? rowid,
+  }) {
+    return CardioSessionsTableCompanion(
+      id: id ?? this.id,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      kind: kind ?? this.kind,
+      source: source ?? this.source,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<int>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<int>(endedAt.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CardioSessionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('kind: $kind, ')
+          ..write('source: $source, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11744,6 +12651,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SleepEntriesTableTable sleepEntriesTable =
       $SleepEntriesTableTable(this);
   late final $DrinkDaysTableTable drinkDaysTable = $DrinkDaysTableTable(this);
+  late final $DailyVitalsTableTable dailyVitalsTable = $DailyVitalsTableTable(
+    this,
+  );
+  late final $CardioSessionsTableTable cardioSessionsTable =
+      $CardioSessionsTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -11788,6 +12700,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_sleep_woke_at',
     'CREATE INDEX idx_sleep_woke_at ON sleep_entries (woke_at)',
   );
+  late final Index idxCardioStartedAt = Index(
+    'idx_cardio_started_at',
+    'CREATE INDEX idx_cardio_started_at ON cardio_sessions (started_at)',
+  );
   late final SettingsDao settingsDao = SettingsDao(this as AppDatabase);
   late final ExercisesDao exercisesDao = ExercisesDao(this as AppDatabase);
   late final RoutinesDao routinesDao = RoutinesDao(this as AppDatabase);
@@ -11795,6 +12711,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final RecordsDao recordsDao = RecordsDao(this as AppDatabase);
   late final ChatDao chatDao = ChatDao(this as AppDatabase);
   late final RecoveryDao recoveryDao = RecoveryDao(this as AppDatabase);
+  late final HealthDao healthDao = HealthDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11821,6 +12738,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sorenessChecksTable,
     sleepEntriesTable,
     drinkDaysTable,
+    dailyVitalsTable,
+    cardioSessionsTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxWorkoutsStartedAt,
@@ -11832,6 +12751,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxProgressPhotosTakenAt,
     idxSorenessCheckedAt,
     idxSleepWokeAt,
+    idxCardioStartedAt,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -12177,6 +13097,8 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> trackRpe,
       Value<bool> trackSleepStages,
       Value<bool> trackAlcohol,
+      Value<bool> healthConnectEnabled,
+      Value<int?> healthConnectSyncedAt,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -12216,6 +13138,8 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> trackRpe,
       Value<bool> trackSleepStages,
       Value<bool> trackAlcohol,
+      Value<bool> healthConnectEnabled,
+      Value<int?> healthConnectSyncedAt,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
       Value<int> prDefaultExtraAttempts,
@@ -12344,6 +13268,16 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get trackAlcohol => $composableBuilder(
     column: $table.trackAlcohol,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get healthConnectEnabled => $composableBuilder(
+    column: $table.healthConnectEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get healthConnectSyncedAt => $composableBuilder(
+    column: $table.healthConnectSyncedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12532,6 +13466,16 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get healthConnectEnabled => $composableBuilder(
+    column: $table.healthConnectEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get healthConnectSyncedAt => $composableBuilder(
+    column: $table.healthConnectSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => ColumnOrderings(column),
@@ -12709,6 +13653,16 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get healthConnectEnabled => $composableBuilder(
+    column: $table.healthConnectEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get healthConnectSyncedAt => $composableBuilder(
+    column: $table.healthConnectSyncedAt,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get defaultWarmupSets => $composableBuilder(
     column: $table.defaultWarmupSets,
     builder: (column) => column,
@@ -12834,6 +13788,8 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> trackRpe = const Value.absent(),
                 Value<bool> trackSleepStages = const Value.absent(),
                 Value<bool> trackAlcohol = const Value.absent(),
+                Value<bool> healthConnectEnabled = const Value.absent(),
+                Value<int?> healthConnectSyncedAt = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -12871,6 +13827,8 @@ class $$AppSettingsTableTableTableManager
                 trackRpe: trackRpe,
                 trackSleepStages: trackSleepStages,
                 trackAlcohol: trackAlcohol,
+                healthConnectEnabled: healthConnectEnabled,
+                healthConnectSyncedAt: healthConnectSyncedAt,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -12910,6 +13868,8 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> trackRpe = const Value.absent(),
                 Value<bool> trackSleepStages = const Value.absent(),
                 Value<bool> trackAlcohol = const Value.absent(),
+                Value<bool> healthConnectEnabled = const Value.absent(),
+                Value<int?> healthConnectSyncedAt = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultExtraAttempts = const Value.absent(),
@@ -12947,6 +13907,8 @@ class $$AppSettingsTableTableTableManager
                 trackRpe: trackRpe,
                 trackSleepStages: trackSleepStages,
                 trackAlcohol: trackAlcohol,
+                healthConnectEnabled: healthConnectEnabled,
+                healthConnectSyncedAt: healthConnectSyncedAt,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
                 prDefaultExtraAttempts: prDefaultExtraAttempts,
@@ -19248,6 +20210,7 @@ typedef $$BodyMeasurementsTableTableCreateCompanionBuilder =
       required String type,
       required double value,
       Value<String?> note,
+      Value<String?> source,
       Value<int> rowid,
     });
 typedef $$BodyMeasurementsTableTableUpdateCompanionBuilder =
@@ -19257,6 +20220,7 @@ typedef $$BodyMeasurementsTableTableUpdateCompanionBuilder =
       Value<String> type,
       Value<double> value,
       Value<String?> note,
+      Value<String?> source,
       Value<int> rowid,
     });
 
@@ -19291,6 +20255,11 @@ class $$BodyMeasurementsTableTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -19328,6 +20297,11 @@ class $$BodyMeasurementsTableTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BodyMeasurementsTableTableAnnotationComposer
@@ -19355,6 +20329,9 @@ class $$BodyMeasurementsTableTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 }
 
 class $$BodyMeasurementsTableTableTableManager
@@ -19408,6 +20385,7 @@ class $$BodyMeasurementsTableTableTableManager
                 Value<String> type = const Value.absent(),
                 Value<double> value = const Value.absent(),
                 Value<String?> note = const Value.absent(),
+                Value<String?> source = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BodyMeasurementsTableCompanion(
                 id: id,
@@ -19415,6 +20393,7 @@ class $$BodyMeasurementsTableTableTableManager
                 type: type,
                 value: value,
                 note: note,
+                source: source,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19424,6 +20403,7 @@ class $$BodyMeasurementsTableTableTableManager
                 required String type,
                 required double value,
                 Value<String?> note = const Value.absent(),
+                Value<String?> source = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BodyMeasurementsTableCompanion.insert(
                 id: id,
@@ -19431,6 +20411,7 @@ class $$BodyMeasurementsTableTableTableManager
                 type: type,
                 value: value,
                 note: note,
+                source: source,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -20018,6 +20999,7 @@ typedef $$SleepEntriesTableTableCreateCompanionBuilder =
       Value<int?> lightMinutes,
       Value<int?> remMinutes,
       Value<int?> deepMinutes,
+      Value<String?> source,
       Value<int> rowid,
     });
 typedef $$SleepEntriesTableTableUpdateCompanionBuilder =
@@ -20028,6 +21010,7 @@ typedef $$SleepEntriesTableTableUpdateCompanionBuilder =
       Value<int?> lightMinutes,
       Value<int?> remMinutes,
       Value<int?> deepMinutes,
+      Value<String?> source,
       Value<int> rowid,
     });
 
@@ -20067,6 +21050,11 @@ class $$SleepEntriesTableTableFilterComposer
 
   ColumnFilters<int> get deepMinutes => $composableBuilder(
     column: $table.deepMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -20109,6 +21097,11 @@ class $$SleepEntriesTableTableOrderingComposer
     column: $table.deepMinutes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SleepEntriesTableTableAnnotationComposer
@@ -20145,6 +21138,9 @@ class $$SleepEntriesTableTableAnnotationComposer
     column: $table.deepMinutes,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
 }
 
 class $$SleepEntriesTableTableTableManager
@@ -20193,6 +21189,7 @@ class $$SleepEntriesTableTableTableManager
                 Value<int?> lightMinutes = const Value.absent(),
                 Value<int?> remMinutes = const Value.absent(),
                 Value<int?> deepMinutes = const Value.absent(),
+                Value<String?> source = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SleepEntriesTableCompanion(
                 id: id,
@@ -20201,6 +21198,7 @@ class $$SleepEntriesTableTableTableManager
                 lightMinutes: lightMinutes,
                 remMinutes: remMinutes,
                 deepMinutes: deepMinutes,
+                source: source,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -20211,6 +21209,7 @@ class $$SleepEntriesTableTableTableManager
                 Value<int?> lightMinutes = const Value.absent(),
                 Value<int?> remMinutes = const Value.absent(),
                 Value<int?> deepMinutes = const Value.absent(),
+                Value<String?> source = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SleepEntriesTableCompanion.insert(
                 id: id,
@@ -20219,6 +21218,7 @@ class $$SleepEntriesTableTableTableManager
                 lightMinutes: lightMinutes,
                 remMinutes: remMinutes,
                 deepMinutes: deepMinutes,
+                source: source,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -20410,6 +21410,409 @@ typedef $$DrinkDaysTableTableProcessedTableManager =
       DrinkDayRow,
       PrefetchHooks Function()
     >;
+typedef $$DailyVitalsTableTableCreateCompanionBuilder =
+    DailyVitalsTableCompanion Function({
+      required String id,
+      required int day,
+      Value<double?> hrvMs,
+      Value<double?> restingHr,
+      Value<int> rowid,
+    });
+typedef $$DailyVitalsTableTableUpdateCompanionBuilder =
+    DailyVitalsTableCompanion Function({
+      Value<String> id,
+      Value<int> day,
+      Value<double?> hrvMs,
+      Value<double?> restingHr,
+      Value<int> rowid,
+    });
+
+class $$DailyVitalsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyVitalsTableTable> {
+  $$DailyVitalsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get hrvMs => $composableBuilder(
+    column: $table.hrvMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get restingHr => $composableBuilder(
+    column: $table.restingHr,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyVitalsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyVitalsTableTable> {
+  $$DailyVitalsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get hrvMs => $composableBuilder(
+    column: $table.hrvMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get restingHr => $composableBuilder(
+    column: $table.restingHr,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyVitalsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyVitalsTableTable> {
+  $$DailyVitalsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<double> get hrvMs =>
+      $composableBuilder(column: $table.hrvMs, builder: (column) => column);
+
+  GeneratedColumn<double> get restingHr =>
+      $composableBuilder(column: $table.restingHr, builder: (column) => column);
+}
+
+class $$DailyVitalsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyVitalsTableTable,
+          DailyVitalsRow,
+          $$DailyVitalsTableTableFilterComposer,
+          $$DailyVitalsTableTableOrderingComposer,
+          $$DailyVitalsTableTableAnnotationComposer,
+          $$DailyVitalsTableTableCreateCompanionBuilder,
+          $$DailyVitalsTableTableUpdateCompanionBuilder,
+          (
+            DailyVitalsRow,
+            BaseReferences<
+              _$AppDatabase,
+              $DailyVitalsTableTable,
+              DailyVitalsRow
+            >,
+          ),
+          DailyVitalsRow,
+          PrefetchHooks Function()
+        > {
+  $$DailyVitalsTableTableTableManager(
+    _$AppDatabase db,
+    $DailyVitalsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyVitalsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyVitalsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyVitalsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> day = const Value.absent(),
+                Value<double?> hrvMs = const Value.absent(),
+                Value<double?> restingHr = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyVitalsTableCompanion(
+                id: id,
+                day: day,
+                hrvMs: hrvMs,
+                restingHr: restingHr,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int day,
+                Value<double?> hrvMs = const Value.absent(),
+                Value<double?> restingHr = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyVitalsTableCompanion.insert(
+                id: id,
+                day: day,
+                hrvMs: hrvMs,
+                restingHr: restingHr,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyVitalsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyVitalsTableTable,
+      DailyVitalsRow,
+      $$DailyVitalsTableTableFilterComposer,
+      $$DailyVitalsTableTableOrderingComposer,
+      $$DailyVitalsTableTableAnnotationComposer,
+      $$DailyVitalsTableTableCreateCompanionBuilder,
+      $$DailyVitalsTableTableUpdateCompanionBuilder,
+      (
+        DailyVitalsRow,
+        BaseReferences<_$AppDatabase, $DailyVitalsTableTable, DailyVitalsRow>,
+      ),
+      DailyVitalsRow,
+      PrefetchHooks Function()
+    >;
+typedef $$CardioSessionsTableTableCreateCompanionBuilder =
+    CardioSessionsTableCompanion Function({
+      required String id,
+      required int startedAt,
+      required int endedAt,
+      required String kind,
+      Value<String?> source,
+      Value<int> rowid,
+    });
+typedef $$CardioSessionsTableTableUpdateCompanionBuilder =
+    CardioSessionsTableCompanion Function({
+      Value<String> id,
+      Value<int> startedAt,
+      Value<int> endedAt,
+      Value<String> kind,
+      Value<String?> source,
+      Value<int> rowid,
+    });
+
+class $$CardioSessionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CardioSessionsTableTable> {
+  $$CardioSessionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CardioSessionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CardioSessionsTableTable> {
+  $$CardioSessionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CardioSessionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CardioSessionsTableTable> {
+  $$CardioSessionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+}
+
+class $$CardioSessionsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CardioSessionsTableTable,
+          CardioSessionRow,
+          $$CardioSessionsTableTableFilterComposer,
+          $$CardioSessionsTableTableOrderingComposer,
+          $$CardioSessionsTableTableAnnotationComposer,
+          $$CardioSessionsTableTableCreateCompanionBuilder,
+          $$CardioSessionsTableTableUpdateCompanionBuilder,
+          (
+            CardioSessionRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CardioSessionsTableTable,
+              CardioSessionRow
+            >,
+          ),
+          CardioSessionRow,
+          PrefetchHooks Function()
+        > {
+  $$CardioSessionsTableTableTableManager(
+    _$AppDatabase db,
+    $CardioSessionsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CardioSessionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CardioSessionsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CardioSessionsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> startedAt = const Value.absent(),
+                Value<int> endedAt = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String?> source = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CardioSessionsTableCompanion(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                kind: kind,
+                source: source,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int startedAt,
+                required int endedAt,
+                required String kind,
+                Value<String?> source = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CardioSessionsTableCompanion.insert(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                kind: kind,
+                source: source,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CardioSessionsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CardioSessionsTableTable,
+      CardioSessionRow,
+      $$CardioSessionsTableTableFilterComposer,
+      $$CardioSessionsTableTableOrderingComposer,
+      $$CardioSessionsTableTableAnnotationComposer,
+      $$CardioSessionsTableTableCreateCompanionBuilder,
+      $$CardioSessionsTableTableUpdateCompanionBuilder,
+      (
+        CardioSessionRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CardioSessionsTableTable,
+          CardioSessionRow
+        >,
+      ),
+      CardioSessionRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -20456,4 +21859,8 @@ class $AppDatabaseManager {
       $$SleepEntriesTableTableTableManager(_db, _db.sleepEntriesTable);
   $$DrinkDaysTableTableTableManager get drinkDaysTable =>
       $$DrinkDaysTableTableTableManager(_db, _db.drinkDaysTable);
+  $$DailyVitalsTableTableTableManager get dailyVitalsTable =>
+      $$DailyVitalsTableTableTableManager(_db, _db.dailyVitalsTable);
+  $$CardioSessionsTableTableTableManager get cardioSessionsTable =>
+      $$CardioSessionsTableTableTableManager(_db, _db.cardioSessionsTable);
 }

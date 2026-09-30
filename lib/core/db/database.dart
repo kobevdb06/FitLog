@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import 'dao/chat_dao.dart';
 import 'dao/exercises_dao.dart';
+import 'dao/health_dao.dart';
 import 'dao/records_dao.dart';
 import 'dao/recovery_dao.dart';
 import 'dao/routines_dao.dart';
@@ -43,6 +44,8 @@ part 'database.drift.dart';
     SorenessChecksTable,
     SleepEntriesTable,
     DrinkDaysTable,
+    DailyVitalsTable,
+    CardioSessionsTable,
   ],
   daos: [
     SettingsDao,
@@ -52,13 +55,14 @@ part 'database.drift.dart';
     RecordsDao,
     ChatDao,
     RecoveryDao,
+    HealthDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -299,6 +303,28 @@ class AppDatabase extends _$AppDatabase {
         if (from < 32) {
           // Stars on exercises. None yet: there was nowhere to put one.
           await m.addColumn(exercisesTable, exercisesTable.isFavourite);
+        }
+        if (from < 33) {
+          // Health Connect: where a night or a weight came from (null is what
+          // you entered, which is everything so far), the watch's daily
+          // readings, the runs and rides, and whether to ask at all - off.
+          // Only for a database that already had the nights: one migrating
+          // from before v30 gets the table created above, from today's
+          // definition, with this column already in it.
+          if (from >= 30) {
+            await m.addColumn(sleepEntriesTable, sleepEntriesTable.source);
+          }
+          await m.addColumn(bodyMeasurementsTable, bodyMeasurementsTable.source);
+          await m.createTable(dailyVitalsTable);
+          await m.createTable(cardioSessionsTable);
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.healthConnectEnabled,
+          );
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.healthConnectSyncedAt,
+          );
         }
       });
 

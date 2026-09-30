@@ -97,6 +97,29 @@ enum PerceivedEffort {
   }
 }
 
+/// A run or a ride another app recorded.
+///
+/// Two kinds and no more: these are the sessions that load the legs enough
+/// to matter for a strength log. A walk, a swim or a yoga class is read past.
+enum CardioKind {
+  running('running', 'loop'),
+  cycling('cycling', 'fietstocht');
+
+  const CardioKind(this.wire, this.label);
+
+  final String wire;
+
+  /// How the recovery screen names one: "je loop van dinsdag".
+  final String label;
+
+  static CardioKind? fromWire(String? value) {
+    for (final kind in values) {
+      if (kind.wire == value) return kind;
+    }
+    return null;
+  }
+}
+
 /// How a muscle feels, as the user says it.
 ///
 /// Three answers and no more. A scale of ten would ask for a precision nobody

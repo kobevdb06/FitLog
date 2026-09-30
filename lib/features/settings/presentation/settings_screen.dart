@@ -10,6 +10,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../dashboard/presentation/today_providers.dart';
+import '../../health/presentation/health_providers.dart';
 
 /// The settings hub.
 class SettingsScreen extends ConsumerWidget {
@@ -63,6 +64,17 @@ class SettingsScreen extends ConsumerWidget {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.settingsCoach),
+          ),
+          ListTile(
+            leading: const Icon(Icons.favorite_outline),
+            title: const Text('Health Connect'),
+            subtitle: Text(
+              ref.watch(healthConnectEnabledProvider)
+                  ? 'Verbonden. Slaap, HRV, gewicht en cardio van je horloge'
+                  : 'Slaap, HRV, gewicht en cardio van je horloge ophalen',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.healthConnect),
           ),
           ListTile(
             leading: const Icon(Icons.lock_outline),

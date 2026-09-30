@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
@@ -7,6 +8,8 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../../routing/routes.dart';
+import '../../health/presentation/health_providers.dart';
 import 'recovery_providers.dart';
 
 /// Shortest and longest night the app believes. Outside this, a time was
@@ -115,6 +118,16 @@ class SleepSection extends ConsumerWidget {
                     stages: stages,
                   ),
                 ),
+            // With a watch, typing it in every morning is the long way round.
+            if (!ref.watch(healthConnectEnabledProvider))
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => context.push(Routes.healthConnect),
+                  icon: const Icon(Icons.watch_outlined, size: 18),
+                  label: const Text('Slaap van je horloge ophalen'),
+                ),
+              ),
             if (!hasLastNight) ...[
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton.icon(
@@ -220,6 +233,13 @@ class _NightRow extends StatelessWidget {
                     '  ·  ${nightLength(length)}',
                     style: theme.textTheme.bodyMedium,
                   ),
+                  if (row.source != null)
+                    Text(
+                      'via Health Connect',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   if (stages.isNotEmpty)
                     Text(
                       stages.join(' · '),

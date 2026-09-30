@@ -277,7 +277,7 @@ final class MorningControllerProvider
   }
 }
 
-String _$morningControllerHash() => r'c23d6a1069541b08e7265abf7dd2b75ff0c0dc82';
+String _$morningControllerHash() => r'dad0f824575aaf7beee3ac302d10fdb9dec9282a';
 
 /// Making a report, now or at the hour, and keeping that hour.
 

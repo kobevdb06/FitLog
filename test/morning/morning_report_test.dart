@@ -420,5 +420,14 @@ class _Watch implements HealthSource {
   Future<void> deleteWorkout(String id) async {}
 
   @override
+  Future<List<ImportedReading>> heartRate({
+    required DateTime from,
+    required DateTime to,
+  }) async => const [];
+
+  @override
+  Future<List<String>> missingAccess() async => const [];
+
+  @override
   Future<bool> requestBackgroundAccess() async => true;
 }

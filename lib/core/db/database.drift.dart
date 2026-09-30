@@ -7743,6 +7743,28 @@ class $WorkoutsTableTable extends WorkoutsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _avgHeartRateMeta = const VerificationMeta(
+    'avgHeartRate',
+  );
+  @override
+  late final GeneratedColumn<int> avgHeartRate = GeneratedColumn<int>(
+    'avg_heart_rate',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxHeartRateMeta = const VerificationMeta(
+    'maxHeartRate',
+  );
+  @override
+  late final GeneratedColumn<int> maxHeartRate = GeneratedColumn<int>(
+    'max_heart_rate',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7757,6 +7779,8 @@ class $WorkoutsTableTable extends WorkoutsTable
     colorIndex,
     durationSeconds,
     healthConnectId,
+    avgHeartRate,
+    maxHeartRate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7857,6 +7881,24 @@ class $WorkoutsTableTable extends WorkoutsTable
         ),
       );
     }
+    if (data.containsKey('avg_heart_rate')) {
+      context.handle(
+        _avgHeartRateMeta,
+        avgHeartRate.isAcceptableOrUnknown(
+          data['avg_heart_rate']!,
+          _avgHeartRateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_heart_rate')) {
+      context.handle(
+        _maxHeartRateMeta,
+        maxHeartRate.isAcceptableOrUnknown(
+          data['max_heart_rate']!,
+          _maxHeartRateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -7914,6 +7956,14 @@ class $WorkoutsTableTable extends WorkoutsTable
         DriftSqlType.string,
         data['${effectivePrefix}health_connect_id'],
       ),
+      avgHeartRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}avg_heart_rate'],
+      ),
+      maxHeartRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_heart_rate'],
+      ),
     );
   }
 
@@ -7948,6 +7998,12 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
   /// it is written once and can be taken out again when you delete it here.
   /// Null for everything that was never written.
   final String? healthConnectId;
+
+  /// Your heart rate during this session, as a watch reported it through
+  /// Health Connect: the average and the highest, in beats per minute. Null
+  /// without a watch, or before it handed its readings over.
+  final int? avgHeartRate;
+  final int? maxHeartRate;
   const WorkoutRow({
     required this.id,
     this.routineId,
@@ -7961,6 +8017,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     this.colorIndex,
     required this.durationSeconds,
     this.healthConnectId,
+    this.avgHeartRate,
+    this.maxHeartRate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7988,6 +8046,12 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     map['duration_seconds'] = Variable<int>(durationSeconds);
     if (!nullToAbsent || healthConnectId != null) {
       map['health_connect_id'] = Variable<String>(healthConnectId);
+    }
+    if (!nullToAbsent || avgHeartRate != null) {
+      map['avg_heart_rate'] = Variable<int>(avgHeartRate);
+    }
+    if (!nullToAbsent || maxHeartRate != null) {
+      map['max_heart_rate'] = Variable<int>(maxHeartRate);
     }
     return map;
   }
@@ -8018,6 +8082,12 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       healthConnectId: healthConnectId == null && nullToAbsent
           ? const Value.absent()
           : Value(healthConnectId),
+      avgHeartRate: avgHeartRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avgHeartRate),
+      maxHeartRate: maxHeartRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxHeartRate),
     );
   }
 
@@ -8039,6 +8109,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
       healthConnectId: serializer.fromJson<String?>(json['healthConnectId']),
+      avgHeartRate: serializer.fromJson<int?>(json['avgHeartRate']),
+      maxHeartRate: serializer.fromJson<int?>(json['maxHeartRate']),
     );
   }
   @override
@@ -8057,6 +8129,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'durationSeconds': serializer.toJson<int>(durationSeconds),
       'healthConnectId': serializer.toJson<String?>(healthConnectId),
+      'avgHeartRate': serializer.toJson<int?>(avgHeartRate),
+      'maxHeartRate': serializer.toJson<int?>(maxHeartRate),
     };
   }
 
@@ -8073,6 +8147,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     Value<int?> colorIndex = const Value.absent(),
     int? durationSeconds,
     Value<String?> healthConnectId = const Value.absent(),
+    Value<int?> avgHeartRate = const Value.absent(),
+    Value<int?> maxHeartRate = const Value.absent(),
   }) => WorkoutRow(
     id: id ?? this.id,
     routineId: routineId.present ? routineId.value : this.routineId,
@@ -8090,6 +8166,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     healthConnectId: healthConnectId.present
         ? healthConnectId.value
         : this.healthConnectId,
+    avgHeartRate: avgHeartRate.present ? avgHeartRate.value : this.avgHeartRate,
+    maxHeartRate: maxHeartRate.present ? maxHeartRate.value : this.maxHeartRate,
   );
   WorkoutRow copyWithCompanion(WorkoutsTableCompanion data) {
     return WorkoutRow(
@@ -8115,6 +8193,12 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       healthConnectId: data.healthConnectId.present
           ? data.healthConnectId.value
           : this.healthConnectId,
+      avgHeartRate: data.avgHeartRate.present
+          ? data.avgHeartRate.value
+          : this.avgHeartRate,
+      maxHeartRate: data.maxHeartRate.present
+          ? data.maxHeartRate.value
+          : this.maxHeartRate,
     );
   }
 
@@ -8132,7 +8216,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ..write('perceivedEffort: $perceivedEffort, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('durationSeconds: $durationSeconds, ')
-          ..write('healthConnectId: $healthConnectId')
+          ..write('healthConnectId: $healthConnectId, ')
+          ..write('avgHeartRate: $avgHeartRate, ')
+          ..write('maxHeartRate: $maxHeartRate')
           ..write(')'))
         .toString();
   }
@@ -8151,6 +8237,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     colorIndex,
     durationSeconds,
     healthConnectId,
+    avgHeartRate,
+    maxHeartRate,
   );
   @override
   bool operator ==(Object other) =>
@@ -8167,7 +8255,9 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           other.perceivedEffort == this.perceivedEffort &&
           other.colorIndex == this.colorIndex &&
           other.durationSeconds == this.durationSeconds &&
-          other.healthConnectId == this.healthConnectId);
+          other.healthConnectId == this.healthConnectId &&
+          other.avgHeartRate == this.avgHeartRate &&
+          other.maxHeartRate == this.maxHeartRate);
 }
 
 class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
@@ -8183,6 +8273,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
   final Value<int?> colorIndex;
   final Value<int> durationSeconds;
   final Value<String?> healthConnectId;
+  final Value<int?> avgHeartRate;
+  final Value<int?> maxHeartRate;
   final Value<int> rowid;
   const WorkoutsTableCompanion({
     this.id = const Value.absent(),
@@ -8197,6 +8289,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.colorIndex = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.healthConnectId = const Value.absent(),
+    this.avgHeartRate = const Value.absent(),
+    this.maxHeartRate = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkoutsTableCompanion.insert({
@@ -8212,6 +8306,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.colorIndex = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.healthConnectId = const Value.absent(),
+    this.avgHeartRate = const Value.absent(),
+    this.maxHeartRate = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -8229,6 +8325,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Expression<int>? colorIndex,
     Expression<int>? durationSeconds,
     Expression<String>? healthConnectId,
+    Expression<int>? avgHeartRate,
+    Expression<int>? maxHeartRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8244,6 +8342,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       if (colorIndex != null) 'color_index': colorIndex,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
       if (healthConnectId != null) 'health_connect_id': healthConnectId,
+      if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
+      if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8261,6 +8361,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Value<int?>? colorIndex,
     Value<int>? durationSeconds,
     Value<String?>? healthConnectId,
+    Value<int?>? avgHeartRate,
+    Value<int?>? maxHeartRate,
     Value<int>? rowid,
   }) {
     return WorkoutsTableCompanion(
@@ -8276,6 +8378,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       colorIndex: colorIndex ?? this.colorIndex,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       healthConnectId: healthConnectId ?? this.healthConnectId,
+      avgHeartRate: avgHeartRate ?? this.avgHeartRate,
+      maxHeartRate: maxHeartRate ?? this.maxHeartRate,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8319,6 +8423,12 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     if (healthConnectId.present) {
       map['health_connect_id'] = Variable<String>(healthConnectId.value);
     }
+    if (avgHeartRate.present) {
+      map['avg_heart_rate'] = Variable<int>(avgHeartRate.value);
+    }
+    if (maxHeartRate.present) {
+      map['max_heart_rate'] = Variable<int>(maxHeartRate.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8340,6 +8450,8 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
           ..write('colorIndex: $colorIndex, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('healthConnectId: $healthConnectId, ')
+          ..write('avgHeartRate: $avgHeartRate, ')
+          ..write('maxHeartRate: $maxHeartRate, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18784,6 +18896,8 @@ typedef $$WorkoutsTableTableCreateCompanionBuilder =
       Value<int?> colorIndex,
       Value<int> durationSeconds,
       Value<String?> healthConnectId,
+      Value<int?> avgHeartRate,
+      Value<int?> maxHeartRate,
       Value<int> rowid,
     });
 typedef $$WorkoutsTableTableUpdateCompanionBuilder =
@@ -18800,6 +18914,8 @@ typedef $$WorkoutsTableTableUpdateCompanionBuilder =
       Value<int?> colorIndex,
       Value<int> durationSeconds,
       Value<String?> healthConnectId,
+      Value<int?> avgHeartRate,
+      Value<int?> maxHeartRate,
       Value<int> rowid,
     });
 
@@ -18936,6 +19052,16 @@ class $$WorkoutsTableTableFilterComposer
 
   ColumnFilters<String> get healthConnectId => $composableBuilder(
     column: $table.healthConnectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get avgHeartRate => $composableBuilder(
+    column: $table.avgHeartRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxHeartRate => $composableBuilder(
+    column: $table.maxHeartRate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19078,6 +19204,16 @@ class $$WorkoutsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get avgHeartRate => $composableBuilder(
+    column: $table.avgHeartRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get maxHeartRate => $composableBuilder(
+    column: $table.maxHeartRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutinesTableTableOrderingComposer get routineId {
     final $$RoutinesTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -19151,6 +19287,16 @@ class $$WorkoutsTableTableAnnotationComposer
 
   GeneratedColumn<String> get healthConnectId => $composableBuilder(
     column: $table.healthConnectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get avgHeartRate => $composableBuilder(
+    column: $table.avgHeartRate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get maxHeartRate => $composableBuilder(
+    column: $table.maxHeartRate,
     builder: (column) => column,
   );
 
@@ -19274,6 +19420,8 @@ class $$WorkoutsTableTableTableManager
                 Value<int?> colorIndex = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
                 Value<String?> healthConnectId = const Value.absent(),
+                Value<int?> avgHeartRate = const Value.absent(),
+                Value<int?> maxHeartRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion(
                 id: id,
@@ -19288,6 +19436,8 @@ class $$WorkoutsTableTableTableManager
                 colorIndex: colorIndex,
                 durationSeconds: durationSeconds,
                 healthConnectId: healthConnectId,
+                avgHeartRate: avgHeartRate,
+                maxHeartRate: maxHeartRate,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19304,6 +19454,8 @@ class $$WorkoutsTableTableTableManager
                 Value<int?> colorIndex = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
                 Value<String?> healthConnectId = const Value.absent(),
+                Value<int?> avgHeartRate = const Value.absent(),
+                Value<int?> maxHeartRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion.insert(
                 id: id,
@@ -19318,6 +19470,8 @@ class $$WorkoutsTableTableTableManager
                 colorIndex: colorIndex,
                 durationSeconds: durationSeconds,
                 healthConnectId: healthConnectId,
+                avgHeartRate: avgHeartRate,
+                maxHeartRate: maxHeartRate,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

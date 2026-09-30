@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => 37;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -357,6 +357,12 @@ class AppDatabase extends _$AppDatabase {
             appSettingsTable,
             appSettingsTable.morningReportMinutes,
           );
+        }
+        if (from < 37) {
+          // Heart rate during a session, from a watch. Nothing yet: nothing
+          // read it before.
+          await m.addColumn(workoutsTable, workoutsTable.avgHeartRate);
+          await m.addColumn(workoutsTable, workoutsTable.maxHeartRate);
         }
       });
 

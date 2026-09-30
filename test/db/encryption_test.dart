@@ -123,7 +123,7 @@ void main() {
 
   test('the schema is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
-    expect(db.schemaVersion, 36);
+    expect(db.schemaVersion, 37);
     await db.settingsDao.ensureInitialized();
     final tables = await db
         .customSelect(

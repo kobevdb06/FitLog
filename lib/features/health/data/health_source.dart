@@ -27,8 +27,20 @@ abstract class HealthSource {
   /// Gives back every permission FitLog was granted.
   Future<void> revokeAccess();
 
-  /// Everything FitLog uses, between [from] and [to].
+  /// Everything FitLog uses, between [from] and [to] - except the heart
+  /// rate, which is asked for one session at a time with [heartRate].
   Future<HealthSnapshot> read({required DateTime from, required DateTime to});
+
+  /// Every heart rate sample between [from] and [to]. Empty without a watch,
+  /// or without permission to read it.
+  Future<List<ImportedReading>> heartRate({
+    required DateTime from,
+    required DateTime to,
+  });
+
+  /// What FitLog asks for but may not read, in the words of its screen:
+  /// "slaap", "hartslag". Empty when it may read everything.
+  Future<List<String>> missingAccess();
 
   /// Shows Health Connect's permission screen for writing sessions. True
   /// when the user allowed it.
@@ -151,4 +163,43 @@ class HealthSnapshot {
       restingHr.isEmpty &&
       weights.isEmpty &&
       cardio.isEmpty;
+}
+
+/// The heart rate during one session: the average and the highest.
+class HeartRateSummary {
+  const HeartRateSummary({
+    required this.average,
+    required this.highest,
+    required this.samples,
+  });
+
+  final int average;
+  final int highest;
+  final int samples;
+}
+
+/// Works out [HeartRateSummary] from the samples between [from] and [to].
+///
+/// Only samples inside the session: Health Connect hands over whole records,
+/// and a watch's record can run on well past the last set. Null when none
+/// fall inside it.
+HeartRateSummary? summarizeHeartRate(
+  Iterable<ImportedReading> samples, {
+  required DateTime from,
+  required DateTime to,
+}) {
+  final inside = [
+    for (final sample in samples)
+      if (!sample.at.isBefore(from) &&
+          !sample.at.isAfter(to) &&
+          sample.value > 0)
+        sample.value,
+  ];
+  if (inside.isEmpty) return null;
+  final total = inside.fold<double>(0, (sum, v) => sum + v);
+  return HeartRateSummary(
+    average: (total / inside.length).round(),
+    highest: inside.reduce((a, b) => a > b ? a : b).round(),
+    samples: inside.length,
+  );
 }

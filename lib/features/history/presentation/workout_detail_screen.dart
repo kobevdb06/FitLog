@@ -113,6 +113,33 @@ class WorkoutDetailScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              if (workout.workout.avgHeartRate case final average?) ...[
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: StatTile(
+                        value: '$average bpm',
+                        label: 'Gem. hartslag',
+                      ),
+                    ),
+                    Expanded(
+                      child: StatTile(
+                        value: '${workout.workout.maxHeartRate ?? average} bpm',
+                        label: 'Max. hartslag',
+                      ),
+                    ),
+                    const Expanded(child: SizedBox.shrink()),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Gemeten door je horloge, via Health Connect.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
               if (workout.workout.notes != null &&
                   workout.workout.notes!.trim().isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),

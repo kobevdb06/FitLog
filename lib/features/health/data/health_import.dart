@@ -64,12 +64,41 @@ class HealthImport {
   }) async {
     final snapshot = await source.read(from: from, to: to);
     final summary = await HealthImporter(db).apply(snapshot);
+    final hearts = await heartRates(from: from, to: to);
     await db.settingsDao.updateSettings(
       AppSettingsTableCompanion(
         healthConnectSyncedAt: Value(to.millisecondsSinceEpoch),
       ),
     );
-    return summary;
+    return summary.withHeartRates(hearts);
+  }
+
+  /// Puts the heart rate a watch measured on every session that ended in
+  /// that stretch, and returns on how many.
+  ///
+  /// One question per session, for exactly its minutes: a watch can store a
+  /// sample a second while you train, and only these minutes matter here.
+  /// Asked again every time the stretch comes round, because a watch often
+  /// hands its readings over only when it next meets the phone.
+  Future<int> heartRates({required DateTime from, required DateTime to}) async {
+    var found = 0;
+    for (final workout in await db.healthDao.workoutsEndedBetween(from, to)) {
+      final start = DateTime.fromMillisecondsSinceEpoch(workout.startedAt);
+      final end = DateTime.fromMillisecondsSinceEpoch(workout.endedAt!);
+      final summary = summarizeHeartRate(
+        await source.heartRate(from: start, to: end),
+        from: start,
+        to: end,
+      );
+      if (summary == null) continue;
+      await db.healthDao.setWorkoutHeartRate(
+        workout.id,
+        average: summary.average,
+        highest: summary.highest,
+      );
+      found++;
+    }
+    return found;
   }
 
   /// [due] and [fetch] in one go. Null when there was nothing to do.

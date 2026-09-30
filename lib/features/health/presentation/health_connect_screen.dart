@@ -90,6 +90,8 @@ class HealthConnectScreen extends ConsumerWidget {
             },
           ),
           if (enabled && availability.value == HealthAvailability.available)
+            const _MissingAccess(),
+          if (enabled && availability.value == HealthAvailability.available)
             const _WriteSwitch(),
           if (sync.summary case final summary?)
             Padding(
@@ -160,6 +162,12 @@ const List<(IconData, String, String)> _whatWeRead = [
     'Loop- en fietssessies',
     'Die tellen mee voor het herstel van je benen.',
   ),
+  (
+    Icons.favorite_border,
+    'Hartslag tijdens je trainingen',
+    'Alleen de minuten van je trainingen in FitLog: het gemiddelde en het '
+        'hoogste staan dan bij die training.',
+  ),
 ];
 
 /// One line on what an import brought in.
@@ -175,6 +183,8 @@ String importSummaryText(ImportSummary summary) {
     if (summary.weights > 0) count(summary.weights, 'gewicht', 'gewichten'),
     if (summary.cardio > 0)
       count(summary.cardio, 'loop of rit', 'lopen of ritten'),
+    if (summary.heartRates > 0)
+      'hartslag bij ${count(summary.heartRates, 'training', 'trainingen')}',
   ];
   final kept = summary.ownNightsKept + summary.ownWeightsKept;
   return [
@@ -329,6 +339,48 @@ class _Connected extends ConsumerWidget {
           child: const Text('Ontkoppelen'),
         ),
       ],
+    );
+  }
+}
+
+/// What Health Connect does not let FitLog read, and the way to change that.
+///
+/// Someone who connected before the heart rate was asked for never saw it on
+/// Health Connect's screen; this is where they are told, and asked.
+class _MissingAccess extends ConsumerWidget {
+  const _MissingAccess();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final missing = ref.watch(healthMissingAccessProvider).value ?? const [];
+    if (missing.isEmpty) return const SizedBox.shrink();
+    final busy = ref.watch(healthSyncProvider).busy;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InfoBanner(
+            icon: Icons.lock_outline,
+            message:
+                'FitLog mag nog niet lezen: ${missing.join(', ')}. Wat je '
+                'weigert, blijft gewoon weg; de rest werkt zonder.',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton(
+            onPressed: busy
+                ? null
+                : () => ref.read(healthSyncProvider.notifier).askAgain(),
+            child: const Text('Toestemming aanpassen'),
+          ),
+        ],
+      ),
     );
   }
 }

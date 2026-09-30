@@ -587,6 +587,12 @@ class WorkoutsTable extends Table {
   TextColumn get healthConnectId =>
       text().named('health_connect_id').nullable()();
 
+  /// Your heart rate during this session, as a watch reported it through
+  /// Health Connect: the average and the highest, in beats per minute. Null
+  /// without a watch, or before it handed its readings over.
+  IntColumn get avgHeartRate => integer().named('avg_heart_rate').nullable()();
+  IntColumn get maxHeartRate => integer().named('max_heart_rate').nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

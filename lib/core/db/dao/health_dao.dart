@@ -176,6 +176,28 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
             ..orderBy([(t) => OrderingTerm.asc(t.startedAt)]))
           .get();
 
+  /// Finished sessions that ended between [from] and [to]: the ones a watch
+  /// may have measured the heart rate of since the last import.
+  Future<List<WorkoutRow>> workoutsEndedBetween(DateTime from, DateTime to) =>
+      (select(workoutsTable)..where(
+            (t) =>
+                t.endedAt.isBiggerOrEqualValue(from.millisecondsSinceEpoch) &
+                t.endedAt.isSmallerOrEqualValue(to.millisecondsSinceEpoch) &
+                t.endedAt.isBiggerThan(t.startedAt),
+          ))
+          .get();
+
+  Future<void> setWorkoutHeartRate(
+    String workoutId, {
+    required int average,
+    required int highest,
+  }) => (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
+    WorkoutsTableCompanion(
+      avgHeartRate: Value(average),
+      maxHeartRate: Value(highest),
+    ),
+  );
+
   /// Remembers the id Health Connect gave a session FitLog wrote there.
   Future<void> markWritten(String workoutId, String healthConnectId) =>
       (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
@@ -191,5 +213,12 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
     )..where((t) => t.source.isNotNull())).go();
     await delete(dailyVitalsTable).go();
     await delete(cardioSessionsTable).go();
+    // The sessions are yours; the heart rate on them came from the watch.
+    await update(workoutsTable).write(
+      const WorkoutsTableCompanion(
+        avgHeartRate: Value(null),
+        maxHeartRate: Value(null),
+      ),
+    );
   });
 }

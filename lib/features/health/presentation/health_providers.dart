@@ -30,6 +30,14 @@ HealthSource healthSource(Ref ref) => HealthConnectSource();
 Future<HealthAvailability> healthAvailability(Ref ref) =>
     ref.watch(healthSourceProvider).availability();
 
+/// What FitLog asks for but may not read, while connected. Asked again when
+/// the screen comes back, so a change made in Health Connect itself shows.
+@riverpod
+Future<List<String>> healthMissingAccess(Ref ref) async {
+  if (!ref.watch(healthConnectEnabledProvider)) return const [];
+  return ref.watch(healthSourceProvider).missingAccess();
+}
+
 /// Whether the user connected it.
 @riverpod
 bool healthConnectEnabled(Ref ref) =>
@@ -197,6 +205,23 @@ class HealthSync extends _$HealthSync {
     } on Object {
       return;
     }
+  }
+
+  /// Shows Health Connect's permission screen again, for what was refused
+  /// or added since - the heart rate, for someone who connected before it
+  /// was asked for - and imports straight after.
+  Future<void> askAgain() async {
+    try {
+      await ref.read(healthSourceProvider).requestAccess();
+    } on Object catch (error) {
+      state = HealthSyncState(
+        summary: state.summary,
+        error: 'Toestemming vragen lukte niet: $error',
+      );
+      return;
+    }
+    ref.invalidate(healthMissingAccessProvider);
+    await sync(force: true);
   }
 
   /// Stops importing and gives the permissions back. With [forget], also

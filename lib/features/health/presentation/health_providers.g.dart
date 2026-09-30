@@ -104,6 +104,54 @@ final class HealthAvailabilityProvider
 String _$healthAvailabilityHash() =>
     r'05cf8acd580acd1e2a633041d5499c51f958e625';
 
+/// What FitLog asks for but may not read, while connected. Asked again when
+/// the screen comes back, so a change made in Health Connect itself shows.
+
+@ProviderFor(healthMissingAccess)
+final healthMissingAccessProvider = HealthMissingAccessProvider._();
+
+/// What FitLog asks for but may not read, while connected. Asked again when
+/// the screen comes back, so a change made in Health Connect itself shows.
+
+final class HealthMissingAccessProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          FutureOr<List<String>>
+        >
+    with $FutureModifier<List<String>>, $FutureProvider<List<String>> {
+  /// What FitLog asks for but may not read, while connected. Asked again when
+  /// the screen comes back, so a change made in Health Connect itself shows.
+  HealthMissingAccessProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'healthMissingAccessProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$healthMissingAccessHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<String>> create(Ref ref) {
+    return healthMissingAccess(ref);
+  }
+}
+
+String _$healthMissingAccessHash() =>
+    r'dee521003d5c3d82e8bf1dfeb347711f2a68a58a';
+
 /// Whether the user connected it.
 
 @ProviderFor(healthConnectEnabled)
@@ -235,7 +283,7 @@ final class HealthSyncProvider
   }
 }
 
-String _$healthSyncHash() => r'ad225da47a583a43efda23b237bf6faddc322269';
+String _$healthSyncHash() => r'0285e24223ec341d9f9d560efdd558127a690696';
 
 /// Connecting, importing and disconnecting.
 

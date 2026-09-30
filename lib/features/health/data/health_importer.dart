@@ -11,6 +11,7 @@ class ImportSummary {
     this.ownWeightsKept = 0,
     this.vitalDays = 0,
     this.cardio = 0,
+    this.heartRates = 0,
   });
 
   final int nights;
@@ -22,8 +23,25 @@ class ImportSummary {
   final int vitalDays;
   final int cardio;
 
+  /// Sessions that got the heart rate a watch measured during them.
+  final int heartRates;
+
   bool get isEmpty =>
-      nights == 0 && weights == 0 && vitalDays == 0 && cardio == 0;
+      nights == 0 &&
+      weights == 0 &&
+      vitalDays == 0 &&
+      cardio == 0 &&
+      heartRates == 0;
+
+  ImportSummary withHeartRates(int count) => ImportSummary(
+    nights: nights,
+    ownNightsKept: ownNightsKept,
+    weights: weights,
+    ownWeightsKept: ownWeightsKept,
+    vitalDays: vitalDays,
+    cardio: cardio,
+    heartRates: count,
+  );
 }
 
 /// Writes a [HealthSnapshot] into FitLog's own database.

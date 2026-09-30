@@ -3089,3 +3089,38 @@ vraag is één verzoek op je eigen sleutel en telt op de dagteller
 **Het uur** kies je onder Health Connect, standaard zeven uur. De
 tijdkiezer is voortaan overal 24 uur: Flutter tekende de klok in 24 uur
 maar weigerde een getypt "19" op een gsm die op AM en PM staat.
+
+## 166. Hartslag tijdens een training: alleen die minuten, en alleen de samenvatting
+
+De coach wist niets van je hartslag tijdens een training, terwijl je
+horloge die had gemeten: FitLog las wel HRV en rusthartslag (één waarde per
+dag), maar niet de hartslag zelf. Nu wel, op één plek: bij je trainingen in
+FitLog.
+
+**Alleen de minuten van je trainingen.** Een horloge bewaart tijdens een
+workout tot een meting per seconde; een maand daarvan is tienduizenden
+punten die voor niets nodig zijn. Daarom vraagt FitLog de hartslag niet mee
+met de rest, maar per afgewerkte training, voor precies het begin tot het
+einde ervan, en houdt het alleen het gemiddelde en het hoogste bij
+(`workouts.avg_heart_rate`, `max_heart_rate`, schema 37). Metingen buiten
+die minuten tellen niet, ook als ze in hetzelfde record zitten.
+
+**Opnieuw bij elke import.** Een horloge geeft zijn metingen vaak pas door
+als het de gsm weer ziet. Elke import vraagt daarom opnieuw voor de
+trainingen in zijn stuk (dat al twee dagen overlapt), zodat de hartslag er
+achteraf bijkomt en een latere, vollere doorgave de eerste vervangt.
+
+**Wat het horloge zelf als workout opnam** ("Overige training") wordt niet
+als tweede training ingelezen: het is dezelfde sessie als die in FitLog, en
+twee keer tellen zou je geschiedenis en je herstel vertekenen. De hartslag
+ervan komt via de minuten van je FitLog-training toch binnen.
+
+**Wie al verbonden was,** zag de vraag naar de hartslag nooit op het scherm
+van Health Connect. Het Health Connect-scherm toont daarom wat FitLog nog
+niet mag lezen, met een knop die dat scherm opnieuw opent. Wie iets bewust
+weigert, ziet het daar staan, en de rest werkt gewoon zonder.
+
+"Vergeten wat binnenkwam" wist ook de hartslag op je trainingen; de
+trainingen zelf zijn van jou en blijven. De coach ziet de hartslag bij
+`recent_workouts`; de workoutdetails tonen hem onder de duur, het volume en
+de sets.

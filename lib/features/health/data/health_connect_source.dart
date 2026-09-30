@@ -27,7 +27,26 @@ class HealthConnectSource implements HealthSource {
     HealthDataType.RESTING_HEART_RATE,
     HealthDataType.WEIGHT,
     HealthDataType.WORKOUT,
+    HealthDataType.HEART_RATE,
   ];
+
+  /// What [read] asks for in one go: everything but the heart rate. A watch
+  /// can store a sample a second during a workout, and a month of those is
+  /// not something to fetch when only the sessions matter.
+  static final List<HealthDataType> _bulkTypes = [
+    for (final type in readTypes)
+      if (type != HealthDataType.HEART_RATE) type,
+  ];
+
+  /// How each permission is called on FitLog's own screen.
+  static const Map<HealthDataType, String> _labels = {
+    HealthDataType.SLEEP_SESSION: 'slaap',
+    HealthDataType.HEART_RATE_VARIABILITY_RMSSD: 'HRV',
+    HealthDataType.RESTING_HEART_RATE: 'rusthartslag',
+    HealthDataType.WEIGHT: 'gewicht',
+    HealthDataType.WORKOUT: 'loop- en fietssessies',
+    HealthDataType.HEART_RATE: 'hartslag',
+  };
 
   Future<void> _ready() async {
     if (_configured) return;
@@ -79,7 +98,7 @@ class HealthConnectSource implements HealthSource {
     // One type at a time: a type the user refused answers with an error,
     // and that should cost that type, not the whole import.
     final points = <HealthDataPoint>[];
-    for (final type in readTypes) {
+    for (final type in _bulkTypes) {
       try {
         points.addAll(
           await _health.getHealthDataFromTypes(
@@ -93,6 +112,43 @@ class HealthConnectSource implements HealthSource {
       }
     }
     return snapshotFromPoints(points);
+  }
+
+  @override
+  Future<List<ImportedReading>> heartRate({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    await _ready();
+    try {
+      final points = await _health.getHealthDataFromTypes(
+        types: const [HealthDataType.HEART_RATE],
+        startTime: from,
+        endTime: to,
+      );
+      return [
+        for (final point in points)
+          if (point.value case final NumericHealthValue value)
+            ImportedReading(
+              at: point.dateFrom,
+              value: value.numericValue.toDouble(),
+            ),
+      ];
+    } on Object {
+      // Not granted, or no watch: no heart rate, and nothing else lost.
+      return const [];
+    }
+  }
+
+  @override
+  Future<List<String>> missingAccess() async {
+    await _ready();
+    final missing = <String>[];
+    for (final MapEntry(key: type, value: label) in _labels.entries) {
+      final granted = await _health.hasPermissions([type]) ?? false;
+      if (!granted) missing.add(label);
+    }
+    return missing;
   }
 
   @override

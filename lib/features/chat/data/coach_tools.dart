@@ -77,7 +77,9 @@ class CoachTools {
       'name': 'recent_workouts',
       'description':
           'De laatste afgewerkte sessies van de gebruiker: datum, naam, duur, '
-          'volume, aantal sets en welke oefeningen erin zaten.',
+          'volume, aantal sets, welke oefeningen erin zaten, en de '
+          'gemiddelde en hoogste hartslag als een horloge die via Health '
+          'Connect doorgaf.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -535,7 +537,8 @@ class CoachTools {
     final rows = await db
         .customSelect(
           'SELECT w.id, w.name, w.started_at, w.duration_seconds, '
-          'w.total_volume_kg, w.total_sets, w.perceived_effort '
+          'w.total_volume_kg, w.total_sets, w.perceived_effort, '
+          'w.avg_heart_rate, w.max_heart_rate '
           'FROM workouts w WHERE w.ended_at IS NOT NULL '
           'ORDER BY w.started_at DESC LIMIT ?',
           variables: [Variable.withInt(limit)],
@@ -564,6 +567,11 @@ class CoachTools {
         'volume_kg': row.read<double?>('total_volume_kg')?.round(),
         'sets': row.read<int?>('total_sets'),
         'felt': row.read<String?>('perceived_effort'),
+        if (row.read<int?>('avg_heart_rate') case final average?)
+          'heart_rate': {
+            'average': average,
+            'highest': row.read<int?>('max_heart_rate'),
+          },
         'exercises': [
           for (final exercise in exercises)
             {

@@ -103,6 +103,29 @@ void main() {
       expect(health.reads, 0);
     });
 
+    testWidgets('wat niet gelezen mag worden, staat erbij, met een knop', (
+      tester,
+    ) async {
+      health.missing = ['hartslag'];
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
+      );
+      await pumpScreen(tester);
+
+      expect(
+        find.textContaining('mag nog niet lezen: hartslag'),
+        findsOneWidget,
+      );
+
+      health.missing = const [];
+      await tester.tap(find.text('Toestemming aanpassen'));
+      await tester.pumpAndSettle();
+
+      expect(health.accessRequested, isTrue);
+      expect(health.reads, 1);
+      expect(find.textContaining('mag nog niet lezen'), findsNothing);
+    });
+
     testWidgets('ontkoppelen en wissen haalt alles weg wat binnenkwam', (
       tester,
     ) async {
@@ -490,6 +513,19 @@ class _FakeHealth implements HealthSource {
   Future<void> deleteWorkout(String id) async => deleted.add(id);
 
   bool backgroundAsked = false;
+
+  /// What the watch measured, and what may not be read.
+  List<ImportedReading> heart = const [];
+  List<String> missing = const [];
+
+  @override
+  Future<List<ImportedReading>> heartRate({
+    required DateTime from,
+    required DateTime to,
+  }) async => heart;
+
+  @override
+  Future<List<String>> missingAccess() async => missing;
 
   @override
   Future<bool> requestBackgroundAccess() async {

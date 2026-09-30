@@ -144,6 +144,17 @@ class AppSettingsTable extends Table {
       .named('health_connect_write_workouts')
       .withDefault(const Constant(false))();
 
+  /// Whether FitLog makes the morning report on its own, every day at
+  /// [morningReportMinutes], with a notification. Off until switched on.
+  BoolColumn get morningReportEnabled => boolean()
+      .named('morning_report_enabled')
+      .withDefault(const Constant(false))();
+
+  /// When, in minutes after midnight: seven o'clock until changed.
+  IntColumn get morningReportMinutes => integer()
+      .named('morning_report_minutes')
+      .withDefault(const Constant(420))();
+
   /// How many warm-up sets a newly added exercise starts with, 0 to 5.
   IntColumn get defaultWarmupSets =>
       integer().named('default_warmup_sets').withDefault(const Constant(0))();

@@ -327,6 +327,51 @@ void main() {
     });
   });
 
+  group('het ochtendrapport', () {
+    Future<void> scrollTo(WidgetTester tester, Finder target) async {
+      await tester.scrollUntilVisible(target, 200);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('de schakelaar zet het aan, standaard om zeven uur', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      await scrollTo(tester, find.text('Elke ochtend een rapport'));
+      expect(find.text('Om 07:00'), findsOneWidget);
+
+      await tester.tap(find.text('Elke ochtend een rapport'));
+      await tester.pumpAndSettle();
+
+      final settings = await db.settingsDao.getSettings();
+      expect(settings.morningReportEnabled, isTrue);
+      expect(settings.morningReportMinutes, 420);
+      // Niet verbonden: dan valt er op de achtergrond niets te vragen.
+      expect(health.backgroundAsked, isFalse);
+    });
+
+    testWidgets('met een pincode zegt het wat dat betekent', (tester) async {
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          appControllerProvider.overrideWith(() => _Ready(db, pin: true)),
+          healthSourceProvider.overrideWithValue(health),
+        ],
+      );
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(morningReportEnabled: Value(true)),
+      );
+      await pumpScreen(tester);
+      await scrollTo(tester, find.textContaining('Je gebruikt een pincode'));
+
+      expect(
+        find.textContaining('zodra je FitLog ontgrendelt'),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('het ophalen', () {
     Future<void> connect() async {
       await db.settingsDao.updateSettings(
@@ -443,19 +488,28 @@ class _FakeHealth implements HealthSource {
 
   @override
   Future<void> deleteWorkout(String id) async => deleted.add(id);
+
+  bool backgroundAsked = false;
+
+  @override
+  Future<bool> requestBackgroundAccess() async {
+    backgroundAsked = true;
+    return true;
+  }
 }
 
 class _Ready extends AppController {
-  _Ready(this._db);
+  _Ready(this._db, {this.pin = false});
 
   final AppDatabase _db;
+  final bool pin;
 
   @override
   AppState build() => AppReady(
     db: _db,
-    security: const SecurityStatus(
+    security: SecurityStatus(
       initialised: true,
-      mode: LockMode.none,
+      mode: pin ? LockMode.pin : LockMode.none,
       biometricEnabled: false,
       hasRecoveryPhrase: false,
       consecutiveFailures: 0,

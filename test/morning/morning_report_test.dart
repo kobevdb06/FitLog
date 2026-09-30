@@ -418,4 +418,7 @@ class _Watch implements HealthSource {
 
   @override
   Future<void> deleteWorkout(String id) async {}
+
+  @override
+  Future<bool> requestBackgroundAccess() async => true;
 }

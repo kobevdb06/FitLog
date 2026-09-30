@@ -25,6 +25,9 @@
     <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
     <!-- Only asked for when the user switches on writing sessions back. -->
     <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
+    <!-- Only asked for with the morning report, which reads before you open
+         the app. -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"/>
 
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
@@ -73,6 +76,24 @@
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
             </intent-filter>
         </activity-alias>
+        <!-- The morning report's alarm: android_alarm_manager_plus wakes a
+             background isolate at the hour you chose, and sets it again after
+             a reboot. -->
+        <service
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"/>
+        <receiver
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmBroadcastReceiver"
+            android:exported="false"/>
+        <receiver
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.RebootBroadcastReceiver"
+            android:enabled="false"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
         <receiver android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
         <receiver android:exported="false"

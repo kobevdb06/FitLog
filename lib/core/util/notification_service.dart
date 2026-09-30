@@ -5,8 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Local notifications: the nudge when a rest is over, and the standing one
-/// that shows where you are while a workout runs.
+/// Local notifications: the nudge when a rest is over, the standing one that
+/// shows where you are while a workout runs, and the morning report.
 ///
 /// Nothing here talks to a server; `flutter_local_notifications` schedules on
 /// the device itself.
@@ -24,8 +24,19 @@ class NotificationService {
   /// And only ever one running workout.
   static const int workoutNotificationId = 1002;
 
+  /// And one morning report: a new one replaces the one before.
+  static const int morningNotificationId = 1003;
+
+  /// What a tap on the morning report carries.
+  static const String morningPayload = 'morning';
+
   static const _channelId = 'fitlog_rest_timer';
   static const _workoutChannelId = 'fitlog_workout';
+  static const _morningChannelId = 'fitlog_morning';
+
+  /// Called with the payload of a notification the user tapped while the
+  /// app was running. The app sets it; the service only passes it on.
+  void Function(String payload)? onTapped;
 
   bool _initialised = false;
   bool _timezoneReady = false;
@@ -54,7 +65,22 @@ class NotificationService {
           requestSoundPermission: false,
         ),
       ),
+      onDidReceiveNotificationResponse: (response) {
+        final payload = response.payload;
+        if (payload != null) onTapped?.call(payload);
+      },
     );
+  }
+
+  /// The payload of the notification that started the app, if one did.
+  Future<String?> launchPayload() async {
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      if (details?.didNotificationLaunchApp != true) return null;
+      return details?.notificationResponse?.payload;
+    } on Object {
+      return null;
+    }
   }
 
   /// The IANA name of the device's zone.
@@ -211,6 +237,59 @@ class NotificationService {
     }
   }
 
+  /// Shows this morning's report, or replaces the one already there.
+  ///
+  /// Private on a locked screen: what it says is how you slept, and Android
+  /// then shows only that FitLog has a notification, unless you allowed
+  /// more.
+  Future<void> showMorningReport({
+    required String title,
+    required String body,
+  }) async {
+    try {
+      await _plugin.show(
+        id: morningNotificationId,
+        title: title,
+        body: body,
+        payload: morningPayload,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _morningChannelId,
+            'Ochtendrapport',
+            channelDescription:
+                'Je slaapscore en wat er nog herstelt, elke ochtend op het '
+                'uur dat je koos.',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            category: AndroidNotificationCategory.status,
+            styleInformation: BigTextStyleInformation(body),
+            visibility: NotificationVisibility.private,
+            autoCancel: true,
+          ),
+          iOS: const DarwinNotificationDetails(presentAlert: true),
+        ),
+      );
+    } on Object catch (error) {
+      debugPrint('FitLog: ochtendrapport niet getoond ($error)');
+    }
+  }
+
+  /// Whether a morning report is in the notification shade right now - the
+  /// one that says it waits for an unlock, most likely.
+  Future<bool> get morningReportShowing async {
+    if (!Platform.isAndroid) return false;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final active = await android?.getActiveNotifications() ?? const [];
+      return active.any((n) => n.id == morningNotificationId);
+    } on Object {
+      return false;
+    }
+  }
+
   Future<void> cancelWorkout() async {
     try {
       await _plugin.cancel(id: workoutNotificationId);
@@ -244,8 +323,7 @@ class NotificationService {
                 android: AndroidNotificationDetails(
                   _channelId,
                   'Rusttimer',
-                  channelDescription:
-                      'Meldt wanneer je rustpauze voorbij is.',
+                  channelDescription: 'Meldt wanneer je rustpauze voorbij is.',
                   importance: Importance.high,
                   priority: Priority.high,
                   playSound: false,

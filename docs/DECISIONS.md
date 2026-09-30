@@ -3040,3 +3040,52 @@ gemaakt uit wat er al was, en staat erbij waarom de nacht kan ontbreken.
 spiergroepen, slaap en alcohol; de vorige rapporten staan ingeklapt
 onderaan. Het rapport is het antwoord op "kan ik vandaag trainen", de rest
 is de uitleg erachter.
+
+## 165. Het ochtendrapport op een vast uur, ook met de app dicht
+
+Gevraagd: elke ochtend op een instelbaar uur zelf ophalen uit Health
+Connect, het rapport opstellen, en een melding sturen waarin het staat.
+
+**Een exacte wekker.** `android_alarm_manager_plus` zet een exacte
+AlarmManager-wekker die ook in Doze afgaat, en maakt op dat moment een
+achtergrond-isolate aan die zelf de database opent, ophaalt, het rapport
+maakt en de melding toont. WorkManager was eenvoudiger maar niet op tijd:
+"rond zevenen, als het toestel er zin in heeft" is niet wat gevraagd werd.
+De toestemming voor exacte wekkers stond er al voor de rusttimer. De
+volgende wekker wordt als eerste gezet, met het uur als parameter, zodat
+een fout verderop de ochtenden niet stopt en er geen database voor nodig is.
+
+De plugin start bij `initialize()` meteen een tweede Flutter-engine die op
+de wekker wacht. Daarom gebeurt dat pas als iemand het rapport aanzet, niet
+bij elke start: wie het niet gebruikt, betaalt dat geheugen niet.
+
+**Lezen op de achtergrond.** Health Connect geeft sinds Android 14 alleen
+gegevens aan een app die je bekijkt, tenzij die `READ_HEALTH_DATA_IN_
+BACKGROUND` heeft. Die wordt gevraagd bij het aanzetten, niet bij het
+verbinden. Geweigerd: het rapport komt er toch, uit wat er binnen was, en
+het scherm zegt dat.
+
+**Met een pincode blijft de database dicht.** De sleutel bestaat dan alleen
+in het geheugen zolang de app ontgrendeld is (`KeyManager`), en het
+ochtendrapport verandert daar niets aan. Ook met
+biometrie niet: die bewaart een kopie van de sleutel, maar voor na een
+vingerafdruk, niet om 's ochtends buiten je om de database te openen. Wie
+een pincode heeft, krijgt op het uur een melding dat het rapport op het
+ontgrendelen wacht; bij het ontgrendelen wordt het gemaakt en neemt het de
+plaats in van die melding. Hetzelfde inhalen gebeurt als de gsm op het uur
+uitstond.
+
+**Nooit twee schrijvers.** Draait de app al, dan geeft de wekker het werk
+aan haar door via `IsolateNameServer`, zodat niet twee isolates tegelijk
+in dezelfde database schrijven. Antwoordt de app niet binnen drie seconden
+(een naam die bleef liggen van een app die weg is), dan ruimt de wekker
+de naam op en doet hij het zelf.
+
+**De melding** is privé op een vergrendeld scherm - ze gaat over je slaap
+- en een tik opent *Herstel*. Met de coach aan staan zijn woorden erin; de
+vraag is één verzoek op je eigen sleutel en telt op de dagteller
+(DECISIONS 164), ook als ze op de achtergrond gebeurt.
+
+**Het uur** kies je onder Health Connect, standaard zeven uur. De
+tijdkiezer is voortaan overal 24 uur: Flutter tekende de klok in 24 uur
+maar weigerde een getypt "19" op een gsm die op AM en PM staat.

@@ -125,6 +125,16 @@ class HealthConnectSource implements HealthSource {
   }
 
   @override
+  Future<bool> requestBackgroundAccess() async {
+    await _ready();
+    // Where the feature is missing, Health Connect has no such permission to
+    // give - and nothing to hold back with it either.
+    if (!await _health.isHealthDataInBackgroundAvailable()) return true;
+    if (await _health.isHealthDataInBackgroundAuthorized()) return true;
+    return _health.requestHealthDataInBackgroundAuthorization();
+  }
+
+  @override
   Future<void> deleteWorkout(String id) async {
     await _ready();
     await _health.deleteByUUID(uuid: id, type: HealthDataType.WORKOUT);

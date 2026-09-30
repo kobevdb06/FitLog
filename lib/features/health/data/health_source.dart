@@ -44,6 +44,11 @@ abstract class HealthSource {
 
   /// Takes a session FitLog wrote out of Health Connect again.
   Future<void> deleteWorkout(String id);
+
+  /// Asks to read while FitLog is not on screen, which the morning report
+  /// needs: Health Connect otherwise only answers an app you are looking at.
+  /// True when allowed, or when this phone does not ask for it.
+  Future<bool> requestBackgroundAccess();
 }
 
 enum HealthAvailability {

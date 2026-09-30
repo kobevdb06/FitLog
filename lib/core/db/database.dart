@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 35;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -346,6 +346,17 @@ class AppDatabase extends _$AppDatabase {
         if (from < 35) {
           // Morning reports. None yet: there was nothing that wrote one.
           await m.createTable(morningReportsTable);
+        }
+        if (from < 36) {
+          // Making them on their own, at an hour: off, and seven o'clock.
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.morningReportEnabled,
+          );
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.morningReportMinutes,
+          );
         }
       });
 

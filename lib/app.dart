@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -11,6 +13,8 @@ import 'core/providers/core_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/util/notification_service.dart';
 import 'features/health/presentation/health_providers.dart';
+import 'features/morning/data/morning_alarm.dart';
+import 'features/morning/presentation/morning_providers.dart';
 import 'features/routines/domain/quick_start.dart';
 import 'features/routines/presentation/quick_start_providers.dart';
 import 'features/workout/domain/workout_notice.dart';
@@ -28,10 +32,37 @@ class FitLogApp extends ConsumerStatefulWidget {
 
 class _FitLogAppState extends ConsumerState<FitLogApp>
     with WidgetsBindingObserver {
+  /// Where the morning alarm finds the running app, so the app makes the
+  /// report itself instead of a second isolate opening the same database.
+  final ReceivePort _morningPort = ReceivePort();
+
+  /// A route a notification asked for, waiting for the app to be unlocked.
+  String? _pendingRoute;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    IsolateNameServer.removePortNameMapping(kMorningPortName);
+    IsolateNameServer.registerPortWithName(
+      _morningPort.sendPort,
+      kMorningPortName,
+    );
+    _morningPort.listen((message) {
+      if (message is! SendPort) return;
+      message.send(true);
+      unawaited(ref.read(morningControllerProvider.notifier).onAlarm());
+    });
+
+    // A tap on the morning report opens Herstel - now if the app is open,
+    // after the unlock otherwise.
+    NotificationService.instance.onTapped = _openFromNotification;
+    unawaited(
+      NotificationService.instance.launchPayload().then((payload) {
+        if (payload != null) _openFromNotification(payload);
+      }),
+    );
     // Android may have launched us straight from a home-screen shortcut. The
     // tap arrives before the database is open, sometimes before the lock
     // screen is answered, so it is only noted here and acted on later.
@@ -48,7 +79,38 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    IsolateNameServer.removePortNameMapping(kMorningPortName);
+    _morningPort.close();
+    NotificationService.instance.onTapped = null;
     super.dispose();
+  }
+
+  void _openFromNotification(String payload) {
+    if (payload != NotificationService.morningPayload) return;
+    _pendingRoute = Routes.muscleRecovery;
+    _openPendingRoute();
+  }
+
+  void _openPendingRoute() {
+    final route = _pendingRoute;
+    if (route == null || ref.read(appControllerProvider) is! AppReady) return;
+    _pendingRoute = null;
+    ref.read(routerProvider).push(route);
+  }
+
+  /// Right after the database opens: the alarm where the setting says, this
+  /// morning's report if a PIN or a switched-off phone kept it from being
+  /// made, and the screen a notification asked for.
+  ///
+  /// After the frame, so the database provider has been told the app is
+  /// open before anything reads it (DECISIONS 161).
+  void _afterUnlock() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final morning = ref.read(morningControllerProvider.notifier);
+      unawaited(morning.syncAlarm().then((_) => morning.catchUp()));
+      _openPendingRoute();
+    });
   }
 
   @override
@@ -159,6 +221,7 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     ref.listen(appControllerProvider, (previous, next) {
       if (next is AppReady && previous is! AppReady) {
         unawaited(ref.read(healthSyncProvider.notifier).sync());
+        _afterUnlock();
       }
     });
 

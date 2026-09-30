@@ -185,6 +185,40 @@
     daar is geen kopie van.
   </p>
 
+  <h3>Health Connect</h3>
+  <p>
+    Health Connect is de plek op Android waar je horloge, je slimme
+    weegschaal en apps als Samsung Health of Google Health hun gegevens
+    delen. Onder <em>Instellingen → Health Connect</em> verbind je FitLog
+    ermee. Health Connect vraagt dan zelf, per gegeven, wat FitLog mag lezen:
+    je slaap met de fasen, HRV, rusthartslag, gewicht, en je loop- en
+    fietssessies. Het is een verbinding tussen apps op je gsm; ook hier gaat
+    niets over het internet. Op Android 14 en nieuwer zit Health Connect
+    ingebouwd, op oudere toestellen installeer je het uit de Play Store.
+    FitLog vraagt daarom vanaf versie 1.41 minstens Android 8.
+  </p>
+  <p>
+    Wat binnenkomt, zet FitLog in zijn eigen database: de eerste keer een
+    maand terug, daarna telkens je de app opent (hooguit om het kwartier) of
+    op <em>Nu ophalen</em> tikt. Je nachten komen zo vanzelf binnen, en je
+    gewicht staat in je lichaamsmetingen. Wat je zelf invult, gaat voor: een
+    nacht of gewicht dat je zelf ingaf, wordt nooit overschreven, en een
+    geïmporteerde nacht die je aanpast, wordt de jouwe. Onder een nacht die
+    van je horloge kwam, staat <em>via Health Connect</em>.
+  </p>
+  <p>
+    Wil je dat je trainingen ook in die andere apps staan, zet dan
+    <em>Trainingen ook naar Health Connect</em> aan. Een afgewerkte training
+    gaat er dan heen als krachttraining, met de naam, het begin en het einde
+    — geen oefeningen, sets of gewichten. Bij het aanzetten gaat de laatste
+    maand mee. Wis je een training in FitLog, dan verdwijnt ze daar ook.
+  </p>
+  <p>
+    <em>Ontkoppelen</em> stopt alles en geeft FitLog's toegang terug. Wat al
+    binnenkwam, kan je houden of wissen; wat je zelf invulde, blijft altijd
+    staan, en wat FitLog naar Health Connect schreef ook.
+  </p>
+
   <h3>De AI-coach</h3>
   <p>
     Dit is het enige deel van FitLog dat het internet gebruikt, en het staat
@@ -542,17 +576,37 @@
     laatste meting.
   </p>
   <p>
+    Is Health Connect verbonden, dan kijkt de schatting ook naar je horloge.
+    Lag je HRV de ochtenden na een training duidelijk onder je gewone, of je
+    rusthartslag duidelijk erboven, dan rekt dat de schatting, tot een vijfde
+    langer. Je gewone is het midden van de vier weken ervoor, en telt pas
+    vanaf een week aan metingen. Gewone schommelingen van dag tot dag
+    veranderen niets, en een goede ochtend maakt de schatting niet korter.
+    Korte nachten en een slechte ochtend zijn meestal hetzelfde nieuws, dus
+    telt alleen het grootste van de twee.
+  </p>
+  <p>
+    Een loop of fietstocht na een training houdt de spieren die hij raakt
+    minstens een tijd tegen, gerekend vanaf het einde: een loop je hele
+    benen een dag (anderhalve bij meer dan een uur), een fietstocht je dijen
+    en bilspieren een halve dag (een hele bij meer dan een uur). Een loop
+    maakt een schatting nooit korter, en zeg je daarna dat je benen fris zijn,
+    dan zijn ze fris.
+  </p>
+  <p>
     Train je dezelfde spier opnieuw voor de vorige keer verwerkt was, dan telt
     de helft van wat er nog openstond mee. Onder elke spiergroep staat waarom
-    de schatting is wat ze is: wat er van de vorige sessie bijkwam, of jij hier
-    sneller of trager herstelt, en wat je vandaag zei.
+    de schatting is wat ze is: wat er van de vorige sessie bijkwam, korte
+    nachten of een lage HRV, een loop of fietstocht, of jij hier sneller of
+    trager herstelt, en wat je vandaag zei.
   </p>
 
   <h3>Profiel</h3>
   <p>
     Instellingen: de indeling van je startscherm, eenheden, rusttijden, hoeveel
     warming-upsets een nieuwe oefening krijgt, de stang en schijven voor de
-    schijvenberekening, beveiliging, back-ups en de oefeningencatalogus.
+    schijvenberekening, beveiliging, back-ups, Health Connect en de
+    oefeningencatalogus.
   </p>
   <p>
     Staat een spiergroep, een toestel of een categorie niet in de app, dan zet

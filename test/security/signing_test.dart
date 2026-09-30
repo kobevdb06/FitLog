@@ -63,13 +63,32 @@ void main() {
   test('the release build no longer reaches for the debug key on purpose', () {
     // It still falls back to it so a fresh checkout builds, but only inside
     // the branch that says out loud what it just did.
+    //
+    // Read with the line endings taken out. This used to look for the debug
+    // line followed by a bare newline, which only ever passed because a
+    // Windows checkout ends its lines in \r\n: on any other machine the one
+    // legitimate fallback line matched it, and the test failed.
+    final text = gradle.replaceAll('\r\n', '\n');
+    const debug = 'signingConfig = signingConfigs.getByName("debug")';
+
     expect(
-      gradle,
-      isNot(contains('signingConfig = signingConfigs.getByName("debug")\n')),
-      reason: 'that was the unconditional version',
+      debug.allMatches(text),
+      hasLength(1),
+      reason: 'one fallback, and no second, unconditional one',
     );
-    expect(gradle, contains('hasReleaseKey'));
-    expect(gradle, contains('never to hand out'));
+    final fallback = text.indexOf(debug);
+    final branch = text.lastIndexOf('} else {', fallback);
+    expect(
+      branch,
+      greaterThan(text.indexOf('if (hasReleaseKey)')),
+      reason: 'the debug key only where there is no release key',
+    );
+    expect(
+      text.substring(branch, fallback).trim(),
+      '} else {',
+      reason: 'and as the first thing that branch does',
+    );
+    expect(text, contains('never to hand out'));
   });
 
   test('the key is read from a file, not written in the build', () {

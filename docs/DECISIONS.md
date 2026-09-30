@@ -2922,3 +2922,27 @@ verschijnt op het Health Connect-scherm.
 blijft in Health Connect staan: het zijn jouw trainingen, waar je ze ook
 bekijkt. FitLog leest zijn eigen trainingen nooit terug als cardio (DECISIONS
 158).
+
+## 161. De rootwidget kijkt pas naar de database als die open is
+
+Elke koude start logde een onafgehandelde "De database is nog niet geopend".
+`FitLogApp` keek in `build` naar de lopende training (voor de melding), de
+favoriete routines (voor de snelkoppelingen) en de instellingen (voor het
+thema), ook op het laadscherm en het slot. Alle drie hangen aan
+`databaseProvider`, die dan bleef hangen in zijn foutstand. Die fout zelf was
+onschuldig. Wat misging, was het moment van openen: de Health Connect-import,
+gestart vanuit een `ref.listen` in dezelfde `build`, vroeg de database op in
+hetzelfde ogenblik dat de staat `AppReady` werd, nog voor de provider wist dat
+hij opnieuw moest. Hij kreeg de oude fout terug, en omdat de import niet
+afgewacht wordt, kwam die als onafgehandelde uitzondering in de log.
+
+Die drie kijken nu pas mee zodra de staat `AppReady` is. Wordt de app opnieuw
+op slot gezet, dan houdt de rootwidget op met kijken, en bij het ontgrendelen
+wordt de database-provider vers opgebouwd in plaats van een oude fout terug te
+geven. De import zelf is niet aangepast: hij vraagt de database pas als de app
+open is, en dat is ook juist.
+
+**Het thema overleeft het slot.** Zonder de instellingen te lezen zou het
+slotscherm na een automatische vergrendeling terugvallen op donker, ook voor
+wie licht koos. De widget onthoudt daarom de laatste keuze. Voor het eerste
+ontgrendelen blijft het donker, zoals voorheen.

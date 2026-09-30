@@ -148,6 +148,9 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     });
   }
 
+  /// The theme the settings last asked for, so it outlasts a lock.
+  ThemeMode _themeMode = ThemeMode.dark;
+
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
@@ -158,18 +161,29 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         unawaited(ref.read(healthSyncProvider.notifier).sync());
       }
     });
-    _syncWorkoutNotification();
-    _syncQuickStart();
+
+    // Nothing here may watch the database before it is open. Watched any
+    // earlier, the database provider settles on "not open yet" and is still
+    // saying so when the import above asks for it, in the same instant the app
+    // opens - an unhandled exception on every cold start.
+    final open = ref.watch(appControllerProvider) is AppReady;
+    if (open) {
+      _syncWorkoutNotification();
+      _syncQuickStart();
+    }
     _handleQuickStart();
 
     // Dark is the default; the setting can override it once the database is
-    // open, and before that we simply stay dark.
-    final settings = ref.watch(settingsProvider).value;
-    final themeMode = switch (settings?.themeMode) {
-      'light' => ThemeMode.light,
-      'system' => ThemeMode.system,
-      _ => ThemeMode.dark,
-    };
+    // open. Before that we stay dark, and after an auto-lock the lock screen
+    // keeps the theme you chose.
+    final wire = open ? ref.watch(settingsProvider).value?.themeMode : null;
+    if (wire != null) {
+      _themeMode = switch (wire) {
+        'light' => ThemeMode.light,
+        'system' => ThemeMode.system,
+        _ => ThemeMode.dark,
+      };
+    }
 
     return MaterialApp.router(
       title: 'FitLog',
@@ -177,7 +191,7 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
       routerConfig: router,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: themeMode,
+      themeMode: _themeMode,
       locale: const Locale('nl'),
       supportedLocales: const [Locale('nl'), Locale('nl', 'BE')],
       localizationsDelegates: const [

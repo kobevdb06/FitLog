@@ -2946,3 +2946,29 @@ open is, en dat is ook juist.
 slotscherm na een automatische vergrendeling terugvallen op donker, ook voor
 wie licht koos. De widget onthoudt daarom de laatste keuze. Voor het eerste
 ontgrendelen blijft het donker, zoals voorheen.
+
+## 162. Een eigen slaapscore, uit de delen die de app kent
+
+Health Connect geeft de nacht en de fasen door, maar geen score van het
+merk van je horloge: die houden Samsung, Fitbit en co voor zichzelf. FitLog
+rekent daarom een eigen slaapscore, van 0 tot 100, uit hoogstens drie delen.
+
+- **Duur**, de helft: niets onder vier uur, alles vanaf acht, en daartussen
+  naar verhouding. Zeven uur - wat de herstelschatting "genoeg" noemt - is
+  zo 75: genoeg om niet trager te herstellen, niet de beste nacht.
+- **Diepe en REM-slaap**, een kwart, alleen als de fasen er zijn. Samen zijn
+  ze meestal 35 à 45 procent van een nacht; niets onder 15, alles vanaf 40.
+  Een kwart en niet meer, om dezelfde reden waarom ze in de
+  herstelschatting helemaal niet meetellen (DECISIONS 155): horloges meten
+  ze slecht. In een score die je leest, mogen ze meepraten; in een
+  schatting die je trainingen verschuift, niet.
+- **Herstel**, een kwart, alleen met een horloge dat HRV of rusthartslag
+  doorgeeft en genoeg ochtenden om je gewone te kennen: HRV tot een kwart
+  onder je gewone en rusthartslag tot tien slagen erboven lopen van alles
+  naar niets. De slechtste van de twee telt.
+
+Een deel dat de app niet kent, wordt weggelaten en niet ingevuld: de score
+is dan het gewogen gemiddelde van wat er wel is. Wie alleen zijn uren
+intypt, krijgt dus een score die alleen over de duur gaat - eerlijk, en
+vergelijkbaar met zichzelf. Het getal staat bij elke nacht, en komt terug in
+het ochtendrapport.

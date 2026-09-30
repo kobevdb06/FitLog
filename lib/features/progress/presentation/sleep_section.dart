@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/calc/recovery.dart';
+import '../../../core/calc/sleep_score.dart';
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -82,6 +84,7 @@ class SleepSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final rows = ref.watch(sleepEntriesProvider).value ?? const [];
+    final vitals = ref.watch(vitalsDaysProvider).value ?? const [];
     final stages = ref.watch(settingsProvider).value?.trackSleepStages ?? false;
     final today = DateTime.now();
     final todayKey = _dayKey(today);
@@ -110,6 +113,7 @@ class SleepSection extends ConsumerWidget {
               for (final row in recent)
                 _NightRow(
                   row: row,
+                  score: nightScore(row, vitals),
                   onTap: () => _edit(
                     context,
                     ref,
@@ -190,10 +194,29 @@ class SleepSection extends ConsumerWidget {
 
 String _dayKey(DateTime at) => '${at.year}-${at.month}-${at.day}';
 
+/// The score of one stored night, with the watch's readings of that morning
+/// when there are any.
+SleepScore nightScore(SleepEntryRow row, List<VitalsDay> vitals) {
+  final woke = DateTime.fromMillisecondsSinceEpoch(row.wokeAt);
+  final morning = morningAgainstUsual(woke, vitals);
+  return sleepScore(
+    asleep: Duration(milliseconds: row.wokeAt - row.fellAsleepAt),
+    deepMinutes: row.deepMinutes,
+    remMinutes: row.remMinutes,
+    hrvDrop: morning.hrvDrop,
+    restingHrRise: morning.restingHrRise,
+  );
+}
+
 class _NightRow extends StatelessWidget {
-  const _NightRow({required this.row, required this.onTap});
+  const _NightRow({
+    required this.row,
+    required this.score,
+    required this.onTap,
+  });
 
   final SleepEntryRow row;
+  final SleepScore score;
   final VoidCallback onTap;
 
   @override
@@ -223,7 +246,8 @@ class _NightRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    Formatters.weekdayDayMonth(woke),
+                    '${Formatters.weekdayDayMonth(woke)}  ·  '
+                    'slaapscore ${score.value}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

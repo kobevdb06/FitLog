@@ -300,6 +300,8 @@ void main() {
       // En de knop is weg: die nacht staat erin.
       expect(find.text('Afgelopen nacht invullen'), findsNothing);
       expect(find.textContaining('8 u'), findsWidgets);
+      // Acht uur, zonder fasen of horloge: de volle score.
+      expect(find.textContaining('slaapscore 100'), findsOneWidget);
     });
 
     testWidgets('met de schakelaar aan vraagt ze ook de fasen', (tester) async {

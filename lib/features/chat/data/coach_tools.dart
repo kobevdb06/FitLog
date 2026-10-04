@@ -80,9 +80,10 @@ class CoachTools {
       'name': 'recent_workouts',
       'description':
           'De laatste afgewerkte sessies van de gebruiker: datum, naam, duur, '
-          'volume, aantal sets, welke oefeningen erin zaten, en de '
-          'gemiddelde en hoogste hartslag als een horloge die via Health '
-          'Connect doorgaf.',
+          'volume, aantal sets, hoe zwaar het voelde, welke oefeningen erin '
+          'zaten, de notities van de gebruiker bij de sessie en bij elke '
+          'oefening, en de gemiddelde en hoogste hartslag als een horloge die '
+          'via Health Connect doorgaf.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -94,7 +95,11 @@ class CoachTools {
       'name': 'exercise_history',
       'description':
           'Wat de gebruiker de laatste keren voor één oefening heeft gedaan, '
-          'set per set, met gewicht en herhalingen.',
+          'set per set: gewicht, herhalingen, RPE (1-10, hoe zwaar de set '
+          'voelde) als die is ingevuld, en de kant (left/right) als de '
+          'oefening per kant gedaan werd. Per keer ook de notitie van de '
+          'gebruiker bij de oefening en of het een PR-poging was, met het '
+          'doel en de uitkomst.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -574,7 +579,7 @@ class CoachTools {
         .customSelect(
           'SELECT w.id, w.name, w.started_at, w.duration_seconds, '
           'w.total_volume_kg, w.total_sets, w.perceived_effort, '
-          'w.avg_heart_rate, w.max_heart_rate '
+          'w.avg_heart_rate, w.max_heart_rate, w.notes '
           'FROM workouts w WHERE w.ended_at IS NOT NULL '
           'ORDER BY w.started_at DESC LIMIT ?',
           variables: [Variable.withInt(limit)],
@@ -586,7 +591,7 @@ class CoachTools {
       final id = row.read<String>('id');
       final exercises = await db
           .customSelect(
-            'SELECT e.name AS name, COUNT(ws.id) AS sets '
+            'SELECT e.name AS name, we.notes AS notes, COUNT(ws.id) AS sets '
             'FROM workout_exercises we '
             'JOIN exercises e ON e.id = we.exercise_id '
             'LEFT JOIN workout_sets ws ON ws.workout_exercise_id = we.id '
@@ -603,6 +608,7 @@ class CoachTools {
         'volume_kg': row.read<double?>('total_volume_kg')?.round(),
         'sets': row.read<int?>('total_sets'),
         'felt': row.read<String?>('perceived_effort'),
+        'notes': ?_text(row.read<String?>('notes')),
         if (row.read<int?>('avg_heart_rate') case final average?)
           'heart_rate': {
             'average': average,
@@ -613,6 +619,7 @@ class CoachTools {
             {
               'name': exercise.read<String>('name'),
               'sets': exercise.read<int>('sets'),
+              'notes': ?_text(exercise.read<String?>('notes')),
             },
         ],
       });
@@ -654,41 +661,56 @@ class CoachTools {
     final name = match.read<String>('name');
     final rows = await db
         .customSelect(
-          'SELECT w.started_at AS at, ws.set_type AS type, '
-          'ws.weight_kg AS weight, ws.reps AS reps, '
-          'ws.duration_seconds AS seconds, ws.distance_m AS distance '
+          'SELECT w.started_at AS at, we.id AS session, we.notes AS notes, '
+          'we.is_pr_attempt AS pr_attempt, '
+          'we.pr_target_weight_kg AS pr_target, we.pr_result AS pr_result, '
+          'ws.set_type AS type, ws.weight_kg AS weight, ws.reps AS reps, '
+          'ws.duration_seconds AS seconds, ws.distance_m AS distance, '
+          'ws.rpe AS rpe, ws.side AS side '
           'FROM workout_sets ws '
           'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
           'JOIN workouts w ON w.id = we.workout_id '
           'WHERE we.exercise_id = ? AND ws.is_completed = 1 '
           'AND w.ended_at IS NOT NULL '
-          'ORDER BY w.started_at DESC, ws.sort_order ASC',
+          'ORDER BY w.started_at DESC, we.sort_order ASC, ws.sort_order ASC',
           variables: [Variable.withString(match.read<String>('id'))],
         )
         .get();
 
-    final byDay = <String, List<Map<String, Object?>>>{};
+    // One entry per time it was done, not per day: twice on one day is two
+    // times, each with its own notes.
+    final done = <String, Map<String, Object?>>{};
     for (final row in rows) {
-      final day = _day(row.read<int>('at'));
-      if (!byDay.containsKey(day) && byDay.length >= sessions) continue;
-      (byDay[day] ??= []).add({
+      final id = row.read<String>('session');
+      if (!done.containsKey(id) && done.length >= sessions) continue;
+      final session = done.putIfAbsent(
+        id,
+        () => {
+          'date': _day(row.read<int>('at')),
+          'notes': ?_text(row.read<String?>('notes')),
+          if (row.read<bool>('pr_attempt'))
+            'pr_attempt': {
+              'target_kg': row.read<double?>('pr_target'),
+              // success, failed or abandoned; null while it runs.
+              'result': row.read<String?>('pr_result'),
+            },
+          'sets': <Map<String, Object?>>[],
+        },
+      );
+      (session['sets']! as List<Map<String, Object?>>).add({
         'type': row.read<String>('type'),
         'weight_kg': row.read<double?>('weight'),
         'reps': row.read<int?>('reps'),
         'seconds': row.read<int?>('seconds'),
         'meters': row.read<double?>('distance'),
+        'rpe': ?row.read<double?>('rpe'),
+        'side': ?row.read<String?>('side'),
       });
     }
 
     return CoachLookup(
-      json: jsonEncode({
-        'exercise': name,
-        'sessions': [
-          for (final entry in byDay.entries)
-            {'date': entry.key, 'sets': entry.value},
-        ],
-      }),
-      summary: 'je laatste ${byDay.length} keer $name',
+      json: jsonEncode({'exercise': name, 'sessions': done.values.toList()}),
+      summary: 'je laatste ${done.length} keer $name',
     );
   }
 

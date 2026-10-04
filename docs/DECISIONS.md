@@ -3385,3 +3385,15 @@ eerste en laatste datum er altijd bij. Viel een veelvoud twee dagen na de
 eerste sessie, dan stonden "29 aug" en "31 aug" over elkaar. De stappen
 tellen nu vanaf het eerste punt (`baselineX`), en een stap die op een
 afronding na op de laatste datum valt, wordt niet nog eens getekend.
+
+## 175. Wat de coach meer mag zien
+
+Gevraagd na een overzicht van wat de coach wel en niet kan opzoeken. Drie
+gaten waren geen keuze maar vergetelheid:
+
+**Notities en RPE.** `recent_workouts` geeft nu de notitie bij de sessie en
+bij elke oefening; `exercise_history` per set de RPE en de kant (alleen als
+ze er zijn, geen lege velden), en per keer de notitie en een PR-poging met
+doel en uitkomst. "Schouder trok wat" is precies wat een coach moet weten.
+De geschiedenis groepeert voortaan per keer in plaats van per dag: twee keer
+op één dag zijn twee keer, elk met hun eigen notitie.

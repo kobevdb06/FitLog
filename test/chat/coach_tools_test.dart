@@ -141,6 +141,27 @@ void main() {
       expect(lookup.summary, 'je laatste 2 sessies');
     });
 
+    test('met wat je erbij schreef', () async {
+      final on = DateTime(2026, 2, 20);
+      await logSet(exerciseId: 'ex-bench', on: on);
+      final at = on.millisecondsSinceEpoch;
+      await db.customStatement(
+        "UPDATE workouts SET notes = 'Slecht geslapen' WHERE id = 'w-$at'",
+      );
+      await db.customStatement(
+        "UPDATE workout_exercises SET notes = 'Smalle grip' "
+        "WHERE id = 'we-$at'",
+      );
+
+      final lookup = await tools.run('recent_workouts', const {});
+
+      final workout =
+          (decode(lookup)['workouts']! as List).single as Map<String, Object?>;
+      expect(workout['notes'], 'Slecht geslapen');
+      final exercise = (workout['exercises']! as List).single as Map;
+      expect(exercise['notes'], 'Smalle grip');
+    });
+
     test('en een dag gaat mee zonder het uur', () async {
       await logSet(exerciseId: 'ex-bench', on: DateTime(2026, 2, 20, 19, 45));
 
@@ -166,6 +187,42 @@ void main() {
       expect(set['weight_kg'], 80);
       expect(set['reps'], 5);
       expect(lookup.summary, 'je laatste 1 keer Bench Press');
+    });
+
+    test('met je RPE, de kant, je notitie en een PR-poging', () async {
+      final on = DateTime(2026, 2, 20);
+      await logSet(exerciseId: 'ex-bench', on: on, weight: 100, reps: 3);
+      final at = on.millisecondsSinceEpoch;
+      await db.customStatement(
+        "UPDATE workout_sets SET rpe = 9.5, side = 'left' WHERE id = 'ws-$at'",
+      );
+      await db.customStatement(
+        "UPDATE workout_exercises SET notes = 'Schouder trok wat', "
+        "is_pr_attempt = 1, pr_target_weight_kg = 100, pr_result = 'success' "
+        "WHERE id = 'we-$at'",
+      );
+
+      final lookup = await tools.run('exercise_history', {'exercise': 'bench'});
+
+      final session =
+          (decode(lookup)['sessions']! as List).single as Map<String, Object?>;
+      expect(session['notes'], 'Schouder trok wat');
+      expect(session['pr_attempt'], {'target_kg': 100, 'result': 'success'});
+      final set = (session['sets']! as List).single as Map<String, Object?>;
+      expect(set['rpe'], 9.5);
+      expect(set['side'], 'left');
+    });
+
+    test('twee keer op één dag zijn twee keer', () async {
+      await logSet(exerciseId: 'ex-bench', on: DateTime(2026, 2, 20, 9));
+      await logSet(exerciseId: 'ex-bench', on: DateTime(2026, 2, 20, 18));
+
+      final lookup = await tools.run('exercise_history', {'exercise': 'bench'});
+
+      expect(decode(lookup)['sessions'], hasLength(2));
+      // Zonder RPE of kant komen die er ook niet als leeg bij.
+      expect(lookup.json, isNot(contains('rpe')));
+      expect(lookup.json, isNot(contains('side')));
     });
 
     test('een oefening die niet bestaat is een antwoord, geen fout', () async {

@@ -52,6 +52,40 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   /// A photo picked but not sent yet, as a file name in the photo directory.
   String? _photo;
 
+  /// A question another screen put ready came in, so this is a new
+  /// conversation and not the newest one.
+  var _drafted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual<String?>(coachDraftProvider, (_, draft) {
+      // Not while the tree is being built: taking the draft clears it.
+      if (draft != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _takeDraft());
+      }
+    }, fireImmediately: true);
+  }
+
+  /// Puts the waiting question in the field of a new conversation. Sending
+  /// it is left to the user.
+  void _takeDraft() {
+    if (!mounted) return;
+    final draft = ref.read(coachDraftProvider);
+    if (draft == null) return;
+    ref.read(coachDraftProvider.notifier).clear();
+    setState(() {
+      _loaded = true;
+      _drafted = true;
+      _threadId = null;
+      _photo = null;
+    });
+    _controller.value = TextEditingValue(
+      text: draft,
+      selection: TextSelection.collapsed(offset: draft.length),
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -65,7 +99,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     if (_loaded) return;
     _loaded = true;
     final newest = await ref.read(databaseProvider).chatDao.newestThread();
-    if (mounted && newest != null) setState(() => _threadId = newest.id);
+    if (mounted && newest != null && !_drafted) {
+      setState(() => _threadId = newest.id);
+    }
   }
 
   Future<void> _send(String text) async {

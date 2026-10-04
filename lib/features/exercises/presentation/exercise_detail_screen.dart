@@ -14,6 +14,8 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/exercise_image.dart';
 import '../../../routing/routes.dart';
+import '../../progress/presentation/plateau_card.dart';
+import '../../progress/presentation/progress_providers.dart';
 import '../../workout/presentation/pr_attempt_screen.dart';
 import 'custom_exercise_screen.dart';
 import 'exercise_providers.dart';
@@ -26,9 +28,18 @@ final _builtInCategories = [
 
 /// Info, history, charts and records for one exercise.
 class ExerciseDetailScreen extends ConsumerWidget {
-  const ExerciseDetailScreen({super.key, required this.exerciseId});
+  const ExerciseDetailScreen({
+    super.key,
+    required this.exerciseId,
+    this.initialTab = 0,
+  });
 
   final String exerciseId;
+
+  /// The tab it opens on: [chartsTab] when it was opened for its progress.
+  final int initialTab;
+
+  static const int chartsTab = 2;
 
   /// Changes how this exercise is done, and with it what a set asks for.
   ///
@@ -72,6 +83,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 4,
+      initialIndex: initialTab,
       child: Scaffold(
         // Present from the first frame, including while the exercise is still
         // being read. The button you came from flies into this one, and a Hero
@@ -205,6 +217,7 @@ class _InfoTab extends ConsumerWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  _PlateauMark(exerciseId: exercise.id),
                   // Such a drawing looks like a photograph of a real machine
                   // and is regularly wrong about how one works. Nobody
                   // remembers months later which picture came from where, so
@@ -271,6 +284,52 @@ class _InfoTab extends ConsumerWidget {
         ],
         const SizedBox(height: AppSpacing.xxl),
       ],
+    );
+  }
+}
+
+/// A quiet line under the type while the exercise stands still, leading to
+/// the card that says more about it.
+class _PlateauMark extends ConsumerWidget {
+  const _PlateauMark({required this.exerciseId});
+
+  final String exerciseId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final found = ref.watch(exercisePlateauProvider(exerciseId));
+    if (found == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final weeks = found.plateau.weeksAt(DateTime.now());
+
+    return InkWell(
+      onTap: () =>
+          DefaultTabController.of(context)
+              .animateTo(ExerciseDetailScreen.chartsTab),
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: Row(
+          children: [
+            Icon(
+              Icons.trending_flat,
+              size: 14,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              'Staat $weeks weken stil',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 14,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -413,10 +472,15 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
       metric: metric,
       range: _range,
     );
+    final plateau = ref.watch(exercisePlateauProvider(widget.exerciseId));
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
+        if (plateau != null) ...[
+          PlateauCard(found: plateau),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         SizedBox(
           height: 40,
           child: ListView(

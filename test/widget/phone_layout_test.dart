@@ -8,6 +8,8 @@ import 'package:fitlog/features/health/presentation/heart_rate_week_screen.dart'
 import 'package:fitlog/features/health/presentation/steps_week_screen.dart';
 import 'package:fitlog/features/morning/domain/morning_facts.dart';
 import 'package:fitlog/features/morning/presentation/morning_report_card.dart';
+import 'package:fitlog/features/progress/data/plateau_loader.dart';
+import 'package:fitlog/features/progress/presentation/plateau_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -154,5 +156,84 @@ void main() {
     final values = tops(tester, ['116 bpm', '150 bpm', '1']);
     expect(values.toSet(), hasLength(1));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('de kaart van een oefening die stilstaat, met de coach', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    final found = await tester.runAsync(() async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-row',
+              name: 'Single Arm Dumbbell Row On Incline Bench',
+              primaryMuscle: 'bovenrug',
+              category: 'dumbbell',
+              createdAt: 0,
+            ),
+          );
+      for (var w = 9; w >= 0; w--) {
+        final at = now.subtract(Duration(days: 7 * w, hours: 2));
+        final id = 'w$w';
+        await db
+            .into(db.workoutsTable)
+            .insert(
+              WorkoutsTableCompanion.insert(
+                id: id,
+                name: 'Rug',
+                startedAt: at.millisecondsSinceEpoch,
+                endedAt: Value(at.millisecondsSinceEpoch + 3600000),
+              ),
+            );
+        await db
+            .into(db.workoutExercisesTable)
+            .insert(
+              WorkoutExercisesTableCompanion.insert(
+                id: 'we$w',
+                workoutId: id,
+                exerciseId: 'ex-row',
+                sortOrder: 0,
+              ),
+            );
+        await db
+            .into(db.workoutSetsTable)
+            .insert(
+              WorkoutSetsTableCompanion.insert(
+                id: 's$w',
+                workoutExerciseId: 'we$w',
+                sortOrder: 0,
+                weightKg: Value(w > 6 ? 30.0 + (9 - w) * 2.5 : 35.0),
+                reps: const Value(8),
+                isCompleted: const Value(true),
+              ),
+            );
+        await db.recoveryDao.setSleep(
+          fellAsleepAt: at.subtract(const Duration(hours: 20)),
+          wokeAt: at.subtract(const Duration(hours: 13)),
+        );
+      }
+      return loadPlateaus(db, now: now);
+    });
+    await pumpPhone(
+      tester,
+      Scaffold(
+        body: SingleChildScrollView(
+          child: PlateauCard(found: found!.single, now: now),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Vraag de coach'), findsOneWidget);
+    for (final label in ['Sets voor bovenrug per week', 'Slaap per nacht']) {
+      expect(
+        tester.getBottomRight(find.text(label)).dx,
+        lessThanOrEqualTo(412),
+        reason: '$label valt van het scherm',
+      );
+    }
   });
 }

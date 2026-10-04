@@ -3296,3 +3296,60 @@ elkaar als niet.
 
 De tests hiervoor draaien op die breedte en die tekstgrootte, en falen op
 de code van daarvoor.
+
+## 173. Stilstand herkennen
+
+Gevraagd: een stille markering voor een oefening die drie à vier weken niet
+meer vooruitkomt, met wat je er in die tijd aan deed, en een coach die dat
+ziet.
+
+**Wat vooruitgang is.** Elke sessie van een oefening wordt één getal: de
+geschatte 1RM van de beste set (Epley, zoals de grafiek), zonder gewicht de
+meeste herhalingen in één set, bij een houding de langste tijd. Een stap
+vooruit is minstens 1% boven *het niveau van de vorige stap*, niet boven het
+beste tot dan: wie elke week een half procent stijgt, gaat vooruit, en
+gemeten tegen de week ervoor zou dat nooit tellen. Minder dan een procent is
+welke set die dag toevallig de beste was - 97,5 kg voor zes tegen 100 voor
+vijf.
+
+**Wanneer het stilstaat.** Minstens 28 dagen en minstens drie sessies na de
+laatste stap vooruit. Een pauze van 21 dagen of meer begint de oefening
+opnieuw: wie na de zomer opbouwt, zou gemeten tegen zijn oude beste altijd
+stilstaan. Om dezelfde reden krijgt een oefening die 21 dagen niet gedaan
+is geen oordeel: niet doen is niet vastzitten. FitLog kijkt een half jaar
+terug.
+
+**Wat niet beoordeeld wordt.** Geassisteerd: minder hulp is daar de
+vooruitgang, en een 1RM uit de hulp zou achteruit lopen. Cardio: dat staat
+onder Gezondheid. Sets met één arm tellen naast sessies met twee niet mee -
+15 kg in één hand is geen slechtere dag dan 30 in twee. Alleen sessies op
+dezelfde manier als de laatste worden vergeleken; wie het altijd met één arm
+doet, krijgt die.
+
+**Wat erbij staat.** Sinds de laatste stap vooruit: keer per week, werksets
+per keer, de mediaan van de herhalingen, werksets per week voor de primaire
+spiergroep (alle oefeningen samen), slaap per nacht, en hoe vaak de oefening
+begon terwijl de spier volgens de herstelschatting nog niet hersteld was.
+Voor dat laatste rekent de schatting zich sessie per sessie door
+(`recoveryHistory`, uit `estimateRecovery` gehaald zonder het gedrag te
+veranderen), met dezelfde nachten, glazen, HRV en antwoorden als het
+Herstel-scherm. Sets en slaap staan naast de even lange periode ervoor
+(hoogstens acht weken, nooit voor een pauze, minstens een week, anders
+niets). Geen eigen oordeel of advies in de app: de cijfers staan er, het
+advies is aan de coach.
+
+**Waar.** Bovenaan Voortgang onder "Staat stil", alleen als er iets
+stilstaat. De kaart staat bovenaan de grafieken van de oefening; de link
+op Voortgang opent de oefening meteen op dat tabblad (`?tab=grafieken`).
+Op het Info-tabblad staat onder het type een stille regel die erheen
+leidt. Niets in de actieve training: daar is het geen moment voor.
+
+**De coach.** Een tool `plateaus` met dezelfde cijfers. "Vraag de coach"
+op de kaart zet de vraag klaar in een nieuw gesprek, maar verstuurt ze
+niet: een vraag kost de gebruiker geld, dus de gebruiker drukt op
+verzenden.
+
+Er wordt niets opgeslagen: het wordt berekend uit de sets, bij elke
+wijziging opnieuw. Geen schemawijziging, en daarom ook (nog) geen "niet
+meer melden" per oefening - wie bewust onderhoudt, bijvoorbeeld tijdens
+het afvallen, ziet de markering staan.

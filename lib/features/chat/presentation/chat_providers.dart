@@ -158,12 +158,11 @@ bool canDrawImages(Ref ref) {
 }
 
 /// How a drawing is made, so a test can hand over one that draws from memory.
-typedef ImageGeneratorFactory =
-    ImageGenerator Function(
-      String apiKey, {
-      DrawingService provider,
-      String? accountId,
-    });
+typedef ImageGeneratorFactory = ImageGenerator Function(
+  String apiKey, {
+  DrawingService provider,
+  String? accountId,
+});
 
 @riverpod
 ImageGeneratorFactory imageGeneratorFactory(Ref ref) =>
@@ -525,7 +524,9 @@ class CoachController extends _$CoachController {
     final stored = await db.settingsDao.apiKey();
     final key = stored == null || stored.isEmpty ? null : stored;
     if (key == null) {
-      throw const CoachException('Er staat geen API-sleutel in de instellingen.');
+      throw const CoachException(
+        'Er staat geen API-sleutel in de instellingen.',
+      );
     }
 
     final client = ref.read(coachClientFactoryProvider)(
@@ -539,13 +540,15 @@ class CoachController extends _$CoachController {
             ? kFramePromptSystem
             : '$kFramePromptSystem\n$kFramePromptNoKit',
         messages: [
-          CoachMessage.user([
-            'Oefening: $name',
-            if (equipment != null && equipment.isNotEmpty)
-              'Materiaal: $equipment',
-            if (instructions != null && instructions.trim().isNotEmpty)
-              'Uitvoering: ${instructions.trim()}',
-          ].join('\n')),
+          CoachMessage.user(
+            [
+              'Oefening: $name',
+              if (equipment != null && equipment.isNotEmpty)
+                'Materiaal: $equipment',
+              if (instructions != null && instructions.trim().isNotEmpty)
+                'Uitvoering: ${instructions.trim()}',
+            ].join('\n'),
+          ),
         ],
         tools: const [],
         model: ref.read(coachModelProvider),
@@ -590,4 +593,19 @@ class CoachController extends _$CoachController {
       client.close();
     }
   }
+}
+
+/// A question another screen has put ready for the coach, not sent yet.
+///
+/// The coach screen takes it into the field of a new conversation and
+/// clears it. It is never sent from here: a question costs the user money,
+/// so the user is the one who sends it.
+@Riverpod(keepAlive: true)
+class CoachDraft extends _$CoachDraft {
+  @override
+  String? build() => null;
+
+  void put(String question) => state = question;
+
+  void clear() => state = null;
 }

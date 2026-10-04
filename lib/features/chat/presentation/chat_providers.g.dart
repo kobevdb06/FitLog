@@ -933,3 +933,76 @@ abstract class _$CoachController extends $Notifier<CoachState> {
     return element.handleCreate(ref, build);
   }
 }
+
+/// A question another screen has put ready for the coach, not sent yet.
+///
+/// The coach screen takes it into the field of a new conversation and
+/// clears it. It is never sent from here: a question costs the user money,
+/// so the user is the one who sends it.
+
+@ProviderFor(CoachDraft)
+final coachDraftProvider = CoachDraftProvider._();
+
+/// A question another screen has put ready for the coach, not sent yet.
+///
+/// The coach screen takes it into the field of a new conversation and
+/// clears it. It is never sent from here: a question costs the user money,
+/// so the user is the one who sends it.
+final class CoachDraftProvider extends $NotifierProvider<CoachDraft, String?> {
+  /// A question another screen has put ready for the coach, not sent yet.
+  ///
+  /// The coach screen takes it into the field of a new conversation and
+  /// clears it. It is never sent from here: a question costs the user money,
+  /// so the user is the one who sends it.
+  CoachDraftProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachDraftProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachDraftHash();
+
+  @$internal
+  @override
+  CoachDraft create() => CoachDraft();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$coachDraftHash() => r'a0d60e71daa93c263b208f83c4cc2e005f80fe09';
+
+/// A question another screen has put ready for the coach, not sent yet.
+///
+/// The coach screen takes it into the field of a new conversation and
+/// clears it. It is never sent from here: a question costs the user money,
+/// so the user is the one who sends it.
+
+abstract class _$CoachDraft extends $Notifier<String?> {
+  String? build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<String?, String?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<String?, String?>,
+              String?,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

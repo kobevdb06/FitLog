@@ -24,6 +24,9 @@ abstract final class Routes {
   static const exerciseNew = '/oefeningen/nieuw';
   static String exerciseDetail(String id) => '/oefeningen/$id';
 
+  /// The same, opened on its charts.
+  static String exerciseCharts(String id) => '/oefeningen/$id?tab=grafieken';
+
   // Workout
   static const workout = '/workout';
   static const restTimer = '/workout/rust';

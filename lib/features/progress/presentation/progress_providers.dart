@@ -1,10 +1,12 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/plateau.dart';
 import '../../../core/calc/streak.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../history/presentation/history_providers.dart';
+import '../data/plateau_loader.dart';
 
 part 'progress_providers.g.dart';
 
@@ -117,3 +119,23 @@ Stream<List<RecordWithExercise>> allRecords(Ref ref, {PrType? type}) =>
 @riverpod
 Stream<List<RecordWithExercise>> latestRecords(Ref ref, {int limit = 3}) =>
     ref.watch(databaseProvider).recordsDao.watchRecords(limit: limit);
+
+/// The exercises that have stalled, the longest first.
+///
+/// A stream: finishing a workout can end a plateau as easily as start one.
+@riverpod
+Stream<List<ExercisePlateau>> plateaus(Ref ref) {
+  final db = ref.watch(databaseProvider);
+  return db.workoutsDao
+      .watchProgressSets(since: DateTime.now().subtract(kPlateauLookback))
+      .asyncMap((sets) => findPlateaus(db, sets, now: DateTime.now()));
+}
+
+/// The plateau of [exerciseId], or null while it is still going forward.
+@riverpod
+ExercisePlateau? exercisePlateau(Ref ref, String exerciseId) {
+  for (final found in ref.watch(plateausProvider).value ?? const []) {
+    if (found.exercise.id == exerciseId) return found;
+  }
+  return null;
+}

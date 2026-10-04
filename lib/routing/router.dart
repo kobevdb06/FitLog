@@ -203,7 +203,12 @@ GoRouter router(Ref ref) {
             parentNavigatorKey: _rootKey,
             pageBuilder: (context, state) => appPage(
               state,
-              ExerciseDetailScreen(exerciseId: state.pathParameters['id']!),
+              ExerciseDetailScreen(
+                exerciseId: state.pathParameters['id']!,
+                initialTab: state.uri.queryParameters['tab'] == 'grafieken'
+                    ? ExerciseDetailScreen.chartsTab
+                    : 0,
+              ),
             ),
           ),
         ],

@@ -15,11 +15,13 @@ import 'dart:convert';
 import 'package:drift/drift.dart'
     show BooleanExpressionOperators, OrderingTerm, Variable;
 
+import '../../../core/calc/plateau.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/calc/sleep_score.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../exercises/presentation/exercise_providers.dart';
+import '../../progress/data/plateau_loader.dart';
 import '../../progress/data/recovery_loader.dart';
 import '../domain/coach_proposal.dart';
 
@@ -305,6 +307,20 @@ class CoachTools {
       },
     },
     {
+      'name': 'plateaus',
+      'description':
+          'De oefeningen die volgens FitLog stilstaan: minstens vier weken en '
+          'drie keer zonder een stap vooruit van minstens 1% (in geschatte '
+          '1RM, of de meeste herhalingen zonder gewicht, of de langste tijd). '
+          'Per oefening: sinds wanneer, het beste en het laatste resultaat, '
+          'en wat er sindsdien gebeurde - keer per week, werksets per keer, '
+          'de gewone herhalingen, sets per week voor de spiergroep en slaap '
+          'per nacht, die twee ook voor even lang ervoor als dat er is - en '
+          'hoe vaak de spier nog niet hersteld was toen de oefening begon. '
+          'Een lege lijst betekent: niets staat stil.',
+      'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
+    },
+    {
       'name': 'drinks',
       'description':
           'Hoeveel standaardglazen alcohol de gebruiker per dag noteerde. '
@@ -334,6 +350,7 @@ class CoachTools {
     'recovery',
     'drinks',
     'steps',
+    'plateaus',
   };
 
   /// Runs one lookup. An unknown name is an answer, not a crash: the model
@@ -355,6 +372,7 @@ class CoachTools {
       'recovery' => _recovery(),
       'drinks' => _drinks(input),
       'steps' => _steps(input),
+      'plateaus' => _plateaus(),
       _ => CoachLookup(
         json: jsonEncode({'error': 'onbekende tool: $name'}),
         summary: 'een opzoeking die niet bestaat ($name)',
@@ -1035,6 +1053,55 @@ class CoachTools {
         ],
       }),
       summary: 'je stappen en zuurstof per dag',
+    );
+  }
+
+  Future<CoachLookup> _plateaus() async {
+    final found = await loadPlateaus(db);
+    double one(double value) => (value * 10).round() / 10;
+    Map<String, Object?> compared(Object? now, Object? before) => {
+      'now': now,
+      'before': ?before,
+    };
+
+    return CoachLookup(
+      json: jsonEncode({
+        'plateaus': [
+          for (final item in found.take(kCoachRowCap))
+            {
+              'exercise': item.exercise.name,
+              'muscle': item.exercise.primaryMuscle,
+              'measured_in': switch (item.plateau.measure) {
+                ProgressMeasure.oneRm => 'estimated_1rm_kg',
+                ProgressMeasure.reps => 'most_reps_in_a_set',
+                ProgressMeasure.hold => 'longest_hold_seconds',
+              },
+              'since': _day(item.plateau.since.millisecondsSinceEpoch),
+              'weeks': item.plateau.weeksAt(DateTime.now()),
+              'best': one(item.plateau.best),
+              'latest': one(item.plateau.latest),
+              'sessions_since': item.context.sessions,
+              'sessions_per_week': one(item.context.sessionsPerWeek),
+              'working_sets_per_session': one(item.context.setsPerSession),
+              'typical_reps': ?item.context.typicalReps,
+              'muscle_sets_per_week': compared(
+                one(item.context.muscleSetsPerWeek),
+                switch (item.context.muscleSetsPerWeekBefore) {
+                  final rate? => one(rate),
+                  null => null,
+                },
+              ),
+              if (item.context.averageSleep case final sleep?)
+                'sleep_minutes_per_night': compared(
+                  sleep.inMinutes,
+                  item.context.averageSleepBefore?.inMinutes,
+                ),
+              if (item.plateau.measure != ProgressMeasure.hold)
+                'started_before_recovered': item.context.unrecovered,
+            },
+        ],
+      }),
+      summary: 'welke oefeningen stilstaan',
     );
   }
 

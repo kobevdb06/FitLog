@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
 import '../../../routing/routes.dart';
+import 'plateau_card.dart';
 import 'progress_providers.dart';
 import 'recovery_providers.dart';
 
@@ -27,6 +28,9 @@ class ProgressScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
+          // First, because it is the one thing here to act on - and only
+          // there while something has stalled.
+          const PlateauSection(),
           const SectionHeader('Lichaamsgewicht'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),

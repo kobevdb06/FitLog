@@ -411,3 +411,146 @@ final class LatestRecordsFamily extends $Family
   @override
   String toString() => r'latestRecordsProvider';
 }
+
+/// The exercises that have stalled, the longest first.
+///
+/// A stream: finishing a workout can end a plateau as easily as start one.
+
+@ProviderFor(plateaus)
+final plateausProvider = PlateausProvider._();
+
+/// The exercises that have stalled, the longest first.
+///
+/// A stream: finishing a workout can end a plateau as easily as start one.
+
+final class PlateausProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<ExercisePlateau>>,
+          List<ExercisePlateau>,
+          Stream<List<ExercisePlateau>>
+        >
+    with
+        $FutureModifier<List<ExercisePlateau>>,
+        $StreamProvider<List<ExercisePlateau>> {
+  /// The exercises that have stalled, the longest first.
+  ///
+  /// A stream: finishing a workout can end a plateau as easily as start one.
+  PlateausProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'plateausProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$plateausHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<ExercisePlateau>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<ExercisePlateau>> create(Ref ref) {
+    return plateaus(ref);
+  }
+}
+
+String _$plateausHash() => r'3ebaf477131992ad9e32da737ffa8927f42d078a';
+
+/// The plateau of [exerciseId], or null while it is still going forward.
+
+@ProviderFor(exercisePlateau)
+final exercisePlateauProvider = ExercisePlateauFamily._();
+
+/// The plateau of [exerciseId], or null while it is still going forward.
+
+final class ExercisePlateauProvider
+    extends
+        $FunctionalProvider<
+          ExercisePlateau?,
+          ExercisePlateau?,
+          ExercisePlateau?
+        >
+    with $Provider<ExercisePlateau?> {
+  /// The plateau of [exerciseId], or null while it is still going forward.
+  ExercisePlateauProvider._({
+    required ExercisePlateauFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'exercisePlateauProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$exercisePlateauHash();
+
+  @override
+  String toString() {
+    return r'exercisePlateauProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $ProviderElement<ExercisePlateau?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ExercisePlateau? create(Ref ref) {
+    final argument = this.argument as String;
+    return exercisePlateau(ref, argument);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ExercisePlateau? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ExercisePlateau?>(value),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ExercisePlateauProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$exercisePlateauHash() => r'0728218d8fb8bbff0d8785383e44f56def914788';
+
+/// The plateau of [exerciseId], or null while it is still going forward.
+
+final class ExercisePlateauFamily extends $Family
+    with $FunctionalFamilyOverride<ExercisePlateau?, String> {
+  ExercisePlateauFamily._()
+    : super(
+        retry: null,
+        name: r'exercisePlateauProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The plateau of [exerciseId], or null while it is still going forward.
+
+  ExercisePlateauProvider call(String exerciseId) =>
+      ExercisePlateauProvider._(argument: exerciseId, from: this);
+
+  @override
+  String toString() => r'exercisePlateauProvider';
+}

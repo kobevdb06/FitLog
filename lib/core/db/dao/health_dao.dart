@@ -215,18 +215,21 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
           .watch();
 
   Stream<List<DailyVitalsRow>> watchVitalsSince(DateTime since) =>
-      (select(dailyVitalsTable)
-            ..where(
-              (t) => t.day.isBiggerOrEqualValue(
-                DateTime(
-                  since.year,
-                  since.month,
-                  since.day,
-                ).millisecondsSinceEpoch,
-              ),
-            )
-            ..orderBy([(t) => OrderingTerm.asc(t.day)]))
-          .watch();
+      _vitalsSince(since).watch();
+
+  /// The same, read once.
+  Future<List<DailyVitalsRow>> vitalsSince(DateTime since) =>
+      _vitalsSince(since).get();
+
+  SimpleSelectStatement<$DailyVitalsTableTable, DailyVitalsRow> _vitalsSince(
+    DateTime since,
+  ) => select(dailyVitalsTable)
+    ..where(
+      (t) => t.day.isBiggerOrEqualValue(
+        DateTime(since.year, since.month, since.day).millisecondsSinceEpoch,
+      ),
+    )
+    ..orderBy([(t) => OrderingTerm.asc(t.day)]);
 
   Stream<List<CardioSessionRow>> watchCardioSince(DateTime since) =>
       (select(cardioSessionsTable)

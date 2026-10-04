@@ -711,6 +711,74 @@ Duration recoveryDuration({
   return Duration(minutes: (clamped * 60).round());
 }
 
+/// Every session of every muscle as the estimate saw it, oldest first per
+/// muscle: what an earlier session still owed when it began is in its
+/// [RecoveryEstimate.carryover].
+///
+/// What was said or run after the newest session only moves that one, so it
+/// is not in here; [estimateRecovery] adds it.
+Map<String, List<RecoveryEstimate>> recoveryHistory(
+  List<MuscleSession> sessions, {
+  Iterable<SorenessCheck> checks = const [],
+  Iterable<SleepNight> nights = const [],
+  Iterable<DrinkDay> drinks = const [],
+  Iterable<VitalsDay> vitals = const [],
+  double? bodyWeightKg,
+}) {
+  final slept = nights.toList()..sort((a, b) => a.wokeAt.compareTo(b.wokeAt));
+  final drank = drinks.toList();
+  final readings = vitals.toList()..sort((a, b) => a.day.compareTo(b.day));
+  final byMuscle = <String, List<MuscleSession>>{};
+  for (final session in sessions) {
+    byMuscle.putIfAbsent(session.muscle, () => []).add(session);
+  }
+  final said = _checksByMuscle(checks);
+
+  return {
+    for (final entry in byMuscle.entries)
+      entry.key: () {
+        final ordered = entry.value.toList()
+          ..sort((a, b) => a.at.compareTo(b.at));
+
+        // First what the table would say, then what your own answers say
+        // about the table, then the table again with that correction in it.
+        final plain = _chain(
+          ordered,
+          factor: 1,
+          nights: slept,
+          drinks: drank,
+          vitals: readings,
+          bodyWeightKg: bodyWeightKg,
+        );
+        final factor = _personalFactor(plain, said[entry.key] ?? const []);
+        return factor == 1
+            ? plain
+            : _chain(
+                ordered,
+                factor: factor,
+                nights: slept,
+                drinks: drank,
+                vitals: readings,
+                bodyWeightKg: bodyWeightKg,
+              );
+      }(),
+  };
+}
+
+/// What the user said, per muscle, oldest first.
+Map<String, List<SorenessCheck>> _checksByMuscle(
+  Iterable<SorenessCheck> checks,
+) {
+  final byMuscle = <String, List<SorenessCheck>>{};
+  for (final check in checks) {
+    byMuscle.putIfAbsent(check.muscle, () => []).add(check);
+  }
+  for (final list in byMuscle.values) {
+    list.sort((a, b) => a.at.compareTo(b.at));
+  }
+  return byMuscle;
+}
+
 /// One estimate per muscle, based on the most recent session for each.
 ///
 /// [sessions] is everything inside [kRecoveryHistoryWindow]; the earlier
@@ -725,46 +793,21 @@ List<RecoveryEstimate> estimateRecovery(
   Iterable<CardioSession> cardio = const [],
   double? bodyWeightKg,
 }) {
-  final slept = nights.toList()..sort((a, b) => a.wokeAt.compareTo(b.wokeAt));
-  final drank = drinks.toList();
-  final readings = vitals.toList()..sort((a, b) => a.day.compareTo(b.day));
   final moved = cardio.toList()..sort((a, b) => a.end.compareTo(b.end));
-  final byMuscle = <String, List<MuscleSession>>{};
-  for (final session in sessions) {
-    byMuscle.putIfAbsent(session.muscle, () => []).add(session);
-  }
-  final checksByMuscle = <String, List<SorenessCheck>>{};
-  for (final check in checks) {
-    checksByMuscle.putIfAbsent(check.muscle, () => []).add(check);
-  }
+  final checksByMuscle = _checksByMuscle(checks);
+  final history = recoveryHistory(
+    sessions,
+    checks: checks,
+    nights: nights,
+    drinks: drinks,
+    vitals: vitals,
+    bodyWeightKg: bodyWeightKg,
+  );
 
   final estimates = <RecoveryEstimate>[];
-  for (final entry in byMuscle.entries) {
-    final ordered = entry.value.toList()..sort((a, b) => a.at.compareTo(b.at));
-    final said = (checksByMuscle[entry.key] ?? const <SorenessCheck>[]).toList()
-      ..sort((a, b) => a.at.compareTo(b.at));
-
-    // First what the table would say, then what your own answers say about
-    // the table, then the table again with that correction in it.
-    final plain = _chain(
-      ordered,
-      factor: 1,
-      nights: slept,
-      drinks: drank,
-      vitals: readings,
-      bodyWeightKg: bodyWeightKg,
-    );
-    final factor = _personalFactor(plain, said);
-    final chain = factor == 1
-        ? plain
-        : _chain(
-            ordered,
-            factor: factor,
-            nights: slept,
-            drinks: drank,
-            vitals: readings,
-            bodyWeightKg: bodyWeightKg,
-          );
+  for (final entry in history.entries) {
+    final chain = entry.value;
+    final said = checksByMuscle[entry.key] ?? const <SorenessCheck>[];
 
     // Then what happened since, in the order it happened: a run floors the
     // estimate, what you said about the muscle outranks everything before

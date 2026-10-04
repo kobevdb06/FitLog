@@ -398,6 +398,70 @@ void main() {
     });
   });
 
+  group('stilstand', () {
+    test(
+      'welke oefening stilstaat, sinds wanneer en wat er gebeurde',
+      () async {
+        final now = DateTime.now();
+        DateTime weeksAgo(int w) =>
+            now.subtract(Duration(days: 7 * w, hours: 2));
+        // Bench: drie weken vooruit, dan vijf weken niets beter.
+        for (final (w, weight) in [
+          (8, 80.0),
+          (7, 82.5),
+          (6, 85.0),
+          (5, 85.0),
+          (4, 82.5),
+          (3, 85.0),
+          (2, 85.0),
+          (1, 82.5),
+          (0, 85.0),
+        ]) {
+          await logSet(exerciseId: 'ex-bench', on: weeksAgo(w), weight: weight);
+        }
+        // Squat: elke week beter.
+        for (var w = 8; w >= 0; w--) {
+          await logSet(
+            exerciseId: 'ex-squat',
+            on: weeksAgo(w).add(const Duration(days: 2)),
+            weight: 100 + (8 - w) * 2.5,
+          );
+        }
+
+        final lookup = await tools.run('plateaus', const {});
+        final stuck = (decode(lookup)['plateaus']! as List).single as Map;
+
+        expect(stuck['exercise'], 'Bench Press');
+        expect(stuck['muscle'], 'borst');
+        expect(stuck['measured_in'], 'estimated_1rm_kg');
+        expect(stuck['weeks'], 6);
+        // 85 kg voor vijf.
+        expect(stuck['best'], 99.2);
+        expect(stuck['latest'], 99.2);
+        expect(stuck['sessions_since'], 6);
+        expect(stuck['working_sets_per_session'], 1.0);
+        expect(stuck['typical_reps'], 5);
+        expect((stuck['muscle_sets_per_week']! as Map)['before'], isNotNull);
+        expect(stuck['started_before_recovered'], isA<int>());
+        expect(lookup.summary, 'welke oefeningen stilstaan');
+      },
+    );
+
+    test('en als alles vooruitgaat, een lege lijst', () async {
+      for (var w = 6; w >= 0; w--) {
+        await logSet(
+          exerciseId: 'ex-bench',
+          on: DateTime.now().subtract(Duration(days: 7 * w)),
+          weight: 80 + (6 - w) * 2.5,
+        );
+      }
+
+      final lookup = await tools.run('plateaus', const {});
+
+      expect(decode(lookup)['plateaus'], isEmpty);
+    });
+  });
+
   group('de grenzen', () {
     test('een tool die niet bestaat komt terug als tekst', () async {
       final lookup = await tools.run('stuur_mijn_data_door', const {});

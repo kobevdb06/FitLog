@@ -25,14 +25,18 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
       '$muscle|${dayKey(at)}';
 
   Stream<List<SorenessCheckRow>> watchSorenessSince(DateTime since) =>
-      (select(sorenessChecksTable)
-            ..where(
-              (t) => t.checkedAt.isBiggerOrEqualValue(
-                since.millisecondsSinceEpoch,
-              ),
-            )
-            ..orderBy([(t) => OrderingTerm.asc(t.checkedAt)]))
-          .watch();
+      _sorenessSince(since).watch();
+
+  /// The same, read once.
+  Future<List<SorenessCheckRow>> sorenessSince(DateTime since) =>
+      _sorenessSince(since).get();
+
+  SimpleSelectStatement<$SorenessChecksTableTable, SorenessCheckRow>
+  _sorenessSince(DateTime since) => select(sorenessChecksTable)
+    ..where(
+      (t) => t.checkedAt.isBiggerOrEqualValue(since.millisecondsSinceEpoch),
+    )
+    ..orderBy([(t) => OrderingTerm.asc(t.checkedAt)]);
 
   /// Says how [muscle] feels at [at]. A second answer on the same day
   /// replaces the first.
@@ -54,7 +58,6 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
     sorenessChecksTable,
   )..where((t) => t.id.equals(sorenessId(muscle, at)))).go();
 
-  /// Nights you woke up from on or after [since], oldest first.
   /// The nights that ended from [from] up to [to], both included, read
   /// once - for the import, which runs where a stream would never settle.
   Future<List<SleepEntryRow>> sleepEndedBetween(DateTime from, DateTime to) =>
@@ -77,14 +80,19 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
             ..orderBy([(t) => OrderingTerm.desc(t.wokeAt)]))
           .watch();
 
+  /// Nights you woke up from on or after [since], oldest first.
   Stream<List<SleepEntryRow>> watchSleepSince(DateTime since) =>
-      (select(sleepEntriesTable)
-            ..where(
-              (t) =>
-                  t.wokeAt.isBiggerOrEqualValue(since.millisecondsSinceEpoch),
-            )
-            ..orderBy([(t) => OrderingTerm.asc(t.wokeAt)]))
-          .watch();
+      _sleepSince(since).watch();
+
+  /// The same, read once.
+  Future<List<SleepEntryRow>> sleepSince(DateTime since) =>
+      _sleepSince(since).get();
+
+  SimpleSelectStatement<$SleepEntriesTableTable, SleepEntryRow> _sleepSince(
+    DateTime since,
+  ) => select(sleepEntriesTable)
+    ..where((t) => t.wokeAt.isBiggerOrEqualValue(since.millisecondsSinceEpoch))
+    ..orderBy([(t) => OrderingTerm.asc(t.wokeAt)]);
 
   /// Stores one night. The morning decides which night it is, so filling it
   /// in again corrects it.
@@ -115,18 +123,21 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
 
   /// Days with drinks on them from [since] on, oldest first.
   Stream<List<DrinkDayRow>> watchDrinksSince(DateTime since) =>
-      (select(drinkDaysTable)
-            ..where(
-              (t) => t.day.isBiggerOrEqualValue(
-                DateTime(
-                  since.year,
-                  since.month,
-                  since.day,
-                ).millisecondsSinceEpoch,
-              ),
-            )
-            ..orderBy([(t) => OrderingTerm.asc(t.day)]))
-          .watch();
+      _drinksSince(since).watch();
+
+  /// The same, read once.
+  Future<List<DrinkDayRow>> drinksSince(DateTime since) =>
+      _drinksSince(since).get();
+
+  SimpleSelectStatement<$DrinkDaysTableTable, DrinkDayRow> _drinksSince(
+    DateTime since,
+  ) => select(drinkDaysTable)
+    ..where(
+      (t) => t.day.isBiggerOrEqualValue(
+        DateTime(since.year, since.month, since.day).millisecondsSinceEpoch,
+      ),
+    )
+    ..orderBy([(t) => OrderingTerm.asc(t.day)]);
 
   /// Sets how much was drunk on the day of [day]. Zero removes the day.
   Future<void> setDrinks(DateTime day, int drinks) async {

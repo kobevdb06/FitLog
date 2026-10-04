@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../calc/plateau.dart';
 import '../../calc/recovery.dart';
 import '../../calc/volume.dart';
 import '../database.dart';
@@ -591,6 +592,60 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
           weightKg: row.readNullable<double>('weight_kg'),
           reps: row.readNullable<int>('reps'),
           rpe: row.readNullable<double>('rpe'),
+        ),
+    ];
+  }
+
+  /// Every completed working set since [since], of every exercise, oldest
+  /// first: what telling progress from a plateau reads.
+  Future<List<ProgressSet>> progressSets({required DateTime since}) =>
+      _progressSetsQuery(since).get().then(_toProgressSets);
+
+  /// The same, re-emitted whenever anything it reads changes.
+  Stream<List<ProgressSet>> watchProgressSets({required DateTime since}) =>
+      _progressSetsQuery(since).watch().map(_toProgressSets);
+
+  Selectable<QueryRow> _progressSetsQuery(DateTime since) {
+    return customSelect(
+      'SELECT w.id AS workout_id, w.started_at AS started_at, '
+      'we.exercise_id AS exercise_id, e.primary_muscle AS primary_muscle, '
+      'e.category AS category, ws.weight_kg AS weight_kg, ws.reps AS reps, '
+      'ws.duration_seconds AS duration_seconds, ws.side AS side '
+      'FROM workout_sets ws '
+      'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+      'JOIN workouts w ON w.id = we.workout_id '
+      'JOIN exercises e ON e.id = we.exercise_id '
+      'WHERE ws.is_completed = 1 AND ws.set_type != ? '
+      'AND w.ended_at IS NOT NULL AND w.started_at >= ? '
+      'ORDER BY w.started_at, we.sort_order, ws.sort_order',
+      variables: [
+        Variable.withString(SetType.warmup.wire),
+        Variable.withInt(since.millisecondsSinceEpoch),
+      ],
+      readsFrom: {
+        workoutSetsTable,
+        workoutExercisesTable,
+        workoutsTable,
+        exercisesTable,
+      },
+    );
+  }
+
+  List<ProgressSet> _toProgressSets(List<QueryRow> rows) {
+    return [
+      for (final row in rows)
+        ProgressSet(
+          workoutId: row.read<String>('workout_id'),
+          startedAt: DateTime.fromMillisecondsSinceEpoch(
+            row.read<int>('started_at'),
+          ),
+          exerciseId: row.read<String>('exercise_id'),
+          primaryMuscle: row.read<String>('primary_muscle'),
+          category: ExerciseCategory.fromWire(row.read<String>('category')),
+          weightKg: row.readNullable<double>('weight_kg'),
+          reps: row.readNullable<int>('reps'),
+          durationSeconds: row.readNullable<int>('duration_seconds'),
+          side: row.readNullable<String>('side'),
         ),
     ];
   }

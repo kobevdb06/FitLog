@@ -9,9 +9,7 @@ part 'recovery_dao.drift.dart';
 /// Kept apart from the workouts on purpose: none of this is training, and all
 /// of it is optional. An empty table here is the normal state, and the
 /// estimate works without it - it just knows less.
-@DriftAccessor(
-  tables: [SorenessChecksTable, SleepEntriesTable, DrinkDaysTable],
-)
+@DriftAccessor(tables: [SorenessChecksTable, SleepEntriesTable, DrinkDaysTable])
 class RecoveryDao extends DatabaseAccessor<AppDatabase>
     with _$RecoveryDaoMixin {
   RecoveryDao(super.db);
@@ -52,16 +50,28 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
   );
 
   /// Takes back what was said about [muscle] on the day of [at].
-  Future<void> clearSoreness(String muscle, {required DateTime at}) =>
-      (delete(sorenessChecksTable)
-            ..where((t) => t.id.equals(sorenessId(muscle, at))))
-          .go();
+  Future<void> clearSoreness(String muscle, {required DateTime at}) => (delete(
+    sorenessChecksTable,
+  )..where((t) => t.id.equals(sorenessId(muscle, at)))).go();
 
   /// Nights you woke up from on or after [since], oldest first.
+  /// The nights that ended from [from] up to [to], exclusive, newest
+  /// first: one week of them on the screen that shows them by week.
+  Stream<List<SleepEntryRow>> watchSleepBetween(DateTime from, DateTime to) =>
+      (select(sleepEntriesTable)
+            ..where(
+              (t) =>
+                  t.wokeAt.isBiggerOrEqualValue(from.millisecondsSinceEpoch) &
+                  t.wokeAt.isSmallerThanValue(to.millisecondsSinceEpoch),
+            )
+            ..orderBy([(t) => OrderingTerm.desc(t.wokeAt)]))
+          .watch();
+
   Stream<List<SleepEntryRow>> watchSleepSince(DateTime since) =>
       (select(sleepEntriesTable)
             ..where(
-              (t) => t.wokeAt.isBiggerOrEqualValue(since.millisecondsSinceEpoch),
+              (t) =>
+                  t.wokeAt.isBiggerOrEqualValue(since.millisecondsSinceEpoch),
             )
             ..orderBy([(t) => OrderingTerm.asc(t.wokeAt)]))
           .watch();
@@ -89,17 +99,20 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
   );
 
   /// Forgets the night you woke up from on the day of [wokeAt].
-  Future<void> clearSleep(DateTime wokeAt) =>
-      (delete(sleepEntriesTable)..where((t) => t.id.equals(dayKey(wokeAt))))
-          .go();
+  Future<void> clearSleep(DateTime wokeAt) => (delete(
+    sleepEntriesTable,
+  )..where((t) => t.id.equals(dayKey(wokeAt)))).go();
 
   /// Days with drinks on them from [since] on, oldest first.
   Stream<List<DrinkDayRow>> watchDrinksSince(DateTime since) =>
       (select(drinkDaysTable)
             ..where(
               (t) => t.day.isBiggerOrEqualValue(
-                DateTime(since.year, since.month, since.day)
-                    .millisecondsSinceEpoch,
+                DateTime(
+                  since.year,
+                  since.month,
+                  since.day,
+                ).millisecondsSinceEpoch,
               ),
             )
             ..orderBy([(t) => OrderingTerm.asc(t.day)]))

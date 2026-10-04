@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../data/morning_reporter.dart';
 import 'morning_providers.dart';
@@ -50,6 +52,14 @@ class MorningReportCard extends ConsumerWidget {
             );
     }
 
+    // Every report is on its own screen, a week at a time: this card stays
+    // one report long however many mornings there have been.
+    final earlier = TextButton.icon(
+      onPressed: () => context.push(Routes.reportWeeks),
+      icon: const Icon(Icons.history, size: 18),
+      label: const Text('Eerdere rapporten'),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: AppCard(
@@ -71,11 +81,16 @@ class MorningReportCard extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               makeButton('Rapport opstellen', filled: true),
+              if (reports.isNotEmpty)
+                Align(alignment: Alignment.centerLeft, child: earlier),
             ] else ...[
-              _ReportBody(report: report),
-              Align(
-                alignment: Alignment.centerRight,
-                child: makeButton('Opnieuw opstellen'),
+              ReportBody(report: report),
+              Row(
+                children: [
+                  earlier,
+                  const Spacer(),
+                  makeButton('Opnieuw opstellen'),
+                ],
               ),
             ],
             if (state.error case final error?)
@@ -94,10 +109,16 @@ class MorningReportCard extends ConsumerWidget {
   }
 }
 
-class _ReportBody extends ConsumerWidget {
-  const _ReportBody({required this.report});
+/// One report: the score, the night, the pills, the words, and who wrote
+/// them.
+class ReportBody extends ConsumerWidget {
+  const ReportBody({super.key, required this.report, this.showDay = false});
 
   final MorningReport report;
+
+  /// Whether the day is named with the time - on the screen that lists a
+  /// whole week of them.
+  final bool showDay;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -140,7 +161,14 @@ class _ReportBody extends ConsumerWidget {
                 ),
               ),
             ),
-            Text('om ${Formatters.time(report.createdAt)}', style: muted),
+            Text(
+              showDay
+                  ? '${Formatters.weekdayDayMonth(report.createdAt)}\n'
+                        'om ${Formatters.time(report.createdAt)}'
+                  : 'om ${Formatters.time(report.createdAt)}',
+              textAlign: TextAlign.end,
+              style: muted,
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -185,68 +213,6 @@ class _ReportBody extends ConsumerWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// The earlier reports, folded away under the rest of the screen.
-class EarlierReports extends ConsumerWidget {
-  const EarlierReports({super.key, this.now});
-
-  final DateTime? now;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final moment = now ?? DateTime.now();
-    final today = DateTime(moment.year, moment.month, moment.day);
-    final earlier = [
-      for (final report in ref.watch(morningReportsProvider).value ?? const [])
-        if (report.facts.day != today) report,
-    ];
-    if (earlier.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: AppCard(
-        padding: EdgeInsets.zero,
-        child: Theme(
-          // No divider lines around the expansion: the card already frames it.
-          data: theme.copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            title: const Text('Eerdere rapporten'),
-            childrenPadding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              AppSpacing.md,
-            ),
-            children: [
-              for (final report in earlier)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${Formatters.weekdayDayMonth(report.facts.day)}'
-                        '${report.facts.score == null ? '' : '  ·  slaapscore ${report.facts.score}'}',
-                        style: theme.textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        report.text,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

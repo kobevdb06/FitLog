@@ -248,6 +248,181 @@ final class CardioSessionsProvider
 
 String _$cardioSessionsHash() => r'5a568b26e43ead080bb402e4f53b98580af232a2';
 
+/// The nights of the week from [start], newest first.
+
+@ProviderFor(nightsInWeek)
+final nightsInWeekProvider = NightsInWeekFamily._();
+
+/// The nights of the week from [start], newest first.
+
+final class NightsInWeekProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<SleepEntryRow>>,
+          List<SleepEntryRow>,
+          Stream<List<SleepEntryRow>>
+        >
+    with
+        $FutureModifier<List<SleepEntryRow>>,
+        $StreamProvider<List<SleepEntryRow>> {
+  /// The nights of the week from [start], newest first.
+  NightsInWeekProvider._({
+    required NightsInWeekFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'nightsInWeekProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$nightsInWeekHash();
+
+  @override
+  String toString() {
+    return r'nightsInWeekProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<SleepEntryRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<SleepEntryRow>> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return nightsInWeek(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is NightsInWeekProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$nightsInWeekHash() => r'5705c8e547c28240608607660e11dec892f2ad51';
+
+/// The nights of the week from [start], newest first.
+
+final class NightsInWeekFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<SleepEntryRow>>, DateTime> {
+  NightsInWeekFamily._()
+    : super(
+        retry: null,
+        name: r'nightsInWeekProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The nights of the week from [start], newest first.
+
+  NightsInWeekProvider call(DateTime start) =>
+      NightsInWeekProvider._(argument: start, from: this);
+
+  @override
+  String toString() => r'nightsInWeekProvider';
+}
+
+/// The readings a night's score in the week from [start] needs: that week
+/// and the four weeks before it, which make up your usual.
+
+@ProviderFor(vitalsForWeek)
+final vitalsForWeekProvider = VitalsForWeekFamily._();
+
+/// The readings a night's score in the week from [start] needs: that week
+/// and the four weeks before it, which make up your usual.
+
+final class VitalsForWeekProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<VitalsDay>>,
+          List<VitalsDay>,
+          Stream<List<VitalsDay>>
+        >
+    with $FutureModifier<List<VitalsDay>>, $StreamProvider<List<VitalsDay>> {
+  /// The readings a night's score in the week from [start] needs: that week
+  /// and the four weeks before it, which make up your usual.
+  VitalsForWeekProvider._({
+    required VitalsForWeekFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'vitalsForWeekProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$vitalsForWeekHash();
+
+  @override
+  String toString() {
+    return r'vitalsForWeekProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<VitalsDay>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<VitalsDay>> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return vitalsForWeek(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is VitalsForWeekProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$vitalsForWeekHash() => r'2c0750e249881ab26c5640ffc89ab2ea4e6d9498';
+
+/// The readings a night's score in the week from [start] needs: that week
+/// and the four weeks before it, which make up your usual.
+
+final class VitalsForWeekFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<VitalsDay>>, DateTime> {
+  VitalsForWeekFamily._()
+    : super(
+        retry: null,
+        name: r'vitalsForWeekProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The readings a night's score in the week from [start] needs: that week
+  /// and the four weeks before it, which make up your usual.
+
+  VitalsForWeekProvider call(DateTime start) =>
+      VitalsForWeekProvider._(argument: start, from: this);
+
+  @override
+  String toString() => r'vitalsForWeekProvider';
+}
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and

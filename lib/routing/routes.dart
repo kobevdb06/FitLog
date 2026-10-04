@@ -58,6 +58,13 @@ abstract final class Routes {
   /// the settings and from the sleep part of the recovery screen.
   static const healthConnect = '/health-connect';
 
+  /// Every night, a week at a time. At the root as well: Herstel and
+  /// Gezondheid both open it.
+  static const sleepWeeks = '/slaap';
+
+  /// Every morning report, a week at a time. Opened from Herstel.
+  static const reportWeeks = '/rapporten';
+
   // Profile and settings
   static const settings = '/profiel/instellingen';
   static const settingsCatalogue = '/profiel/instellingen/catalogus';

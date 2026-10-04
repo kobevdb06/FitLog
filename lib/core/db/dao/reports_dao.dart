@@ -39,6 +39,22 @@ class ReportsDao extends DatabaseAccessor<AppDatabase> with _$ReportsDaoMixin {
     morningReportsTable,
   )..where((t) => t.id.equals(RecoveryDao.dayKey(day)))).getSingleOrNull();
 
+  /// The reports made from [from] up to [to], exclusive, newest first.
+  Stream<List<MorningReportRow>> watchReportsBetween(
+    DateTime from,
+    DateTime to,
+  ) =>
+      (select(morningReportsTable)
+            ..where(
+              (t) =>
+                  t.createdAt.isBiggerOrEqualValue(
+                    from.millisecondsSinceEpoch,
+                  ) &
+                  t.createdAt.isSmallerThanValue(to.millisecondsSinceEpoch),
+            )
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+          .watch();
+
   /// The newest [limit] reports, newest first.
   Stream<List<MorningReportRow>> watchReports({int limit = 8}) =>
       (select(morningReportsTable)

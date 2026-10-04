@@ -22,6 +22,17 @@ Stream<List<MorningReport>> morningReports(Ref ref) => ref
     .watchReports()
     .map((rows) => [for (final row in rows) MorningReport.fromRow(row)]);
 
+/// The reports of the week from [start], newest first.
+@riverpod
+Stream<List<MorningReport>> reportsInWeek(Ref ref, DateTime start) => ref
+    .watch(databaseProvider)
+    .reportsDao
+    .watchReportsBetween(
+      start,
+      DateTime(start.year, start.month, start.day + 7),
+    )
+    .map((rows) => [for (final row in rows) MorningReport.fromRow(row)]);
+
 /// Whether the report is made on its own every morning.
 @riverpod
 bool morningReportEnabled(Ref ref) =>

@@ -54,6 +54,92 @@ final class MorningReportsProvider
 
 String _$morningReportsHash() => r'17f428179e6134c59f890f410064843854f77393';
 
+/// The reports of the week from [start], newest first.
+
+@ProviderFor(reportsInWeek)
+final reportsInWeekProvider = ReportsInWeekFamily._();
+
+/// The reports of the week from [start], newest first.
+
+final class ReportsInWeekProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<MorningReport>>,
+          List<MorningReport>,
+          Stream<List<MorningReport>>
+        >
+    with
+        $FutureModifier<List<MorningReport>>,
+        $StreamProvider<List<MorningReport>> {
+  /// The reports of the week from [start], newest first.
+  ReportsInWeekProvider._({
+    required ReportsInWeekFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'reportsInWeekProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$reportsInWeekHash();
+
+  @override
+  String toString() {
+    return r'reportsInWeekProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<MorningReport>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<MorningReport>> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return reportsInWeek(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ReportsInWeekProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$reportsInWeekHash() => r'b4a7ad50c36fdb7799e4fc4fcab1d3ccb98df98b';
+
+/// The reports of the week from [start], newest first.
+
+final class ReportsInWeekFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<MorningReport>>, DateTime> {
+  ReportsInWeekFamily._()
+    : super(
+        retry: null,
+        name: r'reportsInWeekProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The reports of the week from [start], newest first.
+
+  ReportsInWeekProvider call(DateTime start) =>
+      ReportsInWeekProvider._(argument: start, from: this);
+
+  @override
+  String toString() => r'reportsInWeekProvider';
+}
+
 /// Whether the report is made on its own every morning.
 
 @ProviderFor(morningReportEnabled)

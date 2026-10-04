@@ -3153,3 +3153,34 @@ gewicht, die je ook zelf invult, staan er altijd.
 
 Naar beneden trekken of het pijltje haalt meteen op; het tandwiel gaat naar
 de instellingen van Health Connect.
+
+## 168. Nachten en rapporten per week, op hun eigen scherm
+
+Het herstelscherm toonde de laatste drie nachten en klapte de vorige
+rapporten uit onderaan. Dat gaat goed zolang er weinig is; na een paar
+maanden is het een lijst die alleen langer wordt, op een scherm dat over
+vandaag gaat.
+
+**Op Herstel alleen vandaag.** De slaapkaart toont afgelopen nacht - of de
+knop om ze in te vullen - en de rapportkaart het rapport van vandaag. Elk
+heeft een knop naar de rest: *Eerdere nachten* en *Eerdere rapporten*.
+
+**Een week per keer.** Die schermen tonen één week, van maandag tot zondag
+zoals een Belgische kalender, met de week bovenaan (`28/9 – 4/10`) en
+pijltjes naar de week ervoor en erna. Ze openen op de huidige week en gaan
+niet verder dan die: in de toekomst staat niets. Een week is lang genoeg
+om iets te zien en kort genoeg om op één scherm te passen, hoeveel jaren
+er ook achter zitten. De weekgrenzen komen uit de kalender en niet uit
+blokken van 24 uur, zodat de week van een klokwissel om middernacht begint.
+
+Het weekscherm voor nachten toont per nacht alles: tijden, lengte,
+slaapscore, of ze van een horloge kwam, en de fasen als balk met legende
+(en, als de fasen samen ruim korter zijn dan de nacht, wat er overblijft als
+"wakker of niet ingedeeld" - anders lijkt een nacht met zes ingedeelde uren
+van acht een volle). Bovenaan het gemiddelde van die week. Een tik op een
+nacht opent dezelfde invulkaart als op Herstel.
+
+De balk, de week en het schuiven zijn gedeeld (`SleepStagesBar`,
+`WeekPager`), zodat het scherm met trainingen per week (gevraagd voor
+Gezondheid) er hetzelfde uitziet. Beide routes staan aan de wortel, omdat
+Herstel en Gezondheid ze openen.

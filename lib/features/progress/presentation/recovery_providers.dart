@@ -60,6 +60,22 @@ Stream<List<CardioSession>> cardioSessions(Ref ref) {
       .map((rows) => [for (final row in rows) ?cardioSessionOf(row)]);
 }
 
+/// The nights of the week from [start], newest first.
+@riverpod
+Stream<List<SleepEntryRow>> nightsInWeek(Ref ref, DateTime start) => ref
+    .watch(databaseProvider)
+    .recoveryDao
+    .watchSleepBetween(start, DateTime(start.year, start.month, start.day + 7));
+
+/// The readings a night's score in the week from [start] needs: that week
+/// and the four weeks before it, which make up your usual.
+@riverpod
+Stream<List<VitalsDay>> vitalsForWeek(Ref ref, DateTime start) => ref
+    .watch(databaseProvider)
+    .healthDao
+    .watchVitalsSince(start.subtract(kVitalsBaselineWindow))
+    .map((rows) => [for (final row in rows) vitalsDayOf(row)]);
+
 /// One estimate per muscle group, newest session first.
 ///
 /// A stream rather than a future: finishing a workout, editing a set and

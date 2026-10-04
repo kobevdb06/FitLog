@@ -72,28 +72,29 @@ String nightLength(Duration d) {
   return minutes == 0 ? '${d.inHours} u' : '${d.inHours} u $minutes';
 }
 
-/// The last few nights and the way to fill in one more.
+/// Last night, the way to fill it in, and the way to the nights before.
+///
+/// Only last night: the recovery screen asks about today. Every night is on
+/// the sleep screen, a week at a time, so this card stays one night long
+/// however long you have been keeping track.
 class SleepSection extends ConsumerWidget {
   const SleepSection({super.key});
-
-  /// How many nights the screen shows. The estimate itself looks at up to
-  /// three after each session; showing more is a diary, which this is not.
-  static const int shown = 3;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final rows = ref.watch(sleepEntriesProvider).value ?? const [];
     final vitals = ref.watch(vitalsDaysProvider).value ?? const [];
-    final stages = ref.watch(settingsProvider).value?.trackSleepStages ?? false;
     final today = DateTime.now();
     final todayKey = _dayKey(today);
 
-    final recent = rows.reversed.take(shown).toList();
-    final hasLastNight = rows.any(
-      (row) =>
-          _dayKey(DateTime.fromMillisecondsSinceEpoch(row.wokeAt)) == todayKey,
-    );
+    SleepEntryRow? lastNight;
+    for (final row in rows) {
+      if (_dayKey(DateTime.fromMillisecondsSinceEpoch(row.wokeAt)) ==
+          todayKey) {
+        lastNight = row;
+      }
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -101,27 +102,28 @@ class SleepSection extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (recent.isEmpty)
-              Text(
-                'Hoe laat viel je in slaap, en wanneer werd je wakker? Korte '
-                'nachten rekken je herstel; lange maken het niet korter.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+            if (lastNight case final night?)
+              NightRow(
+                row: night,
+                score: nightScore(night, vitals),
+                onTap: () => editNight(
+                  context,
+                  ref,
+                  wakeDay: DateTime.fromMillisecondsSinceEpoch(night.wokeAt),
+                  existing: night,
                 ),
               )
             else
-              for (final row in recent)
-                _NightRow(
-                  row: row,
-                  score: nightScore(row, vitals),
-                  onTap: () => _edit(
-                    context,
-                    ref,
-                    wakeDay: DateTime.fromMillisecondsSinceEpoch(row.wokeAt),
-                    existing: row,
-                    stages: stages,
-                  ),
+              Text(
+                rows.isEmpty
+                    ? 'Hoe laat viel je in slaap, en wanneer werd je wakker? '
+                          'Korte nachten rekken je herstel; lange maken het '
+                          'niet korter.'
+                    : 'Afgelopen nacht staat er nog niet bij.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
+              ),
             // With a watch, typing it in every morning is the long way round.
             if (!ref.watch(healthConnectEnabledProvider))
               Align(
@@ -132,64 +134,73 @@ class SleepSection extends ConsumerWidget {
                   label: const Text('Slaap van je horloge ophalen'),
                 ),
               ),
-            if (!hasLastNight) ...[
+            if (lastNight == null) ...[
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton.icon(
-                onPressed: () => _edit(
+                onPressed: () => editNight(
                   context,
                   ref,
                   wakeDay: today,
-                  existing: null,
-                  stages: stages,
                   like: rows.isEmpty ? null : rows.last,
                 ),
                 icon: const Icon(Icons.bedtime_outlined),
                 label: const Text('Afgelopen nacht invullen'),
               ),
             ],
+            if (rows.isNotEmpty)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => context.push(Routes.sleepWeeks),
+                  icon: const Icon(Icons.history, size: 18),
+                  label: const Text('Eerdere nachten'),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
+}
 
-  Future<void> _edit(
-    BuildContext context,
-    WidgetRef ref, {
-    required DateTime wakeDay,
-    required SleepEntryRow? existing,
-    required bool stages,
-    SleepEntryRow? like,
-  }) async {
-    final answer = await showAppSheet<_SleepAnswer>(
-      context: context,
-      title: existing == null
-          ? 'Afgelopen nacht'
-          : 'Nacht naar ${Formatters.weekdayDayMonth(wakeDay)}',
-      builder: (context) => _SleepSheet(
-        wakeDay: wakeDay,
-        existing: existing,
-        // A new night starts from the times of the last one: most people go
-        // to bed and get up at roughly the same time.
-        template: existing ?? like,
-        stages: stages,
-      ),
-    );
-    if (answer == null) return;
+/// Opens the sheet for the night that ended on [wakeDay]: [existing] to
+/// correct it, or a new one that starts from the times of [like].
+Future<void> editNight(
+  BuildContext context,
+  WidgetRef ref, {
+  required DateTime wakeDay,
+  SleepEntryRow? existing,
+  SleepEntryRow? like,
+}) async {
+  final stages = ref.read(settingsProvider).value?.trackSleepStages ?? false;
+  final answer = await showAppSheet<_SleepAnswer>(
+    context: context,
+    title: existing == null
+        ? 'Afgelopen nacht'
+        : 'Nacht naar ${Formatters.weekdayDayMonth(wakeDay)}',
+    builder: (context) => _SleepSheet(
+      wakeDay: wakeDay,
+      existing: existing,
+      // A new night starts from the times of the last one: most people go
+      // to bed and get up at roughly the same time.
+      template: existing ?? like,
+      stages: stages,
+    ),
+  );
+  if (answer == null) return;
 
-    final actions = ref.read(recoveryActionsProvider);
-    if (answer.forget) {
-      await actions.forgetNight(wakeDay);
-      return;
-    }
-    await actions.sleep(
-      fellAsleepAt: answer.fellAsleepAt!,
-      wokeAt: answer.wokeAt!,
-      lightMinutes: answer.light,
-      remMinutes: answer.rem,
-      deepMinutes: answer.deep,
-    );
+  final actions = ref.read(recoveryActionsProvider);
+  if (answer.forget) {
+    await actions.forgetNight(wakeDay);
+    return;
   }
+  await actions.sleep(
+    fellAsleepAt: answer.fellAsleepAt!,
+    wokeAt: answer.wokeAt!,
+    lightMinutes: answer.light,
+    remMinutes: answer.rem,
+    deepMinutes: answer.deep,
+  );
 }
 
 String _dayKey(DateTime at) => '${at.year}-${at.month}-${at.day}';
@@ -208,16 +219,24 @@ SleepScore nightScore(SleepEntryRow row, List<VitalsDay> vitals) {
   );
 }
 
-class _NightRow extends StatelessWidget {
-  const _NightRow({
+/// One night: when, how long, its score, where it came from and its
+/// stages. Tapping it opens the sheet to correct it.
+class NightRow extends StatelessWidget {
+  const NightRow({
+    super.key,
     required this.row,
     required this.score,
     required this.onTap,
+    this.showStages = true,
   });
 
   final SleepEntryRow row;
   final SleepScore score;
   final VoidCallback onTap;
+
+  /// Whether the stages are listed in a line of text. Off where a bar shows
+  /// them already.
+  final bool showStages;
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +283,7 @@ class _NightRow extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  if (stages.isNotEmpty)
+                  if (showStages && stages.isNotEmpty)
                     Text(
                       stages.join(' · '),
                       style: theme.textTheme.bodySmall?.copyWith(

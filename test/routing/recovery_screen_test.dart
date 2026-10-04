@@ -7,6 +7,9 @@ import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:fitlog/features/health/presentation/health_overview_screen.dart';
 import 'package:fitlog/features/morning/presentation/morning_providers.dart';
+import 'package:fitlog/features/morning/presentation/report_week_screen.dart';
+import 'package:fitlog/features/progress/presentation/sleep_section.dart';
+import 'package:fitlog/features/progress/presentation/sleep_week_screen.dart';
 import 'package:fitlog/features/progress/presentation/progress_screen.dart';
 import 'package:fitlog/features/progress/presentation/recovery_screen.dart';
 import 'package:fitlog/routing/routes.dart';
@@ -377,6 +380,67 @@ void main() {
 
       expect(find.text('Geef een geldige tijd op'), findsNothing);
       expect(find.textContaining('23:15'), findsWidgets);
+    });
+
+    testWidgets('alleen afgelopen nacht, en de rest per week', (tester) async {
+      final today = DateTime.now();
+      await db.recoveryDao.setSleep(
+        fellAsleepAt: DateTime(today.year, today.month, today.day - 1, 23),
+        wokeAt: DateTime(today.year, today.month, today.day, 7),
+      );
+      await db.recoveryDao.setSleep(
+        fellAsleepAt: DateTime(today.year, today.month, today.day - 2, 23),
+        wokeAt: DateTime(today.year, today.month, today.day - 1, 6),
+      );
+      await openRecovery(tester);
+
+      final earlier = find.text('Eerdere nachten');
+      await tester.scrollUntilVisible(
+        earlier,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(RecoveryScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      // Eén nacht op dit scherm: die van vannacht.
+      expect(
+        find.descendant(
+          of: find.byType(SleepSection),
+          matching: find.textContaining('slaapscore'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('7 u'), findsNothing);
+
+      await tester.tap(earlier);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SleepWeekScreen), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SleepWeekScreen),
+          matching: find.byType(NightRow),
+        ),
+        // Op een maandag hoort de nacht van gisteren bij de vorige week.
+        findsNWidgets(today.weekday == DateTime.monday ? 1 : 2),
+      );
+    });
+
+    testWidgets('en eerdere rapporten hebben hun eigen scherm', (tester) async {
+      await openRecovery(tester);
+      await tester.runAsync(
+        () => container!.read(morningControllerProvider.notifier).makeNow(),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Eerdere rapporten'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReportWeekScreen), findsOneWidget);
+      expect(find.text('Deze week'), findsOneWidget);
     });
 
     testWidgets('met de schakelaar aan vraagt ze ook de fasen', (tester) async {

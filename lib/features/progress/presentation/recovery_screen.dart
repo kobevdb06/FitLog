@@ -98,8 +98,6 @@ class RecoveryScreen extends ConsumerWidget {
             const SectionHeader('Alcohol'),
             const AlcoholSection(),
           ],
-          const SizedBox(height: AppSpacing.lg),
-          const EarlierReports(),
           const Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg,

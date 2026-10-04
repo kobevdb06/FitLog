@@ -553,6 +553,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             ),
             const SectionHeader('Wat de coach over je weet'),
             const _ProfileSwitch(),
+            const _GymTile(),
             const SectionHeader('Afbeeldingen'),
             const Padding(
               padding: EdgeInsets.fromLTRB(
@@ -720,6 +721,49 @@ class _ProfileSwitch extends ConsumerWidget {
           .updateSettings(
             AppSettingsTableCompanion(coachSeesProfile: Value(value)),
           ),
+    );
+  }
+}
+
+/// Where you train, in your own words, for when the coach picks exercises.
+class _GymTile extends ConsumerWidget {
+  const _GymTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stored = ref.watch(settingsProvider).value?.coachGym;
+    final gym = stored == null || stored.trim().isEmpty ? null : stored.trim();
+
+    return ListTile(
+      leading: const Icon(Icons.location_on_outlined),
+      title: const Text('Waar je traint'),
+      subtitle: Text(
+        gym ??
+            'Nog niet beschreven. De coach kijkt dan alleen naar wat je al '
+                'deed.',
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final text = await promptForText(
+          context,
+          title: 'Waar train je?',
+          initialValue: gym,
+          hintText:
+              'bijvoorbeeld Basic-Fit Gent, geen smith machine, dumbbells '
+              'tot 40 kg',
+          maxLines: 4,
+          maxLength: 300,
+        );
+        if (text == null) return;
+        await ref
+            .read(databaseProvider)
+            .settingsDao
+            .updateSettings(
+              AppSettingsTableCompanion(
+                coachGym: Value(text.trim().isEmpty ? null : text.trim()),
+              ),
+            );
+      },
     );
   }
 }

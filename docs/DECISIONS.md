@@ -3418,3 +3418,18 @@ gegevens en niet over iets vaags dat "profiel" heet. Of hij aan staat,
 leest de vraag rechtstreeks uit de database en niet uit een stream: bij een
 koude start mag een gedeeld profiel niet wegvallen, en een niet-gedeeld
 niet meegaan, omdat een stream te laat was.
+
+## 176. Routines van de coach
+
+Gevraagd: de coach maakt zelf een routine op maat ("chest day"), past ze
+aan op wat je in het gesprek zegt, en weet in welke zaal je traint.
+Afgewogen in het gesprek en goedgekeurd met twee toevoegingen: elke vorige
+versie blijft bewaard, en de zaal is een tekstveld.
+
+**Waar je traint.** Eén tekstveld in de instellingen van de coach (schema
+v41, `app_settings.coach_gym`), in je eigen woorden: "Basic-Fit Gent, geen
+smith machine, dumbbells tot 40 kg". Een lijst met vinkjes per toestel is
+meer werk en minder precies dan één zin, en een taalmodel leest die zin
+beter dan een lijst. De opzoeking `gym` geeft die zin, en wat je de laatste
+acht weken echt deed - welke oefeningen, met welk materiaal, hoe vaak -
+want wat je al deed, staat er in elk geval.

@@ -111,6 +111,7 @@ void main() {
       ..execute('ALTER TABLE daily_vitals DROP COLUMN steps')
       // And everything that came after v37.
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_profile')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_gym')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -134,6 +135,7 @@ void main() {
 
     final raw = sqlite3.open(path)
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_profile')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_gym')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -142,6 +144,8 @@ void main() {
     // Wat er was, bleef; wat nieuw is, staat uit.
     expect(settings.anthropicApiKey, 'AQ.Ab8RNiZhX2Mkg');
     expect(settings.coachSeesProfile, isFalse);
+    // v41: nog geen zaal.
+    expect(settings.coachGym, isNull);
     await db.close();
   });
 
@@ -167,7 +171,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 40);
+    expect(raw.select('PRAGMA user_version').first.values.first, 41);
     raw.close();
   });
 
@@ -374,7 +378,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 40);
+    expect(db.schemaVersion, 41);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

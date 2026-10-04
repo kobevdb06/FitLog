@@ -151,6 +151,10 @@ class AppSettingsTable extends Table {
       .named('coach_sees_profile')
       .withDefault(const Constant(false))();
 
+  /// Where you train, in your own words: the gym, and what it has or lacks.
+  /// For the coach, when it picks exercises for you.
+  TextColumn get coachGym => text().named('coach_gym').nullable()();
+
   /// Whether FitLog makes the morning report on its own, every day at
   /// [morningReportMinutes], with a notification. Off until switched on.
   BoolColumn get morningReportEnabled => boolean()

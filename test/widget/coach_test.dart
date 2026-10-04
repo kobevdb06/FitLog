@@ -256,6 +256,31 @@ void main() {
     });
   });
 
+  group('waar je traint', () {
+    testWidgets('schrijf je zelf, en het blijft bewaard', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Nog niet beschreven'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Waar je traint'));
+      await tester.tap(find.text('Waar je traint'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).last,
+        'Basic-Fit Gent, geen smith machine',
+      );
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      expect(
+        (await tester.runAsync(db.settingsDao.getSettings))!.coachGym,
+        'Basic-Fit Gent, geen smith machine',
+      );
+      expect(find.text('Basic-Fit Gent, geen smith machine'), findsOneWidget);
+    });
+  });
+
   group('welke dienst', () {
     testWidgets('is er maar een, dus er valt niets te kiezen', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');

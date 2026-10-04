@@ -13,7 +13,7 @@ library;
 import 'dart:convert';
 
 import 'package:drift/drift.dart'
-    show BooleanExpressionOperators, OrderingTerm, Variable;
+    show BooleanExpressionOperators, OrderingTerm, QueryRow, Variable;
 
 import '../../../core/calc/plateau.dart';
 import '../../../core/calc/recovery.dart';
@@ -339,6 +339,17 @@ class CoachTools {
       'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
     },
     {
+      'name': 'gym',
+      'description':
+          'Waar de gebruiker traint, in eigen woorden (de zaal, wat er wel '
+          'of niet staat), en welk materiaal en welke oefeningen de '
+          'gebruiker de laatste acht weken echt deed. Kijk hier voor je '
+          'oefeningen kiest: neem alleen wat daar kan. Staat er niets '
+          'beschreven, ga dan uit van wat de gebruiker al deed, of vraag '
+          'het.',
+      'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
+    },
+    {
       'name': 'drinks',
       'description':
           'Hoeveel standaardglazen alcohol de gebruiker per dag noteerde. '
@@ -370,6 +381,7 @@ class CoachTools {
     'drinks',
     'steps',
     'plateaus',
+    'gym',
   };
 
   /// Runs one lookup. An unknown name is an answer, not a crash: the model
@@ -393,6 +405,7 @@ class CoachTools {
       'drinks' => _drinks(input),
       'steps' => _steps(input),
       'plateaus' => _plateaus(),
+      'gym' => _gym(),
       _ => CoachLookup(
         json: jsonEncode({'error': 'onbekende tool: $name'}),
         summary: 'een opzoeking die niet bestaat ($name)',
@@ -1153,6 +1166,53 @@ class CoachTools {
         ],
       }),
       summary: 'je stappen en zuurstof per dag',
+    );
+  }
+
+  /// Where you train, and what you actually used there lately.
+  Future<CoachLookup> _gym() async {
+    final described = _text((await db.settingsDao.getSettings()).coachGym);
+    final since = DateTime.now()
+        .subtract(const Duration(days: 56))
+        .millisecondsSinceEpoch;
+    final rows = await db
+        .customSelect(
+          'SELECT e.name AS name, e.equipment AS equipment, '
+          'e.category AS category, COUNT(DISTINCT w.id) AS times '
+          'FROM workout_exercises we '
+          'JOIN workouts w ON w.id = we.workout_id '
+          'JOIN exercises e ON e.id = we.exercise_id '
+          'WHERE w.ended_at IS NOT NULL AND w.started_at >= ? '
+          'AND EXISTS (SELECT 1 FROM workout_sets ws '
+          '  WHERE ws.workout_exercise_id = we.id AND ws.is_completed = 1) '
+          'GROUP BY e.id ORDER BY times DESC, e.name LIMIT $kCoachRowCap',
+          variables: [Variable.withInt(since)],
+        )
+        .get();
+
+    // What it is done with: the equipment where the catalogue names it,
+    // the way it is logged otherwise.
+    String kit(QueryRow row) =>
+        _text(row.read<String?>('equipment')) ?? row.read<String>('category');
+    final used = <String, int>{};
+    for (final row in rows) {
+      used[kit(row)] = (used[kit(row)] ?? 0) + row.read<int>('times');
+    }
+
+    return CoachLookup(
+      json: jsonEncode({
+        'described_by_user': described,
+        'equipment_used_last_8_weeks': used,
+        'exercises_done_last_8_weeks': [
+          for (final row in rows)
+            {
+              'name': row.read<String>('name'),
+              'equipment': kit(row),
+              'times': row.read<int>('times'),
+            },
+        ],
+      }),
+      summary: 'waar je traint',
     );
   }
 

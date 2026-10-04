@@ -802,6 +802,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _coachGymMeta = const VerificationMeta(
+    'coachGym',
+  );
+  @override
+  late final GeneratedColumn<String> coachGym = GeneratedColumn<String>(
+    'coach_gym',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _morningReportEnabledMeta =
       const VerificationMeta('morningReportEnabled');
   @override
@@ -1013,6 +1024,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     healthConnectSyncedAt,
     healthConnectWriteWorkouts,
     coachSeesProfile,
+    coachGym,
     morningReportEnabled,
     morningReportMinutes,
     defaultWarmupSets,
@@ -1246,6 +1258,12 @@ class $AppSettingsTableTable extends AppSettingsTable
           data['coach_sees_profile']!,
           _coachSeesProfileMeta,
         ),
+      );
+    }
+    if (data.containsKey('coach_gym')) {
+      context.handle(
+        _coachGymMeta,
+        coachGym.isAcceptableOrUnknown(data['coach_gym']!, _coachGymMeta),
       );
     }
     if (data.containsKey('morning_report_enabled')) {
@@ -1494,6 +1512,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}coach_sees_profile'],
       )!,
+      coachGym: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_gym'],
+      ),
       morningReportEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}morning_report_enabled'],
@@ -1660,6 +1682,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// works without it.
   final bool coachSeesProfile;
 
+  /// Where you train, in your own words: the gym, and what it has or lacks.
+  /// For the coach, when it picks exercises for you.
+  final String? coachGym;
+
   /// Whether FitLog makes the morning report on its own, every day at
   /// [morningReportMinutes], with a notification. Off until switched on.
   final bool morningReportEnabled;
@@ -1769,6 +1795,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.healthConnectSyncedAt,
     required this.healthConnectWriteWorkouts,
     required this.coachSeesProfile,
+    this.coachGym,
     required this.morningReportEnabled,
     required this.morningReportMinutes,
     required this.defaultWarmupSets,
@@ -1824,6 +1851,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       healthConnectWriteWorkouts,
     );
     map['coach_sees_profile'] = Variable<bool>(coachSeesProfile);
+    if (!nullToAbsent || coachGym != null) {
+      map['coach_gym'] = Variable<String>(coachGym);
+    }
     map['morning_report_enabled'] = Variable<bool>(morningReportEnabled);
     map['morning_report_minutes'] = Variable<int>(morningReportMinutes);
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
@@ -1896,6 +1926,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           : Value(healthConnectSyncedAt),
       healthConnectWriteWorkouts: Value(healthConnectWriteWorkouts),
       coachSeesProfile: Value(coachSeesProfile),
+      coachGym: coachGym == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachGym),
       morningReportEnabled: Value(morningReportEnabled),
       morningReportMinutes: Value(morningReportMinutes),
       defaultWarmupSets: Value(defaultWarmupSets),
@@ -1972,6 +2005,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         json['healthConnectWriteWorkouts'],
       ),
       coachSeesProfile: serializer.fromJson<bool>(json['coachSeesProfile']),
+      coachGym: serializer.fromJson<String?>(json['coachGym']),
       morningReportEnabled: serializer.fromJson<bool>(
         json['morningReportEnabled'],
       ),
@@ -2029,6 +2063,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         healthConnectWriteWorkouts,
       ),
       'coachSeesProfile': serializer.toJson<bool>(coachSeesProfile),
+      'coachGym': serializer.toJson<String?>(coachGym),
       'morningReportEnabled': serializer.toJson<bool>(morningReportEnabled),
       'morningReportMinutes': serializer.toJson<int>(morningReportMinutes),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
@@ -2074,6 +2109,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<int?> healthConnectSyncedAt = const Value.absent(),
     bool? healthConnectWriteWorkouts,
     bool? coachSeesProfile,
+    Value<String?> coachGym = const Value.absent(),
     bool? morningReportEnabled,
     int? morningReportMinutes,
     int? defaultWarmupSets,
@@ -2123,6 +2159,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     healthConnectWriteWorkouts:
         healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
     coachSeesProfile: coachSeesProfile ?? this.coachSeesProfile,
+    coachGym: coachGym.present ? coachGym.value : this.coachGym,
     morningReportEnabled: morningReportEnabled ?? this.morningReportEnabled,
     morningReportMinutes: morningReportMinutes ?? this.morningReportMinutes,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
@@ -2220,6 +2257,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       coachSeesProfile: data.coachSeesProfile.present
           ? data.coachSeesProfile.value
           : this.coachSeesProfile,
+      coachGym: data.coachGym.present ? data.coachGym.value : this.coachGym,
       morningReportEnabled: data.morningReportEnabled.present
           ? data.morningReportEnabled.value
           : this.morningReportEnabled,
@@ -2295,6 +2333,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('healthConnectSyncedAt: $healthConnectSyncedAt, ')
           ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('coachSeesProfile: $coachSeesProfile, ')
+          ..write('coachGym: $coachGym, ')
           ..write('morningReportEnabled: $morningReportEnabled, ')
           ..write('morningReportMinutes: $morningReportMinutes, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
@@ -2342,6 +2381,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     healthConnectSyncedAt,
     healthConnectWriteWorkouts,
     coachSeesProfile,
+    coachGym,
     morningReportEnabled,
     morningReportMinutes,
     defaultWarmupSets,
@@ -2388,6 +2428,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.healthConnectSyncedAt == this.healthConnectSyncedAt &&
           other.healthConnectWriteWorkouts == this.healthConnectWriteWorkouts &&
           other.coachSeesProfile == this.coachSeesProfile &&
+          other.coachGym == this.coachGym &&
           other.morningReportEnabled == this.morningReportEnabled &&
           other.morningReportMinutes == this.morningReportMinutes &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
@@ -2432,6 +2473,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int?> healthConnectSyncedAt;
   final Value<bool> healthConnectWriteWorkouts;
   final Value<bool> coachSeesProfile;
+  final Value<String?> coachGym;
   final Value<bool> morningReportEnabled;
   final Value<int> morningReportMinutes;
   final Value<int> defaultWarmupSets;
@@ -2475,6 +2517,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.healthConnectSyncedAt = const Value.absent(),
     this.healthConnectWriteWorkouts = const Value.absent(),
     this.coachSeesProfile = const Value.absent(),
+    this.coachGym = const Value.absent(),
     this.morningReportEnabled = const Value.absent(),
     this.morningReportMinutes = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
@@ -2519,6 +2562,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.healthConnectSyncedAt = const Value.absent(),
     this.healthConnectWriteWorkouts = const Value.absent(),
     this.coachSeesProfile = const Value.absent(),
+    this.coachGym = const Value.absent(),
     this.morningReportEnabled = const Value.absent(),
     this.morningReportMinutes = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
@@ -2564,6 +2608,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? healthConnectSyncedAt,
     Expression<bool>? healthConnectWriteWorkouts,
     Expression<bool>? coachSeesProfile,
+    Expression<String>? coachGym,
     Expression<bool>? morningReportEnabled,
     Expression<int>? morningReportMinutes,
     Expression<int>? defaultWarmupSets,
@@ -2613,6 +2658,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (healthConnectWriteWorkouts != null)
         'health_connect_write_workouts': healthConnectWriteWorkouts,
       if (coachSeesProfile != null) 'coach_sees_profile': coachSeesProfile,
+      if (coachGym != null) 'coach_gym': coachGym,
       if (morningReportEnabled != null)
         'morning_report_enabled': morningReportEnabled,
       if (morningReportMinutes != null)
@@ -2663,6 +2709,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int?>? healthConnectSyncedAt,
     Value<bool>? healthConnectWriteWorkouts,
     Value<bool>? coachSeesProfile,
+    Value<String?>? coachGym,
     Value<bool>? morningReportEnabled,
     Value<int>? morningReportMinutes,
     Value<int>? defaultWarmupSets,
@@ -2709,6 +2756,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       healthConnectWriteWorkouts:
           healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
       coachSeesProfile: coachSeesProfile ?? this.coachSeesProfile,
+      coachGym: coachGym ?? this.coachGym,
       morningReportEnabled: morningReportEnabled ?? this.morningReportEnabled,
       morningReportMinutes: morningReportMinutes ?? this.morningReportMinutes,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
@@ -2816,6 +2864,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (coachSeesProfile.present) {
       map['coach_sees_profile'] = Variable<bool>(coachSeesProfile.value);
     }
+    if (coachGym.present) {
+      map['coach_gym'] = Variable<String>(coachGym.value);
+    }
     if (morningReportEnabled.present) {
       map['morning_report_enabled'] = Variable<bool>(
         morningReportEnabled.value,
@@ -2902,6 +2953,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('healthConnectSyncedAt: $healthConnectSyncedAt, ')
           ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('coachSeesProfile: $coachSeesProfile, ')
+          ..write('coachGym: $coachGym, ')
           ..write('morningReportEnabled: $morningReportEnabled, ')
           ..write('morningReportMinutes: $morningReportMinutes, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
@@ -14334,6 +14386,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int?> healthConnectSyncedAt,
       Value<bool> healthConnectWriteWorkouts,
       Value<bool> coachSeesProfile,
+      Value<String?> coachGym,
       Value<bool> morningReportEnabled,
       Value<int> morningReportMinutes,
       Value<int> defaultWarmupSets,
@@ -14379,6 +14432,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int?> healthConnectSyncedAt,
       Value<bool> healthConnectWriteWorkouts,
       Value<bool> coachSeesProfile,
+      Value<String?> coachGym,
       Value<bool> morningReportEnabled,
       Value<int> morningReportMinutes,
       Value<int> defaultWarmupSets,
@@ -14529,6 +14583,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get coachSeesProfile => $composableBuilder(
     column: $table.coachSeesProfile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachGym => $composableBuilder(
+    column: $table.coachGym,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14747,6 +14806,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get coachGym => $composableBuilder(
+    column: $table.coachGym,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get morningReportEnabled => $composableBuilder(
     column: $table.morningReportEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -14954,6 +15018,9 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get coachGym =>
+      $composableBuilder(column: $table.coachGym, builder: (column) => column);
+
   GeneratedColumn<bool> get morningReportEnabled => $composableBuilder(
     column: $table.morningReportEnabled,
     builder: (column) => column,
@@ -15093,6 +15160,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> healthConnectSyncedAt = const Value.absent(),
                 Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<bool> coachSeesProfile = const Value.absent(),
+                Value<String?> coachGym = const Value.absent(),
                 Value<bool> morningReportEnabled = const Value.absent(),
                 Value<int> morningReportMinutes = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
@@ -15136,6 +15204,7 @@ class $$AppSettingsTableTableTableManager
                 healthConnectSyncedAt: healthConnectSyncedAt,
                 healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 coachSeesProfile: coachSeesProfile,
+                coachGym: coachGym,
                 morningReportEnabled: morningReportEnabled,
                 morningReportMinutes: morningReportMinutes,
                 defaultWarmupSets: defaultWarmupSets,
@@ -15181,6 +15250,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> healthConnectSyncedAt = const Value.absent(),
                 Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<bool> coachSeesProfile = const Value.absent(),
+                Value<String?> coachGym = const Value.absent(),
                 Value<bool> morningReportEnabled = const Value.absent(),
                 Value<int> morningReportMinutes = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
@@ -15224,6 +15294,7 @@ class $$AppSettingsTableTableTableManager
                 healthConnectSyncedAt: healthConnectSyncedAt,
                 healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 coachSeesProfile: coachSeesProfile,
+                coachGym: coachGym,
                 morningReportEnabled: morningReportEnabled,
                 morningReportMinutes: morningReportMinutes,
                 defaultWarmupSets: defaultWarmupSets,

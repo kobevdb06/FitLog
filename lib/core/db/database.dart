@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 40;
+  int get schemaVersion => 41;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -391,6 +391,10 @@ class AppDatabase extends _$AppDatabase {
             appSettingsTable,
             appSettingsTable.coachSeesProfile,
           );
+        }
+        if (from < 41) {
+          // Where you train, for the coach. Nothing yet.
+          await m.addColumn(appSettingsTable, appSettingsTable.coachGym);
         }
       });
 

@@ -530,6 +530,51 @@ void main() {
     });
   });
 
+  group('waar je traint', () {
+    test('in je eigen woorden, en wat je er echt deed', () async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          coachGym: Value('Basic-Fit Gent, geen smith machine'),
+        ),
+      );
+      final now = DateTime.now();
+      await logSet(
+        exerciseId: 'ex-bench',
+        on: now.subtract(const Duration(days: 3)),
+      );
+      await logSet(
+        exerciseId: 'ex-bench',
+        on: now.subtract(const Duration(days: 10)),
+      );
+      await logSet(
+        exerciseId: 'ex-squat',
+        on: now.subtract(const Duration(days: 5)),
+      );
+      // Te lang geleden om nog iets te zeggen over de zaal van nu.
+      await logSet(
+        exerciseId: 'ex-squat',
+        on: now.subtract(const Duration(days: 90)),
+      );
+
+      final lookup = await tools.run('gym', const {});
+
+      final json = decode(lookup);
+      expect(json['described_by_user'], 'Basic-Fit Gent, geen smith machine');
+      expect(json['equipment_used_last_8_weeks'], {'barbell': 3});
+      expect(json['exercises_done_last_8_weeks'], [
+        {'name': 'Bench Press', 'equipment': 'barbell', 'times': 2},
+        {'name': 'Back Squat', 'equipment': 'barbell', 'times': 1},
+      ]);
+      expect(lookup.summary, 'waar je traint');
+    });
+
+    test('zonder beschrijving zegt het dat ook', () async {
+      final lookup = await tools.run('gym', const {});
+
+      expect(decode(lookup)['described_by_user'], isNull);
+    });
+  });
+
   group('stilstand', () {
     test(
       'welke oefening stilstaat, sinds wanneer en wat er gebeurde',

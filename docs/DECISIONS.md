@@ -3407,3 +3407,14 @@ begint wel met het doel van die routine ingevuld, en dat is in de
 database niet te onderscheiden van wat je zelf typte; de beschrijving van
 de opzoeking zegt dat eerlijk, zodat de coach er niet "al gedaan" van
 maakt.
+
+**Leeftijd, geslacht en lengte, als je dat wil.** Een schakelaar in de
+instellingen van de coach, standaard uit (schema v40,
+`app_settings.coach_sees_profile`). Aan gaat er één regel mee met elke
+vraag - "Over de gebruiker: 23 jaar, man, 182 cm." - zo ver als je profiel
+is ingevuld; "liever niet zeggen" wordt niet gezegd. De schakelaar toont
+wat er precies mee zou gaan, zodat aanzetten een keuze is over die drie
+gegevens en niet over iets vaags dat "profiel" heet. Of hij aan staat,
+leest de vraag rechtstreeks uit de database en niet uit een stream: bij een
+koude start mag een gedeeld profiel niet wegvallen, en een niet-gedeeld
+niet meegaan, omdat een stream te laat was.

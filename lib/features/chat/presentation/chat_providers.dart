@@ -314,17 +314,32 @@ class CoachController extends _$CoachController {
       ref.read(coachProviderProvider),
     );
     try {
-      final settings = ref.read(settingsProvider).value;
-      final profile = ref.read(userProfileProvider).value;
+      // From the database, not from the streams: on a cold start these can
+      // still be on their way, and an unshared profile must not be shared,
+      // nor a shared one dropped, because a stream was late.
+      final settings = await db.settingsDao.getSettings();
+      final profile = await db.settingsDao.getProfile();
+      final now = DateTime.now();
       final coach = Coach(
         client: client,
         tools: CoachTools(db),
         model: ref.read(coachModelProvider),
         system: buildCoachPrompt(
-          now: DateTime.now(),
-          weightUnit: settings?.unitWeight ?? 'kg',
+          now: now,
+          weightUnit: settings.unitWeight,
           displayName: profile?.displayName,
           exerciseCount: await db.exercisesDao.countExercises(),
+          aboutUser: settings.coachSeesProfile && profile != null
+              ? describeProfile(
+                  now: now,
+                  birthDate: switch (profile.birthDate) {
+                    final at? => DateTime.fromMillisecondsSinceEpoch(at),
+                    null => null,
+                  },
+                  sex: Sex.fromWire(profile.sex),
+                  heightCm: profile.heightCm,
+                )
+              : null,
         ),
       );
 

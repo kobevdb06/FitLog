@@ -15,6 +15,8 @@ library;
 /// tokens are the user's own money.
 import 'dart:convert';
 
+import '../../../core/db/enums.dart';
+
 const String _appFacts = '''
 FitLog is een offline logboek voor krachttraining op Android.
 - Tabbladen: Start (vandaag, je week, herstel, records, volume), Trainen
@@ -157,11 +159,41 @@ const String kFramePromptNoKit =
   }
 }
 
+/// `23 jaar, man, 182 cm`: what the coach is told about you when you allow
+/// it, as far as it is filled in. Null when there is nothing to tell.
+String? describeProfile({
+  required DateTime now,
+  DateTime? birthDate,
+  Sex? sex,
+  double? heightCm,
+}) {
+  int? age;
+  if (birthDate != null) {
+    age = now.year - birthDate.year;
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+  }
+  final parts = [
+    if (age != null && age > 0) '$age jaar',
+    switch (sex) {
+      Sex.male => 'man',
+      Sex.female => 'vrouw',
+      Sex.other => 'geslacht anders dan man of vrouw',
+      Sex.undisclosed || null => null,
+    },
+    if (heightCm != null && heightCm > 0) '${heightCm.round()} cm',
+  ].nonNulls.toList();
+  return parts.isEmpty ? null : parts.join(', ');
+}
+
 String buildCoachPrompt({
   required DateTime now,
   required String weightUnit,
   String? displayName,
   int? exerciseCount,
+  String? aboutUser,
 }) {
   final today = '${now.year}-${_two(now.month)}-${_two(now.day)}';
   final weekday = const [
@@ -178,7 +210,7 @@ String buildCoachPrompt({
 $_coachRules
 $_appFacts
 Vandaag is het $weekday $today.
-De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}
+De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}
 ''';
 }
 

@@ -144,6 +144,13 @@ class AppSettingsTable extends Table {
       .named('health_connect_write_workouts')
       .withDefault(const Constant(false))();
 
+  /// Whether the coach is told your age, sex and height with every
+  /// question. Off until you switch it on: it is personal, and the coach
+  /// works without it.
+  BoolColumn get coachSeesProfile => boolean()
+      .named('coach_sees_profile')
+      .withDefault(const Constant(false))();
+
   /// Whether FitLog makes the morning report on its own, every day at
   /// [morningReportMinutes], with a notification. Off until switched on.
   BoolColumn get morningReportEnabled => boolean()

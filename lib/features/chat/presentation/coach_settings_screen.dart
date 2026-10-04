@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
@@ -15,6 +16,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../data/ai_client.dart';
 import '../domain/coach_budget.dart';
+import '../domain/coach_prompt.dart';
 import 'chat_providers.dart';
 
 /// What today has cost, as a bar plus the numbers behind it.
@@ -549,6 +551,8 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickLimit,
             ),
+            const SectionHeader('Wat de coach over je weet'),
+            const _ProfileSwitch(),
             const SectionHeader('Afbeeldingen'),
             const Padding(
               padding: EdgeInsets.fromLTRB(
@@ -672,6 +676,50 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Whether your age, sex and height go along with every question.
+///
+/// Says what exactly would go, so switching it on is a choice about these
+/// three facts and not about something vague called "profile".
+class _ProfileSwitch extends ConsumerWidget {
+  const _ProfileSwitch();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final on = ref.watch(settingsProvider).value?.coachSeesProfile ?? false;
+    final profile = ref.watch(userProfileProvider).value;
+    final about = profile == null
+        ? null
+        : describeProfile(
+            now: DateTime.now(),
+            birthDate: switch (profile.birthDate) {
+              final at? => DateTime.fromMillisecondsSinceEpoch(at),
+              null => null,
+            },
+            sex: Sex.fromWire(profile.sex),
+            heightCm: profile.heightCm,
+          );
+
+    return SwitchListTile(
+      secondary: const Icon(Icons.person_outline),
+      title: const Text('Leeftijd, geslacht en lengte delen'),
+      subtitle: Text(switch ((about, on)) {
+        (null, _) =>
+          'Nog niets ingevuld. Dat doe je bij Profiel, onder Gegevens.',
+        (final what?, true) => 'Gaat mee met elke vraag: $what.',
+        (final what?, false) =>
+          'Zou meegaan: $what. Nu kent de coach alleen je naam.',
+      }),
+      value: on,
+      onChanged: (value) => ref
+          .read(databaseProvider)
+          .settingsDao
+          .updateSettings(
+            AppSettingsTableCompanion(coachSeesProfile: Value(value)),
+          ),
     );
   }
 }

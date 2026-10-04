@@ -109,6 +109,8 @@ void main() {
       ..execute('ALTER TABLE daily_vitals DROP COLUMN spo2_avg')
       ..execute('ALTER TABLE daily_vitals DROP COLUMN spo2_min')
       ..execute('ALTER TABLE daily_vitals DROP COLUMN steps')
+      // And everything that came after v37.
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_profile')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -120,6 +122,26 @@ void main() {
     // v39: no oxygen and no steps yet.
     expect(row.spo2Avg, isNull);
     expect(row.steps, isNull);
+    await db.close();
+  });
+
+  test('a database from v39 keeps the profile from the coach', () async {
+    final path = '${dir.path}/v39.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_profile')
+      ..execute('PRAGMA user_version = 39');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final settings = await db.settingsDao.getSettings();
+    // Wat er was, bleef; wat nieuw is, staat uit.
+    expect(settings.anthropicApiKey, 'AQ.Ab8RNiZhX2Mkg');
+    expect(settings.coachSeesProfile, isFalse);
     await db.close();
   });
 
@@ -145,7 +167,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 39);
+    expect(raw.select('PRAGMA user_version').first.values.first, 40);
     raw.close();
   });
 
@@ -352,7 +374,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 39);
+    expect(db.schemaVersion, 40);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 39;
+  int get schemaVersion => 40;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -384,6 +384,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(dailyVitalsTable, dailyVitalsTable.spo2Min);
             await m.addColumn(dailyVitalsTable, dailyVitalsTable.steps);
           }
+        }
+        if (from < 40) {
+          // Telling the coach your age, sex and height: off.
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.coachSeesProfile,
+          );
         }
       });
 

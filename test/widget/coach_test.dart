@@ -161,7 +161,8 @@ void main() {
       expect(tile, findsOneWidget);
       expect(tester.widget<SwitchListTile>(tile).value, isTrue);
 
-      await tester.tap(find.byType(SwitchListTile));
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
       await tester.pumpAndSettle();
 
       expect(container!.read(coachImageEquipmentProvider), isFalse);
@@ -203,6 +204,55 @@ void main() {
 
       expect(container!.read(coachImageKeyProvider), isNull);
       expect(container!.read(canDrawImagesProvider), isFalse);
+    });
+  });
+
+  group('wat de coach over je weet', () {
+    Future<void> openSettings(WidgetTester tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachSettingsScreen());
+      await tester.pumpAndSettle();
+    }
+
+    final tile = find.widgetWithText(
+      SwitchListTile,
+      'Leeftijd, geslacht en lengte delen',
+    );
+
+    testWidgets('staat uit, en zegt waar je ze invult', (tester) async {
+      await openSettings(tester);
+
+      expect(tester.widget<SwitchListTile>(tile).value, isFalse);
+      expect(find.textContaining('Nog niets ingevuld'), findsOneWidget);
+    });
+
+    testWidgets('toont wat er mee zou gaan, en aan gaat het mee', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => db.settingsDao.upsertProfile(
+          sex: const Value('female'),
+          heightCm: const Value(168),
+        ),
+      );
+      await openSettings(tester);
+      expect(
+        find.textContaining('Zou meegaan: vrouw, 168 cm.'),
+        findsOneWidget,
+      );
+
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      expect(
+        (await tester.runAsync(db.settingsDao.getSettings))!.coachSeesProfile,
+        isTrue,
+      );
+      expect(
+        find.text('Gaat mee met elke vraag: vrouw, 168 cm.'),
+        findsOneWidget,
+      );
     });
   });
 

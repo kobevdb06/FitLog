@@ -326,6 +326,29 @@ void main() {
       final labels = tops(tester, ['Laatste', 'Beste', 'Sessies']);
       expect(labels.toSet(), hasLength(1), reason: 'labels op één lijn');
     });
+
+    testWidgets('en "3 maanden" op één regel', (tester) async {
+      await tester.runAsync(() async {
+        await addExercise('ex-bench', 'Barbell Bench Press - Medium Grip');
+        for (var w = 4; w >= 0; w--) {
+          await logSession('ex-bench', w, 100 + (4 - w) * 4.5);
+        }
+      });
+      await pumpPhone(
+        tester,
+        const ExerciseDetailScreen(
+          exerciseId: 'ex-bench',
+          initialTab: ExerciseDetailScreen.chartsTab,
+        ),
+        size: phone,
+        textScale: largeText,
+      );
+
+      expect(
+        tester.getSize(find.text('3 maanden')).height,
+        tester.getSize(find.text('1 jaar')).height,
+      );
+    });
   });
 
   testWidgets('de kaart van een oefening die stilstaat, met de coach', (

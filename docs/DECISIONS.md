@@ -3372,3 +3372,9 @@ ze staan nu in een `StatRow`. En een getal dat moest krimpen
 dat van de buren. Een getal houdt nu de hoogte van een volle regel en
 staat, gekrompen, onderaan die regel: op dezelfde lijn als de andere, zoals
 een kleiner woord in een zin, met zijn label op gelijke hoogte.
+
+**"3 maanden" op één regel.** De keuze van de periode heeft vier
+segmenten in de breedte van een gsm, en met grote tekst brak "3 maanden"
+over drie regels. Het vinkje in het gekozen segment gaat weg - de vulling
+zegt al wat gekozen is - en waar dat niet volstaat krimpt het woord, zoals
+een getal in een tegel.

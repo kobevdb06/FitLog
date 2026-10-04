@@ -507,9 +507,19 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
         ),
         const SizedBox(height: AppSpacing.sm),
         SegmentedButton<ChartRange>(
+          // Four segments in the width of a phone: "3 maanden" broke over
+          // three lines. The check mark goes - the filled segment says what
+          // is chosen - and where that is not enough, the word shrinks.
+          showSelectedIcon: false,
           segments: [
             for (final range in ChartRange.values)
-              ButtonSegment(value: range, label: Text(range.label)),
+              ButtonSegment(
+                value: range,
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(range.label, maxLines: 1),
+                ),
+              ),
           ],
           selected: {_range},
           onSelectionChanged: (s) => setState(() => _range = s.first),

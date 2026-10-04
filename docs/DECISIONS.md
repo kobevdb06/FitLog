@@ -3378,3 +3378,10 @@ segmenten in de breedte van een gsm, en met grote tekst brak "3 maanden"
 over drie regels. Het vinkje in het gekozen segment gaat weg - de vulling
 zegt al wat gekozen is - en waar dat niet volstaat krimpt het woord, zoals
 een getal in een tegel.
+
+**Datums die niet door elkaar lopen.** fl_chart zet de datums onder een
+lijngrafiek op veelvouden van de stap, geteld vanaf 1970, en tekent de
+eerste en laatste datum er altijd bij. Viel een veelvoud twee dagen na de
+eerste sessie, dan stonden "29 aug" en "31 aug" over elkaar. De stappen
+tellen nu vanaf het eerste punt (`baselineX`), en een stap die op een
+afronding na op de laatste datum valt, wordt niet nog eens getekend.

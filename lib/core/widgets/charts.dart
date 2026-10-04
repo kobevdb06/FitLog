@@ -48,6 +48,7 @@ class TrendLineChart extends StatelessWidget {
     final minValue = values.reduce((a, b) => a < b ? a : b);
     final maxValue = values.reduce((a, b) => a > b ? a : b);
     final padding = ((maxValue - minValue) * 0.15).clamp(1.0, double.infinity);
+    final step = ((last - first) / 3).clamp(1, double.infinity).toDouble();
 
     return SizedBox(
       height: height,
@@ -55,6 +56,10 @@ class TrendLineChart extends StatelessWidget {
         LineChartData(
           minX: first,
           maxX: last,
+          // The dates step from the first point, not from 1970: counted from
+          // there, a step could land two days after the first date and print
+          // over it ("29 aug" on "31 aug").
+          baselineX: first,
           minY: (minValue - padding).clamp(0, double.infinity),
           maxY: maxValue + padding,
           gridData: FlGridData(
@@ -84,19 +89,26 @@ class TrendLineChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 28,
-                interval: ((last - first) / 3).clamp(1, double.infinity),
-                getTitlesWidget: (value, meta) => Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.xs),
-                  child: Text(
-                    Formatters.dayMonth(
-                      DateTime.fromMillisecondsSinceEpoch(value.round()),
+                interval: step,
+                getTitlesWidget: (value, meta) {
+                  // The last step lands on the last date, give or take a
+                  // rounding, and the last date is drawn anyway.
+                  if (value != meta.max && meta.max - value < step / 2) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    child: Text(
+                      Formatters.dayMonth(
+                        DateTime.fromMillisecondsSinceEpoch(value.round()),
+                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 10,
+                      ),
                     ),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -126,11 +138,7 @@ class TrendLineChart extends StatelessWidget {
               dotData: FlDotData(
                 show: points.length <= 30,
                 getDotPainter: (spot, percent, bar, index) =>
-                    FlDotCirclePainter(
-                      radius: 3,
-                      color: color,
-                      strokeWidth: 0,
-                    ),
+                    FlDotCirclePainter(radius: 3, color: color, strokeWidth: 0),
               ),
               belowBarData: BarAreaData(
                 show: true,

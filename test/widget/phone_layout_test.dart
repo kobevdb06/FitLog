@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/db/models.dart';
+import 'package:fitlog/core/widgets/charts.dart';
 import 'package:fitlog/core/widgets/common.dart';
 import 'package:fitlog/features/exercises/presentation/exercise_detail_screen.dart';
 import 'package:fitlog/features/health/presentation/health_overview_screen.dart';
@@ -349,6 +351,56 @@ void main() {
         tester.getSize(find.text('1 jaar')).height,
       );
     });
+  });
+
+  testWidgets('de datums onder een grafiek lopen niet door elkaar', (
+    tester,
+  ) async {
+    // De sessies van de schermafbeelding: 29 augustus tot 28 september.
+    await pumpPhone(
+      tester,
+      Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: TrendLineChart(
+            height: 240,
+            points: [
+              for (final (month, day, kg) in [
+                (8, 29, 120.0),
+                (9, 15, 126.0),
+                (9, 20, 130.0),
+                (9, 28, 136.75),
+              ])
+                ChartPoint(DateTime(2026, month, day, 18), kg),
+            ],
+          ),
+        ),
+      ),
+      size: phone,
+      textScale: largeText,
+    );
+
+    final date = RegExp(r'^\d+ [a-z]+\.?$');
+    final dates = [
+      for (final element
+          in find
+              .descendant(
+                of: find.byType(TrendLineChart),
+                matching: find.byType(Text),
+              )
+              .evaluate())
+        if (date.hasMatch((element.widget as Text).data ?? ''))
+          tester.getRect(find.byWidget(element.widget)),
+    ]..sort((a, b) => a.left.compareTo(b.left));
+
+    expect(dates.length, greaterThanOrEqualTo(3));
+    for (var i = 1; i < dates.length; i++) {
+      expect(
+        dates[i].left,
+        greaterThanOrEqualTo(dates[i - 1].right),
+        reason: 'twee datums over elkaar',
+      );
+    }
   });
 
   testWidgets('de kaart van een oefening die stilstaat, met de coach', (

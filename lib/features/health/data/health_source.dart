@@ -38,6 +38,16 @@ abstract class HealthSource {
     required DateTime to,
   });
 
+  /// Every blood oxygen reading between [from] and [to], in percent.
+  Future<List<ImportedReading>> oxygenSaturation({
+    required DateTime from,
+    required DateTime to,
+  });
+
+  /// The steps between [from] and [to], counted once across every app that
+  /// wrote any. Null when there are none or they may not be read.
+  Future<int?> steps({required DateTime from, required DateTime to});
+
   /// What FitLog asks for but may not read, in the words of its screen:
   /// "slaap", "hartslag". Empty when it may read everything.
   Future<List<String>> missingAccess();
@@ -246,4 +256,24 @@ double? restingHeartRateFromNight(
     if (lowest == null || middle < lowest) lowest = middle;
   }
   return lowest == null ? null : (lowest * 10).round() / 10;
+}
+
+/// The blood oxygen during one night: the average and the lowest reading.
+/// Null with fewer than three readings inside it - one spot check is not a
+/// night.
+({double average, double lowest})? oxygenFromNight(
+  Iterable<ImportedReading> samples, {
+  required DateTime from,
+  required DateTime to,
+}) {
+  final night = [
+    for (final s in samples)
+      if (!s.at.isBefore(from) && !s.at.isAfter(to) && s.value > 0) s.value,
+  ];
+  if (night.length < 3) return null;
+  final total = night.fold<double>(0, (sum, v) => sum + v);
+  return (
+    average: (total / night.length * 10).round() / 10,
+    lowest: night.reduce((a, b) => a < b ? a : b),
+  );
 }

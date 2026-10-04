@@ -17,6 +17,7 @@ import '../../progress/presentation/recovery_providers.dart';
 import '../../progress/presentation/sleep_stages_bar.dart';
 import '../domain/health_overview.dart';
 import 'health_providers.dart';
+import 'steps_week_screen.dart';
 import 'workout_heart_row.dart';
 
 /// Gezondheid: everything from the watch and everything you filled in about
@@ -92,7 +93,21 @@ class HealthOverviewScreen extends ConsumerWidget {
               child: connected ? const _Synced() : const _NotConnected(),
             ),
             const SectionHeader('Slaap'),
-            _SleepCard(sleep: sleep),
+            _SleepCard(
+              sleep: sleep,
+              oxygen: [
+                for (final day in days)
+                  if (sleep.last != null &&
+                      DateTime.fromMillisecondsSinceEpoch(day.day) ==
+                          sleep.last!.morning &&
+                      day.spo2Avg != null)
+                    day,
+              ].firstOrNull,
+            ),
+            if (connected) ...[
+              const SectionHeader('Stappen'),
+              _StepsCard(days: days, now: moment),
+            ],
             // A watch that does not share HRV gets no empty card for it,
             // only a line under the resting heart rate saying why.
             if (hrv.series.isNotEmpty) ...[
@@ -255,9 +270,12 @@ class _NotConnected extends StatelessWidget {
 }
 
 class _SleepCard extends StatelessWidget {
-  const _SleepCard({required this.sleep});
+  const _SleepCard({required this.sleep, this.oxygen});
 
   final SleepOverview sleep;
+
+  /// The day of that night's morning, when it has the blood oxygen of it.
+  final DailyVitalsRow? oxygen;
 
   @override
   Widget build(BuildContext context) {
@@ -327,6 +345,23 @@ class _SleepCard extends StatelessWidget {
                                 'door, of je vult ze zelf in.',
                       style: _muted(context),
                     ),
+                  if (oxygen case final day?) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        const Icon(Icons.air, size: 18),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Zuurstof die nacht: gemiddeld '
+                            '${_number(day.spo2Avg!)}% · laagste '
+                            '${_number(day.spo2Min ?? day.spo2Avg!)}%',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.sm),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -337,6 +372,69 @@ class _SleepCard extends StatelessWidget {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+class _StepsCard extends StatelessWidget {
+  const _StepsCard({required this.days, required this.now});
+
+  final List<DailyVitalsRow> days;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime(now.year, now.month, now.day);
+    final start = weekStartOf(now);
+    int? todays;
+    final week = <int>[];
+    for (final day in days) {
+      final steps = day.steps;
+      if (steps == null) continue;
+      final at = DateTime.fromMillisecondsSinceEpoch(day.day);
+      if (at == today) todays = steps;
+      if (!at.isBefore(start)) week.add(steps);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: AppCard(
+        onTap: () => context.push(Routes.stepsWeeks),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: StatTile(
+                    value: todays == null ? '-' : formatSteps(todays),
+                    label: 'Vandaag',
+                    emphasis: true,
+                  ),
+                ),
+                Expanded(
+                  child: StatTile(
+                    value: week.isEmpty
+                        ? '-'
+                        : formatSteps(
+                            week.reduce((a, b) => a + b) ~/ week.length,
+                          ),
+                    label: 'Gemiddeld per dag, deze week',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text('Per dag', style: _muted(context)),
+                const Icon(Icons.chevron_right, size: 18),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

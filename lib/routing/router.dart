@@ -26,6 +26,7 @@ import '../features/photos/presentation/photos_screen.dart';
 import '../features/progress/presentation/progress_screen.dart';
 import '../features/health/presentation/health_connect_screen.dart';
 import '../features/health/presentation/health_overview_screen.dart';
+import '../features/health/presentation/steps_week_screen.dart';
 import '../features/health/presentation/heart_rate_week_screen.dart';
 import '../features/morning/presentation/report_week_screen.dart';
 import '../features/progress/presentation/sleep_week_screen.dart';
@@ -178,6 +179,12 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
             appPage(state, const ReportWeekScreen()),
+      ),
+      GoRoute(
+        path: Routes.stepsWeeks,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) =>
+            appPage(state, const StepsWeekScreen()),
       ),
       GoRoute(
         path: Routes.exercises,

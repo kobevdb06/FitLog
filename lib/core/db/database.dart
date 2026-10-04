@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -374,6 +374,15 @@ class AppDatabase extends _$AppDatabase {
               dailyVitalsTable,
               dailyVitalsTable.restingHrDerived,
             );
+          }
+        }
+        if (from < 39) {
+          // Oxygen during the night and steps per day. Same rule: a table
+          // created by a migration from before v33 has them already.
+          if (from >= 33) {
+            await m.addColumn(dailyVitalsTable, dailyVitalsTable.spo2Avg);
+            await m.addColumn(dailyVitalsTable, dailyVitalsTable.spo2Min);
+            await m.addColumn(dailyVitalsTable, dailyVitalsTable.steps);
           }
         }
       });

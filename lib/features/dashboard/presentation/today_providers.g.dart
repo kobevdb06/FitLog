@@ -203,7 +203,7 @@ final class HomeBlockFilledProvider
   }
 }
 
-String _$homeBlockFilledHash() => r'3640860986267afc539bcd9ef99e1ac1e07951e6';
+String _$homeBlockFilledHash() => r'c048074ba29bc183d16b89cb614e45eda27d5dbe';
 
 /// Whether a block has anything to say right now.
 ///

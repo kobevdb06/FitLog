@@ -524,6 +524,19 @@ class _FakeHealth implements HealthSource {
     required DateTime to,
   }) async => heart;
 
+  List<ImportedReading> oxygen = const [];
+  Map<DateTime, int> stepsByDay = const {};
+
+  @override
+  Future<List<ImportedReading>> oxygenSaturation({
+    required DateTime from,
+    required DateTime to,
+  }) async => oxygen;
+
+  @override
+  Future<int?> steps({required DateTime from, required DateTime to}) async =>
+      stepsByDay[DateTime(from.year, from.month, from.day)];
+
   @override
   Future<List<String>> missingAccess() async => missing;
 

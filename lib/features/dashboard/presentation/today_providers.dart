@@ -7,6 +7,7 @@ import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../chat/presentation/chat_providers.dart';
+import '../../health/presentation/health_providers.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../progress/presentation/recovery_providers.dart';
 import '../../routines/presentation/routine_providers.dart';
@@ -55,6 +56,8 @@ bool homeBlockFilled(Ref ref, HomeBlock block) => switch (block) {
     (ref.watch(recoveryEstimatesProvider).value ?? const []).isNotEmpty,
   // No key, no coach: the block is not a place to advertise one.
   HomeBlock.coach => ref.watch(coachEnabledProvider),
+  // Nothing to count without a watch.
+  HomeBlock.steps => ref.watch(healthConnectEnabledProvider),
   HomeBlock.today || HomeBlock.week || HomeBlock.volume => true,
 };
 

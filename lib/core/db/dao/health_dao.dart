@@ -161,6 +161,59 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
     ),
   );
 
+  /// Puts the blood oxygen of the night ending on [day] on that day.
+  Future<void> setNightOxygen(
+    DateTime day, {
+    required double average,
+    required double lowest,
+  }) => _upsertDay(
+    day,
+    DailyVitalsTableCompanion(spo2Avg: Value(average), spo2Min: Value(lowest)),
+  );
+
+  /// Sets the steps of [day].
+  Future<void> setSteps(DateTime day, int steps) =>
+      _upsertDay(day, DailyVitalsTableCompanion(steps: Value(steps)));
+
+  /// Writes [changes] onto the row of [day], creating it when needed, and
+  /// leaves every other column of it as it was.
+  Future<void> _upsertDay(
+    DateTime day,
+    DailyVitalsTableCompanion changes,
+  ) async {
+    final id = RecoveryDao.dayKey(day);
+    final exists =
+        await (select(
+          dailyVitalsTable,
+        )..where((t) => t.id.equals(id))).getSingleOrNull() !=
+        null;
+    if (exists) {
+      await (update(
+        dailyVitalsTable,
+      )..where((t) => t.id.equals(id))).write(changes);
+    } else {
+      await into(dailyVitalsTable).insert(
+        changes.copyWith(
+          id: Value(id),
+          day: Value(
+            DateTime(day.year, day.month, day.day).millisecondsSinceEpoch,
+          ),
+        ),
+      );
+    }
+  }
+
+  /// The days from [from] up to [to], exclusive, oldest first.
+  Stream<List<DailyVitalsRow>> watchVitalsBetween(DateTime from, DateTime to) =>
+      (select(dailyVitalsTable)
+            ..where(
+              (t) =>
+                  t.day.isBiggerOrEqualValue(from.millisecondsSinceEpoch) &
+                  t.day.isSmallerThanValue(to.millisecondsSinceEpoch),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.day)]))
+          .watch();
+
   Stream<List<DailyVitalsRow>> watchVitalsSince(DateTime since) =>
       (select(dailyVitalsTable)
             ..where(

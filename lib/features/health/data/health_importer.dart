@@ -13,6 +13,8 @@ class ImportSummary {
     this.cardio = 0,
     this.heartRates = 0,
     this.restingWorkedOut = 0,
+    this.oxygenNights = 0,
+    this.stepDays = 0,
   });
 
   final int nights;
@@ -30,17 +32,25 @@ class ImportSummary {
   /// Mornings that got a resting heart rate worked out from the night.
   final int restingWorkedOut;
 
+  /// Nights that got their blood oxygen, and days their steps.
+  final int oxygenNights;
+  final int stepDays;
+
   bool get isEmpty =>
       nights == 0 &&
       weights == 0 &&
       vitalDays == 0 &&
       cardio == 0 &&
       heartRates == 0 &&
-      restingWorkedOut == 0;
+      restingWorkedOut == 0 &&
+      oxygenNights == 0 &&
+      stepDays == 0;
 
-  ImportSummary withNights({
+  ImportSummary withReadings({
     required int heartRates,
     required int restingWorkedOut,
+    required int oxygenNights,
+    required int stepDays,
   }) => ImportSummary(
     nights: nights,
     ownNightsKept: ownNightsKept,
@@ -50,6 +60,8 @@ class ImportSummary {
     cardio: cardio,
     heartRates: heartRates,
     restingWorkedOut: restingWorkedOut,
+    oxygenNights: oxygenNights,
+    stepDays: stepDays,
   );
 }
 

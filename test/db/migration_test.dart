@@ -106,6 +106,9 @@ void main() {
 
     final raw = sqlite3.open(path)
       ..execute('ALTER TABLE daily_vitals DROP COLUMN resting_hr_derived')
+      ..execute('ALTER TABLE daily_vitals DROP COLUMN spo2_avg')
+      ..execute('ALTER TABLE daily_vitals DROP COLUMN spo2_min')
+      ..execute('ALTER TABLE daily_vitals DROP COLUMN steps')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -114,6 +117,9 @@ void main() {
     expect(row.restingHr, 55);
     // A value from before could only have come from a watch.
     expect(row.restingHrDerived, isFalse);
+    // v39: no oxygen and no steps yet.
+    expect(row.spo2Avg, isNull);
+    expect(row.steps, isNull);
     await db.close();
   });
 
@@ -139,7 +145,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 38);
+    expect(raw.select('PRAGMA user_version').first.values.first, 39);
     raw.close();
   });
 
@@ -346,7 +352,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 38);
+    expect(db.schemaVersion, 39);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

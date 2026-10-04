@@ -460,5 +460,15 @@ class _Watch implements HealthSource {
   }) async => const [];
 
   @override
+  Future<List<ImportedReading>> oxygenSaturation({
+    required DateTime from,
+    required DateTime to,
+  }) async => const [];
+
+  @override
+  Future<int?> steps({required DateTime from, required DateTime to}) async =>
+      null;
+
+  @override
   Future<List<String>> missingAccess() async => const [];
 }

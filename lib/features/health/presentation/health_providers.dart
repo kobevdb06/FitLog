@@ -58,6 +58,16 @@ Stream<List<DailyVitalsRow>> healthDays(Ref ref) => ref
     .healthDao
     .watchVitalsSince(DateTime.now().subtract(const Duration(days: 30)));
 
+/// The days of the week from [start], oldest first: steps and the rest.
+@riverpod
+Stream<List<DailyVitalsRow>> stepsInWeek(Ref ref, DateTime start) => ref
+    .watch(databaseProvider)
+    .healthDao
+    .watchVitalsBetween(
+      start,
+      DateTime(start.year, start.month, start.day + 7),
+    );
+
 /// Whether the user connected it.
 @riverpod
 bool healthConnectEnabled(Ref ref) =>

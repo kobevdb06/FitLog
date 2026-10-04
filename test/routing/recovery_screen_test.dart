@@ -7,6 +7,7 @@ import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:fitlog/features/health/presentation/health_overview_screen.dart';
 import 'package:fitlog/features/health/presentation/heart_rate_week_screen.dart';
+import 'package:fitlog/features/health/presentation/steps_week_screen.dart';
 import 'package:fitlog/features/morning/presentation/morning_providers.dart';
 import 'package:fitlog/features/morning/presentation/report_week_screen.dart';
 import 'package:fitlog/features/progress/presentation/sleep_section.dart';
@@ -223,6 +224,42 @@ void main() {
       await tester.tap(earlier);
       await tester.pumpAndSettle();
       expect(find.byType(HeartRateWeekScreen), findsOneWidget);
+    });
+
+    testWidgets('stappen staan op het startscherm, en openen per week', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
+      );
+      await db.healthDao.setSteps(DateTime(now.year, now.month, now.day), 8432);
+      await pumpApp(tester);
+
+      final block = find.text('STAPPEN');
+      await tester.scrollUntilVisible(
+        block,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(DashboardScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(find.text('8.432'), findsOneWidget);
+
+      await tester.tap(block);
+      await tester.pumpAndSettle();
+      expect(find.byType(StepsWeekScreen), findsOneWidget);
+    });
+
+    testWidgets('en zonder Health Connect staat dat blok er niet', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+
+      expect(find.text('STAPPEN'), findsNothing);
     });
 
     testWidgets('en vanaf het blok op het startscherm', (tester) async {

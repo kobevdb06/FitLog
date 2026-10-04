@@ -26,6 +26,9 @@ import '../domain/home_layout.dart';
 import 'home_grid.dart';
 import '../domain/today_plan.dart';
 import 'today_providers.dart';
+import '../../health/presentation/steps_week_screen.dart';
+import '../../health/presentation/health_providers.dart';
+import '../../../core/widgets/week_navigator.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
 ///
@@ -208,7 +211,75 @@ class _HomeBlockView extends StatelessWidget {
     HomeBlock.records => _RecordsBlock(size: size),
     HomeBlock.volume => _VolumeBlock(size: size),
     HomeBlock.coach => _CoachBlock(size: size),
+    HomeBlock.steps => _StepsBlock(size: size),
   };
+}
+
+/// Today's steps, and this week's average beside them on a wide block.
+class _StepsBlock extends ConsumerWidget {
+  const _StepsBlock({required this.size});
+
+  final HomeBlockSize size;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(homeBlockFilledProvider(HomeBlock.steps))) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    final week =
+        ref.watch(stepsInWeekProvider(weekStartOf(now))).value ?? const [];
+    final today = DateTime(now.year, now.month, now.day);
+    int? todays;
+    final counted = <int>[];
+    for (final row in week) {
+      final steps = row.steps;
+      if (steps == null) continue;
+      counted.add(steps);
+      if (DateTime.fromMillisecondsSinceEpoch(row.day) == today) todays = steps;
+    }
+    final average = counted.isEmpty
+        ? null
+        : counted.reduce((a, b) => a + b) ~/ counted.length;
+
+    return _BlockCard(
+      title: 'Stappen',
+      onTap: () => context.push(Routes.stepsWeeks),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Icon(Icons.directions_walk, color: theme.colorScheme.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  todays == null ? '-' : formatSteps(todays),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                Text(
+                  size == HomeBlockSize.wide && average != null
+                      ? 'vandaag · gemiddeld ${formatSteps(average)} per dag '
+                            'deze week'
+                      : 'vandaag',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// A way in to the coach, for whoever has one.

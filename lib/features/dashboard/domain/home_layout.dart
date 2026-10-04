@@ -31,6 +31,10 @@ enum HomeBlock {
 
   volume('volume', 'Volume', 'Je volume van de laatste acht weken'),
 
+  /// Today's steps, from the watch. Only there with Health Connect
+  /// connected: without it there is nothing to count.
+  steps('stappen', 'Stappen', 'Je stappen van vandaag, van je horloge'),
+
   /// A way in to the coach, for whoever switched it on.
   ///
   /// It is not on anybody's screen unless they entered an API key: without

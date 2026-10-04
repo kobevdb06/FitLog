@@ -12,7 +12,8 @@ library;
 
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show OrderingTerm, Variable;
+import 'package:drift/drift.dart'
+    show BooleanExpressionOperators, OrderingTerm, Variable;
 
 import '../../../core/calc/recovery.dart';
 import '../../../core/calc/sleep_score.dart';
@@ -291,6 +292,19 @@ class CoachTools {
       'input_schema': {'type': 'object', 'properties': {}},
     },
     {
+      'name': 'steps',
+      'description':
+          'Stappen per dag van de gebruiker, zoals Health Connect ze telt '
+          'over alle apps samen, en de zuurstofsaturatie (%) tijdens de nacht '
+          'die die ochtend eindigde: gemiddeld en laagst.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'limit': {'type': 'integer', 'description': 'Hoeveel dagen.'},
+        },
+      },
+    },
+    {
       'name': 'drinks',
       'description':
           'Hoeveel standaardglazen alcohol de gebruiker per dag noteerde. '
@@ -319,6 +333,7 @@ class CoachTools {
     'cardio_sessions',
     'recovery',
     'drinks',
+    'steps',
   };
 
   /// Runs one lookup. An unknown name is an answer, not a crash: the model
@@ -339,6 +354,7 @@ class CoachTools {
       'cardio_sessions' => _cardioSessions(input),
       'recovery' => _recovery(),
       'drinks' => _drinks(input),
+      'steps' => _steps(input),
       _ => CoachLookup(
         json: jsonEncode({'error': 'onbekende tool: $name'}),
         summary: 'een opzoeking die niet bestaat ($name)',
@@ -994,6 +1010,31 @@ class CoachTools {
         ],
       }),
       summary: 'je herstel per spiergroep',
+    );
+  }
+
+  Future<CoachLookup> _steps(Map<String, Object?> input) async {
+    final limit = _limit(input['limit'], 14);
+    final rows =
+        await (db.select(db.dailyVitalsTable)
+              ..where((t) => t.steps.isNotNull() | t.spo2Avg.isNotNull())
+              ..orderBy([(t) => OrderingTerm.desc(t.day)])
+              ..limit(limit))
+            .get();
+
+    return CoachLookup(
+      json: jsonEncode({
+        'days': [
+          for (final row in rows)
+            {
+              'date': _day(row.day),
+              'steps': ?row.steps,
+              if (row.spo2Avg != null)
+                'night_spo2': {'average': row.spo2Avg, 'lowest': row.spo2Min},
+            },
+        ],
+      }),
+      summary: 'je stappen en zuurstof per dag',
     );
   }
 

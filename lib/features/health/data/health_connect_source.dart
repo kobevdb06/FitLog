@@ -28,6 +28,8 @@ class HealthConnectSource implements HealthSource {
     HealthDataType.WEIGHT,
     HealthDataType.WORKOUT,
     HealthDataType.HEART_RATE,
+    HealthDataType.BLOOD_OXYGEN,
+    HealthDataType.STEPS,
   ];
 
   /// What [read] asks for in one go: everything but the heart rate. A watch
@@ -35,7 +37,13 @@ class HealthConnectSource implements HealthSource {
   /// not something to fetch when only the sessions matter.
   static final List<HealthDataType> _bulkTypes = [
     for (final type in readTypes)
-      if (type != HealthDataType.HEART_RATE) type,
+      if (!const {
+        HealthDataType.HEART_RATE,
+        // Read per night and per day, like the heart rate.
+        HealthDataType.BLOOD_OXYGEN,
+        HealthDataType.STEPS,
+      }.contains(type))
+        type,
   ];
 
   /// How each permission is called on FitLog's own screen.
@@ -46,6 +54,8 @@ class HealthConnectSource implements HealthSource {
     HealthDataType.WEIGHT: 'gewicht',
     HealthDataType.WORKOUT: 'loop- en fietssessies',
     HealthDataType.HEART_RATE: 'hartslag',
+    HealthDataType.BLOOD_OXYGEN: 'zuurstofsaturatie',
+    HealthDataType.STEPS: 'stappen',
   };
 
   Future<void> _ready() async {
@@ -137,6 +147,44 @@ class HealthConnectSource implements HealthSource {
     } on Object {
       // Not granted, or no watch: no heart rate, and nothing else lost.
       return const [];
+    }
+  }
+
+  @override
+  Future<List<ImportedReading>> oxygenSaturation({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    await _ready();
+    try {
+      final points = await _health.getHealthDataFromTypes(
+        types: const [HealthDataType.BLOOD_OXYGEN],
+        startTime: from,
+        endTime: to,
+      );
+      return [
+        for (final point in points)
+          if (point.value case final NumericHealthValue value)
+            ImportedReading(
+              at: point.dateFrom,
+              value: value.numericValue.toDouble(),
+            ),
+      ];
+    } on Object {
+      return const [];
+    }
+  }
+
+  @override
+  Future<int?> steps({required DateTime from, required DateTime to}) async {
+    await _ready();
+    try {
+      // Health Connect's own total, which counts a walk two apps recorded
+      // once - adding up the records would count it twice.
+      final total = await _health.getTotalStepsInInterval(from, to);
+      return total == null || total <= 0 ? null : total;
+    } on Object {
+      return null;
     }
   }
 

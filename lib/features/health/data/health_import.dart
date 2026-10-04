@@ -66,12 +66,71 @@ class HealthImport {
     final summary = await HealthImporter(db).apply(snapshot);
     final hearts = await heartRates(from: from, to: to);
     final resting = await restingFromNights(from: from, to: to);
+    final oxygen = await oxygenOfNights(from: from, to: to);
+    final days = await stepsPerDay(from: from, to: to);
     await db.settingsDao.updateSettings(
       AppSettingsTableCompanion(
         healthConnectSyncedAt: Value(to.millisecondsSinceEpoch),
       ),
     );
-    return summary.withNights(heartRates: hearts, restingWorkedOut: resting);
+    return summary.withReadings(
+      heartRates: hearts,
+      restingWorkedOut: resting,
+      oxygenNights: oxygen,
+      stepDays: days,
+    );
+  }
+
+  /// Puts the blood oxygen of every night that ended in that stretch on its
+  /// morning, and returns for how many nights it did.
+  Future<int> oxygenOfNights({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    var found = 0;
+    for (final night in await db.recoveryDao.sleepEndedBetween(from, to)) {
+      final asleep = DateTime.fromMillisecondsSinceEpoch(night.fellAsleepAt);
+      final woke = DateTime.fromMillisecondsSinceEpoch(night.wokeAt);
+      final oxygen = oxygenFromNight(
+        await source.oxygenSaturation(from: asleep, to: woke),
+        from: asleep,
+        to: woke,
+      );
+      if (oxygen == null) continue;
+      await db.healthDao.setNightOxygen(
+        woke,
+        average: oxygen.average,
+        lowest: oxygen.lowest,
+      );
+      found++;
+    }
+    return found;
+  }
+
+  /// Stores the steps of every day in that stretch - today's so far - and
+  /// returns for how many days there were any.
+  ///
+  /// Asked again for every day the stretch covers: a watch hands its steps
+  /// over in batches, and yesterday's total can still grow this morning.
+  Future<int> stepsPerDay({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    var found = 0;
+    var day = DateTime(from.year, from.month, from.day);
+    while (day.isBefore(to)) {
+      final next = DateTime(day.year, day.month, day.day + 1);
+      final count = await source.steps(
+        from: day,
+        to: next.isAfter(to) ? to : next,
+      );
+      if (count != null) {
+        await db.healthDao.setSteps(day, count);
+        found++;
+      }
+      day = next;
+    }
+    return found;
   }
 
   /// Works out a resting heart rate for every night that ended in that

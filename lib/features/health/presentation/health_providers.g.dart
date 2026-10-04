@@ -293,6 +293,92 @@ final class HealthDaysProvider
 
 String _$healthDaysHash() => r'6e4db835afaf3b6c3a71b6b23612b84c7f8cb2a2';
 
+/// The days of the week from [start], oldest first: steps and the rest.
+
+@ProviderFor(stepsInWeek)
+final stepsInWeekProvider = StepsInWeekFamily._();
+
+/// The days of the week from [start], oldest first: steps and the rest.
+
+final class StepsInWeekProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<DailyVitalsRow>>,
+          List<DailyVitalsRow>,
+          Stream<List<DailyVitalsRow>>
+        >
+    with
+        $FutureModifier<List<DailyVitalsRow>>,
+        $StreamProvider<List<DailyVitalsRow>> {
+  /// The days of the week from [start], oldest first: steps and the rest.
+  StepsInWeekProvider._({
+    required StepsInWeekFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'stepsInWeekProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$stepsInWeekHash();
+
+  @override
+  String toString() {
+    return r'stepsInWeekProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<DailyVitalsRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<DailyVitalsRow>> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return stepsInWeek(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is StepsInWeekProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$stepsInWeekHash() => r'4a8bc6005b5ef020f0e2dbb7537f646c157b759d';
+
+/// The days of the week from [start], oldest first: steps and the rest.
+
+final class StepsInWeekFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<DailyVitalsRow>>, DateTime> {
+  StepsInWeekFamily._()
+    : super(
+        retry: null,
+        name: r'stepsInWeekProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The days of the week from [start], oldest first: steps and the rest.
+
+  StepsInWeekProvider call(DateTime start) =>
+      StepsInWeekProvider._(argument: start, from: this);
+
+  @override
+  String toString() => r'stepsInWeekProvider';
+}
+
 /// Whether the user connected it.
 
 @ProviderFor(healthConnectEnabled)

@@ -3237,3 +3237,35 @@ meer, wel één regel waarom.
 Een valkuil die de tests vonden: wie van vóór v33 migreert, krijgt
 `daily_vitals` aangemaakt met de nieuwe kolom er al in, en mag ze dan niet
 nog eens toevoegen. De migratietest vertrekt nu ook van een echte v37.
+
+## 171. Zuurstof tijdens de nacht en stappen per dag
+
+Het horloge van de gebruiker deelt ook zuurstofsaturatie en stappen, en
+Gezondheid moest "alles" tonen. Beide doen niets voor de herstelschatting;
+ze staan erbij omdat ze bij je gezondheid horen, en worden nergens
+meegerekend.
+
+**Zuurstof per nacht.** Per nacht in het stuk dat opgehaald wordt, de
+metingen van precies die nacht: het gemiddelde en het laagste, bij de
+ochtend waarop de nacht eindigde (`daily_vitals.spo2_avg`, `spo2_min`,
+schema 39). Pas vanaf drie metingen: één controle overdag is geen nacht.
+Op Gezondheid staat het onder de fasen van afgelopen nacht.
+
+**Stappen zoals Health Connect ze telt.** Niet de records optellen: een gsm
+en een horloge die dezelfde wandeling opnemen, staan er allebei in. Health
+Connect heeft een eigen totaal per tijdvak dat dubbels wegfiltert, en dat
+gebruikt FitLog, per kalenderdag - vandaag tot nu. Elke dag in het stuk
+wordt opnieuw gevraagd, omdat een horloge zijn stappen in pakketjes
+doorgeeft en het totaal van gisteren 's ochtends nog kan groeien.
+
+**Een blok op het startscherm.** Gevraagd, als leuke statistiek: *Stappen*,
+met wat je vandaag zette en op een breed blok je gemiddelde deze week. Het
+staat er alleen met Health Connect verbonden - zonder is er niets te tellen
+- en is zoals elk blok te verplaatsen, te verkleinen en te verbergen. Het
+blok en de kaart op Gezondheid openen hetzelfde scherm: de stappen per dag,
+een week per keer (DECISIONS 168), met het totaal, het gemiddelde en de
+beste dag, een staaf per dag en een rij per dag tot vandaag. De route staat
+aan de wortel, omdat Start en Voortgang hem openen.
+
+De coach kan ze opzoeken (`steps`). Ook hier de valkuil van DECISIONS 170:
+de kolommen gaan er alleen bij voor een `daily_vitals` die al bestond.

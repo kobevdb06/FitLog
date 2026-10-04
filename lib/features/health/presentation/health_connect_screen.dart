@@ -163,6 +163,16 @@ const List<(IconData, String, String)> _whatWeRead = [
     'Die tellen mee voor het herstel van je benen.',
   ),
   (
+    Icons.air,
+    'Zuurstofsaturatie',
+    'Tijdens je slaap: het gemiddelde en het laagste, bij je nacht.',
+  ),
+  (
+    Icons.directions_walk,
+    'Stappen',
+    'Per dag, voor op Gezondheid en je startscherm.',
+  ),
+  (
     Icons.favorite_border,
     'Hartslag tijdens je trainingen',
     'Alleen de minuten van je trainingen in FitLog: het gemiddelde en het '
@@ -187,6 +197,10 @@ String importSummaryText(ImportSummary summary) {
       'hartslag bij ${count(summary.heartRates, 'training', 'trainingen')}',
     if (summary.restingWorkedOut > 0)
       'rusthartslag van ${count(summary.restingWorkedOut, 'nacht', 'nachten')}',
+    if (summary.oxygenNights > 0)
+      'zuurstof van ${count(summary.oxygenNights, 'nacht', 'nachten')}',
+    if (summary.stepDays > 0)
+      'stappen van ${count(summary.stepDays, 'dag', 'dagen')}',
   ];
   final kept = summary.ownNightsKept + summary.ownWeightsKept;
   return [

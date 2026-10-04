@@ -900,6 +900,15 @@ class DailyVitalsTable extends Table {
       .named('resting_hr_derived')
       .withDefault(const Constant(false))();
 
+  /// Blood oxygen during the night that ended this morning, in percent: the
+  /// average and the lowest.
+  RealColumn get spo2Avg => real().named('spo2_avg').nullable()();
+  RealColumn get spo2Min => real().named('spo2_min').nullable()();
+
+  /// Steps that day, as Health Connect counts them across every app that
+  /// wrote any - a phone and a watch counting the same walk count it once.
+  IntColumn get steps => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

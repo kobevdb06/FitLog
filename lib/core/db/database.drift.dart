@@ -12347,6 +12347,37 @@ class $DailyVitalsTableTable extends DailyVitalsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _spo2AvgMeta = const VerificationMeta(
+    'spo2Avg',
+  );
+  @override
+  late final GeneratedColumn<double> spo2Avg = GeneratedColumn<double>(
+    'spo2_avg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _spo2MinMeta = const VerificationMeta(
+    'spo2Min',
+  );
+  @override
+  late final GeneratedColumn<double> spo2Min = GeneratedColumn<double>(
+    'spo2_min',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stepsMeta = const VerificationMeta('steps');
+  @override
+  late final GeneratedColumn<int> steps = GeneratedColumn<int>(
+    'steps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -12354,6 +12385,9 @@ class $DailyVitalsTableTable extends DailyVitalsTable
     hrvMs,
     restingHr,
     restingHrDerived,
+    spo2Avg,
+    spo2Min,
+    steps,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -12401,6 +12435,24 @@ class $DailyVitalsTableTable extends DailyVitalsTable
         ),
       );
     }
+    if (data.containsKey('spo2_avg')) {
+      context.handle(
+        _spo2AvgMeta,
+        spo2Avg.isAcceptableOrUnknown(data['spo2_avg']!, _spo2AvgMeta),
+      );
+    }
+    if (data.containsKey('spo2_min')) {
+      context.handle(
+        _spo2MinMeta,
+        spo2Min.isAcceptableOrUnknown(data['spo2_min']!, _spo2MinMeta),
+      );
+    }
+    if (data.containsKey('steps')) {
+      context.handle(
+        _stepsMeta,
+        steps.isAcceptableOrUnknown(data['steps']!, _stepsMeta),
+      );
+    }
     return context;
   }
 
@@ -12430,6 +12482,18 @@ class $DailyVitalsTableTable extends DailyVitalsTable
         DriftSqlType.bool,
         data['${effectivePrefix}resting_hr_derived'],
       )!,
+      spo2Avg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}spo2_avg'],
+      ),
+      spo2Min: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}spo2_min'],
+      ),
+      steps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}steps'],
+      ),
     );
   }
 
@@ -12456,12 +12520,24 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
   /// during the night, because the watch handed over none of its own. One
   /// from the watch replaces it, and never the other way round.
   final bool restingHrDerived;
+
+  /// Blood oxygen during the night that ended this morning, in percent: the
+  /// average and the lowest.
+  final double? spo2Avg;
+  final double? spo2Min;
+
+  /// Steps that day, as Health Connect counts them across every app that
+  /// wrote any - a phone and a watch counting the same walk count it once.
+  final int? steps;
   const DailyVitalsRow({
     required this.id,
     required this.day,
     this.hrvMs,
     this.restingHr,
     required this.restingHrDerived,
+    this.spo2Avg,
+    this.spo2Min,
+    this.steps,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -12475,6 +12551,15 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       map['resting_hr'] = Variable<double>(restingHr);
     }
     map['resting_hr_derived'] = Variable<bool>(restingHrDerived);
+    if (!nullToAbsent || spo2Avg != null) {
+      map['spo2_avg'] = Variable<double>(spo2Avg);
+    }
+    if (!nullToAbsent || spo2Min != null) {
+      map['spo2_min'] = Variable<double>(spo2Min);
+    }
+    if (!nullToAbsent || steps != null) {
+      map['steps'] = Variable<int>(steps);
+    }
     return map;
   }
 
@@ -12489,6 +12574,15 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
           ? const Value.absent()
           : Value(restingHr),
       restingHrDerived: Value(restingHrDerived),
+      spo2Avg: spo2Avg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(spo2Avg),
+      spo2Min: spo2Min == null && nullToAbsent
+          ? const Value.absent()
+          : Value(spo2Min),
+      steps: steps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(steps),
     );
   }
 
@@ -12503,6 +12597,9 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       hrvMs: serializer.fromJson<double?>(json['hrvMs']),
       restingHr: serializer.fromJson<double?>(json['restingHr']),
       restingHrDerived: serializer.fromJson<bool>(json['restingHrDerived']),
+      spo2Avg: serializer.fromJson<double?>(json['spo2Avg']),
+      spo2Min: serializer.fromJson<double?>(json['spo2Min']),
+      steps: serializer.fromJson<int?>(json['steps']),
     );
   }
   @override
@@ -12514,6 +12611,9 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       'hrvMs': serializer.toJson<double?>(hrvMs),
       'restingHr': serializer.toJson<double?>(restingHr),
       'restingHrDerived': serializer.toJson<bool>(restingHrDerived),
+      'spo2Avg': serializer.toJson<double?>(spo2Avg),
+      'spo2Min': serializer.toJson<double?>(spo2Min),
+      'steps': serializer.toJson<int?>(steps),
     };
   }
 
@@ -12523,12 +12623,18 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
     Value<double?> hrvMs = const Value.absent(),
     Value<double?> restingHr = const Value.absent(),
     bool? restingHrDerived,
+    Value<double?> spo2Avg = const Value.absent(),
+    Value<double?> spo2Min = const Value.absent(),
+    Value<int?> steps = const Value.absent(),
   }) => DailyVitalsRow(
     id: id ?? this.id,
     day: day ?? this.day,
     hrvMs: hrvMs.present ? hrvMs.value : this.hrvMs,
     restingHr: restingHr.present ? restingHr.value : this.restingHr,
     restingHrDerived: restingHrDerived ?? this.restingHrDerived,
+    spo2Avg: spo2Avg.present ? spo2Avg.value : this.spo2Avg,
+    spo2Min: spo2Min.present ? spo2Min.value : this.spo2Min,
+    steps: steps.present ? steps.value : this.steps,
   );
   DailyVitalsRow copyWithCompanion(DailyVitalsTableCompanion data) {
     return DailyVitalsRow(
@@ -12539,6 +12645,9 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       restingHrDerived: data.restingHrDerived.present
           ? data.restingHrDerived.value
           : this.restingHrDerived,
+      spo2Avg: data.spo2Avg.present ? data.spo2Avg.value : this.spo2Avg,
+      spo2Min: data.spo2Min.present ? data.spo2Min.value : this.spo2Min,
+      steps: data.steps.present ? data.steps.value : this.steps,
     );
   }
 
@@ -12549,13 +12658,25 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
           ..write('day: $day, ')
           ..write('hrvMs: $hrvMs, ')
           ..write('restingHr: $restingHr, ')
-          ..write('restingHrDerived: $restingHrDerived')
+          ..write('restingHrDerived: $restingHrDerived, ')
+          ..write('spo2Avg: $spo2Avg, ')
+          ..write('spo2Min: $spo2Min, ')
+          ..write('steps: $steps')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, day, hrvMs, restingHr, restingHrDerived);
+  int get hashCode => Object.hash(
+    id,
+    day,
+    hrvMs,
+    restingHr,
+    restingHrDerived,
+    spo2Avg,
+    spo2Min,
+    steps,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -12564,7 +12685,10 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
           other.day == this.day &&
           other.hrvMs == this.hrvMs &&
           other.restingHr == this.restingHr &&
-          other.restingHrDerived == this.restingHrDerived);
+          other.restingHrDerived == this.restingHrDerived &&
+          other.spo2Avg == this.spo2Avg &&
+          other.spo2Min == this.spo2Min &&
+          other.steps == this.steps);
 }
 
 class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
@@ -12573,6 +12697,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
   final Value<double?> hrvMs;
   final Value<double?> restingHr;
   final Value<bool> restingHrDerived;
+  final Value<double?> spo2Avg;
+  final Value<double?> spo2Min;
+  final Value<int?> steps;
   final Value<int> rowid;
   const DailyVitalsTableCompanion({
     this.id = const Value.absent(),
@@ -12580,6 +12707,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     this.hrvMs = const Value.absent(),
     this.restingHr = const Value.absent(),
     this.restingHrDerived = const Value.absent(),
+    this.spo2Avg = const Value.absent(),
+    this.spo2Min = const Value.absent(),
+    this.steps = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DailyVitalsTableCompanion.insert({
@@ -12588,6 +12718,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     this.hrvMs = const Value.absent(),
     this.restingHr = const Value.absent(),
     this.restingHrDerived = const Value.absent(),
+    this.spo2Avg = const Value.absent(),
+    this.spo2Min = const Value.absent(),
+    this.steps = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        day = Value(day);
@@ -12597,6 +12730,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     Expression<double>? hrvMs,
     Expression<double>? restingHr,
     Expression<bool>? restingHrDerived,
+    Expression<double>? spo2Avg,
+    Expression<double>? spo2Min,
+    Expression<int>? steps,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -12605,6 +12741,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
       if (hrvMs != null) 'hrv_ms': hrvMs,
       if (restingHr != null) 'resting_hr': restingHr,
       if (restingHrDerived != null) 'resting_hr_derived': restingHrDerived,
+      if (spo2Avg != null) 'spo2_avg': spo2Avg,
+      if (spo2Min != null) 'spo2_min': spo2Min,
+      if (steps != null) 'steps': steps,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -12615,6 +12754,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     Value<double?>? hrvMs,
     Value<double?>? restingHr,
     Value<bool>? restingHrDerived,
+    Value<double?>? spo2Avg,
+    Value<double?>? spo2Min,
+    Value<int?>? steps,
     Value<int>? rowid,
   }) {
     return DailyVitalsTableCompanion(
@@ -12623,6 +12765,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
       hrvMs: hrvMs ?? this.hrvMs,
       restingHr: restingHr ?? this.restingHr,
       restingHrDerived: restingHrDerived ?? this.restingHrDerived,
+      spo2Avg: spo2Avg ?? this.spo2Avg,
+      spo2Min: spo2Min ?? this.spo2Min,
+      steps: steps ?? this.steps,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -12645,6 +12790,15 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     if (restingHrDerived.present) {
       map['resting_hr_derived'] = Variable<bool>(restingHrDerived.value);
     }
+    if (spo2Avg.present) {
+      map['spo2_avg'] = Variable<double>(spo2Avg.value);
+    }
+    if (spo2Min.present) {
+      map['spo2_min'] = Variable<double>(spo2Min.value);
+    }
+    if (steps.present) {
+      map['steps'] = Variable<int>(steps.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -12659,6 +12813,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
           ..write('hrvMs: $hrvMs, ')
           ..write('restingHr: $restingHr, ')
           ..write('restingHrDerived: $restingHrDerived, ')
+          ..write('spo2Avg: $spo2Avg, ')
+          ..write('spo2Min: $spo2Min, ')
+          ..write('steps: $steps, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -22561,6 +22718,9 @@ typedef $$DailyVitalsTableTableCreateCompanionBuilder =
       Value<double?> hrvMs,
       Value<double?> restingHr,
       Value<bool> restingHrDerived,
+      Value<double?> spo2Avg,
+      Value<double?> spo2Min,
+      Value<int?> steps,
       Value<int> rowid,
     });
 typedef $$DailyVitalsTableTableUpdateCompanionBuilder =
@@ -22570,6 +22730,9 @@ typedef $$DailyVitalsTableTableUpdateCompanionBuilder =
       Value<double?> hrvMs,
       Value<double?> restingHr,
       Value<bool> restingHrDerived,
+      Value<double?> spo2Avg,
+      Value<double?> spo2Min,
+      Value<int?> steps,
       Value<int> rowid,
     });
 
@@ -22604,6 +22767,21 @@ class $$DailyVitalsTableTableFilterComposer
 
   ColumnFilters<bool> get restingHrDerived => $composableBuilder(
     column: $table.restingHrDerived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get spo2Avg => $composableBuilder(
+    column: $table.spo2Avg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get spo2Min => $composableBuilder(
+    column: $table.spo2Min,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get steps => $composableBuilder(
+    column: $table.steps,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -22641,6 +22819,21 @@ class $$DailyVitalsTableTableOrderingComposer
     column: $table.restingHrDerived,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get spo2Avg => $composableBuilder(
+    column: $table.spo2Avg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get spo2Min => $composableBuilder(
+    column: $table.spo2Min,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get steps => $composableBuilder(
+    column: $table.steps,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DailyVitalsTableTableAnnotationComposer
@@ -22668,6 +22861,15 @@ class $$DailyVitalsTableTableAnnotationComposer
     column: $table.restingHrDerived,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get spo2Avg =>
+      $composableBuilder(column: $table.spo2Avg, builder: (column) => column);
+
+  GeneratedColumn<double> get spo2Min =>
+      $composableBuilder(column: $table.spo2Min, builder: (column) => column);
+
+  GeneratedColumn<int> get steps =>
+      $composableBuilder(column: $table.steps, builder: (column) => column);
 }
 
 class $$DailyVitalsTableTableTableManager
@@ -22712,6 +22914,9 @@ class $$DailyVitalsTableTableTableManager
                 Value<double?> hrvMs = const Value.absent(),
                 Value<double?> restingHr = const Value.absent(),
                 Value<bool> restingHrDerived = const Value.absent(),
+                Value<double?> spo2Avg = const Value.absent(),
+                Value<double?> spo2Min = const Value.absent(),
+                Value<int?> steps = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyVitalsTableCompanion(
                 id: id,
@@ -22719,6 +22924,9 @@ class $$DailyVitalsTableTableTableManager
                 hrvMs: hrvMs,
                 restingHr: restingHr,
                 restingHrDerived: restingHrDerived,
+                spo2Avg: spo2Avg,
+                spo2Min: spo2Min,
+                steps: steps,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -22728,6 +22936,9 @@ class $$DailyVitalsTableTableTableManager
                 Value<double?> hrvMs = const Value.absent(),
                 Value<double?> restingHr = const Value.absent(),
                 Value<bool> restingHrDerived = const Value.absent(),
+                Value<double?> spo2Avg = const Value.absent(),
+                Value<double?> spo2Min = const Value.absent(),
+                Value<int?> steps = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyVitalsTableCompanion.insert(
                 id: id,
@@ -22735,6 +22946,9 @@ class $$DailyVitalsTableTableTableManager
                 hrvMs: hrvMs,
                 restingHr: restingHr,
                 restingHrDerived: restingHrDerived,
+                spo2Avg: spo2Avg,
+                spo2Min: spo2Min,
+                steps: steps,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

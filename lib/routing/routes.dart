@@ -69,6 +69,10 @@ abstract final class Routes {
   /// Every morning report, a week at a time. Opened from Herstel.
   static const reportWeeks = '/rapporten';
 
+  /// Steps per day, a week at a time. At the root: the Start tab's block
+  /// and Gezondheid both open it.
+  static const stepsWeeks = '/stappen';
+
   // Profile and settings
   static const settings = '/profiel/instellingen';
   static const settingsCatalogue = '/profiel/instellingen/catalogus';

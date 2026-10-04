@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/widgets/common.dart';
+import 'package:fitlog/features/exercises/presentation/exercise_detail_screen.dart';
 import 'package:fitlog/features/health/presentation/health_overview_screen.dart';
 import 'package:fitlog/features/health/presentation/heart_rate_week_screen.dart';
 import 'package:fitlog/features/health/presentation/steps_week_screen.dart';
@@ -41,17 +43,22 @@ void main() {
     await db.close();
   });
 
-  Future<void> pumpPhone(WidgetTester tester, Widget screen) async {
-    tester.view.physicalSize = const Size(412, 2400);
+  Future<void> pumpPhone(
+    WidgetTester tester,
+    Widget screen, {
+    Size size = const Size(412, 2400),
+    double textScale = 1.15,
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       wrapWithContainer(
         container,
         MediaQuery(
-          data: const MediaQueryData(
-            size: Size(412, 2400),
-            textScaler: TextScaler.linear(1.15),
+          data: MediaQueryData(
+            size: size,
+            textScaler: TextScaler.linear(textScale),
           ),
           child: screen,
         ),
@@ -60,11 +67,83 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// One finished session of [exerciseId] [weeksAgo] weeks back: three sets
+  /// of [reps] at [weight].
+  Future<void> logSession(
+    String exerciseId,
+    int weeksAgo,
+    double weight, {
+    int reps = 8,
+  }) async {
+    final at = DateTime.now().subtract(Duration(days: 7 * weeksAgo, hours: 2));
+    final id = '$exerciseId-$weeksAgo';
+    await db
+        .into(db.workoutsTable)
+        .insert(
+          WorkoutsTableCompanion.insert(
+            id: id,
+            name: 'Training',
+            startedAt: at.millisecondsSinceEpoch,
+            endedAt: Value(at.millisecondsSinceEpoch + 3600000),
+          ),
+        );
+    await db
+        .into(db.workoutExercisesTable)
+        .insert(
+          WorkoutExercisesTableCompanion.insert(
+            id: 'we-$id',
+            workoutId: id,
+            exerciseId: exerciseId,
+            sortOrder: 0,
+          ),
+        );
+    for (var i = 0; i < 3; i++) {
+      await db
+          .into(db.workoutSetsTable)
+          .insert(
+            WorkoutSetsTableCompanion.insert(
+              id: 'ws-$id-$i',
+              workoutExerciseId: 'we-$id',
+              sortOrder: i,
+              weightKg: Value(weight),
+              reps: Value(reps),
+              isCompleted: const Value(true),
+            ),
+          );
+    }
+  }
+
+  Future<void> addExercise(String id, String name) => db
+      .into(db.exercisesTable)
+      .insert(
+        ExercisesTableCompanion.insert(
+          id: id,
+          name: name,
+          primaryMuscle: 'borst',
+          category: 'barbell',
+          createdAt: 0,
+        ),
+      );
+
+  /// A real phone screen, with the text as large as on the user's.
+  const phone = Size(412, 915);
+  const largeText = 1.3;
+
   /// The tops of these texts, to see they sit on one line.
   List<double> tops(WidgetTester tester, List<String> texts) => [
     // The first: the same number can stand in a list further down.
     for (final text in texts) tester.getTopLeft(find.text(text).first).dy,
   ];
+
+  /// That these numbers stand on one line. One that had to shrink stands on
+  /// the same line as the rest, its bottom a hair higher at most for its
+  /// smaller descent.
+  void expectOnOneLine(WidgetTester tester, List<Finder> numbers) {
+    final bottoms = [for (final n in numbers) tester.getBottomLeft(n).dy];
+    for (final bottom in bottoms) {
+      expect(bottom, closeTo(bottoms.first, 1.5), reason: 'niet op één lijn');
+    }
+  }
 
   testWidgets('de rapportkaart past, met beide knoppen', (tester) async {
     final now = DateTime.now();
@@ -109,14 +188,13 @@ void main() {
     });
     await pumpPhone(tester, HealthOverviewScreen(now: now));
 
-    final sleep = tops(tester, ['100', '10 u 10']);
-    expect(sleep[0], sleep[1]);
+    expectOnOneLine(tester, [
+      find.text('100').first,
+      find.text('10 u 10').first,
+    ]);
     // Vandaag en het gemiddelde zijn hier allebei 3.249.
     final steps = find.text('3.249');
-    expect(
-      tester.getTopLeft(steps.at(0)).dy,
-      tester.getTopLeft(steps.at(1)).dy,
-    );
+    expectOnOneLine(tester, [steps.at(0), steps.at(1)]);
   });
 
   testWidgets('bij de stappen raken de labels elkaar niet', (tester) async {
@@ -129,8 +207,22 @@ void main() {
     final average = tester.getBottomRight(find.text('Gemiddeld per dag')).dx;
     final best = tester.getTopLeft(find.text('Beste dag')).dx;
     expect(best - average, greaterThanOrEqualTo(8));
-    final values = tops(tester, ['16.375', '8.188', '9.600']);
-    expect(values.toSet(), hasLength(1));
+    expectOnOneLine(tester, [
+      for (final value in ['16.375', '8.188', '9.600']) find.text(value).first,
+    ]);
+    // In de rij: "Deze week" staat ook boven de week zelf.
+    final labels = [
+      for (final label in ['Deze week', 'Gemiddeld per dag', 'Beste dag'])
+        tester
+            .getTopLeft(
+              find.descendant(
+                of: find.byType(StatRow),
+                matching: find.text(label),
+              ),
+            )
+            .dy,
+    ];
+    expect(labels.toSet(), hasLength(1), reason: 'labels op één lijn');
   });
 
   testWidgets('bij de hartslag ook', (tester) async {
@@ -153,9 +245,87 @@ void main() {
       HeartRateWeekScreen(now: DateTime(2026, 10, 4, 21)),
     );
 
-    final values = tops(tester, ['116 bpm', '150 bpm', '1']);
-    expect(values.toSet(), hasLength(1));
+    expectOnOneLine(tester, [
+      for (final value in ['116 bpm', '150 bpm', '1']) find.text(value).first,
+    ]);
     expect(tester.takeException(), isNull);
+  });
+
+  group('de grafieken van een oefening', () {
+    testWidgets('de PR-knop staat over niets als je onderaan bent', (
+      tester,
+    ) async {
+      await tester.runAsync(() async {
+        await addExercise('ex-incline', 'Incline Dumbbell Press');
+        for (final (w, weight) in [
+          (8, 40.0),
+          (7, 42.5),
+          (6, 45.0),
+          (5, 45.0),
+          (4, 42.5),
+          (3, 45.0),
+          (2, 45.0),
+          (1, 42.5),
+          (0, 45.0),
+        ]) {
+          await logSession('ex-incline', w, weight);
+        }
+      });
+      await pumpPhone(
+        tester,
+        const ExerciseDetailScreen(
+          exerciseId: 'ex-incline',
+          initialTab: ExerciseDetailScreen.chartsTab,
+        ),
+        size: phone,
+        textScale: largeText,
+      );
+      expect(find.textContaining('Staat stil sinds'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView).last, const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      final button = tester.getRect(find.byType(FloatingActionButton));
+      expect(
+        tester.getRect(find.text('Sessies')).bottom,
+        lessThanOrEqualTo(button.top),
+        reason: 'het laatste staat onder de PR-knop',
+      );
+    });
+
+    testWidgets('de getallen onder de grafiek houden afstand', (tester) async {
+      await tester.runAsync(() async {
+        await addExercise('ex-bench', 'Barbell Bench Press - Medium Grip');
+        for (var w = 4; w >= 0; w--) {
+          await logSession('ex-bench', w, 100 + (4 - w) * 4.5, reps: 11);
+        }
+      });
+      await pumpPhone(
+        tester,
+        const ExerciseDetailScreen(
+          exerciseId: 'ex-bench',
+          initialTab: ExerciseDetailScreen.chartsTab,
+        ),
+        size: phone,
+        textScale: largeText,
+      );
+
+      // Laatste en Beste zijn hier hetzelfde getal.
+      final values = find.text('161,25 kg');
+      expect(values, findsNWidgets(2));
+      expect(
+        tester.getTopLeft(values.at(1)).dx -
+            tester.getBottomRight(values.at(0)).dx,
+        greaterThanOrEqualTo(8),
+      );
+      expect(
+        tester.getTopLeft(find.text('5')).dx -
+            tester.getBottomRight(values.at(1)).dx,
+        greaterThanOrEqualTo(8),
+      );
+      final labels = tops(tester, ['Laatste', 'Beste', 'Sessies']);
+      expect(labels.toSet(), hasLength(1), reason: 'labels op één lijn');
+    });
   });
 
   testWidgets('de kaart van een oefening die stilstaat, met de coach', (

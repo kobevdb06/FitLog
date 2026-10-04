@@ -202,6 +202,25 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final style = theme.textTheme.headlineSmall?.copyWith(
+      color: emphasis ? AppColors.accent : null,
+    );
+
+    // A full line high, whatever the number shrinks to, and a shrunk one at
+    // the bottom of it: on the same line as its neighbours, the way a
+    // smaller word sits in a sentence, and its label level with theirs.
+    final line = TextPainter(
+      text: TextSpan(
+        text: value,
+        style: DefaultTextStyle.of(context).style.merge(style),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final lineHeight = line.height;
+    line.dispose();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -212,15 +231,12 @@ class StatTile extends StatelessWidget {
         ],
         // Shrunk rather than cut off: "150 bpm" with an ellipsis is a
         // different number.
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: emphasis ? AppColors.accent : null,
-            ),
-            maxLines: 1,
+        SizedBox(
+          height: lineHeight,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.bottomLeft,
+            child: Text(value, style: style, maxLines: 1),
           ),
         ),
         const SizedBox(height: 2),

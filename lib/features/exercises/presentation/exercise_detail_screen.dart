@@ -26,6 +26,15 @@ final _builtInCategories = [
   for (final category in ExerciseCategory.values) CategoryChoice(category),
 ];
 
+/// The padding of every tab: room at the bottom to scroll the last of it
+/// out from under the PR button, which floats over all four.
+const _underButton = EdgeInsets.fromLTRB(
+  AppSpacing.lg,
+  AppSpacing.lg,
+  AppSpacing.lg,
+  96,
+);
+
 /// Info, history, charts and records for one exercise.
 class ExerciseDetailScreen extends ConsumerWidget {
   const ExerciseDetailScreen({
@@ -191,7 +200,7 @@ class _InfoTab extends ConsumerWidget {
     final paths = ref.watch(appPathsProvider).value;
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: _underButton,
       children: [
         ExerciseAnimation(exercise: exercise, manifest: images, paths: paths),
         const SizedBox(height: AppSpacing.lg),
@@ -282,7 +291,6 @@ class _InfoTab extends ConsumerWidget {
           ),
           Text(exercise.instructions!, style: theme.textTheme.bodyMedium),
         ],
-        const SizedBox(height: AppSpacing.xxl),
       ],
     );
   }
@@ -357,7 +365,7 @@ class _HistoryTab extends ConsumerWidget {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: _underButton,
           itemCount: list.length,
           itemBuilder: (context, index) {
             final session = list[index];
@@ -475,7 +483,7 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
     final plateau = ref.watch(exercisePlateauProvider(widget.exerciseId));
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: _underButton,
       children: [
         if (plateau != null) ...[
           PlateauCard(found: plateau),
@@ -515,28 +523,22 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
         ),
         if (points.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),
-          Row(
+          StatRow(
             children: [
-              Expanded(
-                child: StatTile(
-                  value: _format(metric, points.last.value, formatters),
-                  label: 'Laatste',
+              StatTile(
+                value: _format(metric, points.last.value, formatters),
+                label: 'Laatste',
+              ),
+              StatTile(
+                value: _format(
+                  metric,
+                  points.map((p) => p.value).reduce((a, b) => a > b ? a : b),
+                  formatters,
                 ),
+                label: 'Beste',
+                emphasis: true,
               ),
-              Expanded(
-                child: StatTile(
-                  value: _format(
-                    metric,
-                    points.map((p) => p.value).reduce((a, b) => a > b ? a : b),
-                    formatters,
-                  ),
-                  label: 'Beste',
-                  emphasis: true,
-                ),
-              ),
-              Expanded(
-                child: StatTile(value: '${points.length}', label: 'Sessies'),
-              ),
+              StatTile(value: '${points.length}', label: 'Sessies'),
             ],
           ),
         ],
@@ -573,7 +575,7 @@ class _RecordsTab extends ConsumerWidget {
         }
 
         return ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: _underButton,
           children: [
             for (final record in list)
               ListTile(

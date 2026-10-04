@@ -3353,3 +3353,22 @@ Er wordt niets opgeslagen: het wordt berekend uit de sets, bij elke
 wijziging opnieuw. Geen schemawijziging, en daarom ook (nog) geen "niet
 meer melden" per oefening - wie bewust onderhoudt, bijvoorbeeld tijdens
 het afvallen, ziet de markering staan.
+
+## 174. De grafieken van een oefening op een gsm
+
+Van de gsm van de gebruiker (412 punten breed, grote tekst):
+
+**De PR-knop blijft, de inhoud schuift eronderuit.** Met de kaart van een
+oefening die stilstaat werd het tabblad langer dan het scherm, en het
+laatste - de getallen onder de grafiek - lag onder de PR-knop. De knop
+blijft zoals hij is (de gebruiker wil hem altijd kunnen gebruiken); elk van
+de vier tabbladen kreeg onderaan 96 punten ruimte, zoals de andere
+schermen met zo'n knop, zodat je het laatste erboven schuift.
+
+**Getallen houden afstand, ook als ze krimpen.** Onder de grafiek stonden
+drie tegels in een gewone rij zonder tussenruimte ("136,75 kg136,75 kg4");
+ze staan nu in een `StatRow`. En een getal dat moest krimpen
+(DECISIONS 172) werd ook minder hoog, waardoor zijn label hoger kwam dan
+dat van de buren. Een getal houdt nu de hoogte van een volle regel en
+staat, gekrompen, onderaan die regel: op dezelfde lijn als de andere, zoals
+een kleiner woord in een zin, met zijn label op gelijke hoogte.

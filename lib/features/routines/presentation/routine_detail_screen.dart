@@ -12,8 +12,10 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/exercise_avatar.dart';
 import '../../../routing/routes.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../../share/presentation/share_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
+import 'coach_folder.dart';
 import 'favourite_star.dart';
 import 'routine_providers.dart';
 
@@ -28,6 +30,11 @@ class RoutineDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(routineDetailProvider(routineId));
     final formatters = ref.watch(formattersProvider);
+    final folders = ref.watch(routineFoldersProvider).value ?? const [];
+    final versions = ref.watch(routineVersionsProvider(routineId)).value;
+    final forCoach = folders.any(
+      (f) => f.isCoach && f.id == detail.value?.routine.folderId,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -53,6 +60,12 @@ class RoutineDetailScreen extends ConsumerWidget {
                 icon: Icons.drive_file_move_outline,
                 label: 'Verplaatsen naar map',
               ),
+              if (versions != null && versions.isNotEmpty)
+                menuItem(
+                  value: 'versions',
+                  icon: Icons.history,
+                  label: 'Vorige versies',
+                ),
               menuItem(
                 value: 'share',
                 icon: Icons.qr_code_2,
@@ -102,6 +115,22 @@ class RoutineDetailScreen extends ConsumerWidget {
                 days: WeekdaySet(routine.routine.scheduledDays),
                 onTap: () => _schedule(context, ref),
               ),
+              if (forCoach)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    0,
+                  ),
+                  child: InfoBanner(
+                    icon: Icons.smart_toy_outlined,
+                    message:
+                        'Deze routine staat in de map Coach: de coach mag ze '
+                        'aanpassen. Hoe ze voor elke wijziging was, zet je '
+                        'terug via Vorige versies in het menu.',
+                  ),
+                ),
               if (routine.routine.notes != null &&
                   routine.routine.notes!.trim().isNotEmpty)
                 Padding(
@@ -192,6 +221,63 @@ class RoutineDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// The versions kept before each change, and putting one back.
+  ///
+  /// Putting back keeps the routine as it is now first, so that too can be
+  /// undone.
+  Future<void> _versions(
+    BuildContext context,
+    WidgetRef ref,
+    RoutineActions actions,
+  ) async {
+    final versions =
+        ref.read(routineVersionsProvider(routineId)).value ?? const [];
+    if (versions.isEmpty) return;
+
+    final picked = await showAppSheet<RoutineVersionRow>(
+      context: context,
+      title: 'Vorige versies',
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final version in versions)
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: Text(
+                Formatters.relativeDayTime(
+                  DateTime.fromMillisecondsSinceEpoch(version.savedAt),
+                ),
+              ),
+              subtitle: version.note == null ? null : Text(version.note!),
+              onTap: () => Navigator.of(sheetContext).pop(version),
+            ),
+        ],
+      ),
+    );
+    if (picked == null || !context.mounted) return;
+
+    final ok = await confirm(
+      context,
+      title: 'Deze versie terugzetten?',
+      message:
+          'De routine wordt weer zoals ze toen was. Zoals ze nu is, blijft '
+          'bewaard: die kan je daarna ook weer terugzetten.',
+      confirmLabel: 'Terugzetten',
+    );
+    if (!ok) return;
+
+    final left = await actions.restoreVersion(picked.id);
+    if (!context.mounted) return;
+    showSnack(
+      context,
+      left == 0
+          ? 'Vorige versie teruggezet'
+          : 'Vorige versie teruggezet, zonder $left '
+                '${left == 1 ? 'oefening die' : 'oefeningen die'} niet meer '
+                'bestaan',
+    );
+  }
+
   /// Moving a routine used to mean opening the whole editor. This is the same
   /// change in two taps.
   Future<void> _moveToFolder(
@@ -200,12 +286,14 @@ class RoutineDetailScreen extends ConsumerWidget {
     RoutineActions actions,
   ) async {
     final current = await actions.routineFolderId(routineId);
-    var folders = await actions.folders();
+    final coach = ref.read(coachEnabledProvider);
+    var folders = visibleFolders(await actions.folders(), coach: coach);
     if (!context.mounted) return;
 
     // With no folders yet the sheet would only offer "no folder", which is
-    // useless, so making one is offered right there.
-    if (folders.isEmpty) {
+    // useless, so making one is offered right there - unless there is a
+    // coach, whose folder is then on offer too.
+    if (folders.isEmpty && !coach) {
       final name = await promptForText(
         context,
         title: 'Eerste map maken',
@@ -213,9 +301,10 @@ class RoutineDetailScreen extends ConsumerWidget {
       );
       if (name == null || name.trim().isEmpty) return;
       await actions.createFolder(name);
-      folders = await actions.folders();
+      folders = visibleFolders(await actions.folders(), coach: coach);
       if (!context.mounted) return;
     }
+    final hasCoachFolder = folders.any((f) => f.isCoach);
 
     final choice = await showAppSheet<_FolderChoice>(
       context: context,
@@ -232,11 +321,26 @@ class RoutineDetailScreen extends ConsumerWidget {
           ),
           for (final folder in folders)
             ListTile(
-              leading: const Icon(Icons.folder_outlined),
+              leading: Icon(
+                folder.isCoach
+                    ? Icons.smart_toy_outlined
+                    : Icons.folder_outlined,
+              ),
               title: Text(folder.name),
               selected: current == folder.id,
               onTap: () =>
                   Navigator.of(sheetContext).pop(_FolderChoice(folder.id)),
+            ),
+          // The coach's folder before there is one: it is made when the
+          // first routine goes in.
+          if (coach && !hasCoachFolder)
+            ListTile(
+              leading: const Icon(Icons.smart_toy_outlined),
+              title: const Text('Coach'),
+              subtitle: const Text('De coach mag routines hier aanpassen'),
+              onTap: () =>
+                  Navigator.of(sheetContext)
+                      .pop(const _FolderChoice(null, coach: true)),
             ),
           const Divider(height: 1),
           ListTile(
@@ -252,7 +356,17 @@ class RoutineDetailScreen extends ConsumerWidget {
     if (choice == null || !context.mounted) return;
 
     var target = choice.folderId;
-    if (choice.createNew) {
+    final toCoach =
+        choice.coach || folders.any((f) => f.isCoach && f.id == target);
+    final alreadyThere = folders.any((f) => f.isCoach && f.id == current);
+    if (toCoach && !alreadyThere) {
+      final name = (await actions.routine(routineId))?.name ?? '';
+      if (!context.mounted) return;
+      final ok = await confirmHandToCoach(context, routineName: name);
+      if (!ok) return;
+      if (choice.coach) target = await actions.ensureCoachFolder();
+    }
+    if (choice.createNew && context.mounted) {
       final name = await promptForText(
         context,
         title: 'Nieuwe map',
@@ -286,6 +400,9 @@ class RoutineDetailScreen extends ConsumerWidget {
 
       case 'move':
         await _moveToFolder(context, ref, actions);
+
+      case 'versions':
+        await _versions(context, ref, actions);
 
       case 'share':
         await ShareRoutineScreen.open(context, routineId);
@@ -460,8 +577,15 @@ class _ExerciseBlock extends StatelessWidget {
 /// What the folder sheet hands back. A null id means the top level; the
 /// create flag means the user wants a folder that does not exist yet.
 class _FolderChoice {
-  const _FolderChoice(this.folderId, {this.createNew = false});
+  const _FolderChoice(
+    this.folderId, {
+    this.createNew = false,
+    this.coach = false,
+  });
 
   final String? folderId;
+
+  /// The coach's folder, which does not exist yet.
+  final bool coach;
   final bool createNew;
 }

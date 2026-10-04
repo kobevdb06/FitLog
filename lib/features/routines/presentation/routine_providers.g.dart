@@ -166,6 +166,92 @@ final class RoutineDetailFamily extends $Family
   String toString() => r'routineDetailProvider';
 }
 
+/// The kept versions of a routine, newest first.
+
+@ProviderFor(routineVersions)
+final routineVersionsProvider = RoutineVersionsFamily._();
+
+/// The kept versions of a routine, newest first.
+
+final class RoutineVersionsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<RoutineVersionRow>>,
+          List<RoutineVersionRow>,
+          Stream<List<RoutineVersionRow>>
+        >
+    with
+        $FutureModifier<List<RoutineVersionRow>>,
+        $StreamProvider<List<RoutineVersionRow>> {
+  /// The kept versions of a routine, newest first.
+  RoutineVersionsProvider._({
+    required RoutineVersionsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'routineVersionsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$routineVersionsHash();
+
+  @override
+  String toString() {
+    return r'routineVersionsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<RoutineVersionRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<RoutineVersionRow>> create(Ref ref) {
+    final argument = this.argument as String;
+    return routineVersions(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RoutineVersionsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$routineVersionsHash() => r'8d58a30356323c8a8d8026e9a1c67bef88a331b7';
+
+/// The kept versions of a routine, newest first.
+
+final class RoutineVersionsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<RoutineVersionRow>>, String> {
+  RoutineVersionsFamily._()
+    : super(
+        retry: null,
+        name: r'routineVersionsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The kept versions of a routine, newest first.
+
+  RoutineVersionsProvider call(String routineId) =>
+      RoutineVersionsProvider._(argument: routineId, from: this);
+
+  @override
+  String toString() => r'routineVersionsProvider';
+}
+
 /// The routine the dashboard offers to start.
 
 @ProviderFor(suggestedRoutine)

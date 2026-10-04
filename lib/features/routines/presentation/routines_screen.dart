@@ -11,9 +11,11 @@ import '../../../core/widgets/colour_picker.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../../share/presentation/import_routine_screen.dart';
 import '../../share/presentation/scan_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
+import 'coach_folder.dart';
 import 'favourite_star.dart';
 import 'routine_providers.dart';
 
@@ -23,7 +25,10 @@ class RoutinesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final folders = ref.watch(routineFoldersProvider).value ?? const [];
+    final folders = visibleFolders(
+      ref.watch(routineFoldersProvider).value ?? const [],
+      coach: ref.watch(coachEnabledProvider),
+    );
     final routines = ref.watch(routineSummariesProvider);
 
     return Scaffold(
@@ -172,14 +177,20 @@ class _FolderSection extends ConsumerWidget {
             icon: const Icon(Icons.more_horiz, size: 20),
           ),
         ),
-        if (routines.isEmpty)
+        if (folder.isCoach || routines.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
               vertical: AppSpacing.sm,
             ),
             child: Text(
-              'Deze map is nog leeg.',
+              switch ((folder.isCoach, routines.isEmpty)) {
+                (true, true) =>
+                  'De coach mag routines in deze map aanpassen. Vraag hem om '
+                      'een routine, of zet er een van jou in.',
+                (true, false) => 'De coach mag deze routines aanpassen.',
+                _ => 'Deze map is nog leeg.',
+              },
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -216,8 +227,12 @@ class _FolderSection extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.delete_outline),
             title: const Text('Map verwijderen'),
-            subtitle: const Text(
-              'De routines erin blijven bestaan en komen op het hoofdniveau.',
+            subtitle: Text(
+              folder.isCoach
+                  ? 'De routines erin blijven bestaan en komen op het '
+                        'hoofdniveau, waar de coach er niet meer aan kan.'
+                  : 'De routines erin blijven bestaan en komen op het '
+                        'hoofdniveau.',
             ),
             onTap: () async {
               Navigator.of(sheetContext).pop();

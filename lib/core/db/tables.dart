@@ -460,6 +460,37 @@ class RoutineFoldersTable extends Table {
   TextColumn get name => text()();
   IntColumn get sortOrder => integer().named('sort_order')();
 
+  /// The folder whose routines the coach may change. There is at most one,
+  /// and a routine only gets in with the user's say-so.
+  BoolColumn get isCoach =>
+      boolean().named('is_coach').withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A routine as it was before something changed it, to put it back.
+///
+/// Kept before every change the coach makes and before every restore, so
+/// nothing the coach does is final.
+@TableIndex(name: 'idx_routine_versions_routine', columns: {#routineId})
+@DataClassName('RoutineVersionRow')
+class RoutineVersionsTable extends Table {
+  @override
+  String get tableName => 'routine_versions';
+
+  TextColumn get id => text()();
+  TextColumn get routineId => text()
+      .named('routine_id')
+      .references(RoutinesTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get savedAt => integer().named('saved_at')();
+
+  /// Why it was kept: what was about to change.
+  TextColumn get note => text().nullable()();
+
+  /// The routine as JSON: its name and notes, and every exercise and set.
+  TextColumn get content => text()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

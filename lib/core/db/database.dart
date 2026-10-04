@@ -36,6 +36,7 @@ part 'database.drift.dart';
     RoutinesTable,
     RoutineExercisesTable,
     RoutineSetsTable,
+    RoutineVersionsTable,
     WorkoutsTable,
     WorkoutExercisesTable,
     WorkoutSetsTable,
@@ -65,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 41;
+  int get schemaVersion => 42;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -395,6 +396,13 @@ class AppDatabase extends _$AppDatabase {
         if (from < 41) {
           // Where you train, for the coach. Nothing yet.
           await m.addColumn(appSettingsTable, appSettingsTable.coachGym);
+        }
+        if (from < 42) {
+          // The coach's folder, and earlier versions of a routine. No folder
+          // is the coach's yet, and there is nothing to have a version of.
+          await m.addColumn(routineFoldersTable, routineFoldersTable.isCoach);
+          await m.createTable(routineVersionsTable);
+          await m.createIndex(idxRoutineVersionsRoutine);
         }
       });
 

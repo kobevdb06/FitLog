@@ -19,6 +19,11 @@ Stream<List<RoutineSummary>> routineSummaries(Ref ref) =>
 Stream<RoutineDetail?> routineDetail(Ref ref, String routineId) =>
     ref.watch(databaseProvider).routinesDao.watchRoutineDetail(routineId);
 
+/// The kept versions of a routine, newest first.
+@riverpod
+Stream<List<RoutineVersionRow>> routineVersions(Ref ref, String routineId) =>
+    ref.watch(databaseProvider).routinesDao.watchVersions(routineId);
+
 /// The routine the dashboard offers to start.
 @riverpod
 Future<RoutineRow?> suggestedRoutine(Ref ref) =>
@@ -40,6 +45,9 @@ class RoutineActions {
   AppDatabase get _db => ref.read(databaseProvider);
 
   Future<List<RoutineFolderRow>> folders() => _db.routinesDao.getFolders();
+
+  Future<RoutineRow?> routine(String routineId) =>
+      _db.routinesDao.getRoutine(routineId);
 
   /// Which folder a routine currently sits in, or null for the top level.
   Future<String?> routineFolderId(String routineId) async =>
@@ -68,6 +76,14 @@ class RoutineActions {
 
   Future<void> moveToFolder(String routineId, String? folderId) =>
       _db.routinesDao.setRoutineFolder(routineId, folderId);
+
+  /// The coach's folder, made if there is none yet.
+  Future<String> ensureCoachFolder() => _db.routinesDao.ensureCoachFolder();
+
+  /// Puts an earlier version back. How many exercises it had to leave out,
+  /// because they no longer exist, comes back.
+  Future<int> restoreVersion(String versionId) =>
+      _db.routinesDao.restoreVersion(versionId);
 
   Future<void> reorder(List<String> orderedIds) =>
       _db.routinesDao.reorderRoutines(orderedIds);

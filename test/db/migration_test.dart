@@ -112,6 +112,8 @@ void main() {
       // And everything that came after v37.
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_profile')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_gym')
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
+      ..execute('DROP TABLE routine_versions')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -136,6 +138,8 @@ void main() {
     final raw = sqlite3.open(path)
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_profile')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_gym')
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
+      ..execute('DROP TABLE routine_versions')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -146,6 +150,29 @@ void main() {
     expect(settings.coachSeesProfile, isFalse);
     // v41: nog geen zaal.
     expect(settings.coachGym, isNull);
+    await db.close();
+  });
+
+  test('a database from v41 gets the coach folder flag and the versions, '
+      'and keeps its folders', () async {
+    final path = '${dir.path}/v41.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.routinesDao.createFolder('Push Pull Legs');
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
+      ..execute('DROP TABLE routine_versions')
+      ..execute('PRAGMA user_version = 41');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final folder = (await db.routinesDao.getFolders()).single;
+    expect(folder.name, 'Push Pull Legs');
+    // Geen enkele bestaande map is van de coach.
+    expect(folder.isCoach, isFalse);
+    expect(await db.select(db.routineVersionsTable).get(), isEmpty);
     await db.close();
   });
 
@@ -171,7 +198,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 41);
+    expect(raw.select('PRAGMA user_version').first.values.first, 42);
     raw.close();
   });
 
@@ -378,7 +405,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 41);
+    expect(db.schemaVersion, 42);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

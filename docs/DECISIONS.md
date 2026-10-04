@@ -3433,3 +3433,24 @@ meer werk en minder precies dan één zin, en een taalmodel leest die zin
 beter dan een lijst. De opzoeking `gym` geeft die zin, en wat je de laatste
 acht weken echt deed - welke oefeningen, met welk materiaal, hoe vaak -
 want wat je al deed, staat er in elk geval.
+
+**De map Coach.** Eén map, gemarkeerd met `routine_folders.is_coach`
+(schema v42) en niet herkend aan haar naam: je mag ze hernoemen, en een
+eigen map die toevallig "Coach" heet is niet van de coach. Alleen routines
+daarin mag de coach aanpassen. Een routine van jou komt er alleen in na
+een vraag met een vinkje - "Ik weet dat de coach deze routine kan
+aanpassen, en ook kan verknoeien" - en de knop blijft uit tot dat vinkje
+staat; zowel bij Verplaatsen naar map als in de editor. Zonder sleutel is
+de map verborgen in Trainen en in de keuzes, niet verwijderd: met de
+sleutel komt ze terug. Wie de map verwijdert, zet de routines erin op het
+hoofdniveau, buiten bereik van de coach. Een kopie van een routine uit de
+map blijft in de map, zoals elke kopie in de map van het origineel blijft.
+
+**Vorige versies.** Voor elke wijziging door de coach, en voor elk
+terugzetten, wordt de routine bewaard in `routine_versions` (naam, notitie,
+oefeningen en sets als JSON; niet de map en de kleur, want terugzetten
+verandert wat erin zit, niet waar ze staat). Twintig per routine, de
+oudste gaan eerst; ze gaan mee weg met de routine. Terugzetten bewaart
+eerst de routine zoals ze nu is, dus ook dat is ongedaan te maken. Een
+oefening die intussen verwijderd is, valt eruit in plaats van het hele
+terugzetten te laten mislukken, en de melding zegt hoeveel.

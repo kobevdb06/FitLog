@@ -740,7 +740,9 @@ Future<({String? id})?> pickFolder(
         ),
         for (final folder in folders)
           ListTile(
-            leading: const Icon(Icons.folder_outlined),
+            leading: Icon(
+              folder.isCoach ? Icons.smart_toy_outlined : Icons.folder_outlined,
+            ),
             title: Text(folder.name),
             selected: folder.id == current,
             onTap: () => Navigator.of(context).pop((id: folder.id)),

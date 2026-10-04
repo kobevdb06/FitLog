@@ -16,8 +16,10 @@ import '../../../core/widgets/exercise_avatar.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
 import '../../workout/domain/set_columns.dart';
+import 'coach_folder.dart';
 import 'routine_providers.dart';
 
 /// One exercise while the routine is being edited.
@@ -81,6 +83,10 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
   final List<_DraftExercise> _exercises = [];
 
   String? _folderId;
+
+  /// Where the routine was when the editor opened. Moving it into the
+  /// coach's folder asks first; it being there already does not.
+  String? _startFolderId;
   int? _colorIndex;
   bool _loaded = false;
   bool _saving = false;
@@ -89,6 +95,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
   void initState() {
     super.initState();
     _folderId = widget.folderId;
+    _startFolderId = widget.folderId;
     if (widget.routineId == null) {
       _loaded = true;
       _nameController.text = 'Nieuwe routine';
@@ -102,12 +109,30 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     super.dispose();
   }
 
+  /// A folder picked in the header. Into the coach's folder only after the
+  /// question, unless the routine was there already.
+  Future<void> _pickFolder(
+    String? folderId,
+    List<RoutineFolderRow> folders,
+  ) async {
+    final toCoach = folders.any((f) => f.isCoach && f.id == folderId);
+    if (toCoach && folderId != _startFolderId) {
+      final ok = await confirmHandToCoach(
+        context,
+        routineName: _nameController.text,
+      );
+      if (!ok || !mounted) return;
+    }
+    setState(() => _folderId = folderId);
+  }
+
   void _prefill(RoutineDetail detail) {
     if (_loaded) return;
     _loaded = true;
     _nameController.text = detail.routine.name;
     _notesController.text = detail.routine.notes ?? '';
     _folderId = detail.routine.folderId;
+    _startFolderId = detail.routine.folderId;
     _colorIndex = detail.routine.colorIndex;
     _exercises.addAll(
       detail.exercises.map(
@@ -332,7 +357,10 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final formatters = ref.watch(formattersProvider);
-    final folders = ref.watch(routineFoldersProvider).value ?? const [];
+    final folders = visibleFolders(
+      ref.watch(routineFoldersProvider).value ?? const [],
+      coach: ref.watch(coachEnabledProvider),
+    );
 
     if (widget.routineId != null) {
       final detail = ref.watch(routineDetailProvider(widget.routineId!)).value;
@@ -358,7 +386,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
           notesController: _notesController,
           folders: folders,
           folderId: _folderId,
-          onFolder: (value) => setState(() => _folderId = value),
+          onFolder: (value) => _pickFolder(value, folders),
           colorIndex: _colorIndex,
           onColour: (value) => setState(() => _colorIndex = value),
         ),

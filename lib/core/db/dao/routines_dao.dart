@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
@@ -60,12 +62,98 @@ class RoutineSetDraft {
   final double? targetDistanceM;
 }
 
+/// The content of a routine as a kept version stores it.
+///
+/// Where the routine lives and its colour are not in it: putting a version
+/// back changes what is in the routine, not where it sits.
+Map<String, Object?> routineContentToJson(RoutineDraft draft) => {
+  'name': draft.name,
+  'notes': draft.notes,
+  'exercises': [
+    for (final e in draft.exercises)
+      {
+        'exercise_id': e.exerciseId,
+        'rest_seconds': e.restSeconds,
+        'superset_group': e.supersetGroup,
+        'notes': e.notes,
+        'sets': [
+          for (final s in e.sets)
+            {
+              'type': s.setType.wire,
+              'reps': s.targetReps,
+              'weight_kg': s.targetWeightKg,
+              'seconds': s.targetDurationSeconds,
+              'meters': s.targetDistanceM,
+            },
+        ],
+      },
+  ],
+};
+
+RoutineDraft routineContentFromJson(
+  Map<String, Object?> json, {
+  String? folderId,
+  int? colorIndex,
+}) => RoutineDraft(
+  name: '${json['name']}',
+  notes: json['notes'] as String?,
+  folderId: folderId,
+  colorIndex: colorIndex,
+  exercises: [
+    for (final e in (json['exercises'] as List? ?? const []).cast<Map>())
+      RoutineExerciseDraft(
+        exerciseId: '${e['exercise_id']}',
+        restSeconds: (e['rest_seconds'] as num?)?.toInt(),
+        supersetGroup: (e['superset_group'] as num?)?.toInt(),
+        notes: e['notes'] as String?,
+        sets: [
+          for (final s in (e['sets'] as List? ?? const []).cast<Map>())
+            RoutineSetDraft(
+              setType: SetType.fromWire('${s['type'] ?? 'normal'}'),
+              targetReps: (s['reps'] as num?)?.toInt(),
+              targetWeightKg: (s['weight_kg'] as num?)?.toDouble(),
+              targetDurationSeconds: (s['seconds'] as num?)?.toInt(),
+              targetDistanceM: (s['meters'] as num?)?.toDouble(),
+            ),
+        ],
+      ),
+  ],
+);
+
+/// A routine as it stands, as the draft the editor would save.
+RoutineDraft draftOf(RoutineDetail detail) => RoutineDraft(
+  name: detail.routine.name,
+  notes: detail.routine.notes,
+  folderId: detail.routine.folderId,
+  colorIndex: detail.routine.colorIndex,
+  exercises: [
+    for (final e in detail.exercises)
+      RoutineExerciseDraft(
+        exerciseId: e.exercise.id,
+        restSeconds: e.routineExercise.restSeconds,
+        supersetGroup: e.routineExercise.supersetGroup,
+        notes: e.routineExercise.notes,
+        sets: [
+          for (final s in e.sets)
+            RoutineSetDraft(
+              setType: SetType.fromWire(s.setType),
+              targetReps: s.targetReps,
+              targetWeightKg: s.targetWeightKg,
+              targetDurationSeconds: s.targetDurationSeconds,
+              targetDistanceM: s.targetDistanceM,
+            ),
+        ],
+      ),
+  ],
+);
+
 @DriftAccessor(
   tables: [
     RoutineFoldersTable,
     RoutinesTable,
     RoutineExercisesTable,
     RoutineSetsTable,
+    RoutineVersionsTable,
     ExercisesTable,
     WorkoutsTable,
   ],
@@ -319,34 +407,140 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
     if (detail == null) {
       throw StateError('Routine $routineId bestaat niet');
     }
+    final draft = draftOf(detail);
     return createRoutine(
       RoutineDraft(
         name: '${detail.routine.name} (kopie)',
-        notes: detail.routine.notes,
-        folderId: detail.routine.folderId,
-        exercises: detail.exercises
-            .map(
-              (e) => RoutineExerciseDraft(
-                exerciseId: e.exercise.id,
-                restSeconds: e.routineExercise.restSeconds,
-                supersetGroup: e.routineExercise.supersetGroup,
-                notes: e.routineExercise.notes,
-                sets: e.sets
-                    .map(
-                      (s) => RoutineSetDraft(
-                        setType: SetType.fromWire(s.setType),
-                        targetReps: s.targetReps,
-                        targetWeightKg: s.targetWeightKg,
-                        targetDurationSeconds: s.targetDurationSeconds,
-                        targetDistanceM: s.targetDistanceM,
-                      ),
-                    )
-                    .toList(),
-              ),
-            )
-            .toList(),
+        notes: draft.notes,
+        folderId: draft.folderId,
+        exercises: draft.exercises,
       ),
     );
+  }
+
+  // --- The coach's folder ---------------------------------------------------
+
+  /// The folder whose routines the coach may change, or null while there is
+  /// none.
+  Future<RoutineFolderRow?> coachFolder() =>
+      (select(routineFoldersTable)
+            ..where((t) => t.isCoach.equals(true))
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// That folder, made if it is not there yet.
+  Future<String> ensureCoachFolder() async {
+    final existing = await coachFolder();
+    if (existing != null) return existing.id;
+    final id = await createFolder('Coach');
+    await (update(routineFoldersTable)..where((t) => t.id.equals(id))).write(
+      const RoutineFoldersTableCompanion(isCoach: Value(true)),
+    );
+    return id;
+  }
+
+  /// The routines in the coach's folder, in their order.
+  Future<List<RoutineRow>> coachRoutines() async {
+    final folder = await coachFolder();
+    if (folder == null) return const [];
+    return (select(routinesTable)
+          ..where((t) => t.folderId.equals(folder.id))
+          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+        .get();
+  }
+
+  // --- Earlier versions -----------------------------------------------------
+
+  /// How many earlier versions a routine keeps. Enough to go back a good
+  /// way; not a history of everything forever.
+  static const int keptVersions = 20;
+
+  /// Keeps [routineId] as it is now, so it can be put back. [note] says
+  /// what was about to change.
+  Future<void> keepVersion(String routineId, String note) async {
+    final detail = await getRoutineDetail(routineId);
+    if (detail == null) return;
+    await into(routineVersionsTable).insert(
+      RoutineVersionsTableCompanion.insert(
+        id: _uuid.v4(),
+        routineId: routineId,
+        savedAt: DateTime.now().millisecondsSinceEpoch,
+        note: Value(note),
+        content: jsonEncode(routineContentToJson(draftOf(detail))),
+      ),
+    );
+
+    final kept =
+        await (select(routineVersionsTable)
+              ..where((t) => t.routineId.equals(routineId))
+              ..orderBy([(t) => OrderingTerm.desc(t.savedAt)]))
+            .get();
+    for (final old in kept.skip(keptVersions)) {
+      await (delete(
+        routineVersionsTable,
+      )..where((t) => t.id.equals(old.id))).go();
+    }
+  }
+
+  /// The kept versions of [routineId], newest first.
+  Stream<List<RoutineVersionRow>> watchVersions(String routineId) =>
+      (select(routineVersionsTable)
+            ..where((t) => t.routineId.equals(routineId))
+            ..orderBy([(t) => OrderingTerm.desc(t.savedAt)]))
+          .watch();
+
+  /// Puts [versionId] back, after keeping the routine as it is now - so
+  /// putting back can itself be undone.
+  ///
+  /// An exercise that no longer exists is left out rather than failing the
+  /// whole version; how many were, comes back.
+  Future<int> restoreVersion(String versionId) {
+    return transaction(() async {
+      final version = await (select(
+        routineVersionsTable,
+      )..where((t) => t.id.equals(versionId))).getSingleOrNull();
+      if (version == null) return 0;
+      final current = await getRoutine(version.routineId);
+      if (current == null) return 0;
+
+      final draft = routineContentFromJson(
+        (jsonDecode(version.content) as Map).cast<String, Object?>(),
+        folderId: current.folderId,
+        colorIndex: current.colorIndex,
+      );
+      final known = {
+        for (final row
+            in await (select(exercisesTable)..where(
+                  (t) => t.id.isIn([
+                    for (final e in draft.exercises) e.exerciseId,
+                  ]),
+                ))
+                .get())
+          row.id,
+      };
+      final missing = draft.exercises
+          .where((e) => !known.contains(e.exerciseId))
+          .length;
+
+      await keepVersion(
+        version.routineId,
+        'Voor je een vorige versie terugzette',
+      );
+      await updateRoutine(
+        version.routineId,
+        RoutineDraft(
+          name: draft.name,
+          notes: draft.notes,
+          folderId: draft.folderId,
+          colorIndex: draft.colorIndex,
+          exercises: [
+            for (final e in draft.exercises)
+              if (known.contains(e.exerciseId)) e,
+          ],
+        ),
+      );
+      return missing;
+    });
   }
 
   Future<void> reorderRoutines(List<String> orderedIds) async {

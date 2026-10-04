@@ -245,8 +245,8 @@ List<String> recoveryReasons(RecoveryEstimate estimate, {DateTime? now}) {
         at.day == moment.day;
     reasons.add(
       sameDay
-          ? 'vandaag ${level.label.toLowerCase()}'
-          : '${level.label.toLowerCase()} gezegd',
+          ? 'vandaag ${level.label.toLowerCase()} aangeduid'
+          : 'heeft ${level.label.toLowerCase()} aangeduid',
     );
   }
   return reasons;

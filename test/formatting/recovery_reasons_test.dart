@@ -112,4 +112,26 @@ void main() {
 
     expect(reasons, contains('je fietstocht van vandaag (70 min)'));
   });
+
+  test('wat je aanduidde, staat er zo', () {
+    RecoveryEstimate said(DateTime at) => RecoveryEstimate(
+      muscle: 'quadriceps',
+      workoutId: 'w1',
+      trainedAt: monday,
+      recovery: const Duration(hours: 80),
+      loadRatio: 1,
+      provisional: false,
+      check: SorenessLevel.fresh,
+      checkedAt: at,
+    );
+
+    expect(
+      recoveryReasons(said(DateTime(2026, 3, 4, 20)), now: thursday),
+      contains('heeft fris aangeduid'),
+    );
+    expect(
+      recoveryReasons(said(DateTime(2026, 3, 5, 8)), now: thursday),
+      contains('vandaag fris aangeduid'),
+    );
+  });
 }

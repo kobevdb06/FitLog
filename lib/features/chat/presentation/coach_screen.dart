@@ -526,7 +526,8 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
 
   void _open(String id) => switch (widget.proposal.kind) {
     ProposalKind.exercise => context.push(Routes.exerciseDetail(id)),
-    ProposalKind.routine => context.push(Routes.routineDetail(id)),
+    ProposalKind.routine ||
+    ProposalKind.coachRoutine => context.push(Routes.routineDetail(id)),
   };
 
   @override
@@ -546,18 +547,25 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             Row(
               children: [
                 Icon(
-                  proposal.kind == ProposalKind.exercise
-                      ? Icons.fitness_center
-                      : Icons.list_alt,
+                  switch (proposal.kind) {
+                    ProposalKind.exercise => Icons.fitness_center,
+                    ProposalKind.routine => Icons.list_alt,
+                    ProposalKind.coachRoutine => Icons.smart_toy_outlined,
+                  },
                   size: 18,
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
-                    proposal.kind == ProposalKind.exercise
-                        ? 'Voorstel: oefening'
-                        : 'Voorstel: routine',
+                    switch (proposal.kind) {
+                      ProposalKind.exercise => 'Voorstel: oefening',
+                      ProposalKind.routine => 'Voorstel: routine',
+                      ProposalKind.coachRoutine =>
+                        proposal.made
+                            ? 'Gemaakt door de coach'
+                            : 'Aangepast door de coach',
+                    },
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 0.8,
@@ -569,6 +577,10 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             const SizedBox(height: AppSpacing.xs),
             Text(proposal.title, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
+            if (proposal.change case final change?) ...[
+              Text(change, style: theme.textTheme.bodySmall),
+              const SizedBox(height: AppSpacing.xs),
+            ],
             if (exercise != null)
               Text(
                 [
@@ -607,7 +619,12 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                 children: [
                   Icon(Icons.check_circle, size: 18, color: AppColors.success),
                   const SizedBox(width: AppSpacing.xs),
-                  Text('Toegevoegd', style: theme.textTheme.bodySmall),
+                  Text(
+                    proposal.kind == ProposalKind.coachRoutine
+                        ? 'In de map Coach'
+                        : 'Toegevoegd',
+                    style: theme.textTheme.bodySmall,
+                  ),
                   const Spacer(),
                   TextButton(
                     onPressed: () => _open(id),

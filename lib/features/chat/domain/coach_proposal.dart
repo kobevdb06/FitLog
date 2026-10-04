@@ -1,14 +1,18 @@
-/// What the coach offers to add, and what it is not: a change.
+/// What the coach offers to add, and the one thing it does itself.
 ///
-/// The seven lookups are read-only on purpose - it is your logbook, and a
-/// model that may write in it can also quietly spoil it: an exercise with the
-/// wrong muscle, a duplicate of something you already had, found back months
-/// later in your own statistics.
+/// The lookups are read-only on purpose - it is your logbook, and a model
+/// that may write in it can also quietly spoil it: an exercise with the wrong
+/// muscle, a duplicate of something you already had, found back months later
+/// in your own statistics.
 ///
-/// So the coach describes instead. A proposal is stored with the answer it
-/// came with, drawn as a card, and nothing exists until you tap the button on
-/// it. The row in your database is then something you did, with the coach's
-/// words as the draft.
+/// So for an exercise the coach describes instead. A proposal is stored with
+/// the answer it came with, drawn as a card, and nothing exists until you tap
+/// the button on it.
+///
+/// A routine in the coach's folder is the exception: those it makes and
+/// changes itself, because you asked for one or put one there knowing it
+/// could. The card then says what it did, after the fact, and every earlier
+/// version is kept (see `RoutinesDao.keepVersion`).
 library;
 
 import 'dart:convert';
@@ -16,7 +20,13 @@ import 'dart:convert';
 /// What is being offered.
 enum ProposalKind {
   exercise('exercise'),
-  routine('routine');
+
+  /// A routine offered with a button. What the coach did before it could
+  /// make routines itself; still drawn in the conversations of then.
+  routine('routine'),
+
+  /// A routine the coach made or changed in its own folder.
+  coachRoutine('coach_routine');
 
   const ProposalKind(this.wire);
 
@@ -164,15 +174,31 @@ class CoachProposal {
     required this.exercise,
     required this.routine,
     this.appliedId,
+    this.made = false,
+    this.change,
   });
 
   CoachProposal.ofExercise(ExerciseProposal this.exercise, {this.appliedId})
     : kind = ProposalKind.exercise,
-      routine = null;
+      routine = null,
+      made = false,
+      change = null;
 
   CoachProposal.ofRoutine(RoutineProposal this.routine, {this.appliedId})
     : kind = ProposalKind.routine,
-      exercise = null;
+      exercise = null,
+      made = false,
+      change = null;
+
+  /// A routine the coach [made] - or changed, when false - in its own
+  /// folder: already there, so [appliedId] is its id from the start.
+  CoachProposal.ofCoachRoutine(
+    RoutineProposal this.routine, {
+    required String this.appliedId,
+    required this.made,
+    this.change,
+  }) : kind = ProposalKind.coachRoutine,
+       exercise = null;
 
   final ProposalKind kind;
   final ExerciseProposal? exercise;
@@ -182,11 +208,17 @@ class CoachProposal {
   /// is still just an offer.
   final String? appliedId;
 
+  /// For a routine of the coach: whether it was new rather than changed.
+  final bool made;
+
+  /// For a routine of the coach: what it did and why, in one sentence.
+  final String? change;
+
   bool get isApplied => appliedId != null;
 
   String get title => switch (kind) {
     ProposalKind.exercise => exercise!.name,
-    ProposalKind.routine => routine!.name,
+    ProposalKind.routine || ProposalKind.coachRoutine => routine!.name,
   };
 
   CoachProposal applied(String id) => CoachProposal(
@@ -194,6 +226,8 @@ class CoachProposal {
     exercise: exercise,
     routine: routine,
     appliedId: id,
+    made: made,
+    change: change,
   );
 
   Map<String, Object?> toJson() => {
@@ -201,6 +235,7 @@ class CoachProposal {
     'applied_id': appliedId,
     if (exercise != null) 'exercise': exercise!.toJson(),
     if (routine != null) 'routine': routine!.toJson(),
+    if (kind == ProposalKind.coachRoutine) ...{'made': made, 'change': change},
   };
 
   static CoachProposal? fromJson(Map<String, Object?> json) {
@@ -219,6 +254,14 @@ class CoachProposal {
         CoachProposal.ofRoutine(
           RoutineProposal.fromJson(body('routine')),
           appliedId: applied,
+        ),
+      ProposalKind.coachRoutine
+          when json['routine'] is Map && applied != null =>
+        CoachProposal.ofCoachRoutine(
+          RoutineProposal.fromJson(body('routine')),
+          appliedId: applied,
+          made: json['made'] == true,
+          change: json['change'] as String?,
         ),
       _ => null,
     };

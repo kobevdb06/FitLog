@@ -7,7 +7,9 @@
 /// answer and what is kept with the message, so "wat heeft het over mij
 /// gezien" stays answerable a month later.
 ///
-/// Nothing here can write, delete, or reach outside the database.
+/// Nothing here can delete or reach outside the database, and one thing
+/// writes: a routine in the coach's folder, which only holds routines the
+/// coach made or the user put there knowing it could change them.
 library;
 
 import 'dart:convert';
@@ -212,16 +214,43 @@ class CoachTools {
       },
     },
     {
-      'name': 'propose_routine',
+      'name': 'coach_routines',
       'description':
-          'Stel een routine voor die de gebruiker met één tik kan toevoegen. '
-          'Maakt zelf niets aan. Elke oefening moet met haar naam in de app '
-          'bestaan; zoek ze eerst op met search_exercises.',
+          'De routines in de map Coach, de enige die je mag aanpassen: per '
+          'routine de naam, notitie, ingeplande dagen, wanneer laatst '
+          'gedaan, en elke oefening met rusttijd, superset, notitie en elke '
+          'set (type, herhalingen, gewicht, tijd). Lees een routine hier '
+          'voor je ze aanpast.',
+      'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
+    },
+    {
+      'name': 'save_coach_routine',
+      'description':
+          'Maakt een routine op maat in de map Coach, of vervangt de inhoud '
+          'van een routine die daar al staat (geef dan routine mee). Dit '
+          'schrijft echt in de app; hoe ze ervoor was, blijft bewaard en de '
+          'gebruiker kan het terugzetten. Geef altijd de hele routine zoals '
+          'ze moet worden, niet alleen wat verandert. Elke oefening met '
+          'exact de naam uit search_exercises, en alleen wat kan in de zaal '
+          'van de gebruiker (gym). Herhalingen en gewichten op basis van '
+          'exercise_history; laat een gewicht weg als je het niet weet.',
       'input_schema': {
         'type': 'object',
         'properties': {
+          'routine': {
+            'type': 'string',
+            'description':
+                'De naam van de routine in de map Coach die je aanpast. '
+                'Weglaten voor een nieuwe.',
+          },
           'name': {'type': 'string'},
           'notes': {'type': 'string'},
+          'change': {
+            'type': 'string',
+            'description':
+                'Eén zin voor de gebruiker: wat je maakte of veranderde, en '
+                'waarom.',
+          },
           'exercises': {
             'type': 'array',
             'items': {
@@ -229,16 +258,36 @@ class CoachTools {
               'properties': {
                 'exercise': {
                   'type': 'string',
-                  'description': 'Naam zoals ze in de app staat.',
+                  'description': 'Exact de naam zoals ze in de app staat.',
                 },
-                'sets': {'type': 'integer'},
-                'target_reps': {'type': 'integer'},
+                'rest_seconds': {'type': 'integer'},
+                'superset': {
+                  'type': 'integer',
+                  'description':
+                      'Zelfde getal voor oefeningen die je na elkaar doet.',
+                },
+                'notes': {'type': 'string'},
+                'sets': {
+                  'type': 'array',
+                  'items': {
+                    'type': 'object',
+                    'properties': {
+                      'type': {
+                        'type': 'string',
+                        'enum': ['normal', 'warmup', 'drop', 'failure'],
+                      },
+                      'reps': {'type': 'integer'},
+                      'weight_kg': {'type': 'number'},
+                      'seconds': {'type': 'integer'},
+                    },
+                  },
+                },
               },
               'required': ['exercise', 'sets'],
             },
           },
         },
-        'required': ['name', 'exercises'],
+        'required': ['name', 'change', 'exercises'],
       },
     },
     {
@@ -365,7 +414,8 @@ class CoachTools {
 
   static const Set<String> names = {
     'propose_exercise',
-    'propose_routine',
+    'coach_routines',
+    'save_coach_routine',
     'search_exercises',
     'recent_workouts',
     'current_workout',
@@ -389,7 +439,8 @@ class CoachTools {
   Future<CoachLookup> run(String name, Map<String, Object?> input) async {
     return switch (name) {
       'propose_exercise' => _proposeExercise(input),
-      'propose_routine' => _proposeRoutine(input),
+      'coach_routines' => _coachRoutines(),
+      'save_coach_routine' => _saveCoachRoutine(input),
       'search_exercises' => _searchExercises(input),
       'recent_workouts' => _recentWorkouts(input),
       'current_workout' => _currentWorkout(),
@@ -481,64 +532,221 @@ class CoachTools {
     );
   }
 
-  /// A routine the coach would make, with every exercise matched to a real
-  /// one. An invented name comes back as an error so the model can fix it.
-  Future<CoachLookup> _proposeRoutine(Map<String, Object?> input) async {
+  /// The routines in the coach's folder, set by set.
+  Future<CoachLookup> _coachRoutines() async {
+    final folder = await db.routinesDao.coachFolder();
+    final rows = await db.routinesDao.coachRoutines();
+    final routines = <Map<String, Object?>>[];
+    for (final row in rows.take(kCoachRowCap)) {
+      final detail = await db.routinesDao.getRoutineDetail(row.id);
+      if (detail == null) continue;
+      routines.add({
+        'name': row.name,
+        'notes': ?_text(row.notes),
+        'scheduled_days': _days(row.scheduledDays),
+        'last_done': switch (row.lastPerformedAt) {
+          final at? => _day(at),
+          null => null,
+        },
+        'exercises': [
+          for (final item in detail.exercises)
+            {
+              'exercise': item.exercise.name,
+              'rest_seconds': ?item.routineExercise.restSeconds,
+              'superset': ?item.routineExercise.supersetGroup,
+              'notes': ?_text(item.routineExercise.notes),
+              'sets': [
+                for (final set in item.sets)
+                  {
+                    'type': set.setType,
+                    'reps': ?set.targetReps,
+                    'weight_kg': ?set.targetWeightKg,
+                    'seconds': ?set.targetDurationSeconds,
+                    'meters': ?set.targetDistanceM,
+                  },
+              ],
+            },
+        ],
+      });
+    }
+
+    return CoachLookup(
+      json: jsonEncode({'folder_exists': folder != null, 'routines': routines}),
+      summary: 'je routines in de map Coach',
+    );
+  }
+
+  /// The most of each the coach may put in one routine. A guard against a
+  /// runaway answer, far above anything a person would train.
+  static const int _maxExercises = 20;
+  static const int _maxSets = 12;
+
+  /// Makes a routine in the coach's folder, or changes one that is there.
+  ///
+  /// The only lookup that writes, and it can only write there: a routine
+  /// outside the folder is refused by name, whatever the model asks. The
+  /// routine as it was is kept first, so the change can be put back.
+  Future<CoachLookup> _saveCoachRoutine(Map<String, Object?> input) async {
+    CoachLookup refused(String error, String summary) => CoachLookup(
+      json: jsonEncode({'ok': false, 'error': error}),
+      summary: summary,
+    );
+
     final name = _text(input['name']);
+    final change = _text(input['change']);
     final wanted = input['exercises'];
-    if (name == null || wanted is! List || wanted.isEmpty) {
-      return const CoachLookup(
-        json: '{"ok":false,"error":"geef een naam en minstens één oefening"}',
-        summary: 'een voorstel zonder oefeningen',
+    if (name == null || change == null || wanted is! List || wanted.isEmpty) {
+      return refused(
+        'geef een naam, een zin over wat je doet (change) en minstens één '
+            'oefening',
+        'een routine zonder naam of oefeningen',
+      );
+    }
+    if (wanted.length > _maxExercises) {
+      return refused(
+        'hoogstens $_maxExercises oefeningen in één routine',
+        'een routine met te veel oefeningen',
       );
     }
 
-    final exercises = <ProposedRoutineExercise>[];
+    // Every exercise by its exact name: a routine is not the place to guess
+    // which of three bench presses was meant.
+    final exercises = <RoutineExerciseDraft>[];
+    final card = <ProposedRoutineExercise>[];
     final missing = <String>[];
-    for (final entry in wanted.take(kCoachRowCap)) {
+    for (final entry in wanted) {
       if (entry is! Map) continue;
       final asked = _text(entry['exercise']);
-      if (asked == null) continue;
-
+      final sets = entry['sets'];
+      if (asked == null || sets is! List || sets.isEmpty) {
+        return refused(
+          'elke oefening heeft een naam en minstens één set',
+          'een oefening zonder sets',
+        );
+      }
+      if (sets.length > _maxSets) {
+        return refused(
+          'hoogstens $_maxSets sets per oefening ($asked)',
+          'een oefening met te veel sets',
+        );
+      }
       final match = await db
           .customSelect(
             'SELECT id, name FROM exercises '
-            'WHERE is_archived = 0 AND (LOWER(name) = LOWER(?) '
-            'OR name LIKE ?) ORDER BY LENGTH(name) LIMIT 1',
-            variables: [
-              Variable.withString(asked),
-              Variable.withString('%$asked%'),
-            ],
+            'WHERE is_archived = 0 AND LOWER(name) = LOWER(?) LIMIT 1',
+            variables: [Variable.withString(asked)],
           )
           .getSingleOrNull();
-
       if (match == null) {
         missing.add(asked);
         continue;
       }
+
+      final drafts = <RoutineSetDraft>[];
+      for (final set in sets) {
+        if (set is! Map) continue;
+        final reps = _number(set['reps'])?.round();
+        final kg = _number(set['weight_kg']);
+        final seconds = _number(set['seconds'])?.round();
+        if ((reps != null && (reps < 1 || reps > 100)) ||
+            (kg != null && (kg < 0 || kg > 500)) ||
+            (seconds != null && (seconds < 1 || seconds > 3600))) {
+          return refused(
+            'onmogelijke waarden bij $asked: herhalingen 1-100, gewicht '
+                '0-500 kg, tijd 1-3600 seconden',
+            'een set met onmogelijke waarden',
+          );
+        }
+        drafts.add(
+          RoutineSetDraft(
+            setType: SetType.fromWire('${set['type'] ?? 'normal'}'),
+            targetReps: reps,
+            targetWeightKg: kg,
+            targetDurationSeconds: seconds,
+          ),
+        );
+      }
+
+      final id = match.read<String>('id');
       exercises.add(
+        RoutineExerciseDraft(
+          exerciseId: id,
+          restSeconds: _number(entry['rest_seconds'])?.round(),
+          supersetGroup: _number(entry['superset'])?.round(),
+          notes: _text(entry['notes']),
+          sets: drafts,
+        ),
+      );
+      card.add(
         ProposedRoutineExercise(
-          exerciseId: match.read<String>('id'),
+          exerciseId: id,
           name: match.read<String>('name'),
-          sets: _limit(entry['sets'], 3),
-          targetReps: entry['target_reps'] is int
-              ? entry['target_reps']! as int
-              : null,
+          sets: drafts.length,
+          targetReps: drafts
+              .where((s) => s.setType != SetType.warmup)
+              .map((s) => s.targetReps)
+              .nonNulls
+              .firstOrNull,
         ),
       );
     }
-
     if (missing.isNotEmpty) {
       return CoachLookup(
         json: jsonEncode({
           'ok': false,
           'error':
-              'deze oefeningen bestaan niet in de app; zoek ze op met '
-              'search_exercises en gebruik de naam die daar staat, of stel ze '
-              'eerst voor met propose_exercise',
+              'deze oefeningen bestaan niet met die naam; zoek ze op met '
+              'search_exercises en gebruik de naam exact zoals ze daar staat',
           'not_found': missing,
         }),
         summary: 'oefeningen die niet bestaan: ${missing.join(', ')}',
+      );
+    }
+
+    final ours = await db.routinesDao.coachRoutines();
+    RoutineRow? named(String wanted) => ours
+        .where((r) => r.name.toLowerCase() == wanted.toLowerCase())
+        .firstOrNull;
+    final changing = _text(input['routine']);
+
+    final String id;
+    if (changing != null) {
+      final existing = named(changing);
+      if (existing == null) {
+        return refused(
+          '"$changing" staat niet in de map Coach. Alleen routines daar mag '
+              'je aanpassen; maak een nieuwe, of vraag de gebruiker de routine '
+              'zelf in de map Coach te zetten.',
+          'de routine "$changing", die het niet mag aanpassen',
+        );
+      }
+      id = existing.id;
+      await db.routinesDao.keepVersion(id, 'Voor: $change');
+      await db.routinesDao.updateRoutine(
+        id,
+        RoutineDraft(
+          name: name,
+          notes: _text(input['notes']),
+          folderId: existing.folderId,
+          colorIndex: existing.colorIndex,
+          exercises: exercises,
+        ),
+      );
+    } else {
+      if (named(name) != null) {
+        return refused(
+          '"$name" staat al in de map Coach; geef routine: "$name" mee om '
+              'ze aan te passen',
+          'de routine "$name", die al bestond',
+        );
+      }
+      id = await db.routinesDao.createRoutine(
+        RoutineDraft(
+          name: name,
+          notes: _text(input['notes']),
+          folderId: await db.routinesDao.ensureCoachFolder(),
+          exercises: exercises,
+        ),
       );
     }
 
@@ -547,19 +755,31 @@ class CoachTools {
         'ok': true,
         'shown_to_user': true,
         'note':
-            'Het voorstel staat als kaart in het gesprek. Zeg kort waarom je '
-            'deze routine voorstelt; de gebruiker tikt zelf op Toevoegen.',
+            'De routine staat in de map Coach en als kaart in het gesprek. '
+            'Zeg in een paar zinnen wat je maakte of veranderde en waarom; '
+            'de kaart toont de oefeningen.',
       }),
-      summary: 'een voorstel voor de routine "$name"',
-      proposal: CoachProposal.ofRoutine(
+      summary: changing == null
+          ? 'de routine "$name", die het maakte'
+          : 'de routine "$name", die het aanpaste',
+      proposal: CoachProposal.ofCoachRoutine(
         RoutineProposal(
           name: name,
-          exercises: exercises,
+          exercises: card,
           notes: _text(input['notes']),
         ),
+        appliedId: id,
+        made: changing == null,
+        change: change,
       ),
     );
   }
+
+  double? _number(Object? value) => switch (value) {
+    final num n => n.toDouble(),
+    final String s => double.tryParse(s),
+    _ => null,
+  };
 
   Future<CoachLookup> _searchExercises(Map<String, Object?> input) async {
     final query = _text(input['query']);

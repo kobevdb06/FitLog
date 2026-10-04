@@ -3454,3 +3454,32 @@ oudste gaan eerst; ze gaan mee weg met de routine. Terugzetten bewaart
 eerst de routine zoals ze nu is, dus ook dat is ongedaan te maken. Een
 oefening die intussen verwijderd is, valt eruit in plaats van het hele
 terugzetten te laten mislukken, en de melding zegt hoeveel.
+
+**Wat de coach zelf doet.** Twee nieuwe opzoekingen. `coach_routines` leest
+de routines in de map, set per set. `save_coach_routine` maakt er een, of
+vervangt de inhoud van een die er staat - het enige in de coach dat
+schrijft. Het weigert, met een fout die het model kan rechtzetten:
+- een routine buiten de map, ook als de naam klopt: alleen wat in de map
+  staat, en dat wordt gecontroleerd in de code, niet gevraagd aan het model;
+- een oefening die niet exact zo heet (hoofdletters niet meegerekend):
+  "bench" is geen naam als er drie bench presses zijn, en een verkeerde
+  oefening in een routine valt pas op in de zaal;
+- onmogelijke waarden (meer dan 100 herhalingen, meer dan 500 kg), meer
+  dan 20 oefeningen of 12 sets per oefening;
+- een nieuwe routine met de naam van een die er al staat.
+Het model geeft altijd de hele routine zoals ze moet worden: een lijst
+wijzigingen toepassen op een routine die het niet ziet, is vragen om
+fouten. Voor elke aanpassing wordt de vorige versie bewaard, met als
+notitie de zin waarin de coach zegt wat hij deed.
+
+In het gesprek staat een kaart "Gemaakt door de coach" of "Aangepast door
+de coach", met die zin, de oefeningen en een knop naar de routine - geen
+knop om toe te voegen, want het staat er al. `propose_routine`, de kaart
+met een knop, is weg: twee manieren om een routine te maken, waarvan de
+ene niet aan te passen is, maakt het model onzeker over welke het moet
+nemen. Kaarten van toen blijven gewoon werken. Een oefening voorstellen
+blijft wel een kaart met een knop: een nieuwe oefening komt in de
+catalogus, en daar heeft de coach niets te schrijven.
+
+De vaste instructies werden er korter van (4150 tekens zonder naam), niet
+langer: dezelfde regels, in minder woorden.

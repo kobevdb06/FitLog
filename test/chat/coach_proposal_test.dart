@@ -303,43 +303,6 @@ void main() {
     });
   });
 
-  group('een routine voorstellen', () {
-    test('matcht elke oefening aan een die bestaat', () async {
-      final lookup = await tools.run('propose_routine', {
-        'name': 'Push',
-        'exercises': [
-          {'exercise': 'bench', 'sets': 4, 'target_reps': 8},
-        ],
-      });
-
-      expect(decode(lookup)['ok'], isTrue);
-      final routine = lookup.proposal!.routine!;
-      expect(routine.name, 'Push');
-      expect(routine.exercises.single.exerciseId, 'ex-bench');
-      expect(routine.exercises.single.name, 'Bench Press');
-      expect(routine.exercises.single.sets, 4);
-      expect(routine.totalSets, 4);
-    });
-
-    test(
-      'en een verzonnen oefening komt terug als fout, niet als kaart',
-      () async {
-        // Zo kan het model het rechtzetten in plaats van een routine te maken
-        // met een oefening die niet bestaat.
-        final lookup = await tools.run('propose_routine', {
-          'name': 'Push',
-          'exercises': [
-            {'exercise': 'Zweefduik', 'sets': 3},
-          ],
-        });
-
-        expect(decode(lookup)['ok'], isFalse);
-        expect('${decode(lookup)['not_found']}', contains('Zweefduik'));
-        expect(lookup.proposal, isNull);
-      },
-    );
-  });
-
   group('de tekeningen bij een voorstel', () {
     test('de coach geeft zijn eigen beschrijvingen mee', () async {
       final lookup = await tools.run('propose_exercise', {

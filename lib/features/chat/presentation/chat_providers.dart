@@ -418,6 +418,9 @@ class CoachController extends _$CoachController {
         );
       case ProposalKind.routine:
         id = await _createRoutine(db, proposal.routine!);
+      // Made by the coach itself, so already there; isApplied caught it.
+      case ProposalKind.coachRoutine:
+        return proposal.appliedId;
     }
 
     proposals[index] = proposal.applied(id);

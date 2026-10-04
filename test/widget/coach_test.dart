@@ -711,6 +711,49 @@ void main() {
       expect(routines.single.name, 'Push');
       expect(find.text('Toegevoegd'), findsOneWidget);
     });
+
+    testWidgets('wat de coach zelf aanpaste, zegt wat en waarom, zonder '
+        'knop om toe te voegen', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Zwaarder graag');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Aangepast.',
+        proposals: encodeProposals([
+          CoachProposal.ofCoachRoutine(
+            const RoutineProposal(
+              name: 'Chest day',
+              exercises: [
+                ProposedRoutineExercise(
+                  exerciseId: 'ex-bench',
+                  name: 'Bench Press',
+                  sets: 4,
+                  targetReps: 5,
+                ),
+              ],
+            ),
+            appliedId: 'r-1',
+            made: false,
+            change: 'Zwaarder en minder herhalingen: je bench staat stil.',
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Aangepast door de coach'), findsOneWidget);
+      expect(
+        find.text('Zwaarder en minder herhalingen: je bench staat stil.'),
+        findsOneWidget,
+      );
+      expect(find.text('4× Bench Press · 5 herhalingen'), findsOneWidget);
+      expect(find.text('In de map Coach'), findsOneWidget);
+      expect(find.text('Bekijken'), findsOneWidget);
+      expect(find.text('Routine toevoegen'), findsNothing);
+    });
   });
 
   group('eerdere gesprekken', () {

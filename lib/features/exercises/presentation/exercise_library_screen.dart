@@ -198,6 +198,12 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
               .where((e) => !widget.excludeIds.contains(e.id))
               .toList();
           final showRecent = filter.isEmpty && recent.isNotEmpty;
+          // Which exercises were used recently is read once; what they look
+          // like comes from the live list, so a star set on one of them
+          // shows at once and not only after leaving the screen. Without a
+          // filter that list holds every exercise.
+          final live = {for (final e in list) e.id: e};
+          final recentRows = [for (final e in recent) live[e.id] ?? e];
 
           if (visible.isEmpty && !showRecent) {
             return EmptyState(
@@ -217,7 +223,7 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
             children: [
               if (showRecent) ...[
                 const SectionHeader('Recent gebruikt'),
-                for (final exercise in recent.where(
+                for (final exercise in recentRows.where(
                   (e) => !widget.excludeIds.contains(e.id),
                 ))
                   _ExerciseTile(

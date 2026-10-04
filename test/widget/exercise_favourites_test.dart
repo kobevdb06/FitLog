@@ -4,6 +4,7 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/providers/core_providers.dart';
 import 'package:fitlog/core/widgets/exercise_image.dart';
 import 'package:fitlog/features/exercises/presentation/exercise_library_screen.dart';
+import 'package:fitlog/features/exercises/presentation/exercise_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -131,6 +132,58 @@ void main() {
 
       expect((await db.exercisesDao.getById('ex-fly'))!.isFavourite, isTrue);
       expect(find.widgetWithText(FilterChip, 'Favoriet'), findsOneWidget);
+    });
+
+    testWidgets('ook bij recent gebruikt vult de ster meteen in', (
+      tester,
+    ) async {
+      // Die rij las de catalogus maar één keer: de ster stond pas ingevuld
+      // na het scherm te verlaten en terug te openen.
+      await tester.runAsync(() async {
+        await db
+            .into(db.workoutsTable)
+            .insert(
+              WorkoutsTableCompanion.insert(
+                id: 'w1',
+                name: 'Borst',
+                startedAt: 1000,
+                endedAt: const Value(2000),
+              ),
+            );
+        await db
+            .into(db.workoutExercisesTable)
+            .insert(
+              WorkoutExercisesTableCompanion.insert(
+                id: 'we1',
+                workoutId: 'w1',
+                exerciseId: 'ex-fly',
+                sortOrder: 0,
+              ),
+            );
+      });
+      // De lijst van recent gebruikt wordt één keer gelezen; dat gebeurt hier
+      // vooraf, met echte tijd, zoals de app het bij het openen doet.
+      container.listen(recentExercisesProvider, (_, _) {});
+      await tester.runAsync(
+        () => container.read(recentExercisesProvider.future),
+      );
+      await pumpLibrary(tester);
+      expect(find.text('RECENT GEBRUIKT'), findsOneWidget);
+
+      // De eerste Cable Fly is die bij recent gebruikt.
+      await tester.tap(starOf('Cable Fly').first);
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.widgetWithText(ListTile, 'Cable Fly'),
+          matching: find.byTooltip('Uit je favorieten halen'),
+        ),
+        findsNWidgets(2),
+      );
     });
 
     testWidgets('en het filter toont alleen je favorieten', (tester) async {

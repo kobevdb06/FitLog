@@ -113,8 +113,36 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
         day: DateTime(day.year, day.month, day.day).millisecondsSinceEpoch,
         hrvMs: Value(hrvMs ?? existing?.hrvMs),
         restingHr: Value(restingHr ?? existing?.restingHr),
+        // The watch's own beats any FitLog worked out.
+        restingHrDerived: Value(
+          restingHr == null && (existing?.restingHrDerived ?? false),
+        ),
       ),
     );
+  }
+
+  /// Sets the resting heart rate FitLog worked out from the night ending on
+  /// [day]. False, and nothing written, when the watch gave one of its own
+  /// for that day: that one wins.
+  Future<bool> setDerivedRestingHr(DateTime day, double bpm) async {
+    final id = RecoveryDao.dayKey(day);
+    final existing = await (select(
+      dailyVitalsTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (existing?.restingHr != null && !existing!.restingHrDerived) {
+      return false;
+    }
+
+    await into(dailyVitalsTable).insertOnConflictUpdate(
+      DailyVitalsTableCompanion.insert(
+        id: id,
+        day: DateTime(day.year, day.month, day.day).millisecondsSinceEpoch,
+        hrvMs: Value(existing?.hrvMs),
+        restingHr: Value(bpm),
+        restingHrDerived: const Value(true),
+      ),
+    );
+    return true;
   }
 
   Future<void> importCardio({

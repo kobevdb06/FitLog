@@ -12332,8 +12332,29 @@ class $DailyVitalsTableTable extends DailyVitalsTable
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _restingHrDerivedMeta = const VerificationMeta(
+    'restingHrDerived',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, day, hrvMs, restingHr];
+  late final GeneratedColumn<bool> restingHrDerived = GeneratedColumn<bool>(
+    'resting_hr_derived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("resting_hr_derived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    day,
+    hrvMs,
+    restingHr,
+    restingHrDerived,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -12371,6 +12392,15 @@ class $DailyVitalsTableTable extends DailyVitalsTable
         restingHr.isAcceptableOrUnknown(data['resting_hr']!, _restingHrMeta),
       );
     }
+    if (data.containsKey('resting_hr_derived')) {
+      context.handle(
+        _restingHrDerivedMeta,
+        restingHrDerived.isAcceptableOrUnknown(
+          data['resting_hr_derived']!,
+          _restingHrDerivedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -12396,6 +12426,10 @@ class $DailyVitalsTableTable extends DailyVitalsTable
         DriftSqlType.double,
         data['${effectivePrefix}resting_hr'],
       ),
+      restingHrDerived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}resting_hr_derived'],
+      )!,
     );
   }
 
@@ -12417,11 +12451,17 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
 
   /// Beats per minute.
   final double? restingHr;
+
+  /// True when [restingHr] was worked out by FitLog from the heart rate
+  /// during the night, because the watch handed over none of its own. One
+  /// from the watch replaces it, and never the other way round.
+  final bool restingHrDerived;
   const DailyVitalsRow({
     required this.id,
     required this.day,
     this.hrvMs,
     this.restingHr,
+    required this.restingHrDerived,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -12434,6 +12474,7 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
     if (!nullToAbsent || restingHr != null) {
       map['resting_hr'] = Variable<double>(restingHr);
     }
+    map['resting_hr_derived'] = Variable<bool>(restingHrDerived);
     return map;
   }
 
@@ -12447,6 +12488,7 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       restingHr: restingHr == null && nullToAbsent
           ? const Value.absent()
           : Value(restingHr),
+      restingHrDerived: Value(restingHrDerived),
     );
   }
 
@@ -12460,6 +12502,7 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       day: serializer.fromJson<int>(json['day']),
       hrvMs: serializer.fromJson<double?>(json['hrvMs']),
       restingHr: serializer.fromJson<double?>(json['restingHr']),
+      restingHrDerived: serializer.fromJson<bool>(json['restingHrDerived']),
     );
   }
   @override
@@ -12470,6 +12513,7 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       'day': serializer.toJson<int>(day),
       'hrvMs': serializer.toJson<double?>(hrvMs),
       'restingHr': serializer.toJson<double?>(restingHr),
+      'restingHrDerived': serializer.toJson<bool>(restingHrDerived),
     };
   }
 
@@ -12478,11 +12522,13 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
     int? day,
     Value<double?> hrvMs = const Value.absent(),
     Value<double?> restingHr = const Value.absent(),
+    bool? restingHrDerived,
   }) => DailyVitalsRow(
     id: id ?? this.id,
     day: day ?? this.day,
     hrvMs: hrvMs.present ? hrvMs.value : this.hrvMs,
     restingHr: restingHr.present ? restingHr.value : this.restingHr,
+    restingHrDerived: restingHrDerived ?? this.restingHrDerived,
   );
   DailyVitalsRow copyWithCompanion(DailyVitalsTableCompanion data) {
     return DailyVitalsRow(
@@ -12490,6 +12536,9 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
       day: data.day.present ? data.day.value : this.day,
       hrvMs: data.hrvMs.present ? data.hrvMs.value : this.hrvMs,
       restingHr: data.restingHr.present ? data.restingHr.value : this.restingHr,
+      restingHrDerived: data.restingHrDerived.present
+          ? data.restingHrDerived.value
+          : this.restingHrDerived,
     );
   }
 
@@ -12499,13 +12548,14 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
           ..write('id: $id, ')
           ..write('day: $day, ')
           ..write('hrvMs: $hrvMs, ')
-          ..write('restingHr: $restingHr')
+          ..write('restingHr: $restingHr, ')
+          ..write('restingHrDerived: $restingHrDerived')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, day, hrvMs, restingHr);
+  int get hashCode => Object.hash(id, day, hrvMs, restingHr, restingHrDerived);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -12513,7 +12563,8 @@ class DailyVitalsRow extends DataClass implements Insertable<DailyVitalsRow> {
           other.id == this.id &&
           other.day == this.day &&
           other.hrvMs == this.hrvMs &&
-          other.restingHr == this.restingHr);
+          other.restingHr == this.restingHr &&
+          other.restingHrDerived == this.restingHrDerived);
 }
 
 class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
@@ -12521,12 +12572,14 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
   final Value<int> day;
   final Value<double?> hrvMs;
   final Value<double?> restingHr;
+  final Value<bool> restingHrDerived;
   final Value<int> rowid;
   const DailyVitalsTableCompanion({
     this.id = const Value.absent(),
     this.day = const Value.absent(),
     this.hrvMs = const Value.absent(),
     this.restingHr = const Value.absent(),
+    this.restingHrDerived = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DailyVitalsTableCompanion.insert({
@@ -12534,6 +12587,7 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     required int day,
     this.hrvMs = const Value.absent(),
     this.restingHr = const Value.absent(),
+    this.restingHrDerived = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        day = Value(day);
@@ -12542,6 +12596,7 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     Expression<int>? day,
     Expression<double>? hrvMs,
     Expression<double>? restingHr,
+    Expression<bool>? restingHrDerived,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -12549,6 +12604,7 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
       if (day != null) 'day': day,
       if (hrvMs != null) 'hrv_ms': hrvMs,
       if (restingHr != null) 'resting_hr': restingHr,
+      if (restingHrDerived != null) 'resting_hr_derived': restingHrDerived,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -12558,6 +12614,7 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     Value<int>? day,
     Value<double?>? hrvMs,
     Value<double?>? restingHr,
+    Value<bool>? restingHrDerived,
     Value<int>? rowid,
   }) {
     return DailyVitalsTableCompanion(
@@ -12565,6 +12622,7 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
       day: day ?? this.day,
       hrvMs: hrvMs ?? this.hrvMs,
       restingHr: restingHr ?? this.restingHr,
+      restingHrDerived: restingHrDerived ?? this.restingHrDerived,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -12584,6 +12642,9 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
     if (restingHr.present) {
       map['resting_hr'] = Variable<double>(restingHr.value);
     }
+    if (restingHrDerived.present) {
+      map['resting_hr_derived'] = Variable<bool>(restingHrDerived.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -12597,6 +12658,7 @@ class DailyVitalsTableCompanion extends UpdateCompanion<DailyVitalsRow> {
           ..write('day: $day, ')
           ..write('hrvMs: $hrvMs, ')
           ..write('restingHr: $restingHr, ')
+          ..write('restingHrDerived: $restingHrDerived, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -22498,6 +22560,7 @@ typedef $$DailyVitalsTableTableCreateCompanionBuilder =
       required int day,
       Value<double?> hrvMs,
       Value<double?> restingHr,
+      Value<bool> restingHrDerived,
       Value<int> rowid,
     });
 typedef $$DailyVitalsTableTableUpdateCompanionBuilder =
@@ -22506,6 +22569,7 @@ typedef $$DailyVitalsTableTableUpdateCompanionBuilder =
       Value<int> day,
       Value<double?> hrvMs,
       Value<double?> restingHr,
+      Value<bool> restingHrDerived,
       Value<int> rowid,
     });
 
@@ -22535,6 +22599,11 @@ class $$DailyVitalsTableTableFilterComposer
 
   ColumnFilters<double> get restingHr => $composableBuilder(
     column: $table.restingHr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get restingHrDerived => $composableBuilder(
+    column: $table.restingHrDerived,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -22567,6 +22636,11 @@ class $$DailyVitalsTableTableOrderingComposer
     column: $table.restingHr,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get restingHrDerived => $composableBuilder(
+    column: $table.restingHrDerived,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DailyVitalsTableTableAnnotationComposer
@@ -22589,6 +22663,11 @@ class $$DailyVitalsTableTableAnnotationComposer
 
   GeneratedColumn<double> get restingHr =>
       $composableBuilder(column: $table.restingHr, builder: (column) => column);
+
+  GeneratedColumn<bool> get restingHrDerived => $composableBuilder(
+    column: $table.restingHrDerived,
+    builder: (column) => column,
+  );
 }
 
 class $$DailyVitalsTableTableTableManager
@@ -22632,12 +22711,14 @@ class $$DailyVitalsTableTableTableManager
                 Value<int> day = const Value.absent(),
                 Value<double?> hrvMs = const Value.absent(),
                 Value<double?> restingHr = const Value.absent(),
+                Value<bool> restingHrDerived = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyVitalsTableCompanion(
                 id: id,
                 day: day,
                 hrvMs: hrvMs,
                 restingHr: restingHr,
+                restingHrDerived: restingHrDerived,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -22646,12 +22727,14 @@ class $$DailyVitalsTableTableTableManager
                 required int day,
                 Value<double?> hrvMs = const Value.absent(),
                 Value<double?> restingHr = const Value.absent(),
+                Value<bool> restingHrDerived = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyVitalsTableCompanion.insert(
                 id: id,
                 day: day,
                 hrvMs: hrvMs,
                 restingHr: restingHr,
+                restingHrDerived: restingHrDerived,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

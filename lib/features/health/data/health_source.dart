@@ -203,3 +203,47 @@ HeartRateSummary? summarizeHeartRate(
     samples: inside.length,
   );
 }
+
+/// How long the stretch is that a resting heart rate is the lowest average
+/// of, and how many samples it needs before its average means anything.
+const Duration kRestingWindow = Duration(minutes: 30);
+const int kRestingWindowSamples = 3;
+
+/// A resting heart rate worked out from the heart rate during one night:
+/// the lowest half hour while asleep, by the middle reading of each half
+/// hour.
+///
+/// For a watch that measures the heart rate all night but does not hand
+/// Health Connect a resting heart rate of its own - most do the same sum
+/// internally. A stretch rather than one sample, and its middle reading
+/// rather than its average: with a reading every ten minutes, one reading
+/// of 38 between two of 56 is the watch slipping, not the heart, and an
+/// average would still make it 50. Null when no half hour of the night had
+/// [kRestingWindowSamples] samples.
+double? restingHeartRateFromNight(
+  Iterable<ImportedReading> samples, {
+  required DateTime from,
+  required DateTime to,
+}) {
+  final night = [
+    for (final s in samples)
+      if (!s.at.isBefore(from) && !s.at.isAfter(to) && s.value > 0) s,
+  ]..sort((a, b) => a.at.compareTo(b.at));
+
+  double? lowest;
+  for (var start = 0; start < night.length; start++) {
+    final until = night[start].at.add(kRestingWindow);
+    final window = [
+      for (var i = start; i < night.length && night[i].at.isBefore(until); i++)
+        night[i].value,
+    ];
+    if (window.length < kRestingWindowSamples) continue;
+    window.sort();
+    final mid = window.length ~/ 2;
+    final middle = window.length.isOdd
+        ? window[mid]
+        : (window[mid - 1] + window[mid]) / 2;
+    if (lowest == null || middle < lowest) lowest = middle;
+  }
+  return lowest == null ? null : (lowest * 10).round() / 10;
+}

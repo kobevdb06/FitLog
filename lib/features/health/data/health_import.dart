@@ -65,12 +65,40 @@ class HealthImport {
     final snapshot = await source.read(from: from, to: to);
     final summary = await HealthImporter(db).apply(snapshot);
     final hearts = await heartRates(from: from, to: to);
+    final resting = await restingFromNights(from: from, to: to);
     await db.settingsDao.updateSettings(
       AppSettingsTableCompanion(
         healthConnectSyncedAt: Value(to.millisecondsSinceEpoch),
       ),
     );
-    return summary.withHeartRates(hearts);
+    return summary.withNights(heartRates: hearts, restingWorkedOut: resting);
+  }
+
+  /// Works out a resting heart rate for every night that ended in that
+  /// stretch, from the heart rate during it, and returns for how many
+  /// mornings it did.
+  ///
+  /// Only where the watch handed over none of its own - the DAO keeps that
+  /// rule. Every night counts, the ones you typed in too: the watch measured
+  /// your heart all the same.
+  Future<int> restingFromNights({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    var found = 0;
+    final nights = await db.recoveryDao.sleepEndedBetween(from, to);
+    for (final night in nights) {
+      final asleep = DateTime.fromMillisecondsSinceEpoch(night.fellAsleepAt);
+      final woke = DateTime.fromMillisecondsSinceEpoch(night.wokeAt);
+      final resting = restingHeartRateFromNight(
+        await source.heartRate(from: asleep, to: woke),
+        from: asleep,
+        to: woke,
+      );
+      if (resting == null) continue;
+      if (await db.healthDao.setDerivedRestingHr(woke, resting)) found++;
+    }
+    return found;
   }
 
   /// Puts the heart rate a watch measured on every session that ended in

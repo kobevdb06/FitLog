@@ -185,6 +185,8 @@ String importSummaryText(ImportSummary summary) {
       count(summary.cardio, 'loop of rit', 'lopen of ritten'),
     if (summary.heartRates > 0)
       'hartslag bij ${count(summary.heartRates, 'training', 'trainingen')}',
+    if (summary.restingWorkedOut > 0)
+      'rusthartslag van ${count(summary.restingWorkedOut, 'nacht', 'nachten')}',
   ];
   final kept = summary.ownNightsKept + summary.ownWeightsKept;
   return [

@@ -49,6 +49,15 @@ Stream<List<WorkoutRow>> workoutsInWeek(Ref ref, DateTime start) => ref
       DateTime(start.year, start.month, start.day + 7),
     );
 
+/// The watch's daily readings of the health screen's month, as stored - with
+/// what [VitalsDay] leaves out, such as whether a resting heart rate was
+/// worked out by FitLog.
+@riverpod
+Stream<List<DailyVitalsRow>> healthDays(Ref ref) => ref
+    .watch(databaseProvider)
+    .healthDao
+    .watchVitalsSince(DateTime.now().subtract(const Duration(days: 30)));
+
 /// Whether the user connected it.
 @riverpod
 bool healthConnectEnabled(Ref ref) =>

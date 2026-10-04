@@ -3206,3 +3206,34 @@ trainingen* opent ze een week per keer, met bovenaan het gemiddelde en het
 hoogste van die week - alleen over wat gemeten werd. Dat scherm hangt onder
 Gezondheid in de tak van Voortgang, zodat een tik op een training de
 details opent zonder van tak te springen.
+
+## 170. Een rusthartslag uit de nacht, voor een horloge dat er geen deelt
+
+Niet elk horloge geeft Health Connect een rusthartslag of HRV; dat van de
+gebruiker deelt hartslag, slaap, zuurstof, stappen en training, en verder
+niets. Zonder rusthartslag stonden de rusthartslag in de herstelschatting
+(DECISIONS 159) en het herstel-deel van de slaapscore (DECISIONS 162) stil.
+
+**Uit de nacht.** FitLog vraagt bij elk ophalen de hartslag van elke nacht
+in het stuk op en neemt het laagste halfuur terwijl je slaapt - wat
+Oura en Garmin intern ook ongeveer doen. Elk halfuur telt met zijn
+middelste meting, niet met zijn gemiddelde: met een meting om de tien
+minuten weegt één uitschieter anders voor een derde, en een "38" van het
+horloge tussen twee keer 56 is geen hart in rust. Een halfuur telt pas met
+drie metingen. Ook nachten die je zelf invulde, tellen: het horloge mat je
+hart toch.
+
+**Het horloge gaat voor.** Een rusthartslag van het horloge wordt nooit
+overschreven door een berekende, en een berekende maakt plaats als het
+horloge er later toch een geeft (`daily_vitals.resting_hr_derived`,
+schema 38). Gezondheid en de coach zeggen erbij wanneer FitLog ze
+berekende.
+
+**HRV niet.** HRV vraagt de tijd tussen elke slag; Health Connect geeft
+alleen slagen per minuut. Daar valt niets betrouwbaars uit te halen, dus
+doet FitLog het niet. Zonder HRV staat er op Gezondheid geen lege kaart
+meer, wel één regel waarom.
+
+Een valkuil die de tests vonden: wie van vóór v33 migreert, krijgt
+`daily_vitals` aangemaakt met de nieuwe kolom er al in, en mag ze dan niet
+nog eens toevoegen. De migratietest vertrekt nu ook van een echte v37.

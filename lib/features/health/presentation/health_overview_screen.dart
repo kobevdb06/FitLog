@@ -43,6 +43,12 @@ class HealthOverviewScreen extends ConsumerWidget {
     );
     final hrv = readingOverview(vitals, (d) => d.hrvMs, now: moment);
     final resting = readingOverview(vitals, (d) => d.restingHr, now: moment);
+    final days =
+        ref.watch(healthDaysProvider).value ?? const <DailyVitalsRow>[];
+    DailyVitalsRow? latestResting;
+    for (final day in days) {
+      if (day.restingHr != null) latestResting = day;
+    }
     final thisWeek =
         ref.watch(workoutsInWeekProvider(weekStartOf(moment))).value ??
         const <WorkoutRow>[];
@@ -87,7 +93,9 @@ class HealthOverviewScreen extends ConsumerWidget {
             ),
             const SectionHeader('Slaap'),
             _SleepCard(sleep: sleep),
-            if (connected || hrv.series.isNotEmpty) ...[
+            // A watch that does not share HRV gets no empty card for it,
+            // only a line under the resting heart rate saying why.
+            if (hrv.series.isNotEmpty) ...[
               const SectionHeader('HRV'),
               _ReadingCard(
                 reading: hrv,
@@ -98,16 +106,40 @@ class HealthOverviewScreen extends ConsumerWidget {
                     'Hoger dan gewoonlijk is meestal goed nieuws; een paar '
                     'ochtenden duidelijk lager rekt je herstelschatting.',
               ),
+            ],
+            if (connected || resting.series.isNotEmpty) ...[
               const SectionHeader('Rusthartslag'),
               _ReadingCard(
                 reading: resting,
                 unit: 'bpm',
                 usualLabel: 'gewoonlijk',
-                empty: 'Nog geen rusthartslag van je horloge.',
+                empty:
+                    "Nog geen rusthartslag. Draag je horloge 's nachts; "
+                    'FitLog rekent ze dan uit je hartslag tijdens je slaap.',
+                note: latestResting?.restingHrDerived ?? false
+                    ? 'Berekend uit je hartslag tijdens je slaap: het '
+                          'laagste halfuur van de nacht. Je horloge geeft '
+                          'zelf geen rusthartslag door.'
+                    : null,
                 explanation:
                     'Een paar slagen hoger dan gewoonlijk, een paar ochtenden '
                     'na elkaar, is een teken dat je lichaam nog bezig is.',
               ),
+              if (hrv.series.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    0,
+                  ),
+                  child: Text(
+                    'HRV geeft je horloge niet door aan Health Connect, en '
+                    'uit je hartslag alleen valt ze niet te berekenen: '
+                    'daarvoor is de tijd tussen elke slag nodig.',
+                    style: _muted(context),
+                  ),
+                ),
             ],
             if (connected) ...[
               const SectionHeader('Hartslag tijdens trainingen'),
@@ -317,6 +349,7 @@ class _ReadingCard extends StatelessWidget {
     required this.usualLabel,
     required this.empty,
     required this.explanation,
+    this.note,
   });
 
   final ReadingOverview reading;
@@ -324,6 +357,9 @@ class _ReadingCard extends StatelessWidget {
   final String usualLabel;
   final String empty;
   final String explanation;
+
+  /// Where the numbers came from, when that is worth saying.
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -361,6 +397,10 @@ class _ReadingCard extends StatelessWidget {
                     valueLabel: _number,
                   ),
                   const SizedBox(height: AppSpacing.xs),
+                  if (note case final note?) ...[
+                    Text(note, style: _muted(context)),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
                   Text(explanation, style: _muted(context)),
                 ],
               ),

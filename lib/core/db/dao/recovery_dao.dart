@@ -55,6 +55,16 @@ class RecoveryDao extends DatabaseAccessor<AppDatabase>
   )..where((t) => t.id.equals(sorenessId(muscle, at)))).go();
 
   /// Nights you woke up from on or after [since], oldest first.
+  /// The nights that ended from [from] up to [to], both included, read
+  /// once - for the import, which runs where a stream would never settle.
+  Future<List<SleepEntryRow>> sleepEndedBetween(DateTime from, DateTime to) =>
+      (select(sleepEntriesTable)..where(
+            (t) =>
+                t.wokeAt.isBiggerOrEqualValue(from.millisecondsSinceEpoch) &
+                t.wokeAt.isSmallerOrEqualValue(to.millisecondsSinceEpoch),
+          ))
+          .get();
+
   /// The nights that ended from [from] up to [to], exclusive, newest
   /// first: one week of them on the screen that shows them by week.
   Stream<List<SleepEntryRow>> watchSleepBetween(DateTime from, DateTime to) =>

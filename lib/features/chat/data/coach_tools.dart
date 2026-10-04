@@ -258,7 +258,9 @@ class CoachTools {
       'description':
           'HRV (RMSSD, ms) en rusthartslag (slagen per minuut) per dag, van '
           'het horloge van de gebruiker via Health Connect, met het gewone '
-          'niveau: de mediaan van de vier weken voor vandaag.',
+          'niveau: de mediaan van de vier weken voor vandaag. Een '
+          'rusthartslag met resting_hr_from_sleep is door FitLog berekend '
+          'als het laagste halfuur van de nachtelijke hartslag.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -910,6 +912,8 @@ class CoachTools {
               'date': _day(day.day),
               'hrv_ms': ?round(day.hrvMs),
               'resting_hr': ?round(day.restingHr),
+              // Worked out by FitLog from the night, not given by the watch.
+              if (day.restingHrDerived) 'resting_hr_from_sleep': true,
             },
         ],
       }),

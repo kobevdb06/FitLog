@@ -893,6 +893,13 @@ class DailyVitalsTable extends Table {
   /// Beats per minute.
   RealColumn get restingHr => real().named('resting_hr').nullable()();
 
+  /// True when [restingHr] was worked out by FitLog from the heart rate
+  /// during the night, because the watch handed over none of its own. One
+  /// from the watch replaces it, and never the other way round.
+  BoolColumn get restingHrDerived => boolean()
+      .named('resting_hr_derived')
+      .withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

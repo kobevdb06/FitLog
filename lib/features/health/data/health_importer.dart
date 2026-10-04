@@ -12,6 +12,7 @@ class ImportSummary {
     this.vitalDays = 0,
     this.cardio = 0,
     this.heartRates = 0,
+    this.restingWorkedOut = 0,
   });
 
   final int nights;
@@ -26,21 +27,29 @@ class ImportSummary {
   /// Sessions that got the heart rate a watch measured during them.
   final int heartRates;
 
+  /// Mornings that got a resting heart rate worked out from the night.
+  final int restingWorkedOut;
+
   bool get isEmpty =>
       nights == 0 &&
       weights == 0 &&
       vitalDays == 0 &&
       cardio == 0 &&
-      heartRates == 0;
+      heartRates == 0 &&
+      restingWorkedOut == 0;
 
-  ImportSummary withHeartRates(int count) => ImportSummary(
+  ImportSummary withNights({
+    required int heartRates,
+    required int restingWorkedOut,
+  }) => ImportSummary(
     nights: nights,
     ownNightsKept: ownNightsKept,
     weights: weights,
     ownWeightsKept: ownWeightsKept,
     vitalDays: vitalDays,
     cardio: cardio,
-    heartRates: count,
+    heartRates: heartRates,
+    restingWorkedOut: restingWorkedOut,
   );
 }
 

@@ -90,6 +90,33 @@ void main() {
     if (await dir.exists()) await dir.delete(recursive: true);
   });
 
+  test('a database from v37 gets the column for a worked-out resting '
+      'heart rate', () async {
+    // The v1 fixture creates daily_vitals from today's definition, so it
+    // never takes the path a v37 phone takes: the table is there, the column
+    // is not. Built here by taking the column off a current database.
+    final path = '${dir.path}/v37.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.healthDao.importVitals(
+      day: DateTime(2026, 10, 3),
+      restingHr: 55,
+    );
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('ALTER TABLE daily_vitals DROP COLUMN resting_hr_derived')
+      ..execute('PRAGMA user_version = 37');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final row = await db.select(db.dailyVitalsTable).getSingle();
+    expect(row.restingHr, 55);
+    // A value from before could only have come from a watch.
+    expect(row.restingHrDerived, isFalse);
+    await db.close();
+  });
+
   test('the fixture really is a version 1 database', () {
     final file = writeV1Database(dir);
     final raw = sqlite3.open(file.path);
@@ -112,7 +139,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 37);
+    expect(raw.select('PRAGMA user_version').first.values.first, 38);
     raw.close();
   });
 
@@ -319,7 +346,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 37);
+    expect(db.schemaVersion, 38);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

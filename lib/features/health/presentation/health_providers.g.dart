@@ -241,6 +241,58 @@ final class WorkoutsInWeekFamily extends $Family
   String toString() => r'workoutsInWeekProvider';
 }
 
+/// The watch's daily readings of the health screen's month, as stored - with
+/// what [VitalsDay] leaves out, such as whether a resting heart rate was
+/// worked out by FitLog.
+
+@ProviderFor(healthDays)
+final healthDaysProvider = HealthDaysProvider._();
+
+/// The watch's daily readings of the health screen's month, as stored - with
+/// what [VitalsDay] leaves out, such as whether a resting heart rate was
+/// worked out by FitLog.
+
+final class HealthDaysProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<DailyVitalsRow>>,
+          List<DailyVitalsRow>,
+          Stream<List<DailyVitalsRow>>
+        >
+    with
+        $FutureModifier<List<DailyVitalsRow>>,
+        $StreamProvider<List<DailyVitalsRow>> {
+  /// The watch's daily readings of the health screen's month, as stored - with
+  /// what [VitalsDay] leaves out, such as whether a resting heart rate was
+  /// worked out by FitLog.
+  HealthDaysProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'healthDaysProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$healthDaysHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<DailyVitalsRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<DailyVitalsRow>> create(Ref ref) {
+    return healthDays(ref);
+  }
+}
+
+String _$healthDaysHash() => r'6e4db835afaf3b6c3a71b6b23612b84c7f8cb2a2';
+
 /// Whether the user connected it.
 
 @ProviderFor(healthConnectEnabled)

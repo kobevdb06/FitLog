@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 37;
+  int get schemaVersion => 38;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -363,6 +363,18 @@ class AppDatabase extends _$AppDatabase {
           // read it before.
           await m.addColumn(workoutsTable, workoutsTable.avgHeartRate);
           await m.addColumn(workoutsTable, workoutsTable.maxHeartRate);
+        }
+        if (from < 38) {
+          // Resting heart rates worked out from the night. Every one stored
+          // so far came from a watch. Only for a database that already had
+          // the table: one migrating from before v33 gets it created above,
+          // from today's definition, with this column already in it.
+          if (from >= 33) {
+            await m.addColumn(
+              dailyVitalsTable,
+              dailyVitalsTable.restingHrDerived,
+            );
+          }
         }
       });
 

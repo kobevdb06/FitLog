@@ -152,14 +152,16 @@ final class HealthMissingAccessProvider
 String _$healthMissingAccessHash() =>
     r'dee521003d5c3d82e8bf1dfeb347711f2a68a58a';
 
-/// The newest sessions with the heart rate a watch measured during them.
+/// The sessions of the week from [start], newest first, with the heart rate
+/// a watch measured during them where it did.
 
-@ProviderFor(workoutHeartRates)
-final workoutHeartRatesProvider = WorkoutHeartRatesProvider._();
+@ProviderFor(workoutsInWeek)
+final workoutsInWeekProvider = WorkoutsInWeekFamily._();
 
-/// The newest sessions with the heart rate a watch measured during them.
+/// The sessions of the week from [start], newest first, with the heart rate
+/// a watch measured during them where it did.
 
-final class WorkoutHeartRatesProvider
+final class WorkoutsInWeekProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<WorkoutRow>>,
@@ -167,20 +169,28 @@ final class WorkoutHeartRatesProvider
           Stream<List<WorkoutRow>>
         >
     with $FutureModifier<List<WorkoutRow>>, $StreamProvider<List<WorkoutRow>> {
-  /// The newest sessions with the heart rate a watch measured during them.
-  WorkoutHeartRatesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'workoutHeartRatesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  /// The sessions of the week from [start], newest first, with the heart rate
+  /// a watch measured during them where it did.
+  WorkoutsInWeekProvider._({
+    required WorkoutsInWeekFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'workoutsInWeekProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
-  String debugGetCreateSourceHash() => _$workoutHeartRatesHash();
+  String debugGetCreateSourceHash() => _$workoutsInWeekHash();
+
+  @override
+  String toString() {
+    return r'workoutsInWeekProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -190,11 +200,46 @@ final class WorkoutHeartRatesProvider
 
   @override
   Stream<List<WorkoutRow>> create(Ref ref) {
-    return workoutHeartRates(ref);
+    final argument = this.argument as DateTime;
+    return workoutsInWeek(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkoutsInWeekProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$workoutHeartRatesHash() => r'8aa11500d25ddf49304b6b2dfff5c7af2a785da3';
+String _$workoutsInWeekHash() => r'4261cd7047b7004ef0c9914c9a9a2a3d90c0fca2';
+
+/// The sessions of the week from [start], newest first, with the heart rate
+/// a watch measured during them where it did.
+
+final class WorkoutsInWeekFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<WorkoutRow>>, DateTime> {
+  WorkoutsInWeekFamily._()
+    : super(
+        retry: null,
+        name: r'workoutsInWeekProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The sessions of the week from [start], newest first, with the heart rate
+  /// a watch measured during them where it did.
+
+  WorkoutsInWeekProvider call(DateTime start) =>
+      WorkoutsInWeekProvider._(argument: start, from: this);
+
+  @override
+  String toString() => r'workoutsInWeekProvider';
+}
 
 /// Whether the user connected it.
 

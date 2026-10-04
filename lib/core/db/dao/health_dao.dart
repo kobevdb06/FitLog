@@ -198,12 +198,22 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
     ),
   );
 
-  /// The newest sessions a watch measured the heart rate of, newest first.
-  Stream<List<WorkoutRow>> watchWorkoutHeartRates({int limit = 10}) =>
+  /// The finished sessions that started from [from] up to [to], exclusive,
+  /// newest first - with the heart rate on those a watch measured.
+  Stream<List<WorkoutRow>> watchFinishedWorkoutsBetween(
+    DateTime from,
+    DateTime to,
+  ) =>
       (select(workoutsTable)
-            ..where((t) => t.avgHeartRate.isNotNull())
-            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
-            ..limit(limit))
+            ..where(
+              (t) =>
+                  t.endedAt.isNotNull() &
+                  t.startedAt.isBiggerOrEqualValue(
+                    from.millisecondsSinceEpoch,
+                  ) &
+                  t.startedAt.isSmallerThanValue(to.millisecondsSinceEpoch),
+            )
+            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)]))
           .watch();
 
   /// Remembers the id Health Connect gave a session FitLog wrote there.

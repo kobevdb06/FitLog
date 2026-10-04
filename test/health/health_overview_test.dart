@@ -150,8 +150,9 @@ void main() {
               WorkoutsTableCompanion.insert(
                 id: 'w1',
                 name: 'Push',
-                startedAt: day(1, 21).millisecondsSinceEpoch,
-                endedAt: Value(day(1, 22).millisecondsSinceEpoch),
+                // Vandaag vroeg: altijd in deze week, ook op een maandag.
+                startedAt: day(0, 4).millisecondsSinceEpoch,
+                endedAt: Value(day(0, 5).millisecondsSinceEpoch),
                 avgHeartRate: const Value(115),
                 maxHeartRate: const Value(150),
               ),
@@ -165,11 +166,35 @@ void main() {
       expect(find.textContaining('gem. 115 · max. 150 bpm'), findsOneWidget);
       expect(find.text('42 min'), findsOneWidget);
       expect(find.textContaining('Verbind Health Connect'), findsNothing);
+      // De nacht van het horloge had geen fasen, en dat staat er.
+      expect(find.textContaining('geen fasen door'), findsOneWidget);
+      expect(find.text('Eerdere trainingen'), findsOneWidget);
 
       // En op een smalle gsm past het ook.
       await pumpScreen(tester, width: 360);
       expect(tester.takeException(), isNull);
       expect(find.textContaining('gem. 115 · max. 150 bpm'), findsOneWidget);
+    });
+
+    testWidgets('de fasen van afgelopen nacht, met wat elke kleur is', (
+      tester,
+    ) async {
+      final today = DateTime.now();
+      await tester.runAsync(
+        () => db.recoveryDao.setSleep(
+          fellAsleepAt: DateTime(today.year, today.month, today.day - 1, 23),
+          wokeAt: DateTime(today.year, today.month, today.day, 7),
+          lightMinutes: 240,
+          remMinutes: 100,
+          deepMinutes: 80,
+        ),
+      );
+      await pumpScreen(tester);
+
+      expect(find.text('Fasen van die nacht'), findsOneWidget);
+      expect(find.textContaining('Licht 4 u'), findsOneWidget);
+      expect(find.textContaining('REM 1 u 40'), findsOneWidget);
+      expect(find.textContaining('Diep 1 u 20'), findsOneWidget);
     });
 
     testWidgets('zonder horloge: wat je zelf invult, en hoe je meer krijgt', (

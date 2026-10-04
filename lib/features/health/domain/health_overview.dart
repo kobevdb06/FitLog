@@ -19,12 +19,18 @@ class NightPoint {
     required this.length,
     required this.score,
     required this.fromWatch,
+    this.lightMinutes,
+    this.remMinutes,
+    this.deepMinutes,
   });
 
   final DateTime morning;
   final Duration length;
   final int score;
   final bool fromWatch;
+  final int? lightMinutes;
+  final int? remMinutes;
+  final int? deepMinutes;
 }
 
 class SleepOverview {
@@ -64,6 +70,9 @@ SleepOverview sleepOverview(
           restingHrRise: morning.restingHrRise,
         ).value,
         fromWatch: row.source != null,
+        lightMinutes: row.lightMinutes,
+        remMinutes: row.remMinutes,
+        deepMinutes: row.deepMinutes,
       ),
     );
   }

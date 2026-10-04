@@ -6,6 +6,7 @@ import 'package:fitlog/core/security/key_manager.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:fitlog/features/health/presentation/health_overview_screen.dart';
+import 'package:fitlog/features/health/presentation/heart_rate_week_screen.dart';
 import 'package:fitlog/features/morning/presentation/morning_providers.dart';
 import 'package:fitlog/features/morning/presentation/report_week_screen.dart';
 import 'package:fitlog/features/progress/presentation/sleep_section.dart';
@@ -185,6 +186,43 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(HealthOverviewScreen), findsOneWidget);
+    });
+
+    testWidgets('en vanuit Gezondheid naar de nachten en de trainingen', (
+      tester,
+    ) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
+      );
+      final today = DateTime.now();
+      await db.recoveryDao.setSleep(
+        fellAsleepAt: DateTime(today.year, today.month, today.day - 1, 23),
+        wokeAt: DateTime(today.year, today.month, today.day, 7),
+      );
+      await pumpApp(tester);
+      container!.read(routerProvider).push(Routes.health);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Alle nachten'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SleepWeekScreen), findsOneWidget);
+
+      container!.read(routerProvider).pop();
+      await tester.pumpAndSettle();
+      final earlier = find.text('Eerdere trainingen');
+      await tester.scrollUntilVisible(
+        earlier,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(HealthOverviewScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(earlier);
+      await tester.pumpAndSettle();
+      expect(find.byType(HeartRateWeekScreen), findsOneWidget);
     });
 
     testWidgets('en vanaf het blok op het startscherm', (tester) async {

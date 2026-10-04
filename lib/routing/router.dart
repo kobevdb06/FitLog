@@ -26,6 +26,7 @@ import '../features/photos/presentation/photos_screen.dart';
 import '../features/progress/presentation/progress_screen.dart';
 import '../features/health/presentation/health_connect_screen.dart';
 import '../features/health/presentation/health_overview_screen.dart';
+import '../features/health/presentation/heart_rate_week_screen.dart';
 import '../features/morning/presentation/report_week_screen.dart';
 import '../features/progress/presentation/sleep_week_screen.dart';
 import '../features/progress/presentation/recovery_screen.dart';
@@ -292,6 +293,13 @@ GoRouter router(Ref ref) {
                     path: 'gezondheid',
                     pageBuilder: (context, state) =>
                         appPage(state, const HealthOverviewScreen()),
+                    routes: [
+                      GoRoute(
+                        path: 'trainingen',
+                        pageBuilder: (context, state) =>
+                            appPage(state, const HeartRateWeekScreen()),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'metingen',

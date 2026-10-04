@@ -38,10 +38,16 @@ Future<List<String>> healthMissingAccess(Ref ref) async {
   return ref.watch(healthSourceProvider).missingAccess();
 }
 
-/// The newest sessions with the heart rate a watch measured during them.
+/// The sessions of the week from [start], newest first, with the heart rate
+/// a watch measured during them where it did.
 @riverpod
-Stream<List<WorkoutRow>> workoutHeartRates(Ref ref) =>
-    ref.watch(databaseProvider).healthDao.watchWorkoutHeartRates();
+Stream<List<WorkoutRow>> workoutsInWeek(Ref ref, DateTime start) => ref
+    .watch(databaseProvider)
+    .healthDao
+    .watchFinishedWorkoutsBetween(
+      start,
+      DateTime(start.year, start.month, start.day + 7),
+    );
 
 /// Whether the user connected it.
 @riverpod

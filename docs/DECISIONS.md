@@ -3184,3 +3184,25 @@ De balk, de week en het schuiven zijn gedeeld (`SleepStagesBar`,
 `WeekPager`), zodat het scherm met trainingen per week (gevraagd voor
 Gezondheid) er hetzelfde uitziet. Beide routes staan aan de wortel, omdat
 Herstel en Gezondheid ze openen.
+
+## 169. Gezondheid: de fasen van afgelopen nacht, en trainingen per week
+
+Op Gezondheid stond onder de slaapscore een staaf per nacht voor twee
+weken, met alleen een dag eronder. Dat zei weinig: hoe lang je sliep, stond
+er al in cijfers boven, en welke staaf welke nacht was, las je niet af.
+
+**De fasen van afgelopen nacht.** In de plaats komt de nacht zelf: licht,
+REM en diep als één balk, met eronder per kleur wat het is, hoe lang het
+duurde en welk deel van de nacht. Dezelfde balk als op het slaapscherm per
+week (DECISIONS 168). Heeft de nacht geen fasen, dan staat er waarom: het
+horloge gaf ze niet door, of je vulde ze niet in. De kaart opent het
+slaapscherm per week, niet langer Herstel: wie op een nacht tikt, wil
+nachten zien.
+
+**Trainingen per week.** Onder *Hartslag tijdens trainingen* staan de
+trainingen van deze week, ook die zonder gemeten hartslag ("geen hartslag
+gemeten"): zo zie je ook welke training je horloge miste. *Eerdere
+trainingen* opent ze een week per keer, met bovenaan het gemiddelde en het
+hoogste van die week - alleen over wat gemeten werd. Dat scherm hangt onder
+Gezondheid in de tak van Voortgang, zodat een tik op een training de
+details opent zonder van tak te springen.

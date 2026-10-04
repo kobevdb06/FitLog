@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/widgets/week_navigator.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:fitlog/features/health/presentation/heart_rate_week_screen.dart';
 import 'package:fitlog/features/morning/domain/morning_facts.dart';
 import 'package:fitlog/features/morning/presentation/report_week_screen.dart';
 import 'package:fitlog/features/progress/presentation/sleep_week_screen.dart';
@@ -150,6 +152,47 @@ void main() {
       await tester.tap(find.byTooltip('Vorige week'));
       await tester.pumpAndSettle();
       expect(find.text('Rapport van 26'), findsOneWidget);
+    });
+
+    testWidgets('de trainingen van deze week, met hun hartslag', (
+      tester,
+    ) async {
+      await tester.runAsync(() async {
+        for (final (id, start, average) in [
+          ('w1', DateTime(2026, 10, 2, 18), 120),
+          ('w2', DateTime(2026, 10, 1, 18), null),
+          // De week ervoor.
+          ('w3', DateTime(2026, 9, 25, 18), 110),
+        ]) {
+          await db
+              .into(db.workoutsTable)
+              .insert(
+                WorkoutsTableCompanion.insert(
+                  id: id,
+                  name: 'Sessie $id',
+                  startedAt: start.millisecondsSinceEpoch,
+                  endedAt: Value(
+                    start.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+                  ),
+                  avgHeartRate: Value(average),
+                  maxHeartRate: Value(average == null ? null : average + 30),
+                ),
+              );
+        }
+      });
+      await pump(tester, HeartRateWeekScreen(now: now));
+
+      expect(find.text('Sessie w1'), findsOneWidget);
+      expect(find.text('Sessie w2'), findsOneWidget);
+      expect(find.textContaining('gem. 120 · max. 150 bpm'), findsOneWidget);
+      expect(find.textContaining('geen hartslag gemeten'), findsOneWidget);
+      expect(find.text('Sessie w3'), findsNothing);
+      // Het gemiddelde telt alleen wat gemeten werd.
+      expect(find.text('120 bpm'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Vorige week'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sessie w3'), findsOneWidget);
     });
   });
 }

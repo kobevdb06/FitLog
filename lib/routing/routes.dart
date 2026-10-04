@@ -35,6 +35,10 @@ abstract final class Routes {
 
   // Progress
   static const health = '/voortgang/gezondheid';
+
+  /// Sessions with their heart rate, a week at a time. Under Gezondheid, in
+  /// the Voortgang branch, like the session detail it opens.
+  static const heartRateWeeks = '/voortgang/gezondheid/trainingen';
   static const measurements = '/voortgang/metingen';
   static const photos = '/voortgang/fotos';
   static const photoCompare = '/voortgang/fotos/vergelijken';

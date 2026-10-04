@@ -10,11 +10,14 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/week_navigator.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../progress/presentation/recovery_providers.dart';
+import '../../progress/presentation/sleep_stages_bar.dart';
 import '../domain/health_overview.dart';
 import 'health_providers.dart';
+import 'workout_heart_row.dart';
 
 /// Gezondheid: everything from the watch and everything you filled in about
 /// yourself, in one place - the nights with their score, HRV, resting heart
@@ -40,7 +43,9 @@ class HealthOverviewScreen extends ConsumerWidget {
     );
     final hrv = readingOverview(vitals, (d) => d.hrvMs, now: moment);
     final resting = readingOverview(vitals, (d) => d.restingHr, now: moment);
-    final hearts = ref.watch(workoutHeartRatesProvider).value ?? const [];
+    final thisWeek =
+        ref.watch(workoutsInWeekProvider(weekStartOf(moment))).value ??
+        const <WorkoutRow>[];
     final since = moment.subtract(kHealthWindow);
     final cardio = <CardioSession>[
       for (final session
@@ -104,9 +109,9 @@ class HealthOverviewScreen extends ConsumerWidget {
                     'na elkaar, is een teken dat je lichaam nog bezig is.',
               ),
             ],
-            if (connected || hearts.isNotEmpty) ...[
+            if (connected) ...[
               const SectionHeader('Hartslag tijdens trainingen'),
-              _WorkoutHeartRates(workouts: hearts),
+              _WorkoutHeartRates(workouts: thisWeek),
             ],
             const SectionHeader('Gewicht'),
             _WeightCard(points: weight),
@@ -224,17 +229,13 @@ class _SleepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final last = sleep.last;
-    // Two weeks of bars stay readable on a phone; the average is the month.
-    final shown = sleep.nights.length > 14
-        ? sleep.nights.sublist(sleep.nights.length - 14)
-        : sleep.nights;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: AppCard(
-        onTap: () => context.push(Routes.muscleRecovery),
+        // Every night, a week at a time.
+        onTap: () => context.push(Routes.sleepWeeks),
         child: last == null
             ? Text(
                 'Nog geen nachten. Vul ze in onder Herstel, of laat ze van je '
@@ -264,19 +265,43 @@ class _SleepCard extends StatelessWidget {
                       Expanded(
                         child: StatTile(
                           value: _length(sleep.average!),
-                          label: 'Gemiddeld',
+                          label: 'Gemiddeld, 30 dagen',
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  SimpleBarChart(
-                    height: 120,
-                    color: theme.colorScheme.primary,
-                    values: [for (final n in shown) n.length.inMinutes / 60],
-                    labels: [for (final n in shown) '${n.morning.day}'],
-                    valueLabel: (hours) =>
-                        _length(Duration(minutes: (hours * 60).round())),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Fasen van die nacht',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (SleepStagesBar.hasStages(
+                    light: last.lightMinutes,
+                    rem: last.remMinutes,
+                    deep: last.deepMinutes,
+                  ))
+                    SleepStagesBar(
+                      length: last.length,
+                      light: last.lightMinutes,
+                      rem: last.remMinutes,
+                      deep: last.deepMinutes,
+                    )
+                  else
+                    Text(
+                      last.fromWatch
+                          ? 'Je horloge gaf voor deze nacht geen fasen door.'
+                          : 'Geen fasen bij deze nacht. Een horloge geeft ze '
+                                'door, of je vult ze zelf in.',
+                      style: _muted(context),
+                    ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text('Alle nachten', style: _muted(context)),
+                      const Icon(Icons.chevron_right, size: 18),
+                    ],
                   ),
                 ],
               ),
@@ -347,6 +372,7 @@ class _ReadingCard extends StatelessWidget {
 class _WorkoutHeartRates extends StatelessWidget {
   const _WorkoutHeartRates({required this.workouts});
 
+  /// This week's sessions.
   final List<WorkoutRow> workouts;
 
   @override
@@ -354,36 +380,40 @@ class _WorkoutHeartRates extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: AppCard(
-        padding: workouts.isEmpty
-            ? const EdgeInsets.all(AppSpacing.lg)
-            : const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: workouts.isEmpty
-            ? Text(
-                'Nog geen hartslag bij een training. Draag je horloge tijdens '
-                'een training in FitLog; bij het volgende ophalen staat ze '
-                'erbij.',
-                style: _muted(context),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (workouts.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: Text(
+                  'Nog geen training deze week. Draag je horloge tijdens een '
+                  'training in FitLog; bij het volgende ophalen staat de '
+                  'hartslag erbij.',
+                  style: _muted(context),
+                ),
               )
-            : Column(
-                children: [
-                  for (final workout in workouts)
-                    ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.favorite_border),
-                      title: Text(workout.name),
-                      // On the second line, not beside the name: on a
-                      // narrow phone the numbers would push the name out.
-                      subtitle: Text(
-                        '${Formatters.weekdayDayMonth(DateTime.fromMillisecondsSinceEpoch(workout.startedAt))}'
-                        '  ·  gem. ${workout.avgHeartRate} · '
-                        'max. ${workout.maxHeartRate ?? workout.avgHeartRate} '
-                        'bpm',
-                      ),
-                      onTap: () =>
-                          context.push(Routes.workoutDetail(workout.id)),
-                    ),
-                ],
+            else
+              for (final workout in workouts) WorkoutHeartRow(workout: workout),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: TextButton.icon(
+                  onPressed: () => context.push(Routes.heartRateWeeks),
+                  icon: const Icon(Icons.history, size: 18),
+                  label: const Text('Eerdere trainingen'),
+                ),
               ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -92,6 +92,19 @@ class CoachTools {
       },
     },
     {
+      'name': 'current_workout',
+      'description':
+          'De training die nu bezig is, als die er is: naam, hoe lang al, '
+          'uit welke routine, en per oefening de sets met hun status - done '
+          '(afgevinkt), skipped (bewust overgeslagen) of open (nog te doen). '
+          'Bij een open set staat wat er nu ingevuld is: het doel uit de '
+          'routine of wat de gebruiker al intypte, dat is niet te '
+          'onderscheiden. Met de notities, de rusttijd, supersets en of een '
+          'oefening per kant of als PR-poging gedaan wordt. Gebruik dit '
+          'als de gebruiker midden in een training iets vraagt.',
+      'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
+    },
+    {
       'name': 'exercise_history',
       'description':
           'Wat de gebruiker de laatste keren voor één oefening heeft gedaan, '
@@ -344,6 +357,7 @@ class CoachTools {
     'propose_routine',
     'search_exercises',
     'recent_workouts',
+    'current_workout',
     'exercise_history',
     'personal_records',
     'routines',
@@ -366,6 +380,7 @@ class CoachTools {
       'propose_routine' => _proposeRoutine(input),
       'search_exercises' => _searchExercises(input),
       'recent_workouts' => _recentWorkouts(input),
+      'current_workout' => _currentWorkout(),
       'exercise_history' => _exerciseHistory(input),
       'personal_records' => _personalRecords(input),
       'routines' => _routines(),
@@ -630,6 +645,69 @@ class CoachTools {
       summary:
           'je laatste ${sessions.length} '
           '${sessions.length == 1 ? 'sessie' : 'sessies'}',
+    );
+  }
+
+  /// The session that is running, set by set, as far as it got.
+  Future<CoachLookup> _currentWorkout() async {
+    final running = await db.workoutsDao.getActiveWorkoutRow();
+    final detail = running == null
+        ? null
+        : await db.workoutsDao.getWorkoutDetail(running.id);
+    if (detail == null) {
+      return const CoachLookup(
+        json: '{"running":false}',
+        summary: 'of er een training bezig is',
+      );
+    }
+
+    final workout = detail.workout;
+    final routine = workout.routineId == null
+        ? null
+        : await db.routinesDao.getRoutine(workout.routineId!);
+    final started = DateTime.fromMillisecondsSinceEpoch(workout.startedAt);
+
+    return CoachLookup(
+      json: jsonEncode({
+        'running': true,
+        'name': workout.name,
+        'started': _day(workout.startedAt),
+        'minutes_so_far': DateTime.now().difference(started).inMinutes,
+        'from_routine': ?routine?.name,
+        'notes': ?_text(workout.notes),
+        'exercises': [
+          for (final item in detail.exercises)
+            {
+              'name': item.exercise.name,
+              'notes': ?_text(item.workoutExercise.notes),
+              'rest_seconds': item.workoutExercise.restSeconds,
+              'superset': ?item.workoutExercise.supersetGroup,
+              if (item.workoutExercise.isUnilateral) 'per_side': true,
+              if (item.workoutExercise.isPrAttempt)
+                'pr_attempt': {
+                  'target_kg': item.workoutExercise.prTargetWeightKg,
+                },
+              'sets': [
+                for (final set in item.sets)
+                  {
+                    'type': set.setType,
+                    'status': set.isCompleted
+                        ? 'done'
+                        : set.isSkipped
+                        ? 'skipped'
+                        : 'open',
+                    'weight_kg': ?set.weightKg,
+                    'reps': ?set.reps,
+                    'seconds': ?set.durationSeconds,
+                    'meters': ?set.distanceM,
+                    'rpe': ?set.rpe,
+                    'side': ?set.side,
+                  },
+              ],
+            },
+        ],
+      }),
+      summary: 'je training van nu',
     );
   }
 

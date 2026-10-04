@@ -172,6 +172,81 @@ void main() {
     });
   });
 
+  group('de training van nu', () {
+    test('zonder training zegt het dat', () async {
+      final lookup = await tools.run('current_workout', const {});
+
+      expect(decode(lookup), {'running': false});
+    });
+
+    test(
+      'set per set: afgevinkt, overgeslagen en wat er ingevuld staat',
+      () async {
+        final id = await db.workoutsDao.startWorkout(
+          name: 'Push',
+          defaultRestSeconds: 90,
+        );
+        final exercise = (await db.workoutsDao.addExercises(id, [
+          'ex-bench',
+        ], defaultRestSeconds: 90)).single;
+        await db.workoutsDao.updateWorkoutExercise(
+          exercise,
+          notes: const Value('Smalle grip'),
+        );
+        final done = await db.workoutsDao.addSet(exercise);
+        final typed = await db.workoutsDao.addSet(exercise);
+        final skipped = await db.workoutsDao.addSet(exercise);
+        // Wat addExercises zelf al aanmaakte, eerst weg.
+        for (final set in (await db.workoutsDao.getWorkoutDetail(
+          id,
+        ))!.exercises.single.sets) {
+          if (![done, typed, skipped].contains(set.id)) {
+            await db.workoutsDao.deleteSet(set.id);
+          }
+        }
+        await db.workoutsDao.updateSet(
+          done,
+          weightKg: const Value(80),
+          reps: const Value(8),
+          rpe: const Value(8),
+          isCompleted: const Value(true),
+        );
+        await db.workoutsDao.updateSet(
+          typed,
+          weightKg: const Value(82.5),
+          reps: const Value(6),
+        );
+        await db.workoutsDao.updateSet(skipped, isSkipped: const Value(true));
+
+        final lookup = await tools.run('current_workout', const {});
+
+        final json = decode(lookup);
+        expect(json['running'], isTrue);
+        expect(json['name'], 'Push');
+        final bench = (json['exercises']! as List).single as Map;
+        expect(bench['name'], 'Bench Press');
+        expect(bench['notes'], 'Smalle grip');
+        final logged = bench['sets']! as List;
+        expect(logged[0], {
+          'type': 'normal',
+          'status': 'done',
+          'weight_kg': 80,
+          'reps': 8,
+          'rpe': 8,
+        });
+        // Ingevuld, nog niet afgevinkt: ook dat ziet de coach.
+        expect(logged[1], {
+          'type': 'normal',
+          'status': 'open',
+          'weight_kg': 82.5,
+          'reps': 6,
+        });
+        expect((logged[2] as Map)['status'], 'skipped');
+        expect(lookup.summary, 'je training van nu');
+      },
+    );
+  });
+
   group('één oefening', () {
     test('geeft set per set terug wat je deed', () async {
       await logSet(exerciseId: 'ex-bench', on: DateTime(2026, 2, 20));

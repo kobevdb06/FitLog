@@ -3397,3 +3397,13 @@ ze er zijn, geen lege velden), en per keer de notitie en een PR-poging met
 doel en uitkomst. "Schouder trok wat" is precies wat een coach moet weten.
 De geschiedenis groepeert voortaan per keer in plaats van per dag: twee keer
 op één dag zijn twee keer, elk met hun eigen notitie.
+
+**De training van nu.** Een nieuwe opzoeking `current_workout`: de
+training die bezig is, per oefening de sets met hun status (afgevinkt,
+overgeslagen, open), de notities, rusttijd, supersets, per kant en
+PR-poging. Wat je in een set typt, staat meteen in de database, dus een
+open set met cijfers erin ziet de coach ook. Een set uit een routine
+begint wel met het doel van die routine ingevuld, en dat is in de
+database niet te onderscheiden van wat je zelf typte; de beschrijving van
+de opzoeking zegt dat eerlijk, zodat de coach er niet "al gedaan" van
+maakt.

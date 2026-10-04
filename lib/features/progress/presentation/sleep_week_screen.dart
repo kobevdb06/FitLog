@@ -70,26 +70,20 @@ class _Nights extends ConsumerWidget {
         32,
       ),
       children: [
-        Row(
+        StatRow(
           children: [
-            Expanded(
-              child: StatTile(
-                value: stageLength(minutes ~/ nights.length),
-                label: 'Gemiddeld per nacht',
-              ),
+            StatTile(
+              value: stageLength(minutes ~/ nights.length),
+              label: 'Gemiddeld per nacht',
             ),
-            Expanded(
-              child: StatTile(
-                value:
-                    '${(scores.reduce((a, b) => a + b) / scores.length).round()}',
-                label: 'Gemiddelde slaapscore',
-              ),
+            StatTile(
+              value:
+                  '${(scores.reduce((a, b) => a + b) / scores.length).round()}',
+              label: 'Gemiddelde slaapscore',
             ),
-            Expanded(
-              child: StatTile(
-                value: '${nights.length}',
-                label: nights.length == 1 ? 'Nacht' : 'Nachten',
-              ),
+            StatTile(
+              value: '${nights.length}',
+              label: nights.length == 1 ? 'Nacht' : 'Nachten',
             ),
           ],
         ),

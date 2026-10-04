@@ -106,6 +106,84 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
+/// A row of [StatTile]s that share the width, with their numbers on one
+/// line.
+///
+/// Aligned at the top, not centred: a tile whose caption runs to two lines
+/// is taller, and centring it pushed its number below its neighbours'. With
+/// room between the columns, so two long captions never run into each other.
+class StatRow extends StatelessWidget {
+  const StatRow({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppSpacing.md),
+          Expanded(child: children[i]),
+        ],
+      ],
+    );
+  }
+}
+
+/// A quiet link to everything behind a card: `Alle nachten ›`.
+///
+/// Without [onTap] it is only the words, for a card that is tappable as a
+/// whole already.
+class MoreLink extends StatelessWidget {
+  const MoreLink(this.label, {super.key, this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final words = Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.sm,
+        horizontal: AppSpacing.xs,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Icon(
+            Icons.chevron_right,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ],
+      ),
+    );
+    return Align(
+      alignment: Alignment.centerRight,
+      child: onTap == null
+          ? words
+          : InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: AppSpacing.minTouch,
+                ),
+                child: Center(widthFactor: 1, child: words),
+              ),
+            ),
+    );
+  }
+}
+
 /// A number with a caption, used on the dashboard and the summary.
 class StatTile extends StatelessWidget {
   const StatTile({
@@ -132,13 +210,18 @@ class StatTile extends StatelessWidget {
           Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(height: AppSpacing.xs),
         ],
-        Text(
-          value,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: emphasis ? AppColors.accent : null,
+        // Shrunk rather than cut off: "150 bpm" with an ellipsis is a
+        // different number.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: emphasis ? AppColors.accent : null,
+            ),
+            maxLines: 1,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 2),
         Text(

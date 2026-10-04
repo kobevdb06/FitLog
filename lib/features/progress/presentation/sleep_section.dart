@@ -148,13 +148,9 @@ class SleepSection extends ConsumerWidget {
               ),
             ],
             if (rows.isNotEmpty)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => context.push(Routes.sleepWeeks),
-                  icon: const Icon(Icons.history, size: 18),
-                  label: const Text('Eerdere nachten'),
-                ),
+              MoreLink(
+                'Alle nachten',
+                onTap: () => context.push(Routes.sleepWeeks),
               ),
           ],
         ),

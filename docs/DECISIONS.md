@@ -3269,3 +3269,30 @@ aan de wortel, omdat Start en Voortgang hem openen.
 
 De coach kan ze opzoeken (`steps`). Ook hier de valkuil van DECISIONS 170:
 de kolommen gaan er alleen bij voor een `daily_vitals` die al bestond.
+
+## 172. Eén manier om naar "alles" te gaan, en getallen op één lijn
+
+Uit het eerste gebruik op een echte gsm (412 punten breed, iets grotere
+tekst):
+
+**Eén link.** Herstel had "Eerdere nachten" en "Eerdere rapporten" als
+knoppen met een icoon, Gezondheid "Alle nachten" als stille link rechts in
+de kaart. De gebruiker koos de stille: `MoreLink` ("Alle nachten ›") staat
+nu overal waar een kaart naar een weekscherm leidt - nachten, rapporten,
+trainingen, en "Per dag" bij de stappen. Op een kaart die zelf al tikbaar
+is, zijn het alleen de woorden; anders is de link zelf tikbaar, minstens
+48 punten hoog.
+
+**Getallen op één lijn.** Een rij tegels stond verticaal gecentreerd: een
+tegel met een label van twee regels werd hoger, en zijn getal zakte onder
+dat van de buren. `StatRow` lijnt ze bovenaan uit en laat ruimte tussen de
+kolommen, zodat twee lange labels niet tegen elkaar lopen ("Gemiddeld per
+dagBeste dag"). Een getal dat niet past, krimpt in plaats van afgekapt te
+worden: "150 bpm" met drie puntjes is een ander getal.
+
+**Opnieuw opstellen** liep van het scherm, naast "Eerdere rapporten" in
+één rij. De twee staan nu in een `Wrap`: naast elkaar als ze passen, onder
+elkaar als niet.
+
+De tests hiervoor draaien op die breedte en die tekstgrootte, en falen op
+de code van daarvoor.

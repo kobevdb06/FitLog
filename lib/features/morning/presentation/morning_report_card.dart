@@ -54,10 +54,9 @@ class MorningReportCard extends ConsumerWidget {
 
     // Every report is on its own screen, a week at a time: this card stays
     // one report long however many mornings there have been.
-    final earlier = TextButton.icon(
-      onPressed: () => context.push(Routes.reportWeeks),
-      icon: const Icon(Icons.history, size: 18),
-      label: const Text('Eerdere rapporten'),
+    final earlier = MoreLink(
+      'Alle rapporten',
+      onTap: () => context.push(Routes.reportWeeks),
     );
 
     return Padding(
@@ -81,16 +80,16 @@ class MorningReportCard extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               makeButton('Rapport opstellen', filled: true),
-              if (reports.isNotEmpty)
-                Align(alignment: Alignment.centerLeft, child: earlier),
+              if (reports.isNotEmpty) earlier,
             ] else ...[
               ReportBody(report: report),
-              Row(
-                children: [
-                  earlier,
-                  const Spacer(),
-                  makeButton('Opnieuw opstellen'),
-                ],
+              // Side by side where they fit, the one under the other where
+              // they do not: on a narrow phone with large text the row ran
+              // off the screen.
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [makeButton('Opnieuw opstellen'), earlier],
               ),
             ],
             if (state.error case final error?)

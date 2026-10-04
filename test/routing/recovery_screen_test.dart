@@ -210,7 +210,7 @@ void main() {
 
       container!.read(routerProvider).pop();
       await tester.pumpAndSettle();
-      final earlier = find.text('Eerdere trainingen');
+      final earlier = find.text('Alle trainingen');
       await tester.scrollUntilVisible(
         earlier,
         200,
@@ -469,7 +469,7 @@ void main() {
       );
       await openRecovery(tester);
 
-      final earlier = find.text('Eerdere nachten');
+      final earlier = find.text('Alle nachten');
       await tester.scrollUntilVisible(
         earlier,
         200,
@@ -511,7 +511,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Eerdere rapporten'));
+      await tester.tap(find.text('Alle rapporten'));
       await tester.pumpAndSettle();
 
       expect(find.byType(ReportWeekScreen), findsOneWidget);

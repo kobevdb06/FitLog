@@ -66,24 +66,18 @@ class _Steps extends ConsumerWidget {
         32,
       ),
       children: [
-        Row(
+        StatRow(
           children: [
-            Expanded(
-              child: StatTile(value: formatSteps(total), label: 'Deze week'),
+            StatTile(value: formatSteps(total), label: 'Deze week'),
+            StatTile(
+              value: counted.isEmpty
+                  ? '-'
+                  : formatSteps((total / counted.length).round()),
+              label: 'Gemiddeld per dag',
             ),
-            Expanded(
-              child: StatTile(
-                value: counted.isEmpty
-                    ? '-'
-                    : formatSteps((total / counted.length).round()),
-                label: 'Gemiddeld per dag',
-              ),
-            ),
-            Expanded(
-              child: StatTile(
-                value: counted.isEmpty ? '-' : formatSteps(best),
-                label: 'Beste dag',
-              ),
+            StatTile(
+              value: counted.isEmpty ? '-' : formatSteps(best),
+              label: 'Beste dag',
             ),
           ],
         ),

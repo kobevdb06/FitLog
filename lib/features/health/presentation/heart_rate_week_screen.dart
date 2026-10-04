@@ -67,29 +67,23 @@ class _Workouts extends ConsumerWidget {
         32,
       ),
       children: [
-        Row(
+        StatRow(
           children: [
-            Expanded(
-              child: StatTile(
-                value: measured.isEmpty
-                    ? '-'
-                    : '${(measured.fold<int>(0, (sum, w) => sum + w.avgHeartRate!) / measured.length).round()} bpm',
-                label: 'Gemiddelde hartslag',
-              ),
+            StatTile(
+              value: measured.isEmpty
+                  ? '-'
+                  : '${(measured.fold<int>(0, (sum, w) => sum + w.avgHeartRate!) / measured.length).round()} bpm',
+              label: 'Gemiddelde hartslag',
             ),
-            Expanded(
-              child: StatTile(
-                value: measured.isEmpty
-                    ? '-'
-                    : '${measured.map((w) => w.maxHeartRate ?? w.avgHeartRate!).reduce((a, b) => a > b ? a : b)} bpm',
-                label: 'Hoogste',
-              ),
+            StatTile(
+              value: measured.isEmpty
+                  ? '-'
+                  : '${measured.map((w) => w.maxHeartRate ?? w.avgHeartRate!).reduce((a, b) => a > b ? a : b)} bpm',
+              label: 'Hoogste',
             ),
-            Expanded(
-              child: StatTile(
-                value: '${workouts.length}',
-                label: workouts.length == 1 ? 'Training' : 'Trainingen',
-              ),
+            StatTile(
+              value: '${workouts.length}',
+              label: workouts.length == 1 ? 'Training' : 'Trainingen',
             ),
           ],
         ),

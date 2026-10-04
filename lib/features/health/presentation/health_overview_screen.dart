@@ -295,28 +295,19 @@ class _SleepCard extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  StatRow(
                     children: [
-                      Expanded(
-                        child: StatTile(
-                          value: '${last.score}',
-                          label:
-                              'Slaapscore, '
-                              '${Formatters.weekday(last.morning)}',
-                          emphasis: true,
-                        ),
+                      StatTile(
+                        value: '${last.score}',
+                        label:
+                            'Slaapscore, '
+                            '${Formatters.weekday(last.morning)}',
+                        emphasis: true,
                       ),
-                      Expanded(
-                        child: StatTile(
-                          value: _length(last.length),
-                          label: 'Geslapen',
-                        ),
-                      ),
-                      Expanded(
-                        child: StatTile(
-                          value: _length(sleep.average!),
-                          label: 'Gemiddeld, 30 dagen',
-                        ),
+                      StatTile(value: _length(last.length), label: 'Geslapen'),
+                      StatTile(
+                        value: _length(sleep.average!),
+                        label: 'Gemiddeld, 30 dagen',
                       ),
                     ],
                   ),
@@ -362,14 +353,8 @@ class _SleepCard extends StatelessWidget {
                       ],
                     ),
                   ],
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text('Alle nachten', style: _muted(context)),
-                      const Icon(Icons.chevron_right, size: 18),
-                    ],
-                  ),
+                  // The card itself opens them.
+                  const MoreLink('Alle nachten'),
                 ],
               ),
       ),
@@ -404,35 +389,24 @@ class _StepsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            StatRow(
               children: [
-                Expanded(
-                  child: StatTile(
-                    value: todays == null ? '-' : formatSteps(todays),
-                    label: 'Vandaag',
-                    emphasis: true,
-                  ),
+                StatTile(
+                  value: todays == null ? '-' : formatSteps(todays),
+                  label: 'Vandaag',
+                  emphasis: true,
                 ),
-                Expanded(
-                  child: StatTile(
-                    value: week.isEmpty
-                        ? '-'
-                        : formatSteps(
-                            week.reduce((a, b) => a + b) ~/ week.length,
-                          ),
-                    label: 'Gemiddeld per dag, deze week',
-                  ),
+                StatTile(
+                  value: week.isEmpty
+                      ? '-'
+                      : formatSteps(
+                          week.reduce((a, b) => a + b) ~/ week.length,
+                        ),
+                  label: 'Gemiddeld per dag, deze week',
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text('Per dag', style: _muted(context)),
-                const Icon(Icons.chevron_right, size: 18),
-              ],
-            ),
+            const MoreLink('Per dag'),
           ],
         ),
       ),
@@ -470,21 +444,17 @@ class _ReadingCard extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  StatRow(
                     children: [
-                      Expanded(
-                        child: StatTile(
-                          value: '${_number(latest)} $unit',
-                          label: Formatters.weekdayDayMonth(reading.latestDay!),
-                        ),
+                      StatTile(
+                        value: '${_number(latest)} $unit',
+                        label: Formatters.weekdayDayMonth(reading.latestDay!),
                       ),
-                      Expanded(
-                        child: StatTile(
-                          value: '${_number(reading.usual!)} $unit',
-                          label:
-                              usualLabel[0].toUpperCase() +
-                              usualLabel.substring(1),
-                        ),
+                      StatTile(
+                        value: '${_number(reading.usual!)} $unit',
+                        label:
+                            usualLabel[0].toUpperCase() +
+                            usualLabel.substring(1),
                       ),
                     ],
                   ),
@@ -539,15 +509,11 @@ class _WorkoutHeartRates extends StatelessWidget {
               )
             else
               for (final workout in workouts) WorkoutHeartRow(workout: workout),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: TextButton.icon(
-                  onPressed: () => context.push(Routes.heartRateWeeks),
-                  icon: const Icon(Icons.history, size: 18),
-                  label: const Text('Eerdere trainingen'),
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: MoreLink(
+                'Alle trainingen',
+                onTap: () => context.push(Routes.heartRateWeeks),
               ),
             ),
           ],

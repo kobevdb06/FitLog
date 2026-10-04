@@ -168,7 +168,7 @@ void main() {
       expect(find.textContaining('Verbind Health Connect'), findsNothing);
       // De nacht van het horloge had geen fasen, en dat staat er.
       expect(find.textContaining('geen fasen door'), findsOneWidget);
-      expect(find.text('Eerdere trainingen'), findsOneWidget);
+      expect(find.text('Alle trainingen'), findsOneWidget);
 
       // En op een smalle gsm past het ook.
       await pumpScreen(tester, width: 360);

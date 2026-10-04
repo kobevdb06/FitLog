@@ -107,8 +107,17 @@ void main() {
       tester,
     ) async {
       health.missing = ['hartslag'];
+      // Een uur geleden nog opgehaald: zonder meer zou het volgende ophalen
+      // maar twee dagen terug gaan.
       await db.settingsDao.updateSettings(
-        const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
+        AppSettingsTableCompanion(
+          healthConnectEnabled: const Value(true),
+          healthConnectSyncedAt: Value(
+            DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .millisecondsSinceEpoch,
+          ),
+        ),
       );
       await pumpScreen(tester);
 
@@ -124,6 +133,9 @@ void main() {
       expect(health.accessRequested, isTrue);
       expect(health.reads, 1);
       expect(find.textContaining('mag nog niet lezen'), findsNothing);
+      // Wat nu pas mag, heeft nog geen verleden in FitLog: de hele maand.
+      final month = DateTime.now().subtract(kFirstImportReach);
+      expect(health.lastFrom, DateTime(month.year, month.month, month.day));
     });
 
     testWidgets('ontkoppelen en wissen haalt alles weg wat binnenkwam', (

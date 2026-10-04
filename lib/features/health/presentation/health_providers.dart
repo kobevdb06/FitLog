@@ -240,6 +240,11 @@ class HealthSync extends _$HealthSync {
   /// Shows Health Connect's permission screen again, for what was refused
   /// or added since - the heart rate, for someone who connected before it
   /// was asked for - and imports straight after.
+  ///
+  /// A whole month, as on the first import, and not from just before the
+  /// last one: what may be read now has no history in FitLog yet, and a
+  /// resting heart rate needs a week of nights before it knows your usual.
+  /// Importing again changes nothing that was already there.
   Future<void> askAgain() async {
     try {
       await ref.read(healthSourceProvider).requestAccess();
@@ -251,6 +256,12 @@ class HealthSync extends _$HealthSync {
       return;
     }
     ref.invalidate(healthMissingAccessProvider);
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          const AppSettingsTableCompanion(healthConnectSyncedAt: Value(null)),
+        );
     await sync(force: true);
   }
 

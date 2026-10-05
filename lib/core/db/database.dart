@@ -66,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 42;
+  int get schemaVersion => 43;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -403,6 +403,13 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(routineFoldersTable, routineFoldersTable.isCoach);
           await m.createTable(routineVersionsTable);
           await m.createIndex(idxRoutineVersionsRoutine);
+        }
+        if (from < 43) {
+          // What to try today, per exercise: on, as it is for a new install.
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.progressionHints,
+          );
         }
       });
 

@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/pr.dart';
+import '../../../core/calc/progression.dart';
 import '../../../core/calc/set_numbering.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
@@ -258,6 +259,41 @@ class WorkoutController {
       rpe: rpe,
     );
     await _recalculate();
+  }
+
+  /// Puts what the hint says into the working sets that are still open.
+  ///
+  /// Fills, does not tick off, the same as taking over the sets above: what
+  /// you then lift is yours to say. Returns how many were filled.
+  Future<int> applyHint(String workoutExerciseId, ProgressionHint hint) async {
+    final running = await _db.workoutsDao.getActiveWorkoutRow();
+    if (running == null) return 0;
+    final workout = await _db.workoutsDao.getWorkoutDetail(running.id);
+    final owner = workout?.exerciseById(workoutExerciseId);
+    if (owner == null) return 0;
+
+    var filled = 0;
+    for (final set in owner.sets) {
+      if (set.isCompleted ||
+          set.isSkipped ||
+          SetType.fromWire(set.setType) == SetType.warmup) {
+        continue;
+      }
+      await _db.workoutsDao.updateSet(
+        set.id,
+        weightKg: hint.weightKg == null
+            ? const Value.absent()
+            : Value(hint.weightKg),
+        reps: hint.reps == null ? const Value.absent() : Value(hint.reps),
+        durationSeconds: hint.seconds == null
+            ? const Value.absent()
+            : Value(hint.seconds),
+      );
+      filled++;
+    }
+
+    if (filled > 0) await _recalculate();
+    return filled;
   }
 
   /// Copies the last completed set's numbers into the working sets after it.

@@ -114,6 +114,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_gym')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
       ..execute('DROP TABLE routine_versions')
+      ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -140,6 +141,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_gym')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
       ..execute('DROP TABLE routine_versions')
+      ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -164,6 +166,7 @@ void main() {
     final raw = sqlite3.open(path)
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
       ..execute('DROP TABLE routine_versions')
+      ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -173,6 +176,8 @@ void main() {
     // Geen enkele bestaande map is van de coach.
     expect(folder.isCoach, isFalse);
     expect(await db.select(db.routineVersionsTable).get(), isEmpty);
+    // v43: de hint per oefening staat aan, ook voor wie al een database had.
+    expect((await db.settingsDao.getSettings()).progressionHints, isTrue);
     await db.close();
   });
 
@@ -198,7 +203,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 42);
+    expect(raw.select('PRAGMA user_version').first.values.first, 43);
     raw.close();
   });
 
@@ -405,7 +410,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 42);
+    expect(db.schemaVersion, 43);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

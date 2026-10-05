@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../calc/plateau.dart';
+import '../../calc/progression.dart';
 import '../../calc/recovery.dart';
 import '../../calc/volume.dart';
 import '../database.dart';
@@ -883,7 +884,56 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
       if (note != null) notes[exercise.exerciseId] = note;
     }
 
-    return PreviousSession(sets: sets, notes: notes);
+    // What the routine asks for, per exercise.
+    final targets = <String, int>{
+      for (final row in await customSelect(
+        'SELECT re.exercise_id AS exercise_id, '
+        'MAX(rs.target_reps) AS reps '
+        'FROM workouts w '
+        'JOIN routine_exercises re ON re.routine_id = w.routine_id '
+        'JOIN routine_sets rs ON rs.routine_exercise_id = re.id '
+        'WHERE w.id = ? AND rs.set_type != ? AND rs.target_reps > 0 '
+        'GROUP BY re.exercise_id',
+        variables: [
+          Variable.withString(workoutId),
+          Variable.withString(SetType.warmup.wire),
+        ],
+      ).get())
+        row.read<String>('exercise_id'): row.read<int>('reps'),
+    };
+
+    // The weights used on each exercise over the last year, for the step.
+    final steps = <String, double>{};
+    final since = DateTime.now()
+        .subtract(const Duration(days: 365))
+        .millisecondsSinceEpoch;
+    for (final exerciseId in {for (final e in exercises) e.exerciseId}) {
+      final weights = await customSelect(
+        'SELECT DISTINCT ws.weight_kg AS kg FROM workout_sets ws '
+        'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+        'JOIN workouts w ON w.id = we.workout_id '
+        'WHERE we.exercise_id = ? AND ws.is_completed = 1 '
+        'AND ws.set_type != ? AND ws.weight_kg > 0 '
+        'AND w.ended_at IS NOT NULL AND w.started_at >= ? '
+        'ORDER BY ws.weight_kg LIMIT 60',
+        variables: [
+          Variable.withString(exerciseId),
+          Variable.withString(SetType.warmup.wire),
+          Variable.withInt(since),
+        ],
+      ).get();
+      final step = learnedWeightStep([
+        for (final row in weights) row.read<double>('kg'),
+      ]);
+      if (step != null) steps[exerciseId] = step;
+    }
+
+    return PreviousSession(
+      sets: sets,
+      notes: notes,
+      targetReps: targets,
+      weightSteps: steps,
+    );
   }
 
   /// Marks every set of an exercise that is still open as skipped, or clears

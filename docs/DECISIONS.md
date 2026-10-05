@@ -3483,3 +3483,42 @@ catalogus, en daar heeft de coach niets te schrijven.
 
 De vaste instructies werden er korter van (4150 tekens zonder naam), niet
 langer: dezelfde regels, in minder woorden.
+
+## 177. Een hint per oefening
+
+Gevraagd na een voorbeeld: bij elke oefening in een lopende training wat je
+vandaag probeert, op basis van de vorige keer, met een schakelaar om het uit
+te zetten.
+
+**De regel: dubbele progressie.** Gemeten aan de afgevinkte werksets van de
+vorige keer, op het zwaarste gewicht (een lichtere set erna - een back-off,
+een piramide - is niet waar de volgende stap aan gemeten wordt):
+- elke set haalde het doel, RPE hoogstens 8,5 of niet ingevuld: een stap
+  zwaarder, zelfde doel;
+- niet elke set haalde het: zelfde gewicht, mik op het doel;
+- elke set haalde het, maar RPE 9 of hoger: nog eens hetzelfde. In het
+  voorbeeld stond "9,5 of 10"; een 9 laat ook maar één herhaling over, en
+  dan meteen zwaarder is de stap die een plateau maakt;
+- zonder gewicht: één herhaling meer als alle sets even goed waren, anders
+  eerst alle sets naar de beste; een houding: vijf seconden langer;
+- geen hint de eerste keer, bij een PR-poging (die heeft haar eigen
+  ladder), voor geassisteerd en cardio, en zodra er geen open werkset meer
+  is.
+Het doel is het hoogste aantal herhalingen van de werksets in de routine
+van de training; zonder routine of zonder doel het beste van de vorige keer.
+
+**De stap.** Wat je bij die oefening gewoonlijk bijlegt: het kleinste
+verschil tussen de gewichten die je er het afgelopen jaar op gebruikte,
+vanaf drie verschillende (één verschil is nog geen gewoonte), en gewichten
+minder dan een halve kilo uit elkaar tellen als één - 60,25 naast 60 is een
+afronding of een tikfout. Anders: twee keer je kleinste schijf op een
+stang, 2 kg bij dumbbells, 2,5 kg bij machines en kabels. Wie in pond
+traint, krijgt zo vanzelf zijn eigen stap.
+
+**Invullen, niet afvinken.** De knop zet het gewicht en de herhalingen in
+de open werksets, zoals sets overnemen dat doet; de opwarming blijft zoals
+ze was, en afvinken blijft van jou. Zonder tik verandert de hint niets.
+
+**Uit te zetten** in de workout-voorkeuren, onder Tijdens een training
+(schema v43, `app_settings.progression_hints`, standaard aan - ook voor wie
+al een database had).

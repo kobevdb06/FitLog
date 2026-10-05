@@ -92,6 +92,19 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
             onChanged: (value) =>
                 update(AppSettingsTableCompanion(trackRpe: Value(value))),
           ),
+          const SectionHeader('Tijdens een training'),
+          SwitchListTile(
+            title: const Text('Hint per oefening'),
+            subtitle: const Text(
+              'Bij elke oefening wat je vandaag probeert: zwaarder als je '
+              'vorige keer alle herhalingen haalde, anders hetzelfde gewicht '
+              'met meer herhalingen.',
+            ),
+            value: settings.progressionHints,
+            onChanged: (value) => update(
+              AppSettingsTableCompanion(progressionHints: Value(value)),
+            ),
+          ),
           const SectionHeader('Herstel'),
           SwitchListTile(
             title: const Text('Slaapfasen invullen'),

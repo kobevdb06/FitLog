@@ -107,4 +107,16 @@ void main() {
 
     expect((await db.settingsDao.getSettings()).defaultWarmupSets, 3);
   });
+
+  testWidgets('de hint per oefening staat aan, en gaat uit', (tester) async {
+    await pump(tester);
+
+    final hint = find.widgetWithText(SwitchListTile, 'Hint per oefening');
+    expect(tester.widget<SwitchListTile>(hint).value, isTrue);
+
+    await tester.tap(hint);
+    await tester.pumpAndSettle();
+
+    expect((await db.settingsDao.getSettings()).progressionHints, isFalse);
+  });
 }

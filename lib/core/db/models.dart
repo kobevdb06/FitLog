@@ -241,7 +241,12 @@ typedef PreviousKey = ({String exerciseId, SetSide? side});
 /// Loaded in one go and keyed by exercise, so the screen asks once instead of
 /// twice per exercise per side.
 class PreviousSession {
-  const PreviousSession({required this.sets, required this.notes});
+  const PreviousSession({
+    required this.sets,
+    required this.notes,
+    this.targetReps = const {},
+    this.weightSteps = const {},
+  });
 
   static const PreviousSession empty = PreviousSession(sets: {}, notes: {});
 
@@ -249,6 +254,14 @@ class PreviousSession {
 
   /// Only the exercises you actually wrote something about last time.
   final Map<String, String> notes;
+
+  /// Per exercise, the repetitions the session's routine asks for - the
+  /// highest of its working sets. Only exercises with a target.
+  final Map<String, int> targetReps;
+
+  /// Per exercise, the step you take in weight, read off what you used on it
+  /// (see `learnedWeightStep`). Only where the history shows one.
+  final Map<String, double> weightSteps;
 
   /// Null rather than empty when that exercise has no history at all: the
   /// column shows a dash for the first, and nothing at all for the second.

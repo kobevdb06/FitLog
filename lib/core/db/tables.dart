@@ -151,6 +151,11 @@ class AppSettingsTable extends Table {
       .named('coach_sees_profile')
       .withDefault(const Constant(false))();
 
+  /// Whether every exercise in a running session says what to try today,
+  /// from what you did last time. On until you switch it off.
+  BoolColumn get progressionHints =>
+      boolean().named('progression_hints').withDefault(const Constant(true))();
+
   /// Where you train, in your own words: the gym, and what it has or lacks.
   /// For the coach, when it picks exercises for you.
   TextColumn get coachGym => text().named('coach_gym').nullable()();

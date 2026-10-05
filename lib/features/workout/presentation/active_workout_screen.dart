@@ -8,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/calc/progression.dart';
 import '../../../core/calc/set_numbering.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
@@ -893,6 +894,12 @@ class _ExerciseCard extends ConsumerWidget {
               .read(workoutControllerProvider)
               .setExerciseNote(detail.workoutExercise.id, note),
         ),
+        if (_hint(previousBySide) case final hint?)
+          _HintLine(
+            hint: hint,
+            formatters: formatters,
+            onApply: () => _applyHint(context, ref, hint),
+          ),
         const Divider(height: 1),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
@@ -987,6 +994,60 @@ class _ExerciseCard extends ConsumerWidget {
     return () => ref
         .read(workoutControllerProvider)
         .copyPreviousInto(row.id, previous, columns);
+  }
+
+  /// What to try today, or null: switched off, a PR attempt (which has its
+  /// own ladder), nothing to go on, or nothing left to fill in.
+  ProgressionHint? _hint(Map<SetSide?, List<WorkoutSetRow>?> previousBySide) {
+    if (!(settings?.progressionHints ?? true)) return null;
+    if (detail.workoutExercise.isPrAttempt) return null;
+    final open = detail.sets.any(
+      (s) =>
+          !s.isCompleted &&
+          !s.isSkipped &&
+          SetType.fromWire(s.setType) != SetType.warmup,
+    );
+    if (!open) return null;
+
+    final exerciseId = detail.exercise.id;
+    return progressionHint(
+      category: detail.category,
+      last: [
+        for (final sets in previousBySide.values)
+          for (final s in sets ?? const <WorkoutSetRow>[])
+            if (s.isCompleted && !s.isSkipped)
+              HintSet(
+                weightKg: s.weightKg,
+                reps: s.reps,
+                durationSeconds: s.durationSeconds,
+                rpe: s.rpe,
+              ),
+      ],
+      targetReps: previous.targetReps[exerciseId],
+      step:
+          previous.weightSteps[exerciseId] ??
+          defaultWeightStep(
+            detail.category,
+            platesKg: settings == null
+                ? const []
+                : decodePlates(settings!.availablePlatesKg),
+          ),
+    );
+  }
+
+  Future<void> _applyHint(
+    BuildContext context,
+    WidgetRef ref,
+    ProgressionHint hint,
+  ) async {
+    final filled = await ref
+        .read(workoutControllerProvider)
+        .applyHint(detail.workoutExercise.id, hint);
+    if (!context.mounted) return;
+    showSnack(
+      context,
+      filled == 1 ? '1 set ingevuld' : '$filled sets ingevuld',
+    );
   }
 
   /// The matching working set from the previous session, or null.
@@ -1470,6 +1531,126 @@ bool isWideColumn(KeypadFieldKind kind) => kind != KeypadFieldKind.rpe;
 
 /// Wide enough for "10", and for a thumb.
 const double kRpeColumnWidth = 46;
+
+/// What to try today on this exercise, and what that is based on.
+///
+/// One line, under the name: there to glance at between sets, not to read.
+/// Filling it in is a tap; ticking the sets off stays yours.
+class _HintLine extends StatelessWidget {
+  const _HintLine({
+    required this.hint,
+    required this.formatters,
+    required this.onApply,
+  });
+
+  final ProgressionHint hint;
+  final Formatters formatters;
+  final VoidCallback onApply;
+
+  bool get _forward => switch (hint.kind) {
+    HintKind.heavier || HintKind.moreReps || HintKind.longer => true,
+    HintKind.sameWeight || HintKind.repeat || HintKind.evenReps => false,
+  };
+
+  String get _title => switch (hint.kind) {
+    HintKind.heavier =>
+      'Probeer ${formatters.weight(hint.weightKg)} × ${hint.reps}',
+    HintKind.sameWeight => 'Zelfde gewicht, mik op ${hint.reps}',
+    HintKind.repeat =>
+      'Nog eens ${formatters.weight(hint.weightKg)} × ${hint.reps}',
+    HintKind.moreReps => 'Probeer ${hint.reps} herhalingen',
+    HintKind.evenReps => 'Mik op ${hint.reps} in elke set',
+    HintKind.longer => 'Probeer ${Formatters.duration(hint.seconds!)}',
+  };
+
+  /// `Vorige keer 3 × 8 met 80 kg, RPE 8`, or `12, 11, 10` where they
+  /// differed.
+  String get _basis {
+    if (hint.kind == HintKind.longer) {
+      final longest = hint.last
+          .map((s) => s.durationSeconds ?? 0)
+          .fold<int>(0, (a, b) => a > b ? a : b);
+      return 'Vorige keer ${Formatters.duration(longest)}';
+    }
+    final sets = [
+      for (final s in hint.last)
+        if (s.reps != null &&
+            (hint.lastWeightKg == null || s.weightKg == hint.lastWeightKg))
+          s.reps!,
+    ];
+    final reps = sets.toSet().length == 1
+        ? '${sets.length} × ${sets.first}'
+        : sets.join(', ');
+    final weight = hint.lastWeightKg == null
+        ? ''
+        : ' met ${formatters.weight(hint.lastWeightKg)}';
+    final rpe = hint.lastRpe == null
+        ? ''
+        : ', RPE ${formatters.rpeValue(hint.lastRpe)}';
+    return 'Vorige keer $reps$weight$rpe';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colour = _forward
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        0,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xs,
+          AppSpacing.xs,
+          AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: _forward
+              ? theme.colorScheme.primary.withValues(alpha: 0.12)
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _forward ? Icons.trending_up : Icons.repeat,
+              size: 20,
+              color: colour,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: _forward ? colour : null,
+                    ),
+                  ),
+                  Text(
+                    _basis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(onPressed: onApply, child: const Text('Invullen')),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _ColumnHeaders extends StatelessWidget {
   const _ColumnHeaders({required this.formatters, required this.columns});

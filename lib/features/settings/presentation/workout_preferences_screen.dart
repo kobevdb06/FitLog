@@ -430,20 +430,19 @@ class _ChoiceTile<T> extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.sm),
-          // Scrollable as a last resort: a narrow phone with a large system
-          // font can still run out of room, and a row that scrolls beats a row
-          // that overflows.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SegmentedButton<T>(
-              showSelectedIcon: false,
-              segments: [
-                for (final value in values)
-                  ButtonSegment(value: value, label: Text(label(value))),
-              ],
-              selected: {selected},
-              onSelectionChanged: (s) => onChanged(s.first),
-            ),
+          // The full width, shared evenly: every choice in sight on a
+          // narrow phone with a large font. It used to scroll sideways
+          // there, and a row with its last choice off the edge looks
+          // broken rather than scrollable.
+          SegmentedButton<T>(
+            expandedInsets: EdgeInsets.zero,
+            showSelectedIcon: false,
+            segments: [
+              for (final value in values)
+                ButtonSegment(value: value, label: Text(label(value))),
+            ],
+            selected: {selected},
+            onSelectionChanged: (s) => onChanged(s.first),
           ),
         ],
       ),

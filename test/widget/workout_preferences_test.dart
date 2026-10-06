@@ -95,6 +95,24 @@ void main() {
     );
   });
 
+  testWidgets('elke keuzerij past op het scherm, zonder te schuiven', (
+    tester,
+  ) async {
+    // A phone with its display size turned up, and the largest text the app
+    // allows: the warm-up row ran off the right edge there, its 5 cut off.
+    await pump(tester, size: const Size(360, 2600), textScale: 1.4);
+
+    final rows = find.byType(SegmentedButton<int>);
+    expect(rows, findsWidgets);
+    for (final row in tester.widgetList(rows)) {
+      final rect = tester.getRect(find.byWidget(row));
+      expect(rect.left, greaterThanOrEqualTo(15.5));
+      expect(rect.right, lessThanOrEqualTo(360 - 15.5));
+    }
+    final five = tester.getRect(find.text('5'));
+    expect(five.right, lessThanOrEqualTo(360 - 15.5));
+  });
+
   testWidgets('the choices are all still there and pick', (tester) async {
     await pump(tester);
 

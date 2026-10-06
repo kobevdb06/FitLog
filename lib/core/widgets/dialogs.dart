@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -983,22 +984,33 @@ Future<WeekdaySet?> pickWeekdays(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  for (
-                    var weekday = DateTime.monday;
-                    weekday <= DateTime.sunday;
-                    weekday++
-                  )
-                    _WeekdayChip(
-                      weekday: weekday,
-                      selected: chosen.has(weekday),
-                      onTap: () =>
-                          setState(() => chosen = chosen.toggle(weekday)),
-                    ),
-                ],
+              // The week on one line, whatever the width: the days shrink
+              // a little on a narrow screen rather than Sunday wrapping
+              // to a line of its own.
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = math.min(
+                    _WeekdayChip.maxSize,
+                    (constraints.maxWidth - 6 * AppSpacing.xs) / 7,
+                  );
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      for (
+                        var weekday = DateTime.monday;
+                        weekday <= DateTime.sunday;
+                        weekday++
+                      )
+                        _WeekdayChip(
+                          weekday: weekday,
+                          size: size,
+                          selected: chosen.has(weekday),
+                          onTap: () =>
+                              setState(() => chosen = chosen.toggle(weekday)),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -1033,11 +1045,16 @@ Future<WeekdaySet?> pickWeekdays(
 class _WeekdayChip extends StatelessWidget {
   const _WeekdayChip({
     required this.weekday,
+    required this.size,
     required this.selected,
     required this.onTap,
   });
 
+  /// As large as a day gets, where there is room for it.
+  static const double maxSize = 42;
+
   final int weekday;
+  final double size;
   final bool selected;
   final VoidCallback onTap;
 
@@ -1045,8 +1062,8 @@ class _WeekdayChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return SizedBox(
-      width: 42,
-      height: 42,
+      width: size,
+      height: size,
       child: Material(
         color: selected ? AppColors.accent : scheme.surfaceContainerHighest,
         shape: const CircleBorder(),
@@ -1054,11 +1071,16 @@ class _WeekdayChip extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Center(
-            child: Text(
-              Formatters.weekdayShort(weekday),
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: selected ? Colors.white : scheme.onSurfaceVariant,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            // Two letters always fit: on the narrowest screen with the
+            // largest text they get a size smaller, never cut.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                Formatters.weekdayShort(weekday),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: selected ? Colors.white : scheme.onSurfaceVariant,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
               ),
             ),
           ),

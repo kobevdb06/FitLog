@@ -3720,3 +3720,29 @@ De map van de coach heeft het robotje ervoor, zoals de coach overal elders
 in de app. De regel "De coach mag deze routines aanpassen" onder de map
 staat nu bovenaan haar menu, met waar je een wijziging terugzet; alleen een
 lege map van de coach zegt onder de naam nog wat je ermee kunt.
+
+## 185. Een tekstveld loslaten
+
+Op Android houdt Flutter een tekstveld vast tot iets anders de focus vraagt.
+Een tik ernaast, of de terug-veeg die alleen het toetsenbord sluit, liet de
+cursor knipperen, en een pagina waar je naar terugkeerde gaf de focus terug
+aan dat veld - met het toetsenbord erbij. Nu laten twee dingen het veld los,
+voor de hele app op één plek (`ReleaseFieldFocus`, in `appBuilder`):
+
+- **Een tik buiten het veld.** Een tik, geen veeg: een vinger die beweegt
+  (verder dan `kTouchSlop`) leest de pagina, en dan blijft het veld. Dit is
+  het patroon dat Flutter zelf aanraadt, via `EditableTextTapOutsideIntent`
+  en `EditableTextTapUpOutsideIntent`; standaard doet Flutter dit alleen op
+  desktop en het web. Een tik in een ander veld geeft dat de focus, zoals
+  het hoort.
+- **Het toetsenbord dat sluit terwijl een veld de focus heeft.** Gezien aan
+  de onderrand van het scherm (`viewInsets`) die terug naar nul gaat.
+
+Wat bij een veld hoort, telt mee als het veld: de verstuurknop van de coach
+staat in een `TextFieldTapRegion`, zodat het toetsenbord na een vraag open
+blijft voor de volgende, zoals in elke chat. De knoppen in een veld zelf (het
+kruisje om te wissen) horen er al bij.
+
+Er bewaart geen enkel veld iets bij het verliezen van de focus; loslaten kan
+dus niets kwijtmaken. De widgettests draaien nu in dezelfde `appBuilder` als
+de app, zodat ze dit gedrag ook hebben.

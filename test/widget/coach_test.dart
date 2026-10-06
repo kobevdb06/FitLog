@@ -856,6 +856,45 @@ void main() {
       expect(await db.chatDao.messages(threads.id), hasLength(2));
     });
 
+    testWidgets('versturen houdt het toetsenbord open, ernaast tikken niet', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('Tussen 10 en 20 sets per week.')),
+      );
+      // The question field; the messages are selectable text of their own.
+      bool typing() => tester
+          .widget<EditableText>(
+            find.descendant(
+              of: find.byType(TextField),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .focusNode
+          .hasFocus;
+
+      await tester.enterText(
+        find.byType(TextField),
+        'Hoeveel sets voor borst?',
+      );
+      // A frame, as on the phone: the field only knows it has the focus
+      // once it has been drawn with it.
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      await tester.pumpAndSettle();
+
+      // The next question follows the answer, as in any chat.
+      expect(find.text('Tussen 10 en 20 sets per week.'), findsOneWidget);
+      expect(typing(), isTrue);
+
+      await tester.tap(find.byType(AppBar));
+      await tester.pumpAndSettle();
+      expect(typing(), isFalse);
+    });
+
     testWidgets('en toont wat het over jou heeft opgezocht', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       var first = true;

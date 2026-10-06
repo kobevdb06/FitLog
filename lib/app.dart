@@ -12,6 +12,7 @@ import 'core/db/enums.dart';
 import 'core/providers/core_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/util/notification_service.dart';
+import 'core/widgets/field_focus.dart';
 import 'features/health/presentation/health_providers.dart';
 import 'features/morning/data/morning_alarm.dart';
 import 'features/morning/presentation/morning_providers.dart';
@@ -286,17 +287,22 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: (context, child) {
-        // Keep the app readable when the system font is scaled up a lot.
-        final scale = MediaQuery.textScalerOf(context)
-            .clamp(minScaleFactor: 0.9, maxScaleFactor: 1.4);
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: scale),
-          child: child!,
-        );
-      },
+      builder: appBuilder,
     );
   }
+}
+
+/// What every screen of the app sits in, between the app and its pages.
+Widget appBuilder(BuildContext context, Widget? child) {
+  // Keep the app readable when the system font is scaled up a lot.
+  final scale = MediaQuery.textScalerOf(context)
+      .clamp(minScaleFactor: 0.9, maxScaleFactor: 1.4);
+  return ReleaseFieldFocus(
+    child: MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: scale),
+      child: child!,
+    ),
+  );
 }
 
 /// Exposed so the settings screen can label the theme options.

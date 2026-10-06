@@ -905,10 +905,14 @@ class _Ask extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          IconButton.filled(
-            tooltip: 'Versturen',
-            onPressed: busy ? null : () => onSend(controller.text),
-            icon: const Icon(Icons.arrow_upward),
+          // Part of the field: sending keeps the keyboard up for the next
+          // question, the way a chat does.
+          TextFieldTapRegion(
+            child: IconButton.filled(
+              tooltip: 'Versturen',
+              onPressed: busy ? null : () => onSend(controller.text),
+              icon: const Icon(Icons.arrow_upward),
+            ),
           ),
         ],
       ),

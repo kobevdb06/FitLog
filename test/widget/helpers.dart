@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:fitlog/app.dart';
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
@@ -20,8 +21,12 @@ Future<void> initialiseTestLocale() async {
 AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
 
 /// The MaterialApp the screens expect, without a ProviderScope of its own.
+///
+/// With the app's own builder, so a screen behaves here as it does on the
+/// phone - letting go of a text field included.
 Widget appFrame(Widget child) {
   return MaterialApp(
+    builder: appBuilder,
     theme: AppTheme.dark,
     locale: const Locale('nl'),
     supportedLocales: const [Locale('nl')],

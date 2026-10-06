@@ -23,11 +23,11 @@ String weekLabel(DateTime start) {
 /// One week at a time, with arrows to the one before and after - never past
 /// the week of [now].
 ///
-/// Opens on the current week. Used wherever there is a log that keeps
-/// growing - nights, reports, sessions - so the screen stays as long as one
-/// week, whatever the history.
+/// Opens on the current week, or on [initial] when given. Used wherever
+/// there is a log that keeps growing - nights, reports, sessions - so the
+/// screen stays as long as one week, whatever the history.
 class WeekPager extends StatefulWidget {
-  const WeekPager({super.key, required this.builder, this.now});
+  const WeekPager({super.key, required this.builder, this.now, this.initial});
 
   /// What is shown for the week from [start] up to [end], exclusive.
   final Widget Function(BuildContext context, DateTime start, DateTime end)
@@ -36,12 +36,21 @@ class WeekPager extends StatefulWidget {
   /// Fixed in tests; the real clock otherwise.
   final DateTime? now;
 
+  /// A day in the week to open on. Never past the current week.
+  final DateTime? initial;
+
   @override
   State<WeekPager> createState() => _WeekPagerState();
 }
 
 class _WeekPagerState extends State<WeekPager> {
-  late DateTime _start = weekStartOf(widget.now ?? DateTime.now());
+  late DateTime _start = () {
+    final current = weekStartOf(widget.now ?? DateTime.now());
+    final asked = widget.initial;
+    if (asked == null) return current;
+    final week = weekStartOf(asked);
+    return week.isAfter(current) ? current : week;
+  }();
 
   DateTime get _current => weekStartOf(widget.now ?? DateTime.now());
 

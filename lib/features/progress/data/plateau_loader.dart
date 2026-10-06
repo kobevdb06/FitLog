@@ -26,8 +26,11 @@ Future<List<ExercisePlateau>> findPlateaus(
   List<ProgressSet> sets, {
   required DateTime now,
 }) async {
+  // Only what had happened by [now]: asked about a moment in the past - the
+  // start of a week, for the weekly review - a later session must not count.
   final byExercise = <String, List<ProgressSet>>{};
   for (final set in sets) {
+    if (set.startedAt.isAfter(now)) continue;
     byExercise.putIfAbsent(set.exerciseId, () => []).add(set);
   }
 

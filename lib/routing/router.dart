@@ -45,6 +45,7 @@ import '../features/settings/presentation/workout_preferences_screen.dart';
 import '../features/workout/presentation/active_workout_screen.dart';
 import '../features/workout/presentation/rest_timer_screen.dart';
 import '../features/workout/presentation/workout_summary_screen.dart';
+import '../features/review/presentation/week_review_screen.dart';
 import 'app_shell.dart';
 import 'pages.dart';
 import 'tab_pager.dart';
@@ -185,6 +186,14 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
             appPage(state, const StepsWeekScreen()),
+      ),
+      GoRoute(
+        path: Routes.weekReview,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) => appPage(
+          state,
+          WeekReviewScreen(initial: _day(state.uri.queryParameters['start'])),
+        ),
       ),
       GoRoute(
         path: Routes.exercises,
@@ -494,4 +503,13 @@ class StartupFailureScreen extends ConsumerWidget {
 
     await ref.read(appControllerProvider.notifier).wipeEverything();
   }
+}
+
+/// `2026-9-28` back into a date, or null for anything else.
+DateTime? _day(String? value) {
+  final parts = value?.split('-');
+  if (parts == null || parts.length != 3) return null;
+  final numbers = parts.map(int.tryParse).toList();
+  if (numbers.contains(null)) return null;
+  return DateTime(numbers[0]!, numbers[1]!, numbers[2]!);
 }

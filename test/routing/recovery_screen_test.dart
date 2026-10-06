@@ -14,6 +14,7 @@ import 'package:fitlog/features/progress/presentation/sleep_section.dart';
 import 'package:fitlog/features/progress/presentation/sleep_week_screen.dart';
 import 'package:fitlog/features/progress/presentation/progress_screen.dart';
 import 'package:fitlog/features/progress/presentation/recovery_screen.dart';
+import 'package:fitlog/features/review/presentation/week_review_screen.dart';
 import 'package:fitlog/routing/routes.dart';
 import 'package:fitlog/routing/router.dart';
 import 'package:flutter/material.dart';
@@ -158,6 +159,32 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(RecoveryScreen), findsOneWidget);
+    });
+
+    testWidgets('en het weekoverzicht staat er ook', (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.text('Voortgang').last);
+      await tester.pumpAndSettle();
+
+      final entry = find.descendant(
+        of: find.byType(ProgressScreen),
+        matching: find.text('Weekoverzicht'),
+      );
+      await tester.scrollUntilVisible(
+        entry,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(ProgressScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(entry);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WeekReviewScreen), findsOneWidget);
+      expect(find.text('Deze week'), findsOneWidget);
     });
 
     testWidgets('en Gezondheid staat ernaast, in plaats van de grafiek', (

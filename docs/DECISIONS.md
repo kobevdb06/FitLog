@@ -3562,3 +3562,41 @@ de toekomst op dezelfde manier vergeten wordt, is dan op één plek op te
 lossen. Een nieuwe test vergelijkt de indexen van een gemigreerde
 v1-database met die van een verse; die faalde op de code van daarvoor en
 laat zo'n vergetelheid voortaan meteen zien.
+
+## 181. Een weekoverzicht
+
+Gevraagd na een voorbeeld: elke zondagavond je week op een rij, met een
+melding (aan, met een schakelaar), en een voorstel van de coach dat hij
+klaarzet maar niet zelf doorvoert. In drie stappen; dit is de eerste: het
+scherm.
+
+**Waar.** Onder Voortgang, *Weekoverzicht*, een week per keer zoals de andere
+weekschermen. Wordt telkens uit het logboek berekend, zodat een training op
+zondagavond er nog in staat.
+
+**Gepland tegenover gedaan.** Per routine met weekdagen: zoveel keer gepland,
+zoveel keer gedaan (trainingen uit die routine, op welke dag ook). Een dag
+telt pas als gemist als hij voorbij is - vandaag nog niet. Kwam de routine
+die week helemaal niet, dan staan de dagen erbij ("Pull van vrijdag niet
+gedaan"); kwam ze minder vaak dan gepland, dan alleen het aantal, want welke
+dag er dan ontbrak is niet te zeggen. De planning is die van nu: hoe een
+routine vorige maand gepland stond, wordt nergens bewaard.
+
+**Sets per spiergroep** tellen de afgevinkte werksets per primaire spier,
+tegenover het gemiddelde van de vier weken ervoor. Achter blijft een spier
+onder 70% van haar gewoonte, en alleen vanaf vier sets per week gewoonlijk.
+
+**Records** zijn de records uit die week die nog altijd staan: de tabel
+bewaart per oefening en soort alleen het beste, dus een record dat dezelfde
+week verbeterd werd, staat er één keer. Per oefening het record dat het meest
+zegt: geschatte 1RM, dan zwaarste gewicht, dan herhalingen.
+
+**Stilstand** zijn de oefeningen die aan het einde van de week stilstonden,
+en de oefeningen die er bij het begin stilstonden, die week gedaan werden en
+niet meer stilstaan: "weer vooruit". Daarvoor rekent `findPlateaus` nu alleen
+met sessies tot het gevraagde moment; gevraagd naar de maandag, telde een
+latere sessie van die week anders al mee.
+
+**Herstel**: de gemiddelde nacht en slaapscore, HRV, rusthartslag en stappen
+van die week, tegenover de vier weken ervoor (de nachten als gemiddelde,
+HRV en rusthartslag als mediaan, zoals overal).

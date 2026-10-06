@@ -116,6 +116,13 @@ class ProgressScreen extends ConsumerWidget {
           const SectionHeader('Meer'),
           const _RecoveryTile(),
           ListTile(
+            leading: const Icon(Icons.calendar_view_week_outlined),
+            title: const Text('Weekoverzicht'),
+            subtitle: const Text('Je week op een rij'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.weekReview),
+          ),
+          ListTile(
             leading: const Icon(Icons.favorite_border),
             title: const Text('Gezondheid'),
             subtitle: const Text('Slaap, HRV, hartslag, gewicht en lopen'),

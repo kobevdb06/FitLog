@@ -76,6 +76,14 @@ abstract final class Routes {
   /// and Gezondheid both open it.
   static const stepsWeeks = '/stappen';
 
+  /// The weekly review, a week at a time. At the root: Voortgang and the
+  /// Sunday notification both open it.
+  static const weekReview = '/week';
+
+  /// The same, opened on the week from [start].
+  static String weekReviewOf(DateTime start) =>
+      '/week?start=${start.year}-${start.month}-${start.day}';
+
   // Profile and settings
   static const settings = '/profiel/instellingen';
   static const settingsCatalogue = '/profiel/instellingen/catalogus';

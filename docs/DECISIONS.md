@@ -3522,3 +3522,16 @@ ze was, en afvinken blijft van jou. Zonder tik verandert de hint niets.
 **Uit te zetten** in de workout-voorkeuren, onder Tijdens een training
 (schema v43, `app_settings.progression_hints`, standaard aan - ook voor wie
 al een database had).
+
+## 178. De geschiedenis van een oefening: de nieuwste 200
+
+Gevonden tijdens het werk aan stilstand herkennen, niet door een melding:
+`exerciseSessions`, wat de tabbladen Geschiedenis en Grafieken van een
+oefening lezen, nam hoogstens 200 keren - maar zette die limiet op de
+`workout_exercises` vóór er op datum gesorteerd werd. De database gaf dan
+de eerste 200 rijen die ze tegenkwam, in de praktijk de oudste, en de
+nieuwste keren vielen weg zodra een oefening meer dan 200 keer gedaan was
+(twee keer per week: na een jaar of twee). Een training die nog bezig was,
+nam ook een plaats in. Sorteren, alleen afgewerkte trainingen nemen en
+afkappen gebeurt nu in de query zelf. De test voert 205 keer in, oudste
+eerst zoals een echt logboek groeit, en faalde op de code van daarvoor.

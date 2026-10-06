@@ -1278,31 +1278,31 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
             ..orderBy([(t) => OrderingTerm.desc(t.startedAt)]))
           .get();
 
-  /// All sessions in which [exerciseId] was performed, newest first.
+  /// The finished sessions in which [exerciseId] was performed, newest first,
+  /// at most [limit] of them.
+  ///
+  /// Sorted and cut off in the query. Cut off before sorting, it was the
+  /// first [limit] rows the database happened to return - the oldest - so
+  /// past that many the newest sessions fell out of the history and the
+  /// charts; and a session still running took one of the places.
   Future<List<ExerciseSession>> exerciseSessions(
     String exerciseId, {
     int limit = 200,
   }) async {
-    final joined =
-        await (select(workoutExercisesTable)
-              ..where((t) => t.exerciseId.equals(exerciseId))
-              ..limit(limit))
-            .join([
-              innerJoin(
-                workoutsTable,
-                workoutsTable.id.equalsExp(workoutExercisesTable.workoutId),
-              ),
-            ])
-            .get();
-
     final finished =
-        joined.where((r) => r.readTable(workoutsTable).endedAt != null).toList()
-          ..sort(
-            (a, b) => b
-                .readTable(workoutsTable)
-                .startedAt
-                .compareTo(a.readTable(workoutsTable).startedAt),
-          );
+        await (select(workoutExercisesTable).join([
+                innerJoin(
+                  workoutsTable,
+                  workoutsTable.id.equalsExp(workoutExercisesTable.workoutId),
+                ),
+              ])
+              ..where(
+                workoutExercisesTable.exerciseId.equals(exerciseId) &
+                    workoutsTable.endedAt.isNotNull(),
+              )
+              ..orderBy([OrderingTerm.desc(workoutsTable.startedAt)])
+              ..limit(limit))
+            .get();
     if (finished.isEmpty) return const [];
 
     final ids = finished

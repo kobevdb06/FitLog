@@ -6,14 +6,14 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../../workout/presentation/workout_providers.dart';
 
-/// Starts the routine and steps into the session - or, with one already
-/// running, offers to go back to that one instead. One session at a time is
-/// all the log knows.
-Future<void> startRoutine(
+/// Starts a session - the routine's, or an empty one without [routineId] -
+/// and steps into it. With one already running it offers to go back to that
+/// one instead: one session at a time is all the log knows.
+Future<void> startSession(
   BuildContext context,
-  WidgetRef ref,
-  String routineId,
-) async {
+  WidgetRef ref, {
+  String? routineId,
+}) async {
   final active = ref.read(activeWorkoutProvider).value;
   if (active != null) {
     final resume = await confirm(
@@ -28,6 +28,11 @@ Future<void> startRoutine(
     return;
   }
 
-  await ref.read(workoutControllerProvider).startFromRoutine(routineId);
+  final controller = ref.read(workoutControllerProvider);
+  if (routineId == null) {
+    await controller.startEmpty();
+  } else {
+    await controller.startFromRoutine(routineId);
+  }
   if (context.mounted) context.push(Routes.workout);
 }

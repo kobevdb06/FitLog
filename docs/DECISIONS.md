@@ -3670,3 +3670,31 @@ kaart opent ze nog steeds. Het starten zelf (`startRoutine`,
 nu: loopt er al een workout, dan vraagt het of je daarmee verder wilt in
 plaats van een tweede te beginnen. Een routine zonder oefeningen heeft een
 uitgeschakelde knop.
+
+## 183. De bovenkant van Trainen, en zoeken
+
+Bovenaan stonden vier losse icoontjes (nieuwe map, scannen, oefeningen) en
+een knop "Lege workout starten". Nu:
+
+- **Eén kaart bovenaan**, alleen als er iets te zeggen is. Loopt er een
+  workout, dan die ("Workout loopt", met "Ga verder"): er kan er maar één
+  lopen en het is die waar je middenin zat. Anders de routine die je schema
+  vandaag heeft en die je nog niet deed ("Vandaag gepland", met haar
+  spiergroepen, de geschatte duur en "Start"), en de andere van vandaag op
+  één regel eronder. Het plan is dat van het Start-tabblad
+  (`todayPlanProvider`), zodat de twee nooit iets anders zeggen. Zonder
+  schema geen kaart: de favorieten en de suggestie van het Start-tabblad
+  horen hier niet, want hieronder staan ze al allemaal.
+- **Twee knoppen met tekst**: "Lege training" en "Oefeningen". Een lege
+  training starten met een lopende workout vraagt nu ook of je daarmee verder
+  wilt (`startSession`), in plaats van dat de knop een tweede probeert te
+  starten.
+- **Nieuwe map en Routine scannen** onder ⋮: allebei zelden gebruikt.
+- **Zoeken** (het vergrootglas): op de naam van een routine, van de map
+  waarin ze staat, of een spiergroep die ze traint, zonder op hoofdletters te
+  letten. Het is een filter op dezelfde lijst, geen platte lijst met
+  resultaten: de map blijft boven haar routines staan, zodat twee routines
+  met dezelfde naam (de Push met Jan en die met Piet) uit elkaar te houden
+  blijven. Wie de naam van een map typt, ziet alles wat erin zit; mappen
+  zonder treffer verdwijnen zolang je zoekt. De kaart en de knoppen bovenaan
+  maken plaats voor het zoekveld.

@@ -166,7 +166,7 @@ class RoutineDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _start(BuildContext context, WidgetRef ref) =>
-      startRoutine(context, ref, routineId);
+      startSession(context, ref, routineId: routineId);
 
   Future<void> _onMenu(
     BuildContext context,

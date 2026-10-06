@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,8 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
+import '../../dashboard/domain/today_plan.dart';
+import '../../dashboard/presentation/today_providers.dart';
 import '../../share/presentation/import_routine_screen.dart';
 import '../../share/presentation/scan_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
@@ -22,44 +25,86 @@ import 'favourite_star.dart';
 import 'routine_providers.dart';
 import 'routine_start.dart';
 
-/// The Trainen tab: folders, routines, and the two ways to start a session.
-class RoutinesScreen extends ConsumerWidget {
+/// Whether [summary] is what someone typing [query] is after: by its name,
+/// the folder it is in, or a muscle it trains.
+bool routineMatches(
+  RoutineSummary summary,
+  String query, {
+  String? folderName,
+}) {
+  final q = query.trim().toLowerCase();
+  if (q.isEmpty) return true;
+  return summary.routine.name.toLowerCase().contains(q) ||
+      (folderName?.toLowerCase().contains(q) ?? false) ||
+      summary.muscles.any((m) => m.toLowerCase().contains(q));
+}
+
+/// The Trainen tab: what is planned today, the two ways in, and every
+/// routine, in folders.
+class RoutinesScreen extends ConsumerStatefulWidget {
   const RoutinesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RoutinesScreen> createState() => _RoutinesScreenState();
+}
+
+class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
+  final _search = TextEditingController();
+  var _searching = false;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() => setState(() {
+    _searching = !_searching;
+    _search.clear();
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final folders = visibleFolders(
       ref.watch(routineFoldersProvider).value ?? const [],
       coach: ref.watch(coachEnabledProvider),
     );
     final routines = ref.watch(routineSummariesProvider);
+    final query = _searching ? _search.text.trim() : '';
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Trainen'),
         actions: [
           IconButton(
-            tooltip: 'Nieuwe map',
-            onPressed: () async {
-              final name = await promptForText(
-                context,
-                title: 'Nieuwe map',
-                hintText: 'bijvoorbeeld Push Pull Legs',
-              );
-              if (name == null || name.trim().isEmpty) return;
-              await ref.read(routineActionsProvider).createFolder(name);
+            tooltip: _searching ? 'Zoeken sluiten' : 'Routine zoeken',
+            onPressed: _toggleSearch,
+            icon: Icon(_searching ? Icons.search_off : Icons.search),
+          ),
+          PopupMenuButton<_Menu>(
+            tooltip: 'Meer',
+            onSelected: (item) => switch (item) {
+              _Menu.folder => _newFolder(),
+              _Menu.scan => scanAndImportRoutine(context, ref),
             },
-            icon: const Icon(Icons.create_new_folder_outlined),
-          ),
-          IconButton(
-            tooltip: 'Routine scannen',
-            onPressed: () => scanAndImportRoutine(context, ref),
-            icon: const Icon(Icons.qr_code_scanner),
-          ),
-          IconButton(
-            tooltip: 'Oefeningen',
-            onPressed: () => context.push(Routes.exercises),
-            icon: const Icon(Icons.menu_book_outlined),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _Menu.folder,
+                child: ListTile(
+                  leading: Icon(Icons.create_new_folder_outlined),
+                  title: Text('Nieuwe map'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: _Menu.scan,
+                child: ListTile(
+                  leading: Icon(Icons.qr_code_scanner),
+                  title: Text('Routine scannen'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -79,23 +124,73 @@ class RoutinesScreen extends ConsumerWidget {
             );
           }
 
-          final loose = list.where((r) => r.routine.folderId == null).toList();
+          // A folder whose name you typed shows all of it; any other only
+          // what matches. Folders with nothing to show are left out while
+          // searching, and kept otherwise: an empty folder is still yours.
+          final sections = [
+            for (final folder in folders)
+              (
+                folder: folder,
+                routines: [
+                  for (final r in list)
+                    if (r.routine.folderId == folder.id &&
+                        routineMatches(r, query, folderName: folder.name))
+                      r,
+                ],
+              ),
+          ];
+          final loose = [
+            for (final r in list)
+              if (r.routine.folderId == null && routineMatches(r, query)) r,
+          ];
+          final shown = query.isEmpty
+              ? sections
+              : sections.where((s) => s.routines.isNotEmpty).toList();
 
           return ListView(
             padding: const EdgeInsets.only(bottom: 120),
             children: [
-              const _StartActions(),
-              for (final folder in folders)
+              if (_searching)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    0,
+                  ),
+                  child: TextField(
+                    controller: _search,
+                    autofocus: true,
+                    textInputAction: TextInputAction.search,
+                    decoration: const InputDecoration(
+                      hintText: 'Zoek op naam, map of spiergroep',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                )
+              else
+                _StartActions(summaries: list),
+              for (final section in shown)
                 _FolderSection(
-                  folder: folder,
-                  routines: list
-                      .where((r) => r.routine.folderId == folder.id)
-                      .toList(),
+                  folder: section.folder,
+                  routines: section.routines,
                 ),
               if (loose.isNotEmpty) ...[
-                if (folders.isNotEmpty) const SectionHeader('Losse routines'),
+                if (shown.isNotEmpty) const SectionHeader('Losse routines'),
                 for (final routine in loose) _RoutineTile(summary: routine),
               ],
+              if (query.isNotEmpty && shown.isEmpty && loose.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Text(
+                    'Geen routine gevonden voor "$query".',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -107,55 +202,178 @@ class RoutinesScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _newFolder() async {
+    final name = await promptForText(
+      context,
+      title: 'Nieuwe map',
+      hintText: 'bijvoorbeeld Push Pull Legs',
+    );
+    if (name == null || name.trim().isEmpty) return;
+    await ref.read(routineActionsProvider).createFolder(name);
+  }
 }
 
+enum _Menu { folder, scan }
+
+/// The top of the tab: what is going on or planned, and the two ways in that
+/// are not a routine.
 class _StartActions extends ConsumerWidget {
-  const _StartActions();
+  const _StartActions({required this.summaries});
+
+  final List<RoutineSummary> summaries;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeWorkoutProvider).value;
+    final plan = ref.watch(todayPlanProvider);
+    final open = plan.kind == TodayPlanKind.scheduled
+        ? [
+            for (final planned in plan.routines)
+              if (!planned.doneToday) planned.routine,
+          ]
+        : const <RoutineRow>[];
+    final lead = open.isEmpty
+        ? null
+        : summaries.firstWhereOrNull((s) => s.routine.id == open.first.id);
+    final minutes = lead == null
+        ? 0
+        : estimatedRoutineMinutes(
+            lead.timing,
+            defaultRestSeconds:
+                ref.watch(settingsProvider).value?.defaultRestSeconds ?? 90,
+          );
 
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: active != null
-          ? AppCard(
-              onTap: () => context.push(Routes.workout),
-              child: Row(
-                children: [
-                  const Icon(Icons.play_circle_fill),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Workout loopt',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        Text(
-                          active.workout.name,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // A session that is running comes before any plan: there can only
+          // be one, and it is the one you were in the middle of.
+          if (active != null)
+            _TopCard(
+              label: 'Workout loopt',
+              title: active.workout.name,
+              action: 'Ga verder',
+              icon: Icons.play_arrow,
+              onPressed: () => context.push(Routes.workout),
             )
-          : OutlinedButton.icon(
-              onPressed: () async {
-                final id = await ref
-                    .read(workoutControllerProvider)
-                    .startEmpty();
-                if (context.mounted && id.isNotEmpty) {
-                  context.push(Routes.workout);
-                }
-              },
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Lege workout starten'),
+          else if (lead != null)
+            _TopCard(
+              label: 'Vandaag gepland',
+              title: lead.routine.name,
+              detail: [
+                if (lead.muscles.isNotEmpty) routineMuscles(lead.muscles),
+                if (minutes > 0) '±$minutes min',
+              ].join(' · '),
+              after: open.length > 1
+                  ? 'Ook gepland: ${open.skip(1).map((r) => r.name).join(', ')}'
+                  : null,
+              color: AppColors.routineColor(lead.routine.colorIndex),
+              action: 'Start',
+              icon: Icons.play_arrow,
+              onTap: () => context.push(Routes.routineDetail(lead.routine.id)),
+              onPressed: lead.exerciseCount == 0
+                  ? null
+                  : () =>
+                        startSession(context, ref, routineId: lead.routine.id),
             ),
+          if (active != null || lead != null)
+            const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => startSession(context, ref),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Lege training'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push(Routes.exercises),
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('Oefeningen'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The one card above the routines: a session to go back to, or the routine
+/// your schedule has on today.
+class _TopCard extends StatelessWidget {
+  const _TopCard({
+    required this.label,
+    required this.title,
+    required this.action,
+    required this.icon,
+    required this.onPressed,
+    this.detail = '',
+    this.after,
+    this.color,
+    this.onTap,
+  });
+
+  final String label;
+  final String title;
+  final String detail;
+  final String? after;
+  final Color? color;
+  final String action;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = color ?? theme.colorScheme.primary;
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+
+    return AppCard(
+      onTap: onTap,
+      borderColor: accent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: accent,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(title, style: theme.textTheme.titleMedium),
+          if (detail.isNotEmpty) Text(detail, style: muted),
+          if (after != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(after!, style: muted),
+            ),
+          const SizedBox(height: AppSpacing.md),
+          FilledButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon),
+            label: Text(action),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -371,7 +589,11 @@ class _RoutineTile extends ConsumerWidget {
                         tooltip: '${routine.name} starten',
                         onPressed: summary.exerciseCount == 0
                             ? null
-                            : () => startRoutine(context, ref, routine.id),
+                            : () => startSession(
+                                context,
+                                ref,
+                                routineId: routine.id,
+                              ),
                         icon: const Icon(Icons.play_arrow),
                       ),
                     ),

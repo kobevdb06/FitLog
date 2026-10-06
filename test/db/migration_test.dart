@@ -181,6 +181,68 @@ void main() {
     await db.close();
   });
 
+  test('a database that migrated past the tables of v29, v30 and v33 gets '
+      'their indexes after all', () async {
+    // createTable makes a table without its indexes, so a phone that had
+    // FitLog before those versions never got them. Built here by taking them
+    // off a current database.
+    final path = '${dir.path}/v43.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('DROP INDEX idx_soreness_checked_at')
+      ..execute('DROP INDEX idx_sleep_woke_at')
+      ..execute('DROP INDEX idx_cardio_started_at')
+      ..execute('PRAGMA user_version = 43');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final indexes = {
+      for (final row
+          in await db
+              .customSelect(
+                "SELECT name FROM sqlite_master WHERE type = 'index'",
+              )
+              .get())
+        row.read<String>('name'),
+    };
+    expect(
+      indexes,
+      containsAll(<String>[
+        'idx_soreness_checked_at',
+        'idx_sleep_woke_at',
+        'idx_cardio_started_at',
+      ]),
+    );
+    await db.close();
+  });
+
+  test(
+    'and every index a fresh database has, a migrated one has too',
+    () async {
+      final file = writeV1Database(dir);
+      final migrated = AppDatabase(NativeDatabase(file));
+      final fresh = AppDatabase(NativeDatabase.memory());
+
+      Future<Set<String>> indexesOf(AppDatabase db) async => {
+        for (final row
+            in await db
+                .customSelect(
+                  "SELECT name FROM sqlite_master WHERE type = 'index' "
+                  "AND name NOT LIKE 'sqlite_%'",
+                )
+                .get())
+          row.read<String>('name'),
+      };
+
+      expect(await indexesOf(migrated), await indexesOf(fresh));
+      await migrated.close();
+      await fresh.close();
+    },
+  );
+
   test('the fixture really is a version 1 database', () {
     final file = writeV1Database(dir);
     final raw = sqlite3.open(file.path);
@@ -203,7 +265,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 43);
+    expect(raw.select('PRAGMA user_version').first.values.first, 44);
     raw.close();
   });
 
@@ -410,7 +472,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 43);
+    expect(db.schemaVersion, 44);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

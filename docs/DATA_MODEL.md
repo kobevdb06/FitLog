@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **43**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **44**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -71,6 +71,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 41 | `app_settings.coach_gym`: waar je traint, voor de coach. |
 | 42 | `routine_folders.is_coach` en `routine_versions`: de map van de coach, en vorige versies van een routine. |
 | 43 | `app_settings.progression_hints`: de hint per oefening, standaard aan. |
+| 44 | Geen nieuwe kolom: elke index die het schema kent, wordt aangemaakt waar ze ontbreekt (zie Indexen). |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -460,11 +461,12 @@ bediend door een gewone index op `started_at`.
 Een migratie die een tabel met een index aanmaakt, moet die index zelf aanmaken
 (`m.createIndex`): drift's `createTable` doet dat niet, alleen `createAll` bij
 een nieuwe installatie. Bij `soreness_checks` (v29), `sleep_entries` (v30) en
-`cardio_sessions` (v33) is dat niet gebeurd: een database die van voor die
-versies migreerde, mist `idx_soreness_checked_at`, `idx_sleep_woke_at` en
-`idx_cardio_started_at`. Dat kost alleen snelheid, en weinig - het zijn kleine
-tabellen - maar een volgende migratie kan ze met `CREATE INDEX IF NOT EXISTS`
-alsnog aanmaken.
+`cardio_sessions` (v33) is dat niet gebeurd, zodat een database die van voor
+die versies migreerde `idx_soreness_checked_at`, `idx_sleep_woke_at` en
+`idx_cardio_started_at` miste. Versie 44 maakt elke index die het schema kent
+aan met `CREATE INDEX IF NOT EXISTS`, en een test vergelijkt de indexen van een
+gemigreerde v1-database met die van een nieuwe: zo'n vergeten index valt
+voortaan meteen op.
 
 ## Relaties in één blik
 

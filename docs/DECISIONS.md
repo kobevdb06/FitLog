@@ -3546,3 +3546,19 @@ armomtrek, dan vond `WHERE type = ?` niets en zei hij dat er geen metingen
 waren. De lijst komt nu uit `MeasurementType` zelf, zodat ze niet meer kan
 afdrijven, en de oude schrijfwijze wordt nog omgezet: een eerder gesprek
 kan het model die geleerd hebben.
+
+## 180. De indexen die een migratie nooit maakte
+
+Gevonden bij het bijwerken van DATA_MODEL.md: drift's `createTable` maakt een
+tabel zonder haar indexen, alleen `createAll` bij een nieuwe installatie maakt
+ze. De migraties van v29 (`soreness_checks`), v30 (`sleep_entries`) en v33
+(`cardio_sessions`) riepen alleen `createTable` aan, dus elke database die van
+daarvoor migreerde - die op de gsm van de gebruiker - miste drie indexen. Het
+kostte alleen snelheid op kleine tabellen, vandaar dat niemand het merkte.
+
+Schema v44 maakt elke index die het schema declareert aan met
+`CREATE INDEX IF NOT EXISTS`, en laat staan wat er al is: ook een index die in
+de toekomst op dezelfde manier vergeten wordt, is dan op één plek op te
+lossen. Een nieuwe test vergelijkt de indexen van een gemigreerde
+v1-database met die van een verse; die faalde op de code van daarvoor en
+laat zo'n vergetelheid voortaan meteen zien.

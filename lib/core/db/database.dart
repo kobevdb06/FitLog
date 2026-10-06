@@ -66,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 43;
+  int get schemaVersion => 44;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -410,6 +410,21 @@ class AppDatabase extends _$AppDatabase {
             appSettingsTable,
             appSettingsTable.progressionHints,
           );
+        }
+        if (from < 44) {
+          // The indexes a migration never made. createTable makes a table
+          // without them, so the soreness checks (v29), the nights (v30) and
+          // the runs (v33) of a database from before those versions have
+          // none. Every index the schema declares is made where it is
+          // missing, which also leaves alone the ones that are there.
+          for (final index in allSchemaEntities.whereType<Index>()) {
+            await customStatement(
+              index.createStatementsByDialect[SqlDialect.sqlite]!.replaceFirst(
+                'CREATE INDEX ',
+                'CREATE INDEX IF NOT EXISTS ',
+              ),
+            );
+          }
         }
       });
 

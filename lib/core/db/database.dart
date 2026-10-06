@@ -67,7 +67,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 46;
+  int get schemaVersion => 47;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -437,6 +437,14 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(
             appSettingsTable,
             appSettingsTable.weekReviewNotify,
+          );
+        }
+        if (from < 47) {
+          // Folders that fold shut on the Trainen tab: every one open, the
+          // way they always were.
+          await m.addColumn(
+            routineFoldersTable,
+            routineFoldersTable.isCollapsed,
           );
         }
       });

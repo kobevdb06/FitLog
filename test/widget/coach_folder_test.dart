@@ -90,8 +90,13 @@ void main() {
 
       expect(find.text('COACH'), findsOneWidget);
       expect(find.text('Push'), findsOneWidget);
+      // The coach's face on the folder, and what it means under its menu.
+      expect(find.byIcon(Icons.smart_toy_outlined), findsOneWidget);
+      await tester.tap(find.byTooltip('Map bewerken'));
+      await tester.pumpAndSettle();
+      expect(find.text('De map van de coach'), findsOneWidget);
       expect(
-        find.text('De coach mag deze routines aanpassen.'),
+        find.textContaining('De coach mag de routines in deze map aanpassen.'),
         findsOneWidget,
       );
     });

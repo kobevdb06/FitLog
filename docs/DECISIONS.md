@@ -3698,3 +3698,25 @@ een knop "Lege workout starten". Nu:
   blijven. Wie de naam van een map typt, ziet alles wat erin zit; mappen
   zonder treffer verdwijnen zolang je zoekt. De kaart en de knoppen bovenaan
   maken plaats voor het zoekveld.
+
+## 184. Mappen die dichtklappen
+
+Wie met verschillende mensen traint, heeft al snel een map per maat, en die
+van wie je deze maand niet ziet, staat in de weg. Een tik op de naam van een
+map klapt ze dicht of open; ernaast staat hoeveel routines erin zitten, zodat
+een dichte map nog zegt wat ze bevat.
+
+Dat het dicht blijft, ook na het afsluiten van de app, kost één kolom:
+`routine_folders.is_collapsed` (schema v47, standaard open, zodat elke map
+er na de update bij staat zoals voorheen). Bij het voorstel stond dat er
+geen databasewijziging nodig was; dat klopte voor alles behalve dit. Een map
+die bij elke start weer openklapt, is geen map die je dicht kunt doen, en de
+app bewaart niets buiten de versleutelde database.
+
+Zoeken kijkt ook in dichte mappen en toont wat het vindt, zonder de map
+daarvoor open te zetten: na het zoeken staat ze nog zoals je haar liet.
+
+De map van de coach heeft het robotje ervoor, zoals de coach overal elders
+in de app. De regel "De coach mag deze routines aanpassen" onder de map
+staat nu bovenaan haar menu, met waar je een wijziging terugzet; alleen een
+lege map van de coach zegt onder de naam nog wat je ermee kunt.

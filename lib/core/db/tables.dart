@@ -475,6 +475,11 @@ class RoutineFoldersTable extends Table {
   BoolColumn get isCoach =>
       boolean().named('is_coach').withDefault(const Constant(false))();
 
+  /// Folded shut on the Trainen tab, so a folder you rarely open - a
+  /// friend's routines - stays out of the way until you do.
+  BoolColumn get isCollapsed =>
+      boolean().named('is_collapsed').withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

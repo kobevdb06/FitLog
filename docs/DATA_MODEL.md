@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **46**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **47**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -74,6 +74,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 44 | Geen nieuwe kolom: elke index die het schema kent, wordt aangemaakt waar ze ontbreekt (zie Indexen). |
 | 45 | `week_reviews`: wat de coach over een week schreef. |
 | 46 | `app_settings.week_review_notify`: de melding van het weekoverzicht op zondagavond, standaard aan. |
+| 47 | `routine_folders.is_collapsed`: een map die dichtgeklapt staat onder Trainen; elke bestaande map open. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -218,6 +219,7 @@ gedrag verzinnen.
 | `name` | TEXT | |
 | `sort_order` | INT | |
 | `is_coach` | BOOL | de map waarin de coach routines mag aanpassen; hoogstens één |
+| `is_collapsed` | BOOL | dichtgeklapt onder Trainen; standaard open |
 
 De map van de coach wordt herkend aan `is_coach`, niet aan haar naam. Zonder
 sleutel is ze verborgen, niet verwijderd.

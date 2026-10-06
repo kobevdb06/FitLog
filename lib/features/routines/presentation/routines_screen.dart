@@ -175,6 +175,7 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
                 _FolderSection(
                   folder: section.folder,
                   routines: section.routines,
+                  searching: query.isNotEmpty,
                 ),
               if (loose.isNotEmpty) ...[
                 if (shown.isNotEmpty) const SectionHeader('Losse routines'),
@@ -378,46 +379,117 @@ class _TopCard extends StatelessWidget {
   }
 }
 
+/// A folder: a header that folds it shut, and its routines below.
 class _FolderSection extends ConsumerWidget {
-  const _FolderSection({required this.folder, required this.routines});
+  const _FolderSection({
+    required this.folder,
+    required this.routines,
+    this.searching = false,
+  });
 
   final RoutineFolderRow folder;
   final List<RoutineSummary> routines;
 
+  /// What you are looking for is shown, folded shut or not.
+  final bool searching;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final open = searching || !folder.isCollapsed;
+    final muted = theme.colorScheme.onSurfaceVariant;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          folder.name,
-          action: IconButton(
-            tooltip: 'Map bewerken',
-            visualDensity: VisualDensity.compact,
-            onPressed: () => _editFolder(context, ref),
-            icon: const Icon(Icons.more_horiz, size: 20),
-          ),
-        ),
-        if (folder.isCoach || routines.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.sm,
-            ),
-            child: Text(
-              switch ((folder.isCoach, routines.isEmpty)) {
-                (true, true) =>
-                  'De coach mag routines in deze map aanpassen. Vraag hem om '
-                      'een routine, of zet er een van jou in.',
-                (true, false) => 'De coach mag deze routines aanpassen.',
-                _ => 'Deze map is nog leeg.',
-              },
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.md),
+          child: Semantics(
+            button: !searching,
+            expanded: open,
+            label: open ? 'Map dichtklappen' : 'Map openklappen',
+            child: InkWell(
+              onTap: searching
+                  ? null
+                  : () => ref
+                        .read(routineActionsProvider)
+                        .setFolderCollapsed(folder.id, open),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      open ? Icons.expand_more : Icons.chevron_right,
+                      size: 20,
+                      color: searching ? Colors.transparent : muted,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    // The coach's folder looks like the coach everywhere
+                    // else; what it means is under its menu.
+                    if (folder.isCoach) ...[
+                      Icon(
+                        Icons.smart_toy_outlined,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
+                    Flexible(
+                      child: Text(
+                        folder.name.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: muted,
+                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      '${routines.length}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: muted,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: 'Map bewerken',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => _editFolder(context, ref),
+                      icon: const Icon(Icons.more_horiz, size: 20),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        for (final routine in routines) _RoutineTile(summary: routine),
+        ),
+        if (open && routines.isEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
+            child: Text(
+              folder.isCoach
+                  ? 'Nog leeg. Vraag de coach om een routine, of zet er een '
+                        'van jou in.'
+                  : 'Deze map is nog leeg.',
+              style: theme.textTheme.bodySmall?.copyWith(color: muted),
+            ),
+          ),
+        if (open)
+          for (final routine in routines) _RoutineTile(summary: routine),
       ],
     );
   }
@@ -430,6 +502,16 @@ class _FolderSection extends ConsumerWidget {
       builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (folder.isCoach)
+            ListTile(
+              leading: const Icon(Icons.smart_toy_outlined),
+              title: const Text('De map van de coach'),
+              subtitle: const Text(
+                'De coach mag de routines in deze map aanpassen. Wat hij '
+                'verandert, zet je terug via Vorige versies in het menu van '
+                'de routine.',
+              ),
+            ),
           ListTile(
             leading: const Icon(Icons.edit_outlined),
             title: const Text('Naam wijzigen'),

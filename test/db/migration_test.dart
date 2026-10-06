@@ -117,6 +117,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -146,6 +147,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -173,6 +175,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -181,9 +184,31 @@ void main() {
     expect(folder.name, 'Push Pull Legs');
     // Geen enkele bestaande map is van de coach.
     expect(folder.isCoach, isFalse);
+    expect(folder.isCollapsed, isFalse);
     expect(await db.select(db.routineVersionsTable).get(), isEmpty);
     // v43: de hint per oefening staat aan, ook voor wie al een database had.
     expect((await db.settingsDao.getSettings()).progressionHints, isTrue);
+    await db.close();
+  });
+
+  test('a database from v46 keeps its folders, all of them open', () async {
+    final path = '${dir.path}/v46.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.routinesDao.createFolder('Met Jan');
+    await fresh.routinesDao.ensureCoachFolder();
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
+      ..execute('PRAGMA user_version = 46');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final folders = await db.routinesDao.getFolders();
+    expect(folders.map((f) => f.name), containsAll(['Met Jan', 'Coach']));
+    expect(folders.where((f) => f.isCoach), hasLength(1));
+    expect(folders.every((f) => !f.isCollapsed), isTrue);
     await db.close();
   });
 
@@ -203,6 +228,7 @@ void main() {
       ..execute('DROP INDEX idx_cardio_started_at')
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
+      ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -273,7 +299,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 46);
+    expect(raw.select('PRAGMA user_version').first.values.first, 47);
     raw.close();
   });
 
@@ -480,7 +506,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 46);
+    expect(db.schemaVersion, 47);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

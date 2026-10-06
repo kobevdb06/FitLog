@@ -392,4 +392,72 @@ void main() {
       expect(find.text('Lege training'), findsOneWidget);
     });
   });
+
+  group('mappen', () {
+    late String jan;
+
+    setUp(() async {
+      jan = await db.routinesDao.createFolder('Met Jan');
+      for (final name in ['Push', 'Pull']) {
+        await db.routinesDao.createRoutine(
+          RoutineDraft(
+            name: name,
+            folderId: jan,
+            exercises: [exercise('ex-bench', 3)],
+          ),
+        );
+      }
+    });
+
+    Future<RoutineFolderRow> folder(WidgetTester tester) async =>
+        (await tester.runAsync(db.routinesDao.getFolders))!.single;
+
+    testWidgets('een map zegt hoeveel erin zit', (tester) async {
+      await pump(tester);
+
+      expect(find.text('MET JAN'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.byIcon(Icons.smart_toy_outlined), findsNothing);
+    });
+
+    testWidgets('dichtklappen, en dat blijft zo', (tester) async {
+      await pump(tester);
+      expect(find.text('Push'), findsOneWidget);
+
+      await tester.tap(find.text('MET JAN'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Push'), findsNothing);
+      expect(find.text('Pull'), findsNothing);
+      // Folded shut, the count is what is left to see.
+      expect(find.text('2'), findsOneWidget);
+      expect((await folder(tester)).isCollapsed, isTrue);
+
+      // Back on the tab later, still shut.
+      await tester.pumpWidget(const SizedBox());
+      await pump(tester);
+      expect(find.text('Push'), findsNothing);
+
+      await tester.tap(find.text('MET JAN'));
+      await tester.pumpAndSettle();
+      expect(find.text('Push'), findsOneWidget);
+      expect((await folder(tester)).isCollapsed, isFalse);
+    });
+
+    testWidgets('zoeken kijkt ook in een dichte map', (tester) async {
+      await tester.runAsync(() => db.routinesDao.setFolderCollapsed(jan, true));
+      await pump(tester);
+      expect(find.text('Pull'), findsNothing);
+
+      await tester.tap(find.byTooltip('Routine zoeken'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'pull');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Pull'), findsOneWidget);
+      expect(find.text('Push'), findsNothing);
+      // Finding something does not open the folder for good.
+      expect((await folder(tester)).isCollapsed, isTrue);
+    });
+  });
 }

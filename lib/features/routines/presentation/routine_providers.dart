@@ -59,6 +59,10 @@ class RoutineActions {
   Future<void> renameFolder(String id, String name) =>
       _db.routinesDao.renameFolder(id, name.trim());
 
+  /// Folded shut or open on the Trainen tab, and kept that way.
+  Future<void> setFolderCollapsed(String id, bool collapsed) =>
+      _db.routinesDao.setFolderCollapsed(id, collapsed);
+
   /// The routines inside move to the top level; nothing is lost.
   Future<void> deleteFolder(String id) => _db.routinesDao.deleteFolder(id);
 

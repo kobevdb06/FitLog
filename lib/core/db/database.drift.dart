@@ -5885,8 +5885,29 @@ class $RoutineFoldersTableTable extends RoutineFoldersTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isCollapsedMeta = const VerificationMeta(
+    'isCollapsed',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, sortOrder, isCoach];
+  late final GeneratedColumn<bool> isCollapsed = GeneratedColumn<bool>(
+    'is_collapsed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_collapsed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    sortOrder,
+    isCoach,
+    isCollapsed,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5926,6 +5947,15 @@ class $RoutineFoldersTableTable extends RoutineFoldersTable
         isCoach.isAcceptableOrUnknown(data['is_coach']!, _isCoachMeta),
       );
     }
+    if (data.containsKey('is_collapsed')) {
+      context.handle(
+        _isCollapsedMeta,
+        isCollapsed.isAcceptableOrUnknown(
+          data['is_collapsed']!,
+          _isCollapsedMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -5951,6 +5981,10 @@ class $RoutineFoldersTableTable extends RoutineFoldersTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_coach'],
       )!,
+      isCollapsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_collapsed'],
+      )!,
     );
   }
 
@@ -5969,11 +6003,16 @@ class RoutineFolderRow extends DataClass
   /// The folder whose routines the coach may change. There is at most one,
   /// and a routine only gets in with the user's say-so.
   final bool isCoach;
+
+  /// Folded shut on the Trainen tab, so a folder you rarely open - a
+  /// friend's routines - stays out of the way until you do.
+  final bool isCollapsed;
   const RoutineFolderRow({
     required this.id,
     required this.name,
     required this.sortOrder,
     required this.isCoach,
+    required this.isCollapsed,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5982,6 +6021,7 @@ class RoutineFolderRow extends DataClass
     map['name'] = Variable<String>(name);
     map['sort_order'] = Variable<int>(sortOrder);
     map['is_coach'] = Variable<bool>(isCoach);
+    map['is_collapsed'] = Variable<bool>(isCollapsed);
     return map;
   }
 
@@ -5991,6 +6031,7 @@ class RoutineFolderRow extends DataClass
       name: Value(name),
       sortOrder: Value(sortOrder),
       isCoach: Value(isCoach),
+      isCollapsed: Value(isCollapsed),
     );
   }
 
@@ -6004,6 +6045,7 @@ class RoutineFolderRow extends DataClass
       name: serializer.fromJson<String>(json['name']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       isCoach: serializer.fromJson<bool>(json['isCoach']),
+      isCollapsed: serializer.fromJson<bool>(json['isCollapsed']),
     );
   }
   @override
@@ -6014,6 +6056,7 @@ class RoutineFolderRow extends DataClass
       'name': serializer.toJson<String>(name),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'isCoach': serializer.toJson<bool>(isCoach),
+      'isCollapsed': serializer.toJson<bool>(isCollapsed),
     };
   }
 
@@ -6022,11 +6065,13 @@ class RoutineFolderRow extends DataClass
     String? name,
     int? sortOrder,
     bool? isCoach,
+    bool? isCollapsed,
   }) => RoutineFolderRow(
     id: id ?? this.id,
     name: name ?? this.name,
     sortOrder: sortOrder ?? this.sortOrder,
     isCoach: isCoach ?? this.isCoach,
+    isCollapsed: isCollapsed ?? this.isCollapsed,
   );
   RoutineFolderRow copyWithCompanion(RoutineFoldersTableCompanion data) {
     return RoutineFolderRow(
@@ -6034,6 +6079,9 @@ class RoutineFolderRow extends DataClass
       name: data.name.present ? data.name.value : this.name,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       isCoach: data.isCoach.present ? data.isCoach.value : this.isCoach,
+      isCollapsed: data.isCollapsed.present
+          ? data.isCollapsed.value
+          : this.isCollapsed,
     );
   }
 
@@ -6043,13 +6091,14 @@ class RoutineFolderRow extends DataClass
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('isCoach: $isCoach')
+          ..write('isCoach: $isCoach, ')
+          ..write('isCollapsed: $isCollapsed')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, sortOrder, isCoach);
+  int get hashCode => Object.hash(id, name, sortOrder, isCoach, isCollapsed);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -6057,7 +6106,8 @@ class RoutineFolderRow extends DataClass
           other.id == this.id &&
           other.name == this.name &&
           other.sortOrder == this.sortOrder &&
-          other.isCoach == this.isCoach);
+          other.isCoach == this.isCoach &&
+          other.isCollapsed == this.isCollapsed);
 }
 
 class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
@@ -6065,12 +6115,14 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
   final Value<String> name;
   final Value<int> sortOrder;
   final Value<bool> isCoach;
+  final Value<bool> isCollapsed;
   final Value<int> rowid;
   const RoutineFoldersTableCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.isCoach = const Value.absent(),
+    this.isCollapsed = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutineFoldersTableCompanion.insert({
@@ -6078,6 +6130,7 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
     required String name,
     required int sortOrder,
     this.isCoach = const Value.absent(),
+    this.isCollapsed = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -6087,6 +6140,7 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
     Expression<String>? name,
     Expression<int>? sortOrder,
     Expression<bool>? isCoach,
+    Expression<bool>? isCollapsed,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6094,6 +6148,7 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
       if (name != null) 'name': name,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (isCoach != null) 'is_coach': isCoach,
+      if (isCollapsed != null) 'is_collapsed': isCollapsed,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6103,6 +6158,7 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
     Value<String>? name,
     Value<int>? sortOrder,
     Value<bool>? isCoach,
+    Value<bool>? isCollapsed,
     Value<int>? rowid,
   }) {
     return RoutineFoldersTableCompanion(
@@ -6110,6 +6166,7 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
       name: name ?? this.name,
       sortOrder: sortOrder ?? this.sortOrder,
       isCoach: isCoach ?? this.isCoach,
+      isCollapsed: isCollapsed ?? this.isCollapsed,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6129,6 +6186,9 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
     if (isCoach.present) {
       map['is_coach'] = Variable<bool>(isCoach.value);
     }
+    if (isCollapsed.present) {
+      map['is_collapsed'] = Variable<bool>(isCollapsed.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6142,6 +6202,7 @@ class RoutineFoldersTableCompanion extends UpdateCompanion<RoutineFolderRow> {
           ..write('name: $name, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('isCoach: $isCoach, ')
+          ..write('isCollapsed: $isCollapsed, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18532,6 +18593,7 @@ typedef $$RoutineFoldersTableTableCreateCompanionBuilder =
       required String name,
       required int sortOrder,
       Value<bool> isCoach,
+      Value<bool> isCollapsed,
       Value<int> rowid,
     });
 typedef $$RoutineFoldersTableTableUpdateCompanionBuilder =
@@ -18540,6 +18602,7 @@ typedef $$RoutineFoldersTableTableUpdateCompanionBuilder =
       Value<String> name,
       Value<int> sortOrder,
       Value<bool> isCoach,
+      Value<bool> isCollapsed,
       Value<int> rowid,
     });
 
@@ -18604,6 +18667,11 @@ class $$RoutineFoldersTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isCollapsed => $composableBuilder(
+    column: $table.isCollapsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> routinesTableRefs(
     Expression<bool> Function($$RoutinesTableTableFilterComposer f) f,
   ) {
@@ -18658,6 +18726,11 @@ class $$RoutineFoldersTableTableOrderingComposer
     column: $table.isCoach,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isCollapsed => $composableBuilder(
+    column: $table.isCollapsed,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RoutineFoldersTableTableAnnotationComposer
@@ -18680,6 +18753,11 @@ class $$RoutineFoldersTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isCoach =>
       $composableBuilder(column: $table.isCoach, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCollapsed => $composableBuilder(
+    column: $table.isCollapsed,
+    builder: (column) => column,
+  );
 
   Expression<T> routinesTableRefs<T extends Object>(
     Expression<T> Function($$RoutinesTableTableAnnotationComposer a) f,
@@ -18747,12 +18825,14 @@ class $$RoutineFoldersTableTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isCoach = const Value.absent(),
+                Value<bool> isCollapsed = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutineFoldersTableCompanion(
                 id: id,
                 name: name,
                 sortOrder: sortOrder,
                 isCoach: isCoach,
+                isCollapsed: isCollapsed,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18761,12 +18841,14 @@ class $$RoutineFoldersTableTableTableManager
                 required String name,
                 required int sortOrder,
                 Value<bool> isCoach = const Value.absent(),
+                Value<bool> isCollapsed = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutineFoldersTableCompanion.insert(
                 id: id,
                 name: name,
                 sortOrder: sortOrder,
                 isCoach: isCoach,
+                isCollapsed: isCollapsed,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

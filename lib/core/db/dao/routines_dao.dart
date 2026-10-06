@@ -195,6 +195,12 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  Future<void> setFolderCollapsed(String id, bool collapsed) async {
+    await (update(routineFoldersTable)..where((t) => t.id.equals(id))).write(
+      RoutineFoldersTableCompanion(isCollapsed: Value(collapsed)),
+    );
+  }
+
   /// Deleting a folder does not delete its routines: the foreign key is
   /// `ON DELETE SET NULL`, so they move to the top level.
   Future<void> deleteFolder(String id) async {

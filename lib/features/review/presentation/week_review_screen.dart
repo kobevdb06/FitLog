@@ -496,8 +496,12 @@ class _CoachCard extends ConsumerWidget {
         ],
       );
     } else if (!weekReadyForCoach(start, now)) {
+      final sunday =
+          ref.watch(settingsProvider).value?.weekReviewNotify ?? true;
       body = Text(
-        'De coach schrijft over deze week zodra ze voorbij is.',
+        sunday
+            ? 'De coach schrijft zondag om 20:00 over deze week.'
+            : 'De coach schrijft over deze week zodra ze voorbij is.',
         style: muted,
       );
     } else {

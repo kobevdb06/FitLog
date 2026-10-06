@@ -15,6 +15,8 @@ import 'core/util/notification_service.dart';
 import 'features/health/presentation/health_providers.dart';
 import 'features/morning/data/morning_alarm.dart';
 import 'features/morning/presentation/morning_providers.dart';
+import 'features/review/data/week_alarm.dart';
+import 'features/review/presentation/review_providers.dart';
 import 'features/routines/domain/quick_start.dart';
 import 'features/routines/presentation/quick_start_providers.dart';
 import 'features/workout/domain/workout_notice.dart';
@@ -36,6 +38,9 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
   /// report itself instead of a second isolate opening the same database.
   final ReceivePort _morningPort = ReceivePort();
 
+  /// The same for the Sunday evening's weekly review.
+  final ReceivePort _weekPort = ReceivePort();
+
   /// A route a notification asked for, waiting for the app to be unlocked.
   String? _pendingRoute;
 
@@ -53,6 +58,13 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
       if (message is! SendPort) return;
       message.send(true);
       unawaited(ref.read(morningControllerProvider.notifier).onAlarm());
+    });
+    IsolateNameServer.removePortNameMapping(kWeekPortName);
+    IsolateNameServer.registerPortWithName(_weekPort.sendPort, kWeekPortName);
+    _weekPort.listen((message) {
+      if (message is! SendPort) return;
+      message.send(true);
+      unawaited(ref.read(weekNotifyProvider).onAlarm());
     });
 
     // A tap on the morning report opens Herstel - now if the app is open,
@@ -81,13 +93,23 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     WidgetsBinding.instance.removeObserver(this);
     IsolateNameServer.removePortNameMapping(kMorningPortName);
     _morningPort.close();
+    IsolateNameServer.removePortNameMapping(kWeekPortName);
+    _weekPort.close();
     NotificationService.instance.onTapped = null;
     super.dispose();
   }
 
   void _openFromNotification(String payload) {
-    if (payload != NotificationService.morningPayload) return;
-    _pendingRoute = Routes.muscleRecovery;
+    if (payload == NotificationService.morningPayload) {
+      _pendingRoute = Routes.muscleRecovery;
+    } else if (payload.startsWith(NotificationService.weekPayloadPrefix)) {
+      // The week it was about, also when tapped on the Monday after.
+      _pendingRoute =
+          '${Routes.weekReview}?start='
+          '${payload.substring(NotificationService.weekPayloadPrefix.length)}';
+    } else {
+      return;
+    }
     _openPendingRoute();
   }
 
@@ -109,6 +131,8 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
       if (!mounted) return;
       final morning = ref.read(morningControllerProvider.notifier);
       unawaited(morning.syncAlarm().then((_) => morning.catchUp()));
+      final week = ref.read(weekNotifyProvider);
+      unawaited(week.syncAlarm().then((_) => week.catchUp()));
       _openPendingRoute();
     });
   }

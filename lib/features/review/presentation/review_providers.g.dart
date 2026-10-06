@@ -233,3 +233,144 @@ abstract class _$WeekReviewController extends $Notifier<WeekReviewState> {
     return element.handleCreate(ref, build);
   }
 }
+
+/// The Sunday alarm. Overridden in tests with one that only remembers.
+
+@ProviderFor(weekSchedule)
+final weekScheduleProvider = WeekScheduleProvider._();
+
+/// The Sunday alarm. Overridden in tests with one that only remembers.
+
+final class WeekScheduleProvider
+    extends $FunctionalProvider<WeekSchedule, WeekSchedule, WeekSchedule>
+    with $Provider<WeekSchedule> {
+  /// The Sunday alarm. Overridden in tests with one that only remembers.
+  WeekScheduleProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'weekScheduleProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$weekScheduleHash();
+
+  @$internal
+  @override
+  $ProviderElement<WeekSchedule> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  WeekSchedule create(Ref ref) {
+    return weekSchedule(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WeekSchedule value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WeekSchedule>(value),
+    );
+  }
+}
+
+String _$weekScheduleHash() => r'2cc2e24a6fecb4a117186b1241b39aa91a6bd5f7';
+
+/// Where the review is shown outside the app. Overridden in tests.
+
+@ProviderFor(weekNotices)
+final weekNoticesProvider = WeekNoticesProvider._();
+
+/// Where the review is shown outside the app. Overridden in tests.
+
+final class WeekNoticesProvider
+    extends $FunctionalProvider<WeekNotices, WeekNotices, WeekNotices>
+    with $Provider<WeekNotices> {
+  /// Where the review is shown outside the app. Overridden in tests.
+  WeekNoticesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'weekNoticesProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$weekNoticesHash();
+
+  @$internal
+  @override
+  $ProviderElement<WeekNotices> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  WeekNotices create(Ref ref) {
+    return weekNotices(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WeekNotices value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WeekNotices>(value),
+    );
+  }
+}
+
+String _$weekNoticesHash() => r'dc3cdb416dbf8436140a6c63156950fd692bb01d';
+
+/// The Sunday evening notification: the switch, the alarm, and making the
+/// review when the alarm finds the app open or locked.
+
+@ProviderFor(weekNotify)
+final weekNotifyProvider = WeekNotifyProvider._();
+
+/// The Sunday evening notification: the switch, the alarm, and making the
+/// review when the alarm finds the app open or locked.
+
+final class WeekNotifyProvider
+    extends $FunctionalProvider<WeekNotify, WeekNotify, WeekNotify>
+    with $Provider<WeekNotify> {
+  /// The Sunday evening notification: the switch, the alarm, and making the
+  /// review when the alarm finds the app open or locked.
+  WeekNotifyProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'weekNotifyProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$weekNotifyHash();
+
+  @$internal
+  @override
+  $ProviderElement<WeekNotify> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  WeekNotify create(Ref ref) {
+    return weekNotify(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WeekNotify value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WeekNotify>(value),
+    );
+  }
+}
+
+String _$weekNotifyHash() => r'dc74e9acc411525fb20c88fee98f57441c0dc034';

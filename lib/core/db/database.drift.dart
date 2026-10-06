@@ -842,6 +842,21 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _weekReviewNotifyMeta = const VerificationMeta(
+    'weekReviewNotify',
+  );
+  @override
+  late final GeneratedColumn<bool> weekReviewNotify = GeneratedColumn<bool>(
+    'week_review_notify',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("week_review_notify" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _morningReportMinutesMeta =
       const VerificationMeta('morningReportMinutes');
   @override
@@ -1042,6 +1057,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     progressionHints,
     coachGym,
     morningReportEnabled,
+    weekReviewNotify,
     morningReportMinutes,
     defaultWarmupSets,
     prDefaultWarmupSets,
@@ -1300,6 +1316,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('week_review_notify')) {
+      context.handle(
+        _weekReviewNotifyMeta,
+        weekReviewNotify.isAcceptableOrUnknown(
+          data['week_review_notify']!,
+          _weekReviewNotifyMeta,
+        ),
+      );
+    }
     if (data.containsKey('morning_report_minutes')) {
       context.handle(
         _morningReportMinutesMeta,
@@ -1549,6 +1574,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}morning_report_enabled'],
       )!,
+      weekReviewNotify: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}week_review_notify'],
+      )!,
       morningReportMinutes: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}morning_report_minutes'],
@@ -1723,6 +1752,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// [morningReportMinutes], with a notification. Off until switched on.
   final bool morningReportEnabled;
 
+  /// Whether the weekly review comes with a notification every Sunday at
+  /// eight in the evening. On until you switch it off.
+  final bool weekReviewNotify;
+
   /// When, in minutes after midnight: seven o'clock until changed.
   final int morningReportMinutes;
 
@@ -1831,6 +1864,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.progressionHints,
     this.coachGym,
     required this.morningReportEnabled,
+    required this.weekReviewNotify,
     required this.morningReportMinutes,
     required this.defaultWarmupSets,
     required this.prDefaultWarmupSets,
@@ -1890,6 +1924,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       map['coach_gym'] = Variable<String>(coachGym);
     }
     map['morning_report_enabled'] = Variable<bool>(morningReportEnabled);
+    map['week_review_notify'] = Variable<bool>(weekReviewNotify);
     map['morning_report_minutes'] = Variable<int>(morningReportMinutes);
     map['default_warmup_sets'] = Variable<int>(defaultWarmupSets);
     map['pr_default_warmup_sets'] = Variable<int>(prDefaultWarmupSets);
@@ -1966,6 +2001,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ? const Value.absent()
           : Value(coachGym),
       morningReportEnabled: Value(morningReportEnabled),
+      weekReviewNotify: Value(weekReviewNotify),
       morningReportMinutes: Value(morningReportMinutes),
       defaultWarmupSets: Value(defaultWarmupSets),
       prDefaultWarmupSets: Value(prDefaultWarmupSets),
@@ -2046,6 +2082,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       morningReportEnabled: serializer.fromJson<bool>(
         json['morningReportEnabled'],
       ),
+      weekReviewNotify: serializer.fromJson<bool>(json['weekReviewNotify']),
       morningReportMinutes: serializer.fromJson<int>(
         json['morningReportMinutes'],
       ),
@@ -2103,6 +2140,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'progressionHints': serializer.toJson<bool>(progressionHints),
       'coachGym': serializer.toJson<String?>(coachGym),
       'morningReportEnabled': serializer.toJson<bool>(morningReportEnabled),
+      'weekReviewNotify': serializer.toJson<bool>(weekReviewNotify),
       'morningReportMinutes': serializer.toJson<int>(morningReportMinutes),
       'defaultWarmupSets': serializer.toJson<int>(defaultWarmupSets),
       'prDefaultWarmupSets': serializer.toJson<int>(prDefaultWarmupSets),
@@ -2150,6 +2188,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? progressionHints,
     Value<String?> coachGym = const Value.absent(),
     bool? morningReportEnabled,
+    bool? weekReviewNotify,
     int? morningReportMinutes,
     int? defaultWarmupSets,
     int? prDefaultWarmupSets,
@@ -2201,6 +2240,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     progressionHints: progressionHints ?? this.progressionHints,
     coachGym: coachGym.present ? coachGym.value : this.coachGym,
     morningReportEnabled: morningReportEnabled ?? this.morningReportEnabled,
+    weekReviewNotify: weekReviewNotify ?? this.weekReviewNotify,
     morningReportMinutes: morningReportMinutes ?? this.morningReportMinutes,
     defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
     prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
@@ -2304,6 +2344,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       morningReportEnabled: data.morningReportEnabled.present
           ? data.morningReportEnabled.value
           : this.morningReportEnabled,
+      weekReviewNotify: data.weekReviewNotify.present
+          ? data.weekReviewNotify.value
+          : this.weekReviewNotify,
       morningReportMinutes: data.morningReportMinutes.present
           ? data.morningReportMinutes.value
           : this.morningReportMinutes,
@@ -2379,6 +2422,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('progressionHints: $progressionHints, ')
           ..write('coachGym: $coachGym, ')
           ..write('morningReportEnabled: $morningReportEnabled, ')
+          ..write('weekReviewNotify: $weekReviewNotify, ')
           ..write('morningReportMinutes: $morningReportMinutes, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
@@ -2428,6 +2472,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     progressionHints,
     coachGym,
     morningReportEnabled,
+    weekReviewNotify,
     morningReportMinutes,
     defaultWarmupSets,
     prDefaultWarmupSets,
@@ -2476,6 +2521,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.progressionHints == this.progressionHints &&
           other.coachGym == this.coachGym &&
           other.morningReportEnabled == this.morningReportEnabled &&
+          other.weekReviewNotify == this.weekReviewNotify &&
           other.morningReportMinutes == this.morningReportMinutes &&
           other.defaultWarmupSets == this.defaultWarmupSets &&
           other.prDefaultWarmupSets == this.prDefaultWarmupSets &&
@@ -2522,6 +2568,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> progressionHints;
   final Value<String?> coachGym;
   final Value<bool> morningReportEnabled;
+  final Value<bool> weekReviewNotify;
   final Value<int> morningReportMinutes;
   final Value<int> defaultWarmupSets;
   final Value<int> prDefaultWarmupSets;
@@ -2567,6 +2614,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.progressionHints = const Value.absent(),
     this.coachGym = const Value.absent(),
     this.morningReportEnabled = const Value.absent(),
+    this.weekReviewNotify = const Value.absent(),
     this.morningReportMinutes = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
@@ -2613,6 +2661,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.progressionHints = const Value.absent(),
     this.coachGym = const Value.absent(),
     this.morningReportEnabled = const Value.absent(),
+    this.weekReviewNotify = const Value.absent(),
     this.morningReportMinutes = const Value.absent(),
     this.defaultWarmupSets = const Value.absent(),
     this.prDefaultWarmupSets = const Value.absent(),
@@ -2660,6 +2709,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? progressionHints,
     Expression<String>? coachGym,
     Expression<bool>? morningReportEnabled,
+    Expression<bool>? weekReviewNotify,
     Expression<int>? morningReportMinutes,
     Expression<int>? defaultWarmupSets,
     Expression<int>? prDefaultWarmupSets,
@@ -2712,6 +2762,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (coachGym != null) 'coach_gym': coachGym,
       if (morningReportEnabled != null)
         'morning_report_enabled': morningReportEnabled,
+      if (weekReviewNotify != null) 'week_review_notify': weekReviewNotify,
       if (morningReportMinutes != null)
         'morning_report_minutes': morningReportMinutes,
       if (defaultWarmupSets != null) 'default_warmup_sets': defaultWarmupSets,
@@ -2763,6 +2814,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? progressionHints,
     Value<String?>? coachGym,
     Value<bool>? morningReportEnabled,
+    Value<bool>? weekReviewNotify,
     Value<int>? morningReportMinutes,
     Value<int>? defaultWarmupSets,
     Value<int>? prDefaultWarmupSets,
@@ -2811,6 +2863,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       progressionHints: progressionHints ?? this.progressionHints,
       coachGym: coachGym ?? this.coachGym,
       morningReportEnabled: morningReportEnabled ?? this.morningReportEnabled,
+      weekReviewNotify: weekReviewNotify ?? this.weekReviewNotify,
       morningReportMinutes: morningReportMinutes ?? this.morningReportMinutes,
       defaultWarmupSets: defaultWarmupSets ?? this.defaultWarmupSets,
       prDefaultWarmupSets: prDefaultWarmupSets ?? this.prDefaultWarmupSets,
@@ -2928,6 +2981,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         morningReportEnabled.value,
       );
     }
+    if (weekReviewNotify.present) {
+      map['week_review_notify'] = Variable<bool>(weekReviewNotify.value);
+    }
     if (morningReportMinutes.present) {
       map['morning_report_minutes'] = Variable<int>(morningReportMinutes.value);
     }
@@ -3012,6 +3068,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('progressionHints: $progressionHints, ')
           ..write('coachGym: $coachGym, ')
           ..write('morningReportEnabled: $morningReportEnabled, ')
+          ..write('weekReviewNotify: $weekReviewNotify, ')
           ..write('morningReportMinutes: $morningReportMinutes, ')
           ..write('defaultWarmupSets: $defaultWarmupSets, ')
           ..write('prDefaultWarmupSets: $prDefaultWarmupSets, ')
@@ -15463,6 +15520,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> progressionHints,
       Value<String?> coachGym,
       Value<bool> morningReportEnabled,
+      Value<bool> weekReviewNotify,
       Value<int> morningReportMinutes,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
@@ -15510,6 +15568,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> progressionHints,
       Value<String?> coachGym,
       Value<bool> morningReportEnabled,
+      Value<bool> weekReviewNotify,
       Value<int> morningReportMinutes,
       Value<int> defaultWarmupSets,
       Value<int> prDefaultWarmupSets,
@@ -15674,6 +15733,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get morningReportEnabled => $composableBuilder(
     column: $table.morningReportEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get weekReviewNotify => $composableBuilder(
+    column: $table.weekReviewNotify,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15902,6 +15966,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get weekReviewNotify => $composableBuilder(
+    column: $table.weekReviewNotify,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get morningReportMinutes => $composableBuilder(
     column: $table.morningReportMinutes,
     builder: (column) => ColumnOrderings(column),
@@ -16117,6 +16186,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get weekReviewNotify => $composableBuilder(
+    column: $table.weekReviewNotify,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get morningReportMinutes => $composableBuilder(
     column: $table.morningReportMinutes,
     builder: (column) => column,
@@ -16254,6 +16328,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> progressionHints = const Value.absent(),
                 Value<String?> coachGym = const Value.absent(),
                 Value<bool> morningReportEnabled = const Value.absent(),
+                Value<bool> weekReviewNotify = const Value.absent(),
                 Value<int> morningReportMinutes = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
@@ -16299,6 +16374,7 @@ class $$AppSettingsTableTableTableManager
                 progressionHints: progressionHints,
                 coachGym: coachGym,
                 morningReportEnabled: morningReportEnabled,
+                weekReviewNotify: weekReviewNotify,
                 morningReportMinutes: morningReportMinutes,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,
@@ -16346,6 +16422,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> progressionHints = const Value.absent(),
                 Value<String?> coachGym = const Value.absent(),
                 Value<bool> morningReportEnabled = const Value.absent(),
+                Value<bool> weekReviewNotify = const Value.absent(),
                 Value<int> morningReportMinutes = const Value.absent(),
                 Value<int> defaultWarmupSets = const Value.absent(),
                 Value<int> prDefaultWarmupSets = const Value.absent(),
@@ -16391,6 +16468,7 @@ class $$AppSettingsTableTableTableManager
                 progressionHints: progressionHints,
                 coachGym: coachGym,
                 morningReportEnabled: morningReportEnabled,
+                weekReviewNotify: weekReviewNotify,
                 morningReportMinutes: morningReportMinutes,
                 defaultWarmupSets: defaultWarmupSets,
                 prDefaultWarmupSets: prDefaultWarmupSets,

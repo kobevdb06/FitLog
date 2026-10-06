@@ -67,7 +67,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 45;
+  int get schemaVersion => 46;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -430,6 +430,14 @@ class AppDatabase extends _$AppDatabase {
         if (from < 45) {
           // What the coach wrote about a week. Nothing yet.
           await m.createTable(weekReviewsTable);
+        }
+        if (from < 46) {
+          // The Sunday notification of the weekly review: on, as for a new
+          // install.
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.weekReviewNotify,
+          );
         }
       });
 

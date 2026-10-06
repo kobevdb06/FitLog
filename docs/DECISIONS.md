@@ -3615,3 +3615,28 @@ met de vraag het in de routines van de map Coach te verwerken. Versturen
 doet de gebruiker; aanpassen doet de coach in het gesprek, met de vorige
 versie bewaard. Een week die nog loopt, krijgt pas een tekst vanaf
 zondag 20:00.
+
+**Zondagavond om acht** (stap drie). Een wekker zoals die van het
+ochtendrapport (`AndroidWeekAlarm`, id 7302, exact), die elke zondag om 20:00
+het weekoverzicht maakt en meldt: met de tekst van de coach als die er is,
+anders de cijfers ("64 sets · 2 records · 7 u 5 slaap per nacht"). Een tik
+opent de week waarover het ging, ook als je pas maandag tikt. Het loopt
+zoals het ochtendrapport: eerst de wekker van volgende zondag, dan aan de
+open app overgeven als die er is, met een pincode alleen een melding dat het
+klaarstaat, en anders de database zelf openen. Elke week krijgt een rij in
+`week_reviews`, ook zonder coach - dat is wat voorkomt dat het na een
+ontgrendeling nog eens gemaakt wordt.
+
+Standaard aan, met een schakelaar in de workout-voorkeuren (schema v46,
+`app_settings.week_review_notify`). Omdat het voor iedereen aan staat, zet
+de eerste ontgrendeling na de update de wekker; aan het toestemmen van
+meldingen raakt dat niet - wie ze nooit toeliet, ziet het overzicht onder
+Voortgang. Na een ontgrendeling wordt de week van de laatste zondagavond nog
+gemaakt als dat niet gebeurde, tot twee dagen erna; de wachtende melding
+wordt dan vervangen, en zonder wachtende melding komt er geen nieuwe. De
+open app luistert op een eigen naam (`fitlog.week`); `handOffToOpenApp`
+neemt de naam nu als argument.
+
+Geen import uit Health Connect vlak ervoor, anders dan bij het ochtendrapport:
+de nachten van de week kwamen al binnen, en de stappen van zondag zijn om acht
+uur 's avonds toch nog niet af.

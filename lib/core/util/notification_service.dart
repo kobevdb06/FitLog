@@ -30,9 +30,17 @@ class NotificationService {
   /// What a tap on the morning report carries.
   static const String morningPayload = 'morning';
 
+  /// And one weekly review.
+  static const int weekNotificationId = 1004;
+
+  /// A tap on the weekly review carries `week:` and the Monday of its week,
+  /// `2026-9-28`, so it opens that week even when tapped on the Monday after.
+  static const String weekPayloadPrefix = 'week:';
+
   static const _channelId = 'fitlog_rest_timer';
   static const _workoutChannelId = 'fitlog_workout';
   static const _morningChannelId = 'fitlog_morning';
+  static const _weekChannelId = 'fitlog_week';
 
   /// Called with the payload of a notification the user tapped while the
   /// app was running. The app sets it; the service only passes it on.
@@ -271,6 +279,55 @@ class NotificationService {
       );
     } on Object catch (error) {
       debugPrint('FitLog: ochtendrapport niet getoond ($error)');
+    }
+  }
+
+  /// Shows the weekly review of the week from [start], or replaces the one
+  /// already there. Private on a locked screen, like the morning report.
+  Future<void> showWeekReview({
+    required String title,
+    required String body,
+    required DateTime start,
+  }) async {
+    try {
+      await _plugin.show(
+        id: weekNotificationId,
+        title: title,
+        body: body,
+        payload: '$weekPayloadPrefix${start.year}-${start.month}-${start.day}',
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _weekChannelId,
+            'Weekoverzicht',
+            channelDescription:
+                'Je week op een rij, elke zondag om acht uur \'s avonds.',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            category: AndroidNotificationCategory.status,
+            styleInformation: BigTextStyleInformation(body),
+            visibility: NotificationVisibility.private,
+            autoCancel: true,
+          ),
+          iOS: const DarwinNotificationDetails(presentAlert: true),
+        ),
+      );
+    } on Object catch (error) {
+      debugPrint('FitLog: weekoverzicht niet getoond ($error)');
+    }
+  }
+
+  /// Whether the weekly review is in the notification shade right now.
+  Future<bool> get weekReviewShowing async {
+    if (!Platform.isAndroid) return false;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final active = await android?.getActiveNotifications() ?? const [];
+      return active.any((n) => n.id == weekNotificationId);
+    } on Object {
+      return false;
     }
   }
 

@@ -119,4 +119,19 @@ void main() {
 
     expect((await db.settingsDao.getSettings()).progressionHints, isFalse);
   });
+
+  testWidgets('de melding van het weekoverzicht staat aan, en gaat uit', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    final week = find.widgetWithText(SwitchListTile, 'Melding op zondagavond');
+    await tester.ensureVisible(week);
+    expect(tester.widget<SwitchListTile>(week).value, isTrue);
+
+    await tester.tap(week);
+    await tester.pumpAndSettle();
+
+    expect((await db.settingsDao.getSettings()).weekReviewNotify, isFalse);
+  });
 }

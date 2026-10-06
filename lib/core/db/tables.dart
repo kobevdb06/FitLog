@@ -166,6 +166,11 @@ class AppSettingsTable extends Table {
       .named('morning_report_enabled')
       .withDefault(const Constant(false))();
 
+  /// Whether the weekly review comes with a notification every Sunday at
+  /// eight in the evening. On until you switch it off.
+  BoolColumn get weekReviewNotify =>
+      boolean().named('week_review_notify').withDefault(const Constant(true))();
+
   /// When, in minutes after midnight: seven o'clock until changed.
   IntColumn get morningReportMinutes => integer()
       .named('morning_report_minutes')

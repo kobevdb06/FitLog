@@ -14,6 +14,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
+import '../../review/presentation/review_providers.dart';
 
 /// Rest timer, feedback, units, bar and plates.
 class WorkoutPreferencesScreen extends ConsumerWidget {
@@ -104,6 +105,18 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
             onChanged: (value) => update(
               AppSettingsTableCompanion(progressionHints: Value(value)),
             ),
+          ),
+          const SectionHeader('Weekoverzicht'),
+          SwitchListTile(
+            title: const Text('Melding op zondagavond'),
+            subtitle: const Text(
+              'Om 20:00, met je week op een rij. Het overzicht zelf staat '
+              'altijd onder Voortgang.',
+            ),
+            value: settings.weekReviewNotify,
+            onChanged: (value) => value
+                ? ref.read(weekNotifyProvider).enable()
+                : ref.read(weekNotifyProvider).disable(),
           ),
           const SectionHeader('Herstel'),
           SwitchListTile(

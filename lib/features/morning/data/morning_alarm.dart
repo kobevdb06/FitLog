@@ -134,10 +134,13 @@ Future<void> morningAlarm(int id, Map<String, dynamic> params) async {
 ///
 /// A name left behind by an app that is gone answers nobody; after a few
 /// seconds of silence the name is cleared and the alarm does the work itself.
+///
+/// [portName] is the morning's by default; the weekly review has its own.
 Future<bool> handOffToOpenApp({
+  String portName = kMorningPortName,
   Duration wait = const Duration(seconds: 3),
 }) async {
-  final app = IsolateNameServer.lookupPortByName(kMorningPortName);
+  final app = IsolateNameServer.lookupPortByName(portName);
   if (app == null) return false;
 
   final reply = ReceivePort();
@@ -145,7 +148,7 @@ Future<bool> handOffToOpenApp({
     app.send(reply.sendPort);
     return await reply.first.timeout(wait) == true;
   } on TimeoutException {
-    IsolateNameServer.removePortNameMapping(kMorningPortName);
+    IsolateNameServer.removePortNameMapping(portName);
     return false;
   } finally {
     reply.close();

@@ -14357,6 +14357,590 @@ class MorningReportsTableCompanion extends UpdateCompanion<MorningReportRow> {
   }
 }
 
+class $WeekReviewsTableTable extends WeekReviewsTable
+    with TableInfo<$WeekReviewsTableTable, WeekReviewRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeekReviewsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weekStartMeta = const VerificationMeta(
+    'weekStart',
+  );
+  @override
+  late final GeneratedColumn<int> weekStart = GeneratedColumn<int>(
+    'week_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _factsMeta = const VerificationMeta('facts');
+  @override
+  late final GeneratedColumn<String> facts = GeneratedColumn<String>(
+    'facts',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _coachTextMeta = const VerificationMeta(
+    'coachText',
+  );
+  @override
+  late final GeneratedColumn<String> coachText = GeneratedColumn<String>(
+    'coach_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coachErrorMeta = const VerificationMeta(
+    'coachError',
+  );
+  @override
+  late final GeneratedColumn<String> coachError = GeneratedColumn<String>(
+    'coach_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsMeta = const VerificationMeta(
+    'requests',
+  );
+  @override
+  late final GeneratedColumn<int> requests = GeneratedColumn<int>(
+    'requests',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _inputTokensMeta = const VerificationMeta(
+    'inputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> inputTokens = GeneratedColumn<int>(
+    'input_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outputTokensMeta = const VerificationMeta(
+    'outputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> outputTokens = GeneratedColumn<int>(
+    'output_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    weekStart,
+    createdAt,
+    facts,
+    coachText,
+    coachError,
+    requests,
+    inputTokens,
+    outputTokens,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'week_reviews';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WeekReviewRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('week_start')) {
+      context.handle(
+        _weekStartMeta,
+        weekStart.isAcceptableOrUnknown(data['week_start']!, _weekStartMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weekStartMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('facts')) {
+      context.handle(
+        _factsMeta,
+        facts.isAcceptableOrUnknown(data['facts']!, _factsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_factsMeta);
+    }
+    if (data.containsKey('coach_text')) {
+      context.handle(
+        _coachTextMeta,
+        coachText.isAcceptableOrUnknown(data['coach_text']!, _coachTextMeta),
+      );
+    }
+    if (data.containsKey('coach_error')) {
+      context.handle(
+        _coachErrorMeta,
+        coachError.isAcceptableOrUnknown(data['coach_error']!, _coachErrorMeta),
+      );
+    }
+    if (data.containsKey('requests')) {
+      context.handle(
+        _requestsMeta,
+        requests.isAcceptableOrUnknown(data['requests']!, _requestsMeta),
+      );
+    }
+    if (data.containsKey('input_tokens')) {
+      context.handle(
+        _inputTokensMeta,
+        inputTokens.isAcceptableOrUnknown(
+          data['input_tokens']!,
+          _inputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('output_tokens')) {
+      context.handle(
+        _outputTokensMeta,
+        outputTokens.isAcceptableOrUnknown(
+          data['output_tokens']!,
+          _outputTokensMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WeekReviewRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WeekReviewRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      weekStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}week_start'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      facts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}facts'],
+      )!,
+      coachText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_text'],
+      ),
+      coachError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_error'],
+      ),
+      requests: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests'],
+      ),
+      inputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}input_tokens'],
+      ),
+      outputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}output_tokens'],
+      ),
+    );
+  }
+
+  @override
+  $WeekReviewsTableTable createAlias(String alias) {
+    return $WeekReviewsTableTable(attachedDatabase, alias);
+  }
+}
+
+class WeekReviewRow extends DataClass implements Insertable<WeekReviewRow> {
+  /// The Monday, `yyyymmdd`.
+  final String id;
+
+  /// That Monday at midnight.
+  final int weekStart;
+  final int createdAt;
+
+  /// The facts the coach was given, as JSON.
+  final String facts;
+  final String? coachText;
+
+  /// Why there is no text although the coach is on.
+  final String? coachError;
+
+  /// What it cost, for the daily bar.
+  final int? requests;
+  final int? inputTokens;
+  final int? outputTokens;
+  const WeekReviewRow({
+    required this.id,
+    required this.weekStart,
+    required this.createdAt,
+    required this.facts,
+    this.coachText,
+    this.coachError,
+    this.requests,
+    this.inputTokens,
+    this.outputTokens,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['week_start'] = Variable<int>(weekStart);
+    map['created_at'] = Variable<int>(createdAt);
+    map['facts'] = Variable<String>(facts);
+    if (!nullToAbsent || coachText != null) {
+      map['coach_text'] = Variable<String>(coachText);
+    }
+    if (!nullToAbsent || coachError != null) {
+      map['coach_error'] = Variable<String>(coachError);
+    }
+    if (!nullToAbsent || requests != null) {
+      map['requests'] = Variable<int>(requests);
+    }
+    if (!nullToAbsent || inputTokens != null) {
+      map['input_tokens'] = Variable<int>(inputTokens);
+    }
+    if (!nullToAbsent || outputTokens != null) {
+      map['output_tokens'] = Variable<int>(outputTokens);
+    }
+    return map;
+  }
+
+  WeekReviewsTableCompanion toCompanion(bool nullToAbsent) {
+    return WeekReviewsTableCompanion(
+      id: Value(id),
+      weekStart: Value(weekStart),
+      createdAt: Value(createdAt),
+      facts: Value(facts),
+      coachText: coachText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachText),
+      coachError: coachError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachError),
+      requests: requests == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requests),
+      inputTokens: inputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputTokens),
+      outputTokens: outputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputTokens),
+    );
+  }
+
+  factory WeekReviewRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WeekReviewRow(
+      id: serializer.fromJson<String>(json['id']),
+      weekStart: serializer.fromJson<int>(json['weekStart']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      facts: serializer.fromJson<String>(json['facts']),
+      coachText: serializer.fromJson<String?>(json['coachText']),
+      coachError: serializer.fromJson<String?>(json['coachError']),
+      requests: serializer.fromJson<int?>(json['requests']),
+      inputTokens: serializer.fromJson<int?>(json['inputTokens']),
+      outputTokens: serializer.fromJson<int?>(json['outputTokens']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'weekStart': serializer.toJson<int>(weekStart),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'facts': serializer.toJson<String>(facts),
+      'coachText': serializer.toJson<String?>(coachText),
+      'coachError': serializer.toJson<String?>(coachError),
+      'requests': serializer.toJson<int?>(requests),
+      'inputTokens': serializer.toJson<int?>(inputTokens),
+      'outputTokens': serializer.toJson<int?>(outputTokens),
+    };
+  }
+
+  WeekReviewRow copyWith({
+    String? id,
+    int? weekStart,
+    int? createdAt,
+    String? facts,
+    Value<String?> coachText = const Value.absent(),
+    Value<String?> coachError = const Value.absent(),
+    Value<int?> requests = const Value.absent(),
+    Value<int?> inputTokens = const Value.absent(),
+    Value<int?> outputTokens = const Value.absent(),
+  }) => WeekReviewRow(
+    id: id ?? this.id,
+    weekStart: weekStart ?? this.weekStart,
+    createdAt: createdAt ?? this.createdAt,
+    facts: facts ?? this.facts,
+    coachText: coachText.present ? coachText.value : this.coachText,
+    coachError: coachError.present ? coachError.value : this.coachError,
+    requests: requests.present ? requests.value : this.requests,
+    inputTokens: inputTokens.present ? inputTokens.value : this.inputTokens,
+    outputTokens: outputTokens.present ? outputTokens.value : this.outputTokens,
+  );
+  WeekReviewRow copyWithCompanion(WeekReviewsTableCompanion data) {
+    return WeekReviewRow(
+      id: data.id.present ? data.id.value : this.id,
+      weekStart: data.weekStart.present ? data.weekStart.value : this.weekStart,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      facts: data.facts.present ? data.facts.value : this.facts,
+      coachText: data.coachText.present ? data.coachText.value : this.coachText,
+      coachError: data.coachError.present
+          ? data.coachError.value
+          : this.coachError,
+      requests: data.requests.present ? data.requests.value : this.requests,
+      inputTokens: data.inputTokens.present
+          ? data.inputTokens.value
+          : this.inputTokens,
+      outputTokens: data.outputTokens.present
+          ? data.outputTokens.value
+          : this.outputTokens,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeekReviewRow(')
+          ..write('id: $id, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    weekStart,
+    createdAt,
+    facts,
+    coachText,
+    coachError,
+    requests,
+    inputTokens,
+    outputTokens,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WeekReviewRow &&
+          other.id == this.id &&
+          other.weekStart == this.weekStart &&
+          other.createdAt == this.createdAt &&
+          other.facts == this.facts &&
+          other.coachText == this.coachText &&
+          other.coachError == this.coachError &&
+          other.requests == this.requests &&
+          other.inputTokens == this.inputTokens &&
+          other.outputTokens == this.outputTokens);
+}
+
+class WeekReviewsTableCompanion extends UpdateCompanion<WeekReviewRow> {
+  final Value<String> id;
+  final Value<int> weekStart;
+  final Value<int> createdAt;
+  final Value<String> facts;
+  final Value<String?> coachText;
+  final Value<String?> coachError;
+  final Value<int?> requests;
+  final Value<int?> inputTokens;
+  final Value<int?> outputTokens;
+  final Value<int> rowid;
+  const WeekReviewsTableCompanion({
+    this.id = const Value.absent(),
+    this.weekStart = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.facts = const Value.absent(),
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WeekReviewsTableCompanion.insert({
+    required String id,
+    required int weekStart,
+    required int createdAt,
+    required String facts,
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       weekStart = Value(weekStart),
+       createdAt = Value(createdAt),
+       facts = Value(facts);
+  static Insertable<WeekReviewRow> custom({
+    Expression<String>? id,
+    Expression<int>? weekStart,
+    Expression<int>? createdAt,
+    Expression<String>? facts,
+    Expression<String>? coachText,
+    Expression<String>? coachError,
+    Expression<int>? requests,
+    Expression<int>? inputTokens,
+    Expression<int>? outputTokens,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (weekStart != null) 'week_start': weekStart,
+      if (createdAt != null) 'created_at': createdAt,
+      if (facts != null) 'facts': facts,
+      if (coachText != null) 'coach_text': coachText,
+      if (coachError != null) 'coach_error': coachError,
+      if (requests != null) 'requests': requests,
+      if (inputTokens != null) 'input_tokens': inputTokens,
+      if (outputTokens != null) 'output_tokens': outputTokens,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WeekReviewsTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? weekStart,
+    Value<int>? createdAt,
+    Value<String>? facts,
+    Value<String?>? coachText,
+    Value<String?>? coachError,
+    Value<int?>? requests,
+    Value<int?>? inputTokens,
+    Value<int?>? outputTokens,
+    Value<int>? rowid,
+  }) {
+    return WeekReviewsTableCompanion(
+      id: id ?? this.id,
+      weekStart: weekStart ?? this.weekStart,
+      createdAt: createdAt ?? this.createdAt,
+      facts: facts ?? this.facts,
+      coachText: coachText ?? this.coachText,
+      coachError: coachError ?? this.coachError,
+      requests: requests ?? this.requests,
+      inputTokens: inputTokens ?? this.inputTokens,
+      outputTokens: outputTokens ?? this.outputTokens,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (weekStart.present) {
+      map['week_start'] = Variable<int>(weekStart.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (facts.present) {
+      map['facts'] = Variable<String>(facts.value);
+    }
+    if (coachText.present) {
+      map['coach_text'] = Variable<String>(coachText.value);
+    }
+    if (coachError.present) {
+      map['coach_error'] = Variable<String>(coachError.value);
+    }
+    if (requests.present) {
+      map['requests'] = Variable<int>(requests.value);
+    }
+    if (inputTokens.present) {
+      map['input_tokens'] = Variable<int>(inputTokens.value);
+    }
+    if (outputTokens.present) {
+      map['output_tokens'] = Variable<int>(outputTokens.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeekReviewsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -14412,6 +14996,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CardioSessionsTableTable(this);
   late final $MorningReportsTableTable morningReportsTable =
       $MorningReportsTableTable(this);
+  late final $WeekReviewsTableTable weekReviewsTable = $WeekReviewsTableTable(
+    this,
+  );
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -14503,6 +15090,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dailyVitalsTable,
     cardioSessionsTable,
     morningReportsTable,
+    weekReviewsTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -24602,6 +25190,294 @@ typedef $$MorningReportsTableTableProcessedTableManager =
       MorningReportRow,
       PrefetchHooks Function()
     >;
+typedef $$WeekReviewsTableTableCreateCompanionBuilder =
+    WeekReviewsTableCompanion Function({
+      required String id,
+      required int weekStart,
+      required int createdAt,
+      required String facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+typedef $$WeekReviewsTableTableUpdateCompanionBuilder =
+    WeekReviewsTableCompanion Function({
+      Value<String> id,
+      Value<int> weekStart,
+      Value<int> createdAt,
+      Value<String> facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+
+class $$WeekReviewsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $WeekReviewsTableTable> {
+  $$WeekReviewsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WeekReviewsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $WeekReviewsTableTable> {
+  $$WeekReviewsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weekStart => $composableBuilder(
+    column: $table.weekStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WeekReviewsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WeekReviewsTableTable> {
+  $$WeekReviewsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get weekStart =>
+      $composableBuilder(column: $table.weekStart, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get facts =>
+      $composableBuilder(column: $table.facts, builder: (column) => column);
+
+  GeneratedColumn<String> get coachText =>
+      $composableBuilder(column: $table.coachText, builder: (column) => column);
+
+  GeneratedColumn<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requests =>
+      $composableBuilder(column: $table.requests, builder: (column) => column);
+
+  GeneratedColumn<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => column,
+  );
+}
+
+class $$WeekReviewsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeekReviewsTableTable,
+          WeekReviewRow,
+          $$WeekReviewsTableTableFilterComposer,
+          $$WeekReviewsTableTableOrderingComposer,
+          $$WeekReviewsTableTableAnnotationComposer,
+          $$WeekReviewsTableTableCreateCompanionBuilder,
+          $$WeekReviewsTableTableUpdateCompanionBuilder,
+          (
+            WeekReviewRow,
+            BaseReferences<
+              _$AppDatabase,
+              $WeekReviewsTableTable,
+              WeekReviewRow
+            >,
+          ),
+          WeekReviewRow,
+          PrefetchHooks Function()
+        > {
+  $$WeekReviewsTableTableTableManager(
+    _$AppDatabase db,
+    $WeekReviewsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WeekReviewsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WeekReviewsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WeekReviewsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> weekStart = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<String> facts = const Value.absent(),
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeekReviewsTableCompanion(
+                id: id,
+                weekStart: weekStart,
+                createdAt: createdAt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int weekStart,
+                required int createdAt,
+                required String facts,
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WeekReviewsTableCompanion.insert(
+                id: id,
+                weekStart: weekStart,
+                createdAt: createdAt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WeekReviewsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeekReviewsTableTable,
+      WeekReviewRow,
+      $$WeekReviewsTableTableFilterComposer,
+      $$WeekReviewsTableTableOrderingComposer,
+      $$WeekReviewsTableTableAnnotationComposer,
+      $$WeekReviewsTableTableCreateCompanionBuilder,
+      $$WeekReviewsTableTableUpdateCompanionBuilder,
+      (
+        WeekReviewRow,
+        BaseReferences<_$AppDatabase, $WeekReviewsTableTable, WeekReviewRow>,
+      ),
+      WeekReviewRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -24656,4 +25532,6 @@ class $AppDatabaseManager {
       $$CardioSessionsTableTableTableManager(_db, _db.cardioSessionsTable);
   $$MorningReportsTableTableTableManager get morningReportsTable =>
       $$MorningReportsTableTableTableManager(_db, _db.morningReportsTable);
+  $$WeekReviewsTableTableTableManager get weekReviewsTable =>
+      $$WeekReviewsTableTableTableManager(_db, _db.weekReviewsTable);
 }

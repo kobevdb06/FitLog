@@ -49,6 +49,7 @@ part 'database.drift.dart';
     DailyVitalsTable,
     CardioSessionsTable,
     MorningReportsTable,
+    WeekReviewsTable,
   ],
   daos: [
     SettingsDao,
@@ -66,7 +67,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 45;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -425,6 +426,10 @@ class AppDatabase extends _$AppDatabase {
               ),
             );
           }
+        }
+        if (from < 45) {
+          // What the coach wrote about a week. Nothing yet.
+          await m.createTable(weekReviewsTable);
         }
       });
 

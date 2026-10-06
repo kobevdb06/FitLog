@@ -10,7 +10,12 @@ part 'chat_dao.drift.dart';
 /// the coach does not exist, and these tables stay empty for the whole life of
 /// the app.
 @DriftAccessor(
-  tables: [ChatThreadsTable, ChatMessagesTable, MorningReportsTable],
+  tables: [
+    ChatThreadsTable,
+    ChatMessagesTable,
+    MorningReportsTable,
+    WeekReviewsTable,
+  ],
 )
 class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   ChatDao(super.db);
@@ -152,7 +157,10 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
       "FROM chat_messages WHERE role = 'assistant' AND created_at >= ? "
       'UNION ALL '
       'SELECT requests, COALESCE(input_tokens, 0), COALESCE(output_tokens, 0) '
-      'FROM morning_reports WHERE requests IS NOT NULL AND created_at >= ?'
+      'FROM morning_reports WHERE requests IS NOT NULL AND created_at >= ? '
+      'UNION ALL '
+      'SELECT requests, COALESCE(input_tokens, 0), COALESCE(output_tokens, 0) '
+      'FROM week_reviews WHERE requests IS NOT NULL AND created_at >= ?'
       ')';
 
   /// What was spent since [since]: calls, answers and tokens.
@@ -166,8 +174,9 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
       variables: [
         Variable.withInt(since.millisecondsSinceEpoch),
         Variable.withInt(since.millisecondsSinceEpoch),
+        Variable.withInt(since.millisecondsSinceEpoch),
       ],
-      readsFrom: {chatMessagesTable, morningReportsTable},
+      readsFrom: {chatMessagesTable, morningReportsTable, weekReviewsTable},
     ).getSingle();
 
     return (
@@ -187,8 +196,9 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
         variables: [
           Variable.withInt(since.millisecondsSinceEpoch),
           Variable.withInt(since.millisecondsSinceEpoch),
+          Variable.withInt(since.millisecondsSinceEpoch),
         ],
-        readsFrom: {chatMessagesTable, morningReportsTable},
+        readsFrom: {chatMessagesTable, morningReportsTable, weekReviewsTable},
       ).watchSingle().map(
         (row) => (
           requests: row.read<int>('requests'),

@@ -115,6 +115,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
       ..execute('DROP TABLE routine_versions')
       ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
+      ..execute('DROP TABLE week_reviews')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -142,6 +143,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
       ..execute('DROP TABLE routine_versions')
       ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
+      ..execute('DROP TABLE week_reviews')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -167,6 +169,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_coach')
       ..execute('DROP TABLE routine_versions')
       ..execute('ALTER TABLE app_settings DROP COLUMN progression_hints')
+      ..execute('DROP TABLE week_reviews')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -195,6 +198,7 @@ void main() {
       ..execute('DROP INDEX idx_soreness_checked_at')
       ..execute('DROP INDEX idx_sleep_woke_at')
       ..execute('DROP INDEX idx_cardio_started_at')
+      ..execute('DROP TABLE week_reviews')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -265,7 +269,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 44);
+    expect(raw.select('PRAGMA user_version').first.values.first, 45);
     raw.close();
   });
 
@@ -472,7 +476,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 44);
+    expect(db.schemaVersion, 45);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

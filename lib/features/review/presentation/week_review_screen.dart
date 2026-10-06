@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -7,8 +8,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/week_navigator.dart';
+import '../../../routing/routes.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../../health/presentation/steps_week_screen.dart';
 import '../../progress/presentation/sleep_section.dart';
+import '../data/week_reviewer.dart';
 import '../domain/week_facts.dart';
 import 'review_providers.dart';
 
@@ -32,7 +36,8 @@ class WeekReviewScreen extends StatelessWidget {
       body: WeekPager(
         now: now,
         initial: initial,
-        builder: (context, start, end) => _Week(start: start),
+        builder: (context, start, end) =>
+            _Week(start: start, now: now ?? DateTime.now()),
       ),
     );
   }
@@ -73,9 +78,10 @@ String recordValue(WeekRecord record, Formatters formatters) =>
     };
 
 class _Week extends ConsumerWidget {
-  const _Week({required this.start});
+  const _Week({required this.start, required this.now});
 
   final DateTime start;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -150,6 +156,7 @@ class _Week extends ConsumerWidget {
                   ],
                 ),
               ),
+            _CoachCard(start: start, now: now),
             if (week.muscles.isNotEmpty) ...[
               const SectionHeader(
                 'Sets per spiergroep',
@@ -415,5 +422,141 @@ class _Recovery extends ConsumerWidget {
           ),
       ],
     );
+  }
+}
+
+/// When the coach may write about the week from [start]: once it is over,
+/// or from eight on its Sunday evening.
+bool weekReadyForCoach(DateTime start, DateTime now) =>
+    !now.isBefore(DateTime(start.year, start.month, start.day + 6, 20));
+
+/// What the coach wrote about the week, the way to have it written, and the
+/// way to hand its suggestion to the coach in the chat.
+///
+/// Nothing at all without a coach: the numbers are the review then.
+class _CoachCard extends ConsumerWidget {
+  const _CoachCard({required this.start, required this.now});
+
+  final DateTime start;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(coachEnabledProvider)) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final review = ref.watch(weekReviewProvider(start)).value;
+    final state = ref.watch(weekReviewControllerProvider);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+
+    Future<void> write() =>
+        ref.read(weekReviewControllerProvider.notifier).write(start, now: now);
+
+    final Widget body;
+    if (state.busy) {
+      body = const Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text('De coach schrijft over je week')),
+        ],
+      );
+    } else if (review?.coachText case final text?) {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(text, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Geschreven '
+            '${Formatters.relativeDayTime(review!.createdAt).toLowerCase()}',
+            style: muted,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => _handToCoach(context, ref, review),
+                icon: const Icon(Icons.smart_toy_outlined, size: 18),
+                label: const Text('Laat de coach het aanpassen'),
+              ),
+              TextButton(
+                onPressed: write,
+                child: const Text('Opnieuw laten schrijven'),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else if (!weekReadyForCoach(start, now)) {
+      body = Text(
+        'De coach schrijft over deze week zodra ze voorbij is.',
+        style: muted,
+      );
+    } else {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if ((state.error ?? review?.coachError) case final error?) ...[
+            Text(error, style: muted),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          FilledButton.tonalIcon(
+            onPressed: write,
+            icon: const Icon(Icons.smart_toy_outlined, size: 18),
+            label: const Text('Laat de coach erover schrijven'),
+          ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.smart_toy_outlined,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'De coach over je week',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            body,
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Puts the suggestion ready in a new conversation. Changing a routine is
+  /// for the coach in the chat to do, and sending the question for the user.
+  void _handToCoach(BuildContext context, WidgetRef ref, WeekReview review) {
+    ref
+        .read(coachDraftProvider.notifier)
+        .put(
+          'In mijn weekoverzicht van ${weekLabel(start)} schreef je: '
+          '"${review.suggestion}" Pas mijn routines in de map Coach daarop '
+          'aan.',
+        );
+    context.go(Routes.chat);
   }
 }

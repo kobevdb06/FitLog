@@ -5,8 +5,8 @@ import 'recovery_dao.dart';
 
 part 'reports_dao.drift.dart';
 
-/// The morning reports: one per day, newest first.
-@DriftAccessor(tables: [MorningReportsTable])
+/// The morning reports, one per day, and the coach's word on each week.
+@DriftAccessor(tables: [MorningReportsTable, WeekReviewsTable])
 class ReportsDao extends DatabaseAccessor<AppDatabase> with _$ReportsDaoMixin {
   ReportsDao(super.db);
 
@@ -61,4 +61,37 @@ class ReportsDao extends DatabaseAccessor<AppDatabase> with _$ReportsDaoMixin {
             ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
             ..limit(limit))
           .watch();
+
+  /// Stores what the coach wrote about the week from [start]. Writing it again
+  /// replaces it.
+  Future<void> saveWeekReview({
+    required DateTime start,
+    required DateTime createdAt,
+    required String facts,
+    String? coachText,
+    String? coachError,
+    int? requests,
+    int? inputTokens,
+    int? outputTokens,
+  }) => into(weekReviewsTable).insertOnConflictUpdate(
+    WeekReviewsTableCompanion.insert(
+      id: RecoveryDao.dayKey(start),
+      weekStart: start.millisecondsSinceEpoch,
+      createdAt: createdAt.millisecondsSinceEpoch,
+      facts: facts,
+      coachText: Value(coachText),
+      coachError: Value(coachError),
+      requests: Value(requests),
+      inputTokens: Value(inputTokens),
+      outputTokens: Value(outputTokens),
+    ),
+  );
+
+  Future<WeekReviewRow?> weekReviewFor(DateTime start) => (select(
+    weekReviewsTable,
+  )..where((t) => t.id.equals(RecoveryDao.dayKey(start)))).getSingleOrNull();
+
+  Stream<WeekReviewRow?> watchWeekReview(DateTime start) => (select(
+    weekReviewsTable,
+  )..where((t) => t.id.equals(RecoveryDao.dayKey(start)))).watchSingleOrNull();
 }

@@ -1024,3 +1024,37 @@ class MorningReportsTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// What the coach wrote about one week, with what it was shown.
+///
+/// One per week, keyed by its Monday, `yyyymmdd`: writing it again replaces
+/// it. The numbers on the weekly review are worked out fresh every time it
+/// opens; this keeps the coach's words, which cost money to have again.
+@DataClassName('WeekReviewRow')
+class WeekReviewsTable extends Table {
+  @override
+  String get tableName => 'week_reviews';
+
+  /// The Monday, `yyyymmdd`.
+  TextColumn get id => text()();
+
+  /// That Monday at midnight.
+  IntColumn get weekStart => integer().named('week_start')();
+  IntColumn get createdAt => integer().named('created_at')();
+
+  /// The facts the coach was given, as JSON.
+  TextColumn get facts => text()();
+
+  TextColumn get coachText => text().named('coach_text').nullable()();
+
+  /// Why there is no text although the coach is on.
+  TextColumn get coachError => text().named('coach_error').nullable()();
+
+  /// What it cost, for the daily bar.
+  IntColumn get requests => integer().nullable()();
+  IntColumn get inputTokens => integer().named('input_tokens').nullable()();
+  IntColumn get outputTokens => integer().named('output_tokens').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

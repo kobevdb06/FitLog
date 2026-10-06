@@ -3600,3 +3600,18 @@ latere sessie van die week anders al mee.
 **Herstel**: de gemiddelde nacht en slaapscore, HRV, rusthartslag en stappen
 van die week, tegenover de vier weken ervoor (de nachten als gemiddelde,
 HRV en rusthartslag als mediaan, zoals overal).
+
+**De coach over je week** (stap twee). Met een sleutel staat er een kaart op
+het weekoverzicht. De coach schrijft in hoogstens vier zinnen wat goed ging,
+wat achterbleef - alleen als het in de feiten staat - en eindigt met één
+zin die begint met "Volgende week:". Hij krijgt de feiten van de week als
+JSON en geen tools, zoals bij het ochtendrapport: één aanvraag per week, die
+meetelt in de daglimiet en de balk van vandaag. Zijn tekst wordt bewaard
+(schema v45, `week_reviews`, één rij per week, met wat hij te zien kreeg);
+de cijfers op het scherm worden telkens opnieuw berekend.
+*Laat de coach het aanpassen* zet zijn voorstel klaar in een nieuw gesprek
+- de zin met "Volgende week:", of zijn hele tekst als die er niet is -
+met de vraag het in de routines van de map Coach te verwerken. Versturen
+doet de gebruiker; aanpassen doet de coach in het gesprek, met de vorige
+versie bewaard. Een week die nog loopt, krijgt pas een tekst vanaf
+zondag 20:00.

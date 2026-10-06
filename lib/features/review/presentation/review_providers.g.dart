@@ -90,3 +90,146 @@ final class WeekFactsFamily extends $Family
   @override
   String toString() => r'weekFactsProvider';
 }
+
+/// What the coach wrote about the week from [start], if it did.
+
+@ProviderFor(weekReview)
+final weekReviewProvider = WeekReviewFamily._();
+
+/// What the coach wrote about the week from [start], if it did.
+
+final class WeekReviewProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<WeekReview?>,
+          WeekReview?,
+          Stream<WeekReview?>
+        >
+    with $FutureModifier<WeekReview?>, $StreamProvider<WeekReview?> {
+  /// What the coach wrote about the week from [start], if it did.
+  WeekReviewProvider._({
+    required WeekReviewFamily super.from,
+    required DateTime super.argument,
+  }) : super(
+         retry: null,
+         name: r'weekReviewProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$weekReviewHash();
+
+  @override
+  String toString() {
+    return r'weekReviewProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<WeekReview?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<WeekReview?> create(Ref ref) {
+    final argument = this.argument as DateTime;
+    return weekReview(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WeekReviewProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$weekReviewHash() => r'1b6988d1c671cc0597322671ba319ace207b1a4f';
+
+/// What the coach wrote about the week from [start], if it did.
+
+final class WeekReviewFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<WeekReview?>, DateTime> {
+  WeekReviewFamily._()
+    : super(
+        retry: null,
+        name: r'weekReviewProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// What the coach wrote about the week from [start], if it did.
+
+  WeekReviewProvider call(DateTime start) =>
+      WeekReviewProvider._(argument: start, from: this);
+
+  @override
+  String toString() => r'weekReviewProvider';
+}
+
+/// Having the coach write about a week.
+
+@ProviderFor(WeekReviewController)
+final weekReviewControllerProvider = WeekReviewControllerProvider._();
+
+/// Having the coach write about a week.
+final class WeekReviewControllerProvider
+    extends $NotifierProvider<WeekReviewController, WeekReviewState> {
+  /// Having the coach write about a week.
+  WeekReviewControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'weekReviewControllerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$weekReviewControllerHash();
+
+  @$internal
+  @override
+  WeekReviewController create() => WeekReviewController();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WeekReviewState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WeekReviewState>(value),
+    );
+  }
+}
+
+String _$weekReviewControllerHash() =>
+    r'8e1b8176c9d9ce2a4e7d8446c5401f928a7c46fe';
+
+/// Having the coach write about a week.
+
+abstract class _$WeekReviewController extends $Notifier<WeekReviewState> {
+  WeekReviewState build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<WeekReviewState, WeekReviewState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<WeekReviewState, WeekReviewState>,
+              WeekReviewState,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

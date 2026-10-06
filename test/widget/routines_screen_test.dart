@@ -1,6 +1,7 @@
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/calc/schedule.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/theme/app_spacing.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/routines/presentation/routines_screen.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
@@ -187,6 +188,34 @@ void main() {
       ),
     );
     expect(play.onPressed, isNull);
+  });
+
+  testWidgets('ruimte tussen de bovenkant en de eerste kaart', (tester) async {
+    await tester.runAsync(() => routine('Push', [exercise('ex-bench', 3)]));
+    await pump(tester);
+
+    Rect card() => tester.getRect(
+      find
+          .ancestor(of: find.text('Push'), matching: find.byType(Material))
+          .first,
+    );
+
+    // No folders, so no header in between: the buttons need their own room.
+    final buttons = tester.getRect(
+      find.ancestor(
+        of: find.text('Lege training'),
+        matching: find.byType(OutlinedButton),
+      ),
+    );
+    expect(card().top - buttons.bottom, greaterThanOrEqualTo(AppSpacing.md));
+
+    await tester.tap(find.byTooltip('Routine zoeken'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'push');
+    await tester.pumpAndSettle();
+
+    final field = tester.getRect(find.byType(TextField));
+    expect(card().top - field.bottom, greaterThanOrEqualTo(AppSpacing.sm));
   });
 
   testWidgets('fits a phone with large text', (tester) async {

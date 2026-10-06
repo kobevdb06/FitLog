@@ -152,11 +152,13 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
             children: [
               if (_searching)
                 Padding(
+                  // Room below of its own: the first thing under it can be a
+                  // card, with no folder header in between.
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg,
                     AppSpacing.sm,
                     AppSpacing.lg,
-                    0,
+                    AppSpacing.md,
                   ),
                   child: TextField(
                     controller: _search,
@@ -250,7 +252,7 @@ class _StartActions extends ConsumerWidget {
         AppSpacing.lg,
         AppSpacing.sm,
         AppSpacing.lg,
-        0,
+        AppSpacing.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

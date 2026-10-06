@@ -439,27 +439,36 @@ class _FolderSection extends ConsumerWidget {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                     ],
-                    Flexible(
-                      child: Text(
-                        folder.name.toUpperCase(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: muted,
-                          letterSpacing: 0.8,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    // The name gives way to a long one, the count stays
+                    // next to it, and the menu keeps the right edge.
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              folder.name.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: muted,
+                                letterSpacing: 0.8,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            '${routines.length}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: muted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      '${routines.length}',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: muted,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                    const Spacer(),
                     IconButton(
                       tooltip: 'Map bewerken',
                       visualDensity: VisualDensity.compact,

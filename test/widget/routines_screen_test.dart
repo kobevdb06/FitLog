@@ -420,6 +420,21 @@ void main() {
       expect(find.byIcon(Icons.smart_toy_outlined), findsNothing);
     });
 
+    testWidgets('het menu van een map staat tegen de rechterkant', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      // As far right as the cards below it reach, whatever the name's length.
+      final menu = tester.getRect(find.byTooltip('Map bewerken'));
+      final card = tester.getRect(
+        find
+            .ancestor(of: find.text('Push'), matching: find.byType(Material))
+            .first,
+      );
+      expect(menu.right, closeTo(card.right, 12));
+    });
+
     testWidgets('dichtklappen, en dat blijft zo', (tester) async {
       await pump(tester);
       expect(find.text('Push'), findsOneWidget);

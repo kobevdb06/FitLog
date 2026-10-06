@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **44**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **46**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -72,6 +72,8 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 42 | `routine_folders.is_coach` en `routine_versions`: de map van de coach, en vorige versies van een routine. |
 | 43 | `app_settings.progression_hints`: de hint per oefening, standaard aan. |
 | 44 | Geen nieuwe kolom: elke index die het schema kent, wordt aangemaakt waar ze ontbreekt (zie Indexen). |
+| 45 | `week_reviews`: wat de coach over een week schreef. |
+| 46 | `app_settings.week_review_notify`: de melding van het weekoverzicht op zondagavond, standaard aan. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -143,6 +145,7 @@ Geboortedatum, geslacht en lengte gaan alleen naar de coach met
 | `health_connect_write_workouts` | BOOL | false |
 | `morning_report_enabled` | BOOL | false |
 | `morning_report_minutes` | INT | 420 (minuten na middernacht: 7:00) |
+| `week_review_notify` | BOOL | true: het weekoverzicht op zondag om 20:00, met een melding |
 | **De coach** | | |
 | `anthropic_api_key` | TEXT? | de sleutel van de coach, van welke dienst ook - de naam stamt van toen Anthropic de enige was |
 | `chat_provider` | TEXT? | leeg = afleiden uit de sleutel |
@@ -416,6 +419,22 @@ mee in de herstelschatting.
 | `import_error` | TEXT? | waarom Health Connect net ervoor niet gelezen kon worden |
 | `requests`, `input_tokens`, `output_tokens` | INT? | wat de vraag aan de coach kostte |
 
+#### `week_reviews`
+
+| Kolom | Type | Opmerking |
+|---|---|---|
+| `id` | TEXT PK | de maandag van de week, `yyyymmdd` |
+| `week_start` | INT | die maandag, middernacht |
+| `created_at` | INT | |
+| `facts` | TEXT | JSON: de cijfers van de week zoals ze toen waren |
+| `coach_text` | TEXT? | wat de coach schreef |
+| `coach_error` | TEXT? | waarom er geen tekst is terwijl de coach aan staat |
+| `requests`, `input_tokens`, `output_tokens` | INT? | wat de vraag aan de coach kostte |
+
+Elke week krijgt een rij zodra haar overzicht gemaakt is, ook zonder coach:
+zo weet de app dat het niet opnieuw moet. De cijfers op het scherm worden
+telkens opnieuw berekend; alleen de tekst van de coach komt hier vandaan.
+
 ### De coach
 
 #### `chat_threads`
@@ -488,5 +507,5 @@ chat_threads 1─* chat_messages
 Los, één rij of één rij per dag:
 user_profile  app_settings  body_measurements  custom_muscles
 custom_equipment  custom_categories  soreness_checks  sleep_entries
-drink_days  daily_vitals  cardio_sessions  morning_reports
+drink_days  daily_vitals  cardio_sessions  morning_reports  week_reviews
 ```

@@ -3535,3 +3535,14 @@ nieuwste keren vielen weg zodra een oefening meer dan 200 keer gedaan was
 nam ook een plaats in. Sorteren, alleen afgewerkte trainingen nemen en
 afkappen gebeurt nu in de query zelf. De test voert 205 keer in, oudste
 eerst zoals een echt logboek groeit, en faalde op de code van daarvoor.
+
+## 179. De namen van de metingen, voor de coach
+
+De beschrijving van `body_measurements` vertelde de coach dat de soorten
+`arm_left`, `thigh_left`, `calf_left` (en rechts) en `height` heetten. Bewaard
+worden ze als `left_arm`, `left_thigh`, `left_calf`, en lengte staat niet
+bij de metingen maar in het profiel. Vroeg de coach gericht naar een
+armomtrek, dan vond `WHERE type = ?` niets en zei hij dat er geen metingen
+waren. De lijst komt nu uit `MeasurementType` zelf, zodat ze niet meer kan
+afdrijven, en de oude schrijfwijze wordt nog omgezet: een eerder gesprek
+kan het model die geleerd hebben.

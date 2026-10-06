@@ -383,6 +383,44 @@ void main() {
       expect(lookup.summary, 'je metingen van weight');
     });
 
+    test(
+      'de coach krijgt de namen van de metingen zoals ze bewaard worden',
+      () {
+        final type =
+            (((CoachTools.definitions().firstWhere(
+                              (d) => d['name'] == 'body_measurements',
+                            )['input_schema']!
+                            as Map)['properties']!
+                        as Map)['type']!
+                    as Map)['description']!
+                as String;
+
+        for (final wanted in MeasurementType.values) {
+          expect(type, contains(wanted.wire));
+        }
+        // Die bestaan niet: zo zocht de coach naar niets.
+        expect(type, isNot(contains('arm_left')));
+        expect(type, isNot(contains('height')));
+      },
+    );
+
+    test('en vindt ze ook met de oude schrijfwijze', () async {
+      // Wat in eerdere gesprekken stond, kan het model nog zo vragen.
+      await db.recordsDao.addMeasurement(
+        type: MeasurementType.leftArm,
+        value: 36.5,
+        measuredAt: DateTime(2026, 2, 1),
+      );
+
+      final lookup = await tools.run('body_measurements', {'type': 'arm_left'});
+
+      final row =
+          (decode(lookup)['measurements']! as List).single
+              as Map<String, Object?>;
+      expect(row['type'], 'left_arm');
+      expect(row['value'], 36.5);
+    });
+
     test('records noemen de oefening erbij', () async {
       await db
           .into(db.personalRecordsTable)

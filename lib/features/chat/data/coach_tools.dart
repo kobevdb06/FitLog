@@ -300,10 +300,12 @@ class CoachTools {
         'properties': {
           'type': {
             'type': 'string',
+            // From the enum itself: written out by hand it drifted to
+            // names that are stored nowhere, and the coach found nothing.
             'description':
-                'weight, height, body_fat, neck, chest, waist, hips, '
-                'thigh_left, thigh_right, arm_left, arm_right, calf_left, '
-                'calf_right.',
+                'Een van: '
+                '${MeasurementType.values.map((t) => t.wire).join(', ')}. '
+                'Lengte staat hier niet.',
           },
           'limit': {'type': 'integer'},
         },
@@ -1155,7 +1157,7 @@ class CoachTools {
   }
 
   Future<CoachLookup> _bodyMeasurements(Map<String, Object?> input) async {
-    final type = _text(input['type']);
+    final type = _measurementType(_text(input['type']));
     final limit = _limit(input['limit'], 10);
 
     final rows = await db
@@ -1184,6 +1186,16 @@ class CoachTools {
       }),
       summary: type == null ? 'je lichaamsmetingen' : 'je metingen van $type',
     );
+  }
+
+  /// A measurement as the coach asks for it, as it is stored.
+  ///
+  /// It used to be told `arm_left` where `left_arm` is stored, and an older
+  /// conversation can still teach it that; those are read the right way round.
+  String? _measurementType(String? asked) {
+    if (asked == null) return null;
+    final old = RegExp(r'^(arm|thigh|calf)_(left|right)$').firstMatch(asked);
+    return old == null ? asked : '${old.group(2)}_${old.group(1)}';
   }
 
   Future<CoachLookup> _sleep(Map<String, Object?> input) async {

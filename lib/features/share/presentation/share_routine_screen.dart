@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/formatting/formatters.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
@@ -78,7 +79,11 @@ class ShareRoutineScreen extends ConsumerWidget {
               Text(routine.name, style: theme.textTheme.headlineSmall),
               Text(
                 [
-                  '${routine.exercises.length} oefeningen',
+                  Formatters.amount(
+                    routine.exercises.length,
+                    'oefening',
+                    'oefeningen',
+                  ),
                   if (routine.customCount > 0)
                     '${routine.customCount} eigen ${routine.customCount == 1 ? 'oefening' : 'oefeningen'}',
                 ].join(' · '),

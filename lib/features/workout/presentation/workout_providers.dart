@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/formatting/formatters.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/pr.dart';
 import '../../../core/calc/progression.dart';
@@ -699,7 +700,7 @@ class WorkoutController {
       ..writeln(
         '${detail.workout.durationSeconds ~/ 60} min - '
         '${formatters.volume(detail.workout.totalVolumeKg)} - '
-        '${detail.workout.totalSets} sets',
+        '${Formatters.amount(detail.workout.totalSets, 'set', 'sets')}',
       )
       ..writeln();
 

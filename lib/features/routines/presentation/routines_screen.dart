@@ -276,8 +276,8 @@ class _RoutineTile extends ConsumerWidget {
           if (days.isNotEmpty)
             [for (final day in days.weekdays) Formatters.weekdayShort(day)]
                 .join(' '),
-          '${summary.exerciseCount} oefeningen',
-          '${summary.setCount} sets',
+          Formatters.amount(summary.exerciseCount, 'oefening', 'oefeningen'),
+          Formatters.amount(summary.setCount, 'set', 'sets'),
           if (last != null)
             Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(last))
                 .toLowerCase()

@@ -47,9 +47,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget build(BuildContext context) {
     final history = ref.watch(workoutHistoryProvider());
     final pending = ref.watch(pendingWorkoutDeletionsProvider);
-    final monthWorkouts = ref
-        .watch(workoutsInMonthProvider(_month.year, _month.month))
-        .value ?? const [];
+    final monthWorkouts =
+        ref.watch(workoutsInMonthProvider(_month.year, _month.month)).value ??
+        const [];
     final formatters = ref.watch(formattersProvider);
 
     return Scaffold(
@@ -83,21 +83,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 workouts: monthWorkouts,
                 selected: _day,
                 onSelect: (day) => setState(
-                  () => _day = _day != null && _isOn(_day!, day.millisecondsSinceEpoch)
+                  () => _day =
+                      _day != null && _isOn(_day!, day.millisecondsSinceEpoch)
                       ? null
                       : day,
                 ),
-                onPrevious: () => _goToMonth(
-                  DateTime(_month.year, _month.month - 1),
-                ),
-                onNext: () => _goToMonth(
-                  DateTime(_month.year, _month.month + 1),
-                ),
+                onPrevious: () =>
+                    _goToMonth(DateTime(_month.year, _month.month - 1)),
+                onNext: () =>
+                    _goToMonth(DateTime(_month.year, _month.month + 1)),
               ),
               SectionHeader(
-                _day == null
-                    ? 'Sessies'
-                    : Formatters.relativeDay(_day!),
+                _day == null ? 'Sessies' : Formatters.relativeDay(_day!),
                 action: _day == null
                     ? null
                     : TextButton(
@@ -105,11 +102,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         child: const Text('Alles'),
                       ),
               ),
-              for (final summary in day == null
-                  ? workouts
-                  : workouts
-                        .where((w) => _isOn(day, w.workout.startedAt))
-                        .toList())
+              for (final summary
+                  in day == null
+                      ? workouts
+                      : workouts
+                            .where((w) => _isOn(day, w.workout.startedAt))
+                            .toList())
                 _WorkoutTile(
                   key: ValueKey(summary.workout.id),
                   summary: summary,
@@ -216,12 +214,11 @@ class _MonthCalendar extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: firstWeekday - 1 + daysInMonth,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    mainAxisSpacing: 2,
-                    crossAxisSpacing: 2,
-                  ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisSpacing: 2,
+                crossAxisSpacing: 2,
+              ),
               itemBuilder: (context, index) {
                 if (index < firstWeekday - 1) return const SizedBox.shrink();
                 final day = index - firstWeekday + 2;
@@ -246,8 +243,10 @@ class _MonthCalendar extends StatelessWidget {
                         : (colourByDay[day] ?? AppColors.accent).withValues(
                             alpha: maxVolume <= 0
                                 ? 0.3
-                                : (0.25 + 0.55 * (volume / maxVolume))
-                                      .clamp(0.25, 0.8),
+                                : (0.25 + 0.55 * (volume / maxVolume)).clamp(
+                                    0.25,
+                                    0.8,
+                                  ),
                           ),
                     borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                     border: isSelected
@@ -275,9 +274,7 @@ class _MonthCalendar extends StatelessWidget {
 
                 if (volume == null) return cell;
                 return GestureDetector(
-                  onTap: () => onSelect(
-                    DateTime(month.year, month.month, day),
-                  ),
+                  onTap: () => onSelect(DateTime(month.year, month.month, day)),
                   behavior: HitTestBehavior.opaque,
                   child: cell,
                 );
@@ -312,8 +309,7 @@ class _WorkoutTile extends ConsumerWidget {
         child: const Icon(Icons.delete_outline, color: AppColors.danger),
       ),
       confirmDismiss: (_) => confirmWorkoutDeletion(context),
-      onDismissed: (_) =>
-          deleteWorkoutWithUndo(context, ref, summary.workout),
+      onDismissed: (_) => deleteWorkoutWithUndo(context, ref, summary.workout),
       child: _tile(context, ref),
     );
   }
@@ -337,7 +333,7 @@ class _WorkoutTile extends ConsumerWidget {
           ),
           Formatters.durationWords(workout.durationSeconds),
           formatters.volume(workout.totalVolumeKg),
-          '${workout.totalSets} sets',
+          Formatters.amount(workout.totalSets, 'set', 'sets'),
         ].join(' · '),
       ),
       trailing: PopupMenuButton<String>(

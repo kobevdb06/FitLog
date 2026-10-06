@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/formatting/formatters.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
@@ -83,7 +84,7 @@ class _ImportRoutineScreenState extends ConsumerState<ImportRoutineScreen> {
               children: [
                 Text(plan.routine.name, style: theme.textTheme.headlineSmall),
                 Text(
-                  '${plan.exercises.length} oefeningen · '
+                  '${Formatters.amount(plan.exercises.length, 'oefening', 'oefeningen')} · '
                   '${plan.newExerciseCount} nieuw voor jou',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

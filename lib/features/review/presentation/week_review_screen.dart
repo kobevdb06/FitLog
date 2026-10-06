@@ -70,7 +70,11 @@ String recordValue(WeekRecord record, Formatters formatters) =>
     switch (record.type) {
       'est_1rm' => '1RM ${formatters.weight(record.value)}',
       'max_weight' => formatters.weight(record.value),
-      'max_reps' => '${record.value.round()} herhalingen',
+      'max_reps' => Formatters.amount(
+        record.value.round(),
+        'herhaling',
+        'herhalingen',
+      ),
       'max_set_volume' => formatters.volume(record.value),
       'max_duration' => Formatters.duration(record.value.round()),
       'max_distance' => formatters.distance(record.value),

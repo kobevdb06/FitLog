@@ -7,6 +7,7 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 import '../../../core/db/connection.dart';
 import '../../../core/db/database.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/security/key_manager.dart';
 import '../../../core/security/key_material.dart';
 import '../../../core/security/secret_store.dart';
@@ -162,9 +163,9 @@ String weekTitle(WeekFacts facts) {
 String weekSummary(WeekFacts facts) {
   final sleep = facts.sleepMinutes;
   return [
-    '${facts.sets} sets',
-    if (facts.records.length == 1) '1 record',
-    if (facts.records.length > 1) '${facts.records.length} records',
+    Formatters.amount(facts.sets, 'set', 'sets'),
+    if (facts.records.isNotEmpty)
+      Formatters.amount(facts.records.length, 'record', 'records'),
     if (sleep != null)
       '${sleep ~/ 60} u${sleep % 60 == 0 ? '' : ' ${sleep % 60}'} slaap per '
           'nacht',

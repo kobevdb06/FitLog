@@ -24,7 +24,11 @@ String _weeks(int weeks) => weeks == 1 ? '1 week' : '$weeks weken';
 String plateauValue(Plateau plateau, double value, Formatters formatters) =>
     switch (plateau.measure) {
       ProgressMeasure.oneRm => formatters.weight(value),
-      ProgressMeasure.reps => '${value.round()} herhalingen',
+      ProgressMeasure.reps => Formatters.amount(
+        value.round(),
+        'herhaling',
+        'herhalingen',
+      ),
       ProgressMeasure.hold => Formatters.duration(value.round()),
     };
 

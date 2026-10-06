@@ -600,13 +600,13 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                   for (final item in routine.exercises)
                     Text(
                       '${item.sets}× ${item.name}'
-                      '${item.targetReps == null ? '' : ' · ${item.targetReps} herhalingen'}',
+                      '${item.targetReps == null ? '' : ' · ${Formatters.amount(item.targetReps!, 'herhaling', 'herhalingen')}'}',
                       style: theme.textTheme.bodySmall,
                     ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    '${routine.exercises.length} oefeningen · '
-                    '${routine.totalSets} sets',
+                    '${Formatters.amount(routine.exercises.length, 'oefening', 'oefeningen')} · '
+                    '${Formatters.amount(routine.totalSets, 'set', 'sets')}',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

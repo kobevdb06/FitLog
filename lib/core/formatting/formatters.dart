@@ -192,6 +192,11 @@ class Formatters {
 
   String count(int value) => _integer.format(value);
 
+  /// `1 set`, `3 sets`: a number with the word that goes with it. Always
+  /// both forms written out - Dutch plurals do not follow one rule.
+  static String amount(int value, String one, String many) =>
+      value == 1 ? '1 $one' : '$value $many';
+
   String decimal(double value) => _decimal.format(value);
 
   // --- Time -----------------------------------------------------------------

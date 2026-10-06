@@ -515,7 +515,7 @@ class _ExerciseBlock extends StatelessWidget {
                       ),
                       Text(
                         [
-                          '${detail.sets.length} sets',
+                          Formatters.amount(detail.sets.length, 'set', 'sets'),
                           if (detail.routineExercise.restSeconds != null)
                             '${detail.routineExercise.restSeconds}s rust',
                           if (group != null)

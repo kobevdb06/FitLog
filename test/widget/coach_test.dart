@@ -700,7 +700,7 @@ void main() {
 
       expect(find.text('Voorstel: routine'), findsOneWidget);
       expect(find.text('4× Bench Press · 8 herhalingen'), findsOneWidget);
-      expect(find.text('1 oefeningen · 4 sets'), findsOneWidget);
+      expect(find.text('1 oefening · 4 sets'), findsOneWidget);
 
       await tester.tap(find.text('Routine toevoegen'));
       await tester.pumpAndSettle();

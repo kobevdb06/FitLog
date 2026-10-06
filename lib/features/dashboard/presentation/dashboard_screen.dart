@@ -531,7 +531,7 @@ class _WeekBlock extends ConsumerWidget {
         title: 'Deze week',
         child: StatTile(
           value: formatters.volume(week?.volumeKg ?? 0),
-          label: '${week?.workouts ?? 0} workouts',
+          label: Formatters.amount(week?.workouts ?? 0, 'workout', 'workouts'),
           emphasis: true,
         ),
       );

@@ -3640,3 +3640,33 @@ neemt de naam nu als argument.
 Geen import uit Health Connect vlak ervoor, anders dan bij het ochtendrapport:
 de nachten van de week kwamen al binnen, en de stappen van zondag zijn om acht
 uur 's avonds toch nog niet af.
+
+## 182. Een routine als kaart, met een startknop
+
+De lijst onder Trainen telde oefeningen en sets, en dat zegt weinig als je
+kiest wat je vandaag doet. Elke routine is nu een kaart met haar kleur als
+streep langs de kant (in plaats van een bolletje), de spiergroepen die ze
+traint ("Borst · Schouders · Triceps", hoogstens drie, die met de meeste
+sets eerst; bij gelijkstand de volgorde waarin de routine ze tegenkomt), en
+daaronder de dagen, het aantal oefeningen, een geschatte duur en wanneer je
+ze laatst deed. Het aantal sets staat alleen nog op de pagina van de routine.
+
+**De duur** (`estimatedRoutineMinutes`, `lib/core/calc/routine_time.dart`)
+is een schatting om tussen routines te kiezen, geen belofte: 40 seconden per
+set, of de duur die een set zelf heeft (een plank, een hold); daarna de rust
+die de oefening in de routine heeft, anders je eigen standaardrust; een
+minuut om naar de volgende oefening te gaan; geen rust na de allerlaatste
+set. Afgerond op vijf minuten en minstens vijf, en getoond als "±20 min",
+zodat niemand er een stopwatch naast legt. Opwarmsets tellen mee, want ze
+staan in de routine en je doet ze.
+
+`watchRoutines` haalt daarvoor in één tweede query elke geplande set op met
+haar spier en rust, en kijkt nu ook naar `exercises`: wie de spiergroep van
+een oefening verandert, ziet de kaart meteen mee veranderen.
+
+**De ▶-knop** start de routine zonder ze eerst te openen. Een tik op de
+kaart opent ze nog steeds. Het starten zelf (`startRoutine`,
+`routine_start.dart`) is wat de pagina van de routine al deed en deelt die
+nu: loopt er al een workout, dan vraagt het of je daarmee verder wilt in
+plaats van een tweede te beginnen. Een routine zonder oefeningen heeft een
+uitgeschakelde knop.

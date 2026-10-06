@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../calc/routine_time.dart';
 import '../../calc/schedule.dart';
 import '../database.dart';
 import '../models.dart';
@@ -223,19 +224,63 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
       ' JOIN routine_exercises re2 ON re2.id = rs.routine_exercise_id '
       ' WHERE re2.routine_id = r.id) AS set_count '
       'FROM routines r ORDER BY r.sort_order ASC',
-      readsFrom: {routinesTable, routineExercisesTable, routineSetsTable},
+      // The exercises too: a muscle changed on one changes the card.
+      readsFrom: {
+        routinesTable,
+        routineExercisesTable,
+        routineSetsTable,
+        exercisesTable,
+      },
     );
-    return query.watch().map(
-      (rows) => rows
-          .map(
-            (r) => RoutineSummary(
-              routine: routinesTable.map(r.data),
-              exerciseCount: r.read<int>('exercise_count'),
-              setCount: r.read<int>('set_count'),
-            ),
-          )
-          .toList(),
-    );
+    return query.watch().asyncMap((rows) async {
+      // Every planned set with its muscle and its rest, in one read, for the
+      // muscles on the card and how long the routine takes.
+      final sets = await customSelect(
+        'SELECT re.routine_id AS routine_id, re.sort_order AS position, '
+        're.rest_seconds AS rest, e.primary_muscle AS muscle, '
+        'rs.target_duration_seconds AS seconds '
+        'FROM routine_sets rs '
+        'JOIN routine_exercises re ON re.id = rs.routine_exercise_id '
+        'JOIN exercises e ON e.id = re.exercise_id '
+        'ORDER BY re.routine_id, re.sort_order, rs.sort_order',
+      ).get();
+      final timing = <String, List<PlannedSetTime>>{};
+      final muscleSets = <String, Map<String, int>>{};
+      for (final row in sets) {
+        final routine = row.read<String>('routine_id');
+        timing
+            .putIfAbsent(routine, () => [])
+            .add(
+              PlannedSetTime(
+                exercise: row.read<int>('position'),
+                restSeconds: row.read<int?>('rest'),
+                durationSeconds: row.read<int?>('seconds'),
+              ),
+            );
+        final counts = muscleSets.putIfAbsent(routine, () => {});
+        final muscle = row.read<String>('muscle');
+        counts[muscle] = (counts[muscle] ?? 0) + 1;
+      }
+
+      return rows.map((r) {
+        final routine = routinesTable.map(r.data);
+        // Most sets first; a tie keeps the order the routine meets them in.
+        final counts = muscleSets[routine.id] ?? const {};
+        final met = counts.keys.toList();
+        final muscles = [...met]
+          ..sort((a, b) {
+            final bySets = counts[b]!.compareTo(counts[a]!);
+            return bySets != 0 ? bySets : met.indexOf(a) - met.indexOf(b);
+          });
+        return RoutineSummary(
+          routine: routine,
+          exerciseCount: r.read<int>('exercise_count'),
+          setCount: r.read<int>('set_count'),
+          muscles: muscles,
+          timing: timing[routine.id] ?? const [],
+        );
+      }).toList();
+    });
   }
 
   Future<RoutineRow?> getRoutine(String id) =>

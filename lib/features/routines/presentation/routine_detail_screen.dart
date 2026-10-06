@@ -14,10 +14,10 @@ import '../../../core/widgets/exercise_avatar.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../share/presentation/share_routine_screen.dart';
-import '../../workout/presentation/workout_providers.dart';
 import 'coach_folder.dart';
 import 'favourite_star.dart';
 import 'routine_providers.dart';
+import 'routine_start.dart';
 
 /// One routine with its planned sets, and the button that turns it into a
 /// running session.
@@ -165,24 +165,8 @@ class RoutineDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _start(BuildContext context, WidgetRef ref) async {
-    final active = ref.read(activeWorkoutProvider).value;
-    if (active != null) {
-      final resume = await confirm(
-        context,
-        title: 'Er loopt al een workout',
-        message:
-            'Je kunt maar een sessie tegelijk loggen. Ga verder met '
-            '"${active.workout.name}" of rond die eerst af.',
-        confirmLabel: 'Ga verder',
-      );
-      if (resume && context.mounted) context.push(Routes.workout);
-      return;
-    }
-
-    await ref.read(workoutControllerProvider).startFromRoutine(routineId);
-    if (context.mounted) context.push(Routes.workout);
-  }
+  Future<void> _start(BuildContext context, WidgetRef ref) =>
+      startRoutine(context, ref, routineId);
 
   Future<void> _onMenu(
     BuildContext context,

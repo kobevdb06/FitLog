@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 
+import '../calc/routine_time.dart';
 import 'database.dart';
 
 // Read-model types that join a few tables together. They are plain immutable
@@ -54,11 +55,19 @@ class RoutineSummary {
     required this.routine,
     required this.exerciseCount,
     required this.setCount,
+    this.muscles = const [],
+    this.timing = const [],
   });
 
   final RoutineRow routine;
   final int exerciseCount;
   final int setCount;
+
+  /// The primary muscles it trains, most sets first.
+  final List<String> muscles;
+
+  /// Every planned set, for how long the routine takes.
+  final List<PlannedSetTime> timing;
 }
 
 class RoutineExerciseDetail {

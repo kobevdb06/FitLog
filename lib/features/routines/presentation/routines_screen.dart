@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/calc/routine_time.dart';
 import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
+import '../../../core/providers/core_providers.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/colour_picker.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
@@ -18,6 +20,7 @@ import '../../workout/presentation/workout_providers.dart';
 import 'coach_folder.dart';
 import 'favourite_star.dart';
 import 'routine_providers.dart';
+import 'routine_start.dart';
 
 /// The Trainen tab: folders, routines, and the two ways to start a session.
 class RoutinesScreen extends ConsumerWidget {
@@ -254,6 +257,14 @@ class _FolderSection extends ConsumerWidget {
   }
 }
 
+/// `Borst · Schouders · Triceps`: what a routine trains, at most three.
+String routineMuscles(List<String> muscles) => [
+  for (final m in muscles.take(3))
+    m.isEmpty ? m : m[0].toUpperCase() + m.substring(1),
+].join(' · ');
+
+/// One routine: its colour down the side, what it trains, how long it
+/// takes, and a button that starts it without opening it first.
 class _RoutineTile extends ConsumerWidget {
   const _RoutineTile({required this.summary});
 
@@ -261,36 +272,115 @@ class _RoutineTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final routine = summary.routine;
     final last = routine.lastPerformedAt;
     final days = WeekdaySet(routine.scheduledDays);
+    final rest = ref.watch(settingsProvider).value?.defaultRestSeconds ?? 90;
+    final minutes = estimatedRoutineMinutes(
+      summary.timing,
+      defaultRestSeconds: rest,
+    );
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
 
-    return ListTile(
-      onTap: () => context.push(Routes.routineDetail(routine.id)),
-      leading: ColourDot(colorIndex: routine.colorIndex),
-      title: Text(routine.name),
-      subtitle: Text(
-        [
-          // First, because it is what tells two routines apart at a glance and
-          // it is the half that survives when the line runs out of room.
-          if (days.isNotEmpty)
-            [for (final day in days.weekdays) Formatters.weekdayShort(day)]
-                .join(' '),
-          Formatters.amount(summary.exerciseCount, 'oefening', 'oefeningen'),
-          Formatters.amount(summary.setCount, 'set', 'sets'),
-          if (last != null)
-            Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(last))
-                .toLowerCase()
-          else
-            'nog niet gedaan',
-        ].join(' · '),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FavouriteStar(routine: routine),
-          const Icon(Icons.chevron_right),
-        ],
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push(Routes.routineDetail(routine.id)),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.outline),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // The colour you gave it, as a stripe rather than a dot:
+                  // the one thing that tells two routines apart at a glance.
+                  Container(
+                    width: 5,
+                    color:
+                        AppColors.routineColor(routine.colorIndex) ??
+                        theme.colorScheme.outline,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(routine.name, style: theme.textTheme.titleSmall),
+                          if (summary.muscles.isNotEmpty)
+                            Text(
+                              routineMuscles(summary.muscles),
+                              style: muted,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          Text(
+                            [
+                              // First, because the days are what tells two
+                              // routines of the same muscles apart.
+                              if (days.isNotEmpty)
+                                [
+                                  for (final day in days.weekdays)
+                                    Formatters.weekdayShort(day),
+                                ].join(' '),
+                              Formatters.amount(
+                                summary.exerciseCount,
+                                'oefening',
+                                'oefeningen',
+                              ),
+                              if (minutes > 0) '±$minutes min',
+                              if (last != null)
+                                Formatters.relativeDay(
+                                  DateTime.fromMillisecondsSinceEpoch(last),
+                                ).toLowerCase()
+                              else
+                                'nog niet gedaan',
+                            ].join(' · '),
+                            style: muted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  FavouriteStar(routine: routine),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: Center(
+                      child: IconButton.filledTonal(
+                        tooltip: '${routine.name} starten',
+                        onPressed: summary.exerciseCount == 0
+                            ? null
+                            : () => startRoutine(context, ref, routine.id),
+                        icon: const Icon(Icons.play_arrow),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

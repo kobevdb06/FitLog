@@ -280,36 +280,38 @@ class _SecuritySettingsScreenState
               onChanged: _biometricAvailable ? _toggleBiometrics : null,
             ),
             const SectionHeader('Auto-vergrendelen'),
-            for (final option in const [
-              (0, 'Meteen'),
-              (60, 'Na 1 minuut'),
-              (300, 'Na 5 minuten'),
-              (900, 'Na 15 minuten'),
-              (-1, 'Nooit'),
-            ])
-              RadioListTile<int>(
-                value: option.$1,
-                // ignore: deprecated_member_use
-                groupValue: settings.autoLockSeconds,
-                title: Text(option.$2),
-                // ignore: deprecated_member_use
-                onChanged: hasPin
-                    ? (value) async {
-                        if (value == null) return;
-                        await ref
-                            .read(databaseProvider)
-                            .settingsDao
-                            .updateSettings(
-                              AppSettingsTableCompanion(
-                                autoLockSeconds: Value(value),
-                              ),
-                            );
-                        ref
-                            .read(appControllerProvider.notifier)
-                            .setAutoLockSeconds(value);
-                      }
-                    : null,
+            RadioGroup<int>(
+              groupValue: settings.autoLockSeconds,
+              onChanged: (value) async {
+                if (value == null || !hasPin) return;
+                await ref
+                    .read(databaseProvider)
+                    .settingsDao
+                    .updateSettings(
+                      AppSettingsTableCompanion(autoLockSeconds: Value(value)),
+                    );
+                ref
+                    .read(appControllerProvider.notifier)
+                    .setAutoLockSeconds(value);
+              },
+              child: Column(
+                children: [
+                  for (final option in const [
+                    (0, 'Meteen'),
+                    (60, 'Na 1 minuut'),
+                    (300, 'Na 5 minuten'),
+                    (900, 'Na 15 minuten'),
+                    (-1, 'Nooit'),
+                  ])
+                    RadioListTile<int>(
+                      value: option.$1,
+                      title: Text(option.$2),
+                      // Without a PIN there is nothing to lock.
+                      enabled: hasPin,
+                    ),
+                ],
               ),
+            ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: InfoBanner(

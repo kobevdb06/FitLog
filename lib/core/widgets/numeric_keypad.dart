@@ -148,13 +148,20 @@ class _Header extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Text(
-          title,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        // The title gives way: the value you are typing and the buttons
+        // beside it are what the pad is for, and a long title on a narrow
+        // phone with large text pushed them over the edge.
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           value.isEmpty ? '-' : value.text,
           style: theme.textTheme.headlineSmall,

@@ -56,9 +56,10 @@ void main() {
           (w) =>
               w is Text &&
               w.style?.fontSize ==
-                  Theme.of(
-                    tester.element(find.byType(NumericKeypad)),
-                  ).textTheme.headlineSmall?.fontSize,
+                  Theme.of(tester.element(find.byType(NumericKeypad)))
+                      .textTheme
+                      .headlineSmall
+                      ?.fontSize,
         ),
       ),
     );
@@ -162,5 +163,44 @@ void main() {
     await pumpKeypad(tester);
     // A TextField would be the only thing that could raise it.
     expect(find.byType(EditableText), findsNothing);
+  });
+
+  testWidgets('een lange titel past op een smal toestel met grote letters', (
+    tester,
+  ) async {
+    // The width of a phone with its display size turned up, and the largest
+    // text the app allows.
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await tester.pumpWidget(
+      wrapForTest(
+        Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: NumericKeypad(
+              value: const KeypadValue.empty()
+                  .appendDigit('1')
+                  .appendDigit('0')
+                  .appendDigit('2'),
+              kind: KeypadFieldKind.weight,
+              unitLabel: 'kg',
+              title: 'Gewicht van de stang',
+              feedback: _silent,
+              onChanged: (_) {},
+              onDone: () {},
+              onPlates: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('102'), findsOneWidget);
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/widgets/reorderable_cards.dart';
@@ -59,10 +61,15 @@ void main() {
         (w.icon == Icons.drag_indicator || w.icon == Icons.drag_handle),
   );
 
-  /// A phone: tall cards of six sets do not fit on it.
+  /// A phone: tall cards of ten sets do not fit on it. Its touch slop is
+  /// the phone's own, smaller than Flutter's default, as on Android - a
+  /// scroll then recognises itself sooner than a drag that does not know.
   void phone(WidgetTester tester) {
     tester.view.physicalSize = const Size(360, 740);
     tester.view.devicePixelRatio = 1;
+    tester.view.gestureSettings = const ui.GestureSettings(
+      physicalTouchSlop: 8,
+    );
     addTearDown(tester.view.reset);
   }
 

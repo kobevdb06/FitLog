@@ -141,6 +141,10 @@ class _ReorderableCardsState extends State<ReorderableCards> {
       onAccepted: () => _fold(key, recognizer),
       onAbandoned: () => _unfold(keepInPlace: false),
     );
+    // The phone's own touch slop, the one the list scrolls with: Android's is
+    // smaller than Flutter's default, and a scroll that knows it sooner wins
+    // every drag before it starts.
+    recognizer.gestureSettings = MediaQuery.maybeGestureSettingsOf(context);
     list.startItemDragReorder(
       index: index,
       event: event,

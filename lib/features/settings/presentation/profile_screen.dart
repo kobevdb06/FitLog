@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/milestones.dart';
+import '../../../core/calc/streak.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
@@ -17,6 +19,7 @@ import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
 import '../../measurements/presentation/measurements_screen.dart';
+import '../../history/presentation/history_providers.dart';
 import '../../progress/presentation/progress_providers.dart';
 
 /// The Profiel tab: who you are, what you have lifted, and the way into
@@ -147,10 +150,10 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SectionHeader('Badges'),
+          const SectionHeader('Mijlpalen'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: _Badges(stats: stats, streakWeeks: streak?.weeks ?? 0),
+            child: _Milestones(stats: stats),
           ),
           const SectionHeader('Gegevens'),
           ListTile(
@@ -292,59 +295,127 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _Badges extends StatelessWidget {
-  const _Badges({required this.stats, required this.streakWeeks});
+/// What you have reached, and how far the next step is.
+///
+/// Badges that were simply there or not said nothing about the road to the
+/// next one, and the one for weeks in a row counted the streak running now:
+/// it went again the week a streak ended. A milestone counts the longest
+/// streak you ever had, and keeps what you reached.
+class _Milestones extends ConsumerWidget {
+  const _Milestones({required this.stats});
 
   final LifetimeStats? stats;
-  final int streakWeeks;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(finishedWorkoutDatesProvider).value ?? const [];
+    final records = ref.watch(allRecordsProvider()).value?.length ?? 0;
+    final formatters = ref.watch(formattersProvider);
+    final milestones = milestonesFor(
+      workouts: stats?.workouts ?? 0,
+      longestStreakWeeks: longestStreakWeeks(dates),
+      volumeKg: stats?.volumeKg ?? 0,
+      records: records,
+    );
+
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      child: Column(
+        children: [
+          for (final (i, milestone) in milestones.indexed) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.lg),
+            _MilestoneRow(milestone: milestone, formatters: formatters),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MilestoneRow extends StatelessWidget {
+  const _MilestoneRow({required this.milestone, required this.formatters});
+
+  final Milestone milestone;
+  final Formatters formatters;
+
+  /// A value of this milestone in words: `50 workouts`, `12 weken`, `100 t`.
+  String amount(double value) => switch (milestone.kind) {
+    MilestoneKind.workouts => Formatters.amount(
+      value.round(),
+      'workout',
+      'workouts',
+    ),
+    MilestoneKind.streak => Formatters.amount(value.round(), 'week', 'weken'),
+    MilestoneKind.volume => formatters.volume(value),
+    MilestoneKind.records => Formatters.amount(
+      value.round(),
+      'record',
+      'records',
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
-    final workouts = stats?.workouts ?? 0;
-    final volume = stats?.volumeKg ?? 0;
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final earned = milestone.reached > 0;
+    final left = milestone.kind == MilestoneKind.volume
+        ? formatters.volume(milestone.remaining)
+        : '${milestone.remaining.round()}';
+    final (title, icon) = switch (milestone.kind) {
+      MilestoneKind.workouts => ('Workouts', Icons.flag_outlined),
+      MilestoneKind.streak => (
+        'Langste reeks',
+        Icons.local_fire_department_outlined,
+      ),
+      MilestoneKind.volume => ('Getild', Icons.fitness_center),
+      MilestoneKind.records => ('Records', Icons.emoji_events_outlined),
+    };
 
-    final badges = <({String label, IconData icon, bool earned})>[
-      (
-        label: 'Eerste workout',
-        icon: Icons.flag_outlined,
-        earned: workouts >= 1,
-      ),
-      (label: '10 workouts', icon: Icons.looks_two, earned: workouts >= 10),
-      (
-        label: '50 workouts',
-        icon: Icons.workspace_premium_outlined,
-        earned: workouts >= 50,
-      ),
-      (
-        label: '4 weken op rij',
-        icon: Icons.local_fire_department_outlined,
-        earned: streakWeeks >= 4,
-      ),
-      (
-        label: '100 ton getild',
-        icon: Icons.fitness_center,
-        earned: volume >= 100000,
-      ),
-    ];
-
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final badge in badges)
-          Chip(
-            avatar: Icon(
-              badge.icon,
-              size: 18,
-              color: badge.earned
-                  ? AppColors.record
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            label: Text(badge.label),
-            backgroundColor: badge.earned
-                ? AppColors.record.withValues(alpha: 0.12)
-                : null,
+        Icon(icon, color: earned ? AppColors.record : muted),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(title, style: theme.textTheme.titleSmall),
+                  ),
+                  Text(
+                    '${milestone.reached} van ${milestone.steps.length}',
+                    style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: milestone.progress,
+                  minHeight: 6,
+                  color: AppColors.record,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(switch (milestone.next) {
+                null => 'Alles behaald: ${amount(milestone.value)}',
+                final next when milestone.value == 0 =>
+                  'Eerste stap: ${amount(next)}',
+                final next =>
+                  '${amount(milestone.value)} · nog $left tot ${amount(next)}',
+              }, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+            ],
           ),
+        ),
       ],
     );
   }

@@ -3844,3 +3844,24 @@ weg naar wat het tandwiel rechtsboven al opent. Het heet nu *Meer van jou*
 en brengt je naar je persoonlijke records, je lichaamsmetingen en je
 voortgangsfoto's: wat over jou gaat, op de plek waar je jezelf bekijkt. Die
 schermen horen bij Voortgang; ze openen er zoals vanaf het Start-tabblad.
+
+## 191. Mijlpalen in plaats van badges
+
+Profiel had vijf vaste badges, aan of uit: je zag niet hoe ver de volgende
+was, *10 workouts* had als icoon een "2" (`Icons.looks_two`), en *4 weken op
+rij* keek naar de reeks die nu loopt - de badge verdween weer de week dat een
+reeks brak.
+
+Nu zijn het vier mijlpalen met stappen (`lib/core/calc/milestones.dart`):
+
+- **Workouts**: 1, 10, 25, 50, 100, 250, 500.
+- **Langste reeks**, in weken op rij: 4, 12, 26, 52. Het is de langste reeks
+  ooit (`longestStreakWeeks`), niet de huidige: wat je haalde, blijft van jou.
+- **Getild**: 10, 100, 500 en 1000 ton, in je eigen eenheid getoond.
+- **Records**: 1, 10, 25, 50, 100, geteld als de records die nu op je naam
+  staan, zoals het recordscherm ze toont.
+
+Bij elk staat hoeveel stappen je haalde ("3 van 7"), een balk naar de
+volgende en wat er nog ontbreekt ("37 workouts · nog 13 tot 50 workouts").
+De balk loopt van nul tot de volgende stap, niet van de vorige: 37 van 50 is
+dan een balk die voor driekwart vol is, zoals de woorden eronder.

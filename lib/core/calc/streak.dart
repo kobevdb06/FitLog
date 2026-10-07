@@ -54,3 +54,22 @@ StreakResult computeStreak(Iterable<DateTime> workoutDates, {DateTime? now}) {
 
   return StreakResult(weeks: count, daysSinceLast: daysSinceLast);
 }
+
+/// The most weeks in a row you ever trained in, current streak or not.
+///
+/// What a milestone counts: a streak of twelve weeks you once had stays
+/// yours after it ends, where [computeStreak] only knows the one running now.
+int longestStreakWeeks(Iterable<DateTime> workoutDates) {
+  final weeks = workoutDates.map(startOfWeek).toSet().toList()..sort();
+  var longest = 0;
+  var run = 0;
+  DateTime? previous;
+  for (final week in weeks) {
+    // The Monday before this one: a week earlier, whatever the clocks did.
+    final before = startOfWeek(week.subtract(const Duration(days: 1)));
+    run = previous == before ? run + 1 : 1;
+    if (run > longest) longest = run;
+    previous = week;
+  }
+  return longest;
+}

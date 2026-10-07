@@ -3805,3 +3805,13 @@ deelt, zoals de andere keuzes, in plaats van in een blad of naast de titel.
 *Startscherm* zegt nu dat het het Start-tabblad opent, want dat doet het.
 
 Geen databasewijziging: alleen waar de schakelaars staan, is veranderd.
+
+## 188. Wissen in een gevarenzone
+
+*Alle gegevens wissen* stond in het overzicht van de instellingen, tussen
+*Back-up en export* en *Over FitLog*. Het was goed beveiligd (twee keer
+bevestigen, WISSEN typen), maar wat niet terug te draaien is, hoort niet
+tussen wat je vaak gebruikt. Het staat nu helemaal onderaan *Back-up en
+export*, onder *Gevarenzone*, met de raad om eerst een back-up te maken. De
+bevestigingen zijn dezelfde. De omschrijving in het overzicht zegt dat
+wissen daar staat.

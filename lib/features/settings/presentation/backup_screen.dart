@@ -103,6 +103,31 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
   });
 
+  /// Two confirmations and typing the word, because there is no undo and no
+  /// copy anywhere else.
+  Future<void> _wipe() async {
+    final first = await confirm(
+      context,
+      title: 'Alle gegevens wissen?',
+      message:
+          'Je routines, workouts, records, metingen en foto\'s worden van dit '
+          'toestel verwijderd. Er is geen kopie elders.',
+      confirmLabel: 'Doorgaan',
+      destructive: true,
+    );
+    if (!first || !mounted) return;
+
+    final second = await confirmByTyping(
+      context,
+      title: 'Zeker weten?',
+      message: 'Typ WISSEN om te bevestigen. Dit kan niet ongedaan gemaakt.',
+      word: 'WISSEN',
+    );
+    if (!second) return;
+
+    await ref.read(appControllerProvider.notifier).wipeEverything();
+  }
+
   Future<void> _exportCsv() => _run(() async {
     final controller = ref.read(appControllerProvider.notifier);
     final db = controller.databaseOrNull;
@@ -289,6 +314,25 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 ],
               ),
             ),
+            // At the very bottom, past everything you come here for: what
+            // cannot be undone does not sit between what you use often.
+            const SectionHeader('Gevarenzone'),
+            ListTile(
+              leading: const Icon(
+                Icons.delete_forever_outlined,
+                color: AppColors.danger,
+              ),
+              title: const Text(
+                'Alle gegevens wissen',
+                style: TextStyle(color: AppColors.danger),
+              ),
+              subtitle: const Text(
+                'Alles van dit toestel verwijderen. Maak eerst een back-up '
+                'als je iets wil houden.',
+              ),
+              onTap: _wipe,
+            ),
+            const SizedBox(height: AppSpacing.xl),
           ],
         ),
       ),

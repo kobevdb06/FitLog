@@ -97,18 +97,16 @@ void main() {
     expect(find.text('Basic-Fit Gent, geen smith machine'), findsOneWidget);
   });
 
-  testWidgets("onderaan: je records, metingen en foto's, geen tweede weg "
-      'naar de instellingen', (tester) async {
+  testWidgets('onderaan: je records en metingen, geen tweede weg naar de '
+      'instellingen', (tester) async {
     await pump(tester);
 
-    for (final title in [
-      'Persoonlijke records',
-      'Lichaamsmetingen',
-      "Voortgangsfoto's",
-    ]) {
+    for (final title in ['Persoonlijke records', 'Lichaamsmetingen']) {
       await tester.ensureVisible(find.text(title));
       expect(find.text(title), findsOneWidget, reason: title);
     }
+    // The photos are under Voortgang, and only there.
+    expect(find.text("Voortgangsfoto's"), findsNothing);
     // The gear at the top is the way in; a list tile saying the same was
     // the only thing under "Meer".
     expect(find.byTooltip('Instellingen'), findsOneWidget);

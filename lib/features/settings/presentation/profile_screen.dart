@@ -268,8 +268,10 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const _WeightTile(),
           const _GymTile(),
-          // What else is yours. The settings are the gear at the top; a
-          // second way to them was all this section used to hold.
+          // What else is about you: your records and your measurements -
+          // here and nowhere else. The photos are under Voortgang. The
+          // settings are the gear at the top; a second way to them was all
+          // this section used to hold.
           const SectionHeader('Meer van jou'),
           ListTile(
             leading: const Icon(Icons.emoji_events_outlined),
@@ -282,12 +284,6 @@ class ProfileScreen extends ConsumerWidget {
             title: const Text('Lichaamsmetingen'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.measurements),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text("Voortgangsfoto's"),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.photos),
           ),
         ],
       ),

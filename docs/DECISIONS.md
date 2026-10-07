@@ -3921,3 +3921,16 @@ die Android gaf. Uitzetten maakt die leeg en geeft de toegang terug. De
 handmatige back-up en de automatische maken het bestand op dezelfde manier
 (`backupMakerProvider`).
 
+
+## 194. Eén plek voor records, metingen en foto's
+
+Na beslissing 190 stonden je records, metingen en foto's twee keer: onder
+*Profiel → Meer van jou* en onder *Voortgang → Meer*. Twee wegen naar
+hetzelfde maken een app groter zonder dat je er iets mee wint.
+
+Nu heeft elk één plek. Je **persoonlijke records** en je
+**lichaamsmetingen** gaan over jou en staan op Profiel; je
+**voortgangsfoto's** staan onder Voortgang, waar je je verandering bekijkt.
+De gewichtsgrafiek op Voortgang blijft naar je metingen wijzen: dat is geen
+tweede lijst, maar wat er gebeurt als je op de grafiek tikt. De records op het
+Start-tabblad blijven ook naar het recordscherm leiden, om dezelfde reden.

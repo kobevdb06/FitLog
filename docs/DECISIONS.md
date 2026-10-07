@@ -3815,3 +3815,24 @@ tussen wat je vaak gebruikt. Het staat nu helemaal onderaan *Back-up en
 export*, onder *Gevarenzone*, met de raad om eerst een back-up te maken. De
 bevestigingen zijn dezelfde. De omschrijving in het overzicht zegt dat
 wissen daar staat.
+
+## 189. Profiel is wie je bent
+
+Wat de app over jou weet, stond op twee plaatsen: leeftijd, geslacht en
+lengte op Profiel, maar hoe je je zaal beschrijft bij de instellingen van de
+coach, en je lichaamsgewicht alleen onder Voortgang → Metingen. De regel is
+nu één plek per gegeven, en voor wie je bent is dat Profiel → Gegevens:
+
+- **Lichaamsgewicht**: de laatste meting met haar dag; een tik voegt er een
+  toe. Het is geen tweede plek waar een gewicht staat, maar de laatste van je
+  metingen.
+- **Waar je traint**: dezelfde beschrijving in je eigen woorden, nu hier.
+  Het veld in de database heet nog `coach_gym` (v41); een kolom hernoemen
+  voor een label is het risico van een migratie niet waard.
+
+De coach-instelling beslist alleen nog of de coach dit mag zien. De
+schakelaar heet nu *Je profiel delen* en zegt wat er mee zou gaan. Dat
+betekent één verandering in gedrag: de coach leest hoe je je zaal beschreef
+alleen nog als je je profiel deelt. Welke oefeningen en welk materiaal je de
+laatste weken echt gebruikte, blijft hij zien - dat is je training, en die
+ziet hij altijd.

@@ -573,6 +573,7 @@ void main() {
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(
           coachGym: Value('Basic-Fit Gent, geen smith machine'),
+          coachSeesProfile: Value(true),
         ),
       );
       final now = DateTime.now();
@@ -610,6 +611,24 @@ void main() {
       final lookup = await tools.run('gym', const {});
 
       expect(decode(lookup)['described_by_user'], isNull);
+    });
+
+    test('wie zijn profiel niet deelt, deelt zijn zaal ook niet', () async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          coachGym: Value('Basic-Fit Gent, geen smith machine'),
+        ),
+      );
+      await logSet(
+        exerciseId: 'ex-bench',
+        on: DateTime.now().subtract(const Duration(days: 3)),
+      );
+
+      final json = decode(await tools.run('gym', const {}));
+
+      expect(json['described_by_user'], isNull);
+      // What you did there is your training, which the coach always sees.
+      expect(json['equipment_used_last_8_weeks'], {'barbell': 1});
     });
   });
 

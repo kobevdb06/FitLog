@@ -214,10 +214,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    final tile = find.widgetWithText(
-      SwitchListTile,
-      'Leeftijd, geslacht en lengte delen',
-    );
+    final tile = find.widgetWithText(SwitchListTile, 'Je profiel delen');
 
     testWidgets('staat uit, en zegt waar je ze invult', (tester) async {
       await openSettings(tester);
@@ -257,27 +254,23 @@ void main() {
   });
 
   group('waar je traint', () {
-    testWidgets('schrijf je zelf, en het blijft bewaard', (tester) async {
+    testWidgets('staat op Profiel; hier alleen of de coach het ziet', (
+      tester,
+    ) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          coachGym: Value('Basic-Fit Gent, geen smith machine'),
+        ),
+      );
       await pump(tester, const CoachSettingsScreen());
       await tester.pumpAndSettle();
-      expect(find.textContaining('Nog niet beschreven'), findsOneWidget);
 
-      await tester.ensureVisible(find.text('Waar je traint'));
-      await tester.tap(find.text('Waar je traint'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byType(TextField).last,
-        'Basic-Fit Gent, geen smith machine',
-      );
-      await tester.tap(find.text('Opslaan'));
-      await tester.pumpAndSettle();
-
+      expect(find.text('Waar je traint'), findsNothing);
       expect(
-        (await tester.runAsync(db.settingsDao.getSettings))!.coachGym,
-        'Basic-Fit Gent, geen smith machine',
+        find.textContaining('Zou meegaan: waar je traint.'),
+        findsOneWidget,
       );
-      expect(find.text('Basic-Fit Gent, geen smith machine'), findsOneWidget);
     });
   });
 

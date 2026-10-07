@@ -53,6 +53,49 @@ void main() {
     return texts.first!;
   }
 
+  testWidgets('je gewicht: de laatste meting, en een tik voor een nieuwe', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => db.recordsDao.addMeasurement(
+        type: MeasurementType.weight,
+        value: 82.5,
+        measuredAt: DateTime.now(),
+      ),
+    );
+    await pump(tester);
+
+    expect(find.text('Lichaamsgewicht'), findsOneWidget);
+    expect(find.textContaining('82,5 kg · vandaag'), findsOneWidget);
+
+    await tester.tap(find.text('Lichaamsgewicht'));
+    await tester.pumpAndSettle();
+    expect(find.text('Meting toevoegen'), findsOneWidget);
+  });
+
+  testWidgets('waar je traint schrijf je hier, en het blijft bewaard', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.text('Nog niet beschreven'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Waar je traint'));
+    await tester.tap(find.text('Waar je traint'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField).last,
+      'Basic-Fit Gent, geen smith machine',
+    );
+    await tester.tap(find.text('Opslaan'));
+    await tester.pumpAndSettle();
+
+    expect(
+      (await tester.runAsync(db.settingsDao.getSettings))!.coachGym,
+      'Basic-Fit Gent, geen smith machine',
+    );
+    expect(find.text('Basic-Fit Gent, geen smith machine'), findsOneWidget);
+  });
+
   testWidgets('zonder trainingen geen "0 s" in de zaal', (tester) async {
     await pump(tester);
 

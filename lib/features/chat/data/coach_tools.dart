@@ -1402,8 +1402,15 @@ class CoachTools {
   }
 
   /// Where you train, and what you actually used there lately.
+  ///
+  /// How you describe your gym is part of your profile, so it only comes
+  /// along when you share that; what you did there is your training, which
+  /// the coach always sees.
   Future<CoachLookup> _gym() async {
-    final described = _text((await db.settingsDao.getSettings()).coachGym);
+    final settings = await db.settingsDao.getSettings();
+    final described = settings.coachSeesProfile
+        ? _text(settings.coachGym)
+        : null;
     final since = DateTime.now()
         .subtract(const Duration(days: 56))
         .millisecondsSinceEpoch;

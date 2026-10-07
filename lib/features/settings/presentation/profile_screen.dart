@@ -16,6 +16,7 @@ import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
+import '../../measurements/presentation/measurements_screen.dart';
 import '../../progress/presentation/progress_providers.dart';
 
 /// The Profiel tab: who you are, what you have lifted, and the way into
@@ -262,6 +263,8 @@ class ProfileScreen extends ConsumerWidget {
                   );
             },
           ),
+          const _WeightTile(),
+          const _GymTile(),
           const SectionHeader('Meer'),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
@@ -329,6 +332,76 @@ class _Badges extends StatelessWidget {
                 : null,
           ),
       ],
+    );
+  }
+}
+
+/// Your body weight as you last measured it, and the way to a new one.
+///
+/// A measurement like any other - this is the latest of them, not a second
+/// place where a weight is kept.
+class _WeightTile extends ConsumerWidget {
+  const _WeightTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final latest = ref
+        .watch(latestMeasurementsProvider)
+        .value?[MeasurementType.weight];
+    final formatters = ref.watch(formattersProvider);
+
+    return ListTile(
+      title: const Text('Lichaamsgewicht'),
+      subtitle: Text(
+        latest == null
+            ? 'Nog geen meting'
+            : '${formatters.measurement(MeasurementType.weight, latest.value)}'
+                  ' · ${Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(latest.measuredAt)).toLowerCase()}',
+      ),
+      trailing: const Icon(Icons.add),
+      onTap: () =>
+          showAddMeasurementSheet(context, ref, type: MeasurementType.weight),
+    );
+  }
+}
+
+/// Where you train, in your own words: what is there and what is not.
+///
+/// Part of who you are as a lifter, so it lives here; the coach reads it when
+/// it picks exercises, if you share your profile with it.
+class _GymTile extends ConsumerWidget {
+  const _GymTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stored = ref.watch(settingsProvider).value?.coachGym;
+    final gym = stored == null || stored.trim().isEmpty ? null : stored.trim();
+
+    return ListTile(
+      title: const Text('Waar je traint'),
+      subtitle: Text(gym ?? 'Nog niet beschreven'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final text = await promptForText(
+          context,
+          title: 'Waar train je?',
+          initialValue: gym,
+          hintText:
+              'bijvoorbeeld Basic-Fit Gent, geen smith machine, dumbbells '
+              'tot 40 kg',
+          maxLines: 4,
+          maxLength: 300,
+        );
+        if (text == null) return;
+        await ref
+            .read(databaseProvider)
+            .settingsDao
+            .updateSettings(
+              AppSettingsTableCompanion(
+                coachGym: Value(text.trim().isEmpty ? null : text.trim()),
+              ),
+            );
+      },
     );
   }
 }

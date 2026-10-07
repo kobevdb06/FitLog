@@ -553,7 +553,6 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             ),
             const SectionHeader('Wat de coach over je weet'),
             const _ProfileSwitch(),
-            const _GymTile(),
             const SectionHeader('Afbeeldingen'),
             const Padding(
               padding: EdgeInsets.fromLTRB(
@@ -681,16 +680,21 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
   }
 }
 
-/// Whether your age, sex and height go along with every question.
+/// Whether what Profiel says about you goes to the coach: your age, sex and
+/// height with every question, and where you train when it picks exercises.
 ///
 /// Says what exactly would go, so switching it on is a choice about these
-/// three facts and not about something vague called "profile".
+/// facts and not about something vague called "profile". They are filled in
+/// on Profiel; here is only whether the coach may see them.
 class _ProfileSwitch extends ConsumerWidget {
   const _ProfileSwitch();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final on = ref.watch(settingsProvider).value?.coachSeesProfile ?? false;
+    final settings = ref.watch(settingsProvider).value;
+    final on = settings?.coachSeesProfile ?? false;
+    final gym = settings?.coachGym?.trim();
+    final hasGym = gym != null && gym.isNotEmpty;
     final profile = ref.watch(userProfileProvider).value;
     final about = profile == null
         ? null
@@ -706,13 +710,17 @@ class _ProfileSwitch extends ConsumerWidget {
 
     return SwitchListTile(
       secondary: const Icon(Icons.person_outline),
-      title: const Text('Leeftijd, geslacht en lengte delen'),
-      subtitle: Text(switch ((about, on)) {
-        (null, _) =>
+      title: const Text('Je profiel delen'),
+      subtitle: Text(switch ((about, hasGym, on)) {
+        (null, false, _) =>
           'Nog niets ingevuld. Dat doe je bij Profiel, onder Gegevens.',
-        (final what?, true) => 'Gaat mee met elke vraag: $what.',
-        (final what?, false) =>
-          'Zou meegaan: $what. Nu kent de coach alleen je naam.',
+        (_, _, true) => [
+          if (about != null) 'Gaat mee met elke vraag: $about.',
+          if (hasGym) 'Waar je traint, zoekt hij op als hij oefeningen kiest.',
+        ].join(' '),
+        (_, _, false) =>
+          'Zou meegaan: ${[?about, if (hasGym) 'waar je traint'].join(', en ')}. '
+              'Nu kent de coach alleen je naam.',
       }),
       value: on,
       onChanged: (value) => ref
@@ -721,49 +729,6 @@ class _ProfileSwitch extends ConsumerWidget {
           .updateSettings(
             AppSettingsTableCompanion(coachSeesProfile: Value(value)),
           ),
-    );
-  }
-}
-
-/// Where you train, in your own words, for when the coach picks exercises.
-class _GymTile extends ConsumerWidget {
-  const _GymTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final stored = ref.watch(settingsProvider).value?.coachGym;
-    final gym = stored == null || stored.trim().isEmpty ? null : stored.trim();
-
-    return ListTile(
-      leading: const Icon(Icons.location_on_outlined),
-      title: const Text('Waar je traint'),
-      subtitle: Text(
-        gym ??
-            'Nog niet beschreven. De coach kijkt dan alleen naar wat je al '
-                'deed.',
-      ),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () async {
-        final text = await promptForText(
-          context,
-          title: 'Waar train je?',
-          initialValue: gym,
-          hintText:
-              'bijvoorbeeld Basic-Fit Gent, geen smith machine, dumbbells '
-              'tot 40 kg',
-          maxLines: 4,
-          maxLength: 300,
-        );
-        if (text == null) return;
-        await ref
-            .read(databaseProvider)
-            .settingsDao
-            .updateSettings(
-              AppSettingsTableCompanion(
-                coachGym: Value(text.trim().isEmpty ? null : text.trim()),
-              ),
-            );
-      },
     );
   }
 }

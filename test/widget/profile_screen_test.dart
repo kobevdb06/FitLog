@@ -96,6 +96,24 @@ void main() {
     expect(find.text('Basic-Fit Gent, geen smith machine'), findsOneWidget);
   });
 
+  testWidgets("onderaan: je records, metingen en foto's, geen tweede weg "
+      'naar de instellingen', (tester) async {
+    await pump(tester);
+
+    for (final title in [
+      'Persoonlijke records',
+      'Lichaamsmetingen',
+      "Voortgangsfoto's",
+    ]) {
+      await tester.ensureVisible(find.text(title));
+      expect(find.text(title), findsOneWidget, reason: title);
+    }
+    // The gear at the top is the way in; a list tile saying the same was
+    // the only thing under "Meer".
+    expect(find.byTooltip('Instellingen'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Instellingen'), findsNothing);
+  });
+
   testWidgets('zonder trainingen geen "0 s" in de zaal', (tester) async {
     await pump(tester);
 

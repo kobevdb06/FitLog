@@ -265,12 +265,26 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const _WeightTile(),
           const _GymTile(),
-          const SectionHeader('Meer'),
+          // What else is yours. The settings are the gear at the top; a
+          // second way to them was all this section used to hold.
+          const SectionHeader('Meer van jou'),
           ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: const Text('Instellingen'),
+            leading: const Icon(Icons.emoji_events_outlined),
+            title: const Text('Persoonlijke records'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.settings),
+            onTap: () => context.push(Routes.records),
+          ),
+          ListTile(
+            leading: const Icon(Icons.straighten),
+            title: const Text('Lichaamsmetingen'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.measurements),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text("Voortgangsfoto's"),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.photos),
           ),
         ],
       ),

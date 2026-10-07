@@ -3836,3 +3836,11 @@ betekent één verandering in gedrag: de coach leest hoe je je zaal beschreef
 alleen nog als je je profiel deelt. Welke oefeningen en welk materiaal je de
 laatste weken echt gebruikte, blijft hij zien - dat is je training, en die
 ziet hij altijd.
+
+## 190. Onderaan Profiel: wat nog meer van jou is
+
+Het blok *Meer* onderaan Profiel bevatte alleen *Instellingen*, een tweede
+weg naar wat het tandwiel rechtsboven al opent. Het heet nu *Meer van jou*
+en brengt je naar je persoonlijke records, je lichaamsmetingen en je
+voortgangsfoto's: wat over jou gaat, op de plek waar je jezelf bekijkt. Die
+schermen horen bij Voortgang; ze openen er zoals vanaf het Start-tabblad.

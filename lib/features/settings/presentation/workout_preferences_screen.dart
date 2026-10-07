@@ -40,7 +40,9 @@ class WorkoutPreferencesScreen extends ConsumerWidget {
           const _NotificationWarning(),
           ListTile(
             title: const Text('Standaard rusttijd'),
-            subtitle: Text('${settings.defaultRestSeconds} seconden'),
+            subtitle: Text(
+              Formatters.minutesSeconds(settings.defaultRestSeconds),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               final result = await showKeypadSheet(
@@ -369,7 +371,7 @@ class _NotificationWarning extends StatelessWidget {
             icon: Icons.notifications_off_outlined,
             message:
                 'Meldingen staan uit voor FitLog. De rusttimer laat dan niets '
-                'zien als je je telefoon wegleg, en tijdens een workout komt '
+                'zien als je je telefoon weglegt, en tijdens een workout komt '
                 'er geen melding met je oefening en je set. Aan te zetten bij '
                 'de app-instellingen van je toestel.',
           ),

@@ -122,9 +122,13 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: StatTile(
-                          value: Formatters.durationWords(
-                            stats?.durationSeconds ?? 0,
-                          ),
+                          // Nothing yet is a dash, like the busiest day
+                          // beside it - not "0 s".
+                          value: (stats?.durationSeconds ?? 0) == 0
+                              ? '-'
+                              : Formatters.durationWords(
+                                  stats!.durationSeconds,
+                                ),
                           label: 'Tijd in de zaal',
                         ),
                       ),

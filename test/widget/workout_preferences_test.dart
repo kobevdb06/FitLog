@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/settings/presentation/workout_preferences_screen.dart';
@@ -111,6 +112,18 @@ void main() {
     }
     final five = tester.getRect(find.text('5'));
     expect(five.right, lessThanOrEqualTo(360 - 15.5));
+  });
+
+  testWidgets('de rusttijd in minuten en seconden', (tester) async {
+    await tester.runAsync(
+      () => db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(defaultRestSeconds: Value(150)),
+      ),
+    );
+    await pump(tester);
+
+    expect(find.text('2 min 30 s'), findsOneWidget);
+    expect(find.text('150 seconden'), findsNothing);
   });
 
   testWidgets('the choices are all still there and pick', (tester) async {

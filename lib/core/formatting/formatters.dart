@@ -212,6 +212,15 @@ class Formatters {
     return '${two(m)}:${two(s)}';
   }
 
+  /// `2 min 30 s`, `2 min` or `45 s`: a short stretch of time in words, to
+  /// the second, as a rest is set.
+  static String minutesSeconds(int seconds) {
+    final minutes = seconds.abs() ~/ 60;
+    final rest = seconds.abs() % 60;
+    if (minutes == 0) return '$rest s';
+    return rest == 0 ? '$minutes min' : '$minutes min $rest s';
+  }
+
   /// `1 u 12 min` or `45 min`, for summaries.
   static String durationWords(int seconds) {
     final d = Duration(seconds: seconds.abs());

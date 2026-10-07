@@ -16,6 +16,7 @@ import '../../../core/widgets/exercise_avatar.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
+import '../../../core/widgets/reorderable_cards.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
 import '../../workout/domain/set_columns.dart';
@@ -379,8 +380,8 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
           ),
         ],
       ),
-      body: ReorderableListView.builder(
-        padding: const EdgeInsets.only(bottom: 120),
+      // The same cards as a running session's, put in order the same way.
+      body: ReorderableCards(
         header: _Header(
           nameController: _nameController,
           notesController: _notesController,
@@ -391,78 +392,95 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
           onColour: (value) => setState(() => _colorIndex = value),
         ),
         itemCount: _exercises.length,
-        // onReorderItem hands over an index that is already corrected for
-        // the removed item, so no off-by-one adjustment is needed here.
-        onReorderItem: (oldIndex, newIndex) => setState(() {
-          final item = _exercises.removeAt(oldIndex);
-          _exercises.insert(newIndex, item);
+        // The draft itself, not its place: the same exercise can be in a
+        // routine twice, and a key that holds the position changes with it.
+        keyOf: (index) => ObjectKey(_exercises[index]),
+        itemPadding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.sm,
+        ),
+        onReorder: (from, to) => setState(() {
+          final item = _exercises.removeAt(from);
+          _exercises.insert(to, item);
         }),
-        itemBuilder: (context, index) {
+        summaryOf: (index) {
           final draft = _exercises[index];
-          return Padding(
-            key: ValueKey('${draft.exercise.id}-$index'),
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.sm,
-              AppSpacing.lg,
-              AppSpacing.sm,
-            ),
-            child: _ExerciseEditorCard(
-              index: index,
-              draft: draft,
-              formatters: formatters,
-              canSuperset: index + 1 < _exercises.length,
-              onRemove: () => setState(() => _exercises.removeAt(index)),
-              onReplace: () => _replaceExercise(index),
-              onToggleSuperset: () => _toggleSuperset(index),
-              onAddSet: () => setState(() {
-                final last = draft.sets.isEmpty ? null : draft.sets.last;
-                draft.sets.add(
-                  _DraftSet(
-                    reps: last?.reps,
-                    weightKg: last?.weightKg,
-                    durationSeconds: last?.durationSeconds,
-                    distanceM: last?.distanceM,
-                  ),
-                );
-              }),
-              onRemoveSet: (setIndex) => setState(() {
-                draft.sets.removeAt(setIndex);
-                if (draft.sets.isEmpty) draft.sets.add(_DraftSet());
-              }),
-              onEditValue: (set, kind) => _editSetValue(set, kind, formatters),
-              onSetType: (set, type) => setState(() => set.setType = type),
-              onRest: () async {
-                final result = await showKeypadSheet(
-                  context: context,
-                  kind: KeypadFieldKind.duration,
-                  initialValue: KeypadValue.fromNumber(
-                    draft.restSeconds,
-                    decimals: 0,
-                  ),
-                  unitLabel: 'sec',
-                  title: 'Rust tussen sets',
-                );
-                if (result == null) return;
-                setState(() => draft.restSeconds = result.intValue);
-              },
-              onNote: () async {
-                final note = await promptForText(
-                  context,
-                  title: 'Notitie',
-                  initialValue: draft.notes,
-                  maxLines: 3,
-                );
-                if (note == null) return;
-                setState(
-                  () => draft.notes = note.trim().isEmpty ? null : note.trim(),
-                );
-              },
-            ),
+          final group = draft.supersetGroup;
+          return ReorderSummary(
+            leading: ExerciseAvatar(exercise: draft.exercise, size: 32),
+            title: draft.exercise.name,
+            subtitle: Formatters.amount(draft.sets.length, 'set', 'sets'),
+            accent: group == null
+                ? null
+                : AppColors.supersets[group % AppColors.supersets.length],
+          );
+        },
+        cardBuilder: (context, index, handle) {
+          final draft = _exercises[index];
+          return _ExerciseEditorCard(
+            handle: handle,
+            draft: draft,
+            formatters: formatters,
+            canSuperset: index + 1 < _exercises.length,
+            onRemove: () => setState(() => _exercises.removeAt(index)),
+            onReplace: () => _replaceExercise(index),
+            onToggleSuperset: () => _toggleSuperset(index),
+            onAddSet: () => setState(() {
+              final last = draft.sets.isEmpty ? null : draft.sets.last;
+              draft.sets.add(
+                _DraftSet(
+                  reps: last?.reps,
+                  weightKg: last?.weightKg,
+                  durationSeconds: last?.durationSeconds,
+                  distanceM: last?.distanceM,
+                ),
+              );
+            }),
+            onRemoveSet: (setIndex) => setState(() {
+              draft.sets.removeAt(setIndex);
+              if (draft.sets.isEmpty) draft.sets.add(_DraftSet());
+            }),
+            onEditValue: (set, kind) => _editSetValue(set, kind, formatters),
+            onSetType: (set, type) => setState(() => set.setType = type),
+            onRest: () async {
+              final result = await showKeypadSheet(
+                context: context,
+                kind: KeypadFieldKind.duration,
+                initialValue: KeypadValue.fromNumber(
+                  draft.restSeconds,
+                  decimals: 0,
+                ),
+                unitLabel: 'sec',
+                title: 'Rust tussen sets',
+              );
+              if (result == null) return;
+              setState(() => draft.restSeconds = result.intValue);
+            },
+            onNote: () async {
+              final note = await promptForText(
+                context,
+                title: 'Notitie',
+                initialValue: draft.notes,
+                maxLines: 3,
+              );
+              if (note == null) return;
+              setState(
+                () => draft.notes = note.trim().isEmpty ? null : note.trim(),
+              );
+            },
           );
         },
         footer: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          // Room under the button, so the last card can come up from
+          // behind the keyboard and the navigation bar.
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg + 120,
+          ),
           child: OutlinedButton.icon(
             onPressed: _addExercises,
             icon: const Icon(Icons.add),
@@ -558,7 +576,7 @@ class _Header extends StatelessWidget {
 
 class _ExerciseEditorCard extends StatelessWidget {
   const _ExerciseEditorCard({
-    required this.index,
+    required this.handle,
     required this.draft,
     required this.formatters,
     required this.canSuperset,
@@ -573,7 +591,8 @@ class _ExerciseEditorCard extends StatelessWidget {
     required this.onNote,
   });
 
-  final int index;
+  /// What picks the card up to put it somewhere else.
+  final Widget handle;
   final _DraftExercise draft;
   final Formatters formatters;
   final bool canSuperset;
@@ -616,13 +635,7 @@ class _ExerciseEditorCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                ReorderableDragStartListener(
-                  index: index,
-                  child: const Padding(
-                    padding: EdgeInsets.all(AppSpacing.sm),
-                    child: Icon(Icons.drag_handle),
-                  ),
-                ),
+                handle,
                 ExerciseAvatar(exercise: draft.exercise, size: 32),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(

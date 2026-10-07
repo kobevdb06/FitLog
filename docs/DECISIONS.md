@@ -3746,3 +3746,34 @@ kruisje om te wissen) horen er al bij.
 Er bewaart geen enkel veld iets bij het verliezen van de focus; loslaten kan
 dus niets kwijtmaken. De widgettests draaien nu in dezelfde `appBuilder` als
 de app, zodat ze dit gedrag ook hebben.
+
+## 186. Oefeningen verslepen: eerst inklappen
+
+Een oefening oppakken om de volgorde te wijzigen, liet ze meteen helemaal
+naar onderen schieten, tijdens een workout en in de routine-editor. Een
+herschikbare lijst scrolt vanzelf zolang wat je vasthoudt over de rand van
+het scherm steekt; een kaart met al haar sets is hoger dan wat er onder je
+vinger nog van het scherm over is, dus de lijst scrolde door tot het einde,
+en de oefening viel daar neer.
+
+Nu klappen alle kaarten in tot één regel (foto, naam, aantal sets) zodra je
+er een oppakt, voor beide schermen hetzelfde (`ReorderableCards`):
+
+- **De regel die je vasthoudt, blijft onder je vinger.** De andere schuiven
+  rond haar dicht. Pas als ze ingeklapt op haar plaats staat, begint het
+  slepen: de lijst neemt de grootte van wat je vasthoudt op dat moment, en
+  dat moet de ingeklapte zijn. Daarvoor is er een eigen sleepherkenner die
+  pas aan de lijst doorgeeft dat het slepen begint als het inklappen klaar
+  is (`_FoldFirstDrag`).
+- **De hele volgorde past op het scherm**, dus scrollen hoeft bijna nooit.
+  Gebeurt het toch, dan alleen aan de rand, zoals het hoort.
+- **Loslaten klapt alles weer open**, met de oefening die je verplaatste op
+  de plek waar je haar losliet.
+- **Wat in een kaart staat, blijft staan.** Ingeklapt is een kaart verborgen,
+  niet weg: een half getypte notitie is er nog als ze openklapt.
+
+Daarbij zijn de twee schermen gelijkgetrokken: dezelfde greep (⠿, de editor
+had ≡), en de opgepakte oefening is in beide een kaart met een schaduw. In de
+editor werd ze een witte balk over de hele breedte, de standaard van een
+`ReorderableListView`. De sleutel van een oefening in de editor is nu de
+oefening zelf en niet haar plaats, zodat ze bij het verslepen dezelfde blijft.

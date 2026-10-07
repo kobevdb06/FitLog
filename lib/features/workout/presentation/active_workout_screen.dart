@@ -18,8 +18,10 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/feedback_service.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../../core/widgets/exercise_avatar.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
+import '../../../core/widgets/reorderable_cards.dart';
 import '../../../routing/routes.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
 import '../../exercises/presentation/exercise_preview_sheet.dart';
@@ -565,60 +567,68 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                     actionLabel: 'Oefening toevoegen',
                     onAction: () => _addExercises(workout),
                   )
-                // A sliver list rather than a ReorderableListView so the
-                // "add exercise" button can sit under it without becoming one of
-                // the draggable items.
+                // The same cards as the routine editor's, put in order the
+                // same way; the "add exercise" button sits under them
+                // without becoming one of them.
                 : _AfterTheSlide(
-                    child: CustomScrollView(
-                      slivers: [
-                        SliverReorderableList(
-                          itemCount: workout.exercises.length,
-                          onReorderItem: (from, to) =>
-                              _reorder(workout, from, to),
-                          itemBuilder: (context, index) {
-                            final exercise = workout.exercises[index];
-                            return Padding(
-                              key: ValueKey(exercise.workoutExercise.id),
-                              padding: const EdgeInsets.fromLTRB(
-                                AppSpacing.md,
-                                AppSpacing.sm,
-                                AppSpacing.md,
-                                AppSpacing.sm,
-                              ),
-                              child: _ExerciseCard(
-                                workout: workout,
-                                detail: exercise,
-                                index: index,
-                                formatters: formatters,
-                                settings: settings,
-                                previous: previous,
-                                trackRpe: trackRpe,
-                                recordSetIds: recordSetIds,
-                                activeTarget: _target,
-                                onFocus: (row, kind) =>
-                                    _focus(row, kind, formatters),
-                                onToggle: (row) => _toggleSet(row, settings),
-                                onReset: (row) => _resetSet(row, settings),
-                              ),
-                            );
-                          },
-                        ),
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.lg,
-                              AppSpacing.lg,
-                              AppSpacing.lg,
-                              32,
-                            ),
-                            child: OutlinedButton.icon(
-                              onPressed: () => _addExercises(workout),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Oefening toevoegen'),
-                            ),
+                    child: ReorderableCards(
+                      itemCount: workout.exercises.length,
+                      keyOf: (index) =>
+                          ValueKey(workout.exercises[index].workoutExercise.id),
+                      itemPadding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                      ),
+                      onReorder: (from, to) => _reorder(workout, from, to),
+                      summaryOf: (index) {
+                        final exercise = workout.exercises[index];
+                        final group = exercise.workoutExercise.supersetGroup;
+                        return ReorderSummary(
+                          leading: ExerciseAvatar(
+                            exercise: exercise.exercise,
+                            size: 32,
                           ),
+                          title: exercise.exercise.name,
+                          subtitle: Formatters.amount(
+                            exercise.sets.length,
+                            'set',
+                            'sets',
+                          ),
+                          accent: group == null
+                              ? null
+                              : AppColors.supersets[group %
+                                    AppColors.supersets.length],
+                        );
+                      },
+                      cardBuilder: (context, index, handle) => _ExerciseCard(
+                        workout: workout,
+                        detail: workout.exercises[index],
+                        handle: handle,
+                        formatters: formatters,
+                        settings: settings,
+                        previous: previous,
+                        trackRpe: trackRpe,
+                        recordSetIds: recordSetIds,
+                        activeTarget: _target,
+                        onFocus: (row, kind) => _focus(row, kind, formatters),
+                        onToggle: (row) => _toggleSet(row, settings),
+                        onReset: (row) => _resetSet(row, settings),
+                      ),
+                      footer: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                          AppSpacing.lg,
+                          32,
                         ),
-                      ],
+                        child: OutlinedButton.icon(
+                          onPressed: () => _addExercises(workout),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Oefening toevoegen'),
+                        ),
+                      ),
                     ),
                   ),
             // The pad rises and sinks instead of appearing and vanishing.
@@ -807,7 +817,7 @@ class _ExerciseCard extends ConsumerWidget {
   const _ExerciseCard({
     required this.workout,
     required this.detail,
-    required this.index,
+    required this.handle,
     required this.formatters,
     required this.settings,
     required this.previous,
@@ -822,8 +832,8 @@ class _ExerciseCard extends ConsumerWidget {
   final WorkoutDetail workout;
   final WorkoutExerciseDetail detail;
 
-  /// Position in the list, which is what the drag handle needs.
-  final int index;
+  /// What picks the card up to put it somewhere else.
+  final Widget handle;
   final Formatters formatters;
   final AppSettingsRow? settings;
 
@@ -882,7 +892,7 @@ class _ExerciseCard extends ConsumerWidget {
           PrAttemptHeader(detail: detail, formatters: formatters),
         _CardHeader(
           detail: detail,
-          index: index,
+          handle: handle,
           groupColor: groupColor,
           group: group,
           onMenu: (value) => _onMenu(context, ref, value),
@@ -1255,14 +1265,14 @@ class _ExerciseCard extends ConsumerWidget {
 class _CardHeader extends ConsumerWidget {
   const _CardHeader({
     required this.detail,
-    required this.index,
+    required this.handle,
     required this.groupColor,
     required this.group,
     required this.onMenu,
   });
 
   final WorkoutExerciseDetail detail;
-  final int index;
+  final Widget handle;
   final Color? groupColor;
   final int? group;
   final ValueChanged<String> onMenu;
@@ -1283,18 +1293,7 @@ class _CardHeader extends ConsumerWidget {
         children: [
           // Only the handle starts a drag. The card is full of tappable set
           // rows, and a drag anywhere on it would fight with every one of them.
-          ReorderableDragStartListener(
-            index: index,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Icon(
-                Icons.drag_indicator,
-                size: 18,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
+          handle,
           Expanded(
             child: InkWell(
               // Mid-set you want the picture and the cue, not four tabs of

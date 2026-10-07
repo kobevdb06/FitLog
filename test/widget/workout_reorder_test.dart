@@ -1,5 +1,6 @@
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/widgets/reorderable_cards.dart';
 import 'package:fitlog/features/workout/presentation/active_workout_screen.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter/gestures.dart' show kLongPressTimeout;
@@ -60,13 +61,15 @@ void main() {
     await db.close();
   });
 
-  Future<List<String>> order() async => (await db.workoutsDao.getWorkoutDetail(
-    workoutId,
-  ))!.exercises.map((e) => e.exercise.id).toList();
+  Future<List<String>> order() async =>
+      (await db.workoutsDao.getWorkoutDetail(workoutId))!.exercises
+          .map((e) => e.exercise.id)
+          .toList();
 
-  Future<List<String>> ids() async => (await db.workoutsDao.getWorkoutDetail(
-    workoutId,
-  ))!.exercises.map((e) => e.workoutExercise.id).toList();
+  Future<List<String>> ids() async =>
+      (await db.workoutsDao.getWorkoutDetail(workoutId))!.exercises
+          .map((e) => e.workoutExercise.id)
+          .toList();
 
   test('the order starts as it was added', () async {
     expect(await order(), ['ex-squat', 'ex-bench', 'ex-row']);
@@ -105,7 +108,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(ReorderableDragStartListener), findsNWidgets(3));
+    expect(find.byType(ReorderHandle), findsNWidgets(3));
     expect(find.byType(SliverReorderableList), findsOneWidget);
   });
 
@@ -115,7 +118,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final handle = find.byType(ReorderableDragStartListener).first;
+    final handle = find.byType(ReorderHandle).first;
     final start = tester.getCenter(handle);
 
     final drag = await tester.startGesture(start);

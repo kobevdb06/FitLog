@@ -3865,3 +3865,22 @@ Bij elk staat hoeveel stappen je haalde ("3 van 7"), een balk naar de
 volgende en wat er nog ontbreekt ("37 workouts · nog 13 tot 50 workouts").
 De balk loopt van nul tot de volgende stap, niet van de vorige: 37 van 50 is
 dan een balk die voor driekwart vol is, zoals de woorden eronder.
+
+## 192. Eigen schijven, en lb-schijven
+
+De schijven kon je alleen aanvinken uit een vaste lijst van 25 tot 1,25 kg.
+Een microschijf van 0,5 kg kon er niet bij, en wie in lb traint, zag
+omgerekende kilo's ("44 lb" voor een schijf van 20 kg) in plaats van de 45 lb
+die in zijn zaal liggen.
+
+Nu toont de lijst de standaardset van je eenheid (`standardPlatesKg`): in kg
+25 tot 1,25 kg, in lb 45, 35, 25, 10, 5 en 2,5 lb. Met *Schijf toevoegen*
+zet je er een eigen schijf bij; die staat er tot je ze weghaalt. Wijkt je
+set af van de standaard, dan zet *Standaardset terugzetten* die terug - wat
+je nodig hebt na het wisselen van eenheid.
+
+Alles blijft in kilogram bewaard, ook een lb-schijf (45 lb is 20,4117 kg).
+De schijvenberekening rekent met een marge van een gram, dus 135 lb op een
+stang van 45 lb komt nog altijd uit op één 45 per kant. Twee schijven zijn
+dezelfde als ze minder dan een gram verschillen (`samePlate`), wat de afronding
+van een omrekening opvangt.

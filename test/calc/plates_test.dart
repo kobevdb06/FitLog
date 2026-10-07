@@ -1,4 +1,5 @@
 import 'package:fitlog/core/calc/plates.dart';
+import 'package:fitlog/core/calc/units.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -65,10 +66,7 @@ void main() {
     });
 
     test('falls short when the inventory cannot reach the target', () {
-      final s = calculatePlates(
-        targetKg: 100,
-        availablePlatesKg: const [5],
-      );
+      final s = calculatePlates(targetKg: 100, availablePlatesKg: const [5]);
       expect(s.perSide, [const PlateStack(5, 8)]);
       expect(s.achievedKg, 100);
 
@@ -107,6 +105,40 @@ void main() {
 
     test('never goes below the bar', () {
       expect(nearestAchievableWeightKg(targetKg: 5), 20);
+    });
+  });
+
+  group('pound plates', () {
+    final pounds = standardPlatesKg(pounds: true);
+
+    test('the standard set is 45 to 2.5 lb', () {
+      expect(pounds.map((kg) => (kgToLb(kg) * 10).round() / 10), [
+        45,
+        35,
+        25,
+        10,
+        5,
+        2.5,
+      ]);
+      expect(standardPlatesKg(pounds: false), kDefaultPlatesKg);
+    });
+
+    test('135 lb on a 45 lb bar is one 45 a side, exactly', () {
+      final solution = calculatePlates(
+        targetKg: lbToKg(135),
+        barKg: lbToKg(45),
+        availablePlatesKg: pounds,
+      );
+
+      expect(solution.isExact, isTrue);
+      expect(solution.perSide, hasLength(1));
+      expect(samePlate(solution.perSide.single.weightKg, lbToKg(45)), isTrue);
+      expect(solution.perSide.single.count, 1);
+    });
+
+    test('a converted plate is the same plate', () {
+      expect(samePlate(lbToKg(45), 45 / 2.20462), isTrue);
+      expect(samePlate(20, 20.5), isFalse);
     });
   });
 }

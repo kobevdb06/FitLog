@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'units.dart';
+
 // The plate calculator.
 //
 // Everything here is in kilograms; the display layer converts. The
@@ -8,6 +10,19 @@ import 'dart:math' as math;
 
 /// The default plate inventory, per side, heaviest first.
 const List<double> kDefaultPlatesKg = [25, 20, 15, 10, 5, 2.5, 1.25];
+
+/// The standard plate set for the unit you lift in, per side, heaviest
+/// first, in kilograms like every weight here: a pound gym has 45, 35, 25,
+/// 10, 5 and 2.5 lb plates, not kilo plates shown as 44.1 lb.
+List<double> standardPlatesKg({required bool pounds}) => pounds
+    ? [
+        for (final lb in const [45.0, 35.0, 25.0, 10.0, 5.0, 2.5]) lbToKg(lb),
+      ]
+    : kDefaultPlatesKg;
+
+/// Whether two plates are the same plate, give or take the rounding of a
+/// conversion.
+bool samePlate(double a, double b) => (a - b).abs() < _epsilon;
 
 /// The default barbell weight.
 const double kDefaultBarWeightKg = 20;

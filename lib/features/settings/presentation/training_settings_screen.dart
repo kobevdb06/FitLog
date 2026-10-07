@@ -168,6 +168,8 @@ class TrainingSettingsScreen extends ConsumerWidget {
   }
 }
 
+/// The plates in your gym: the standard set for your unit, and any of your
+/// own on top - microplates, a 0.5 kg disc, kilo plates in a pound gym.
 class _PlateEditor extends StatelessWidget {
   const _PlateEditor({
     required this.plates,
@@ -175,13 +177,50 @@ class _PlateEditor extends StatelessWidget {
     required this.onChanged,
   });
 
+  /// Kilograms, as stored.
   final List<double> plates;
   final Formatters formatters;
   final ValueChanged<List<double>> onChanged;
 
+  bool get _pounds => formatters.weightUnit == WeightUnit.lb;
+
+  bool _has(double plate) => plates.any((p) => samePlate(p, plate));
+
+  /// Leaves at least one plate: a bar with nothing to load is no setting.
+  void _without(double plate) {
+    final next = [
+      for (final p in plates)
+        if (!samePlate(p, plate)) p,
+    ];
+    if (next.isNotEmpty) onChanged(next);
+  }
+
+  Future<void> _add(BuildContext context) async {
+    final result = await showKeypadSheet(
+      context: context,
+      kind: KeypadFieldKind.weight,
+      initialValue: const KeypadValue.empty(),
+      unitLabel: formatters.weightUnitLabel,
+      title: 'Schijf toevoegen',
+    );
+    final value = result?.number;
+    if (value == null || value <= 0) return;
+    final plate = formatters.fromDisplayWeight(value);
+    if (_has(plate)) return;
+    onChanged([...plates, plate]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final standard = standardPlatesKg(pounds: _pounds);
+    final own = [
+      for (final p in plates)
+        if (!standard.any((s) => samePlate(s, p))) p,
+    ]..sort((a, b) => b.compareTo(a));
+    final isStandard =
+        own.isEmpty && standard.every(_has) && plates.length == standard.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,19 +233,39 @@ class _PlateEditor extends StatelessWidget {
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
           children: [
-            for (final plate in kDefaultPlatesKg)
+            for (final plate in standard)
               FilterChip(
                 label: Text(formatters.weight(plate)),
-                selected: plates.contains(plate),
-                onSelected: (selected) {
-                  final next = [...plates];
-                  selected ? next.add(plate) : next.remove(plate);
-                  if (next.isEmpty) return;
-                  onChanged(next);
-                },
+                selected: _has(plate),
+                onSelected: (selected) =>
+                    selected ? onChanged([...plates, plate]) : _without(plate),
               ),
+            // Your own: always there, until you take them away.
+            for (final plate in own)
+              InputChip(
+                label: Text(formatters.weight(plate)),
+                selected: true,
+                onSelected: (_) {},
+                deleteButtonTooltipMessage: 'Weghalen',
+                onDeleted: () => _without(plate),
+              ),
+            ActionChip(
+              avatar: const Icon(Icons.add, size: 18),
+              label: const Text('Schijf toevoegen'),
+              onPressed: () => _add(context),
+            ),
           ],
         ),
+        if (!isStandard)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: TextButton(
+              onPressed: () => onChanged(standard),
+              child: Text(
+                'Standaardset in ${_pounds ? 'lb' : 'kg'} terugzetten',
+              ),
+            ),
+          ),
       ],
     );
   }

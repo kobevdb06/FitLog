@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/providers/core_providers.dart';
+import 'package:fitlog/core/widgets/numeric_keypad.dart';
 import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/settings/presentation/display_settings_screen.dart';
 import 'package:fitlog/features/settings/presentation/notification_settings_screen.dart';
@@ -178,6 +180,67 @@ void main() {
       await tester.pumpAndSettle();
 
       expect((await settings(tester)).progressionHints, isFalse);
+    });
+  });
+
+  group('stang en schijven', () {
+    Finder key(String label) => find.descendant(
+      of: find.byType(NumericKeypad),
+      matching: find.text(label),
+    );
+
+    Future<List<double>> plates(WidgetTester tester) async =>
+        decodePlates((await settings(tester)).availablePlatesKg);
+
+    testWidgets('een eigen schijf erbij, en weer weg', (tester) async {
+      await pump(tester);
+
+      await tester.ensureVisible(find.text('Schijf toevoegen'));
+      await tester.tap(find.text('Schijf toevoegen'));
+      await tester.pumpAndSettle();
+      for (final label in ['0', ',', '5']) {
+        await tester.tap(key(label));
+        await tester.pump();
+      }
+      await tester.tap(find.bySemanticsLabel('Klaar'));
+      await tester.pumpAndSettle();
+
+      expect(await plates(tester), contains(0.5));
+      expect(find.text('0,5 kg'), findsOneWidget);
+      expect(find.text('Standaardset in kg terugzetten'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Weghalen'));
+      await tester.pumpAndSettle();
+
+      expect(await plates(tester), isNot(contains(0.5)));
+      expect(find.text('0,5 kg'), findsNothing);
+    });
+
+    testWidgets('in lb de echte lb-schijven, met de standaardset', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => db.settingsDao.updateSettings(
+          const AppSettingsTableCompanion(unitWeight: Value('lb')),
+        ),
+      );
+      await pump(tester);
+
+      // The kilo plates stored so far are kilo plates, shown as they are.
+      expect(find.widgetWithText(InputChip, '44 lb'), findsOneWidget);
+      for (final lb in ['45 lb', '35 lb', '25 lb', '10 lb', '5 lb', '2,5 lb']) {
+        expect(find.text(lb), findsWidgets, reason: lb);
+      }
+
+      await tester.ensureVisible(find.text('Standaardset in lb terugzetten'));
+      await tester.tap(find.text('Standaardset in lb terugzetten'));
+      await tester.pumpAndSettle();
+
+      final stored = await plates(tester);
+      expect(stored, hasLength(6));
+      expect(stored.first, closeTo(45 / 2.20462, 0.001));
+      expect(find.widgetWithText(InputChip, '44 lb'), findsNothing);
+      expect(find.text('Standaardset in lb terugzetten'), findsNothing);
     });
   });
 

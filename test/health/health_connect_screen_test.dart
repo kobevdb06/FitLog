@@ -7,6 +7,7 @@ import 'package:fitlog/features/health/data/health_source.dart';
 import 'package:fitlog/features/health/presentation/health_connect_screen.dart';
 import 'package:fitlog/features/health/presentation/health_providers.dart';
 import 'package:fitlog/features/history/presentation/history_providers.dart';
+import 'package:fitlog/features/settings/presentation/notification_settings_screen.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -368,10 +369,34 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('de schakelaar zet het aan, standaard om zeven uur', (
+    /// Set with the other notifications now, not here.
+    Future<void> pumpMeldingen(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1100, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        wrapWithContainer(container, const NotificationSettingsScreen()),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('staat bij de meldingen, en Health Connect wijst ernaar', (
       tester,
     ) async {
       await pumpScreen(tester);
+      await scrollTo(tester, find.text('Ochtendrapport').last);
+
+      expect(
+        find.text('Aan- en uitzetten en het uur kiezen doe je bij Meldingen.'),
+        findsOneWidget,
+      );
+      expect(find.text('Elke ochtend een rapport'), findsNothing);
+    });
+
+    testWidgets('de schakelaar zet het aan, standaard om zeven uur', (
+      tester,
+    ) async {
+      await pumpMeldingen(tester);
       await scrollTo(tester, find.text('Elke ochtend een rapport'));
       expect(find.text('Om 07:00'), findsOneWidget);
 
@@ -397,7 +422,7 @@ void main() {
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(morningReportEnabled: Value(true)),
       );
-      await pumpScreen(tester);
+      await pumpMeldingen(tester);
       await scrollTo(tester, find.textContaining('Je gebruikt een pincode'));
 
       expect(

@@ -38,10 +38,13 @@ import '../features/routines/presentation/routines_screen.dart';
 import '../features/settings/presentation/about_screen.dart';
 import '../features/settings/presentation/backup_screen.dart';
 import '../features/settings/presentation/catalogue_settings_screen.dart';
+import '../features/settings/presentation/display_settings_screen.dart';
+import '../features/settings/presentation/notification_settings_screen.dart';
 import '../features/settings/presentation/profile_screen.dart';
+import '../features/settings/presentation/recovery_settings_screen.dart';
 import '../features/settings/presentation/security_settings_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
-import '../features/settings/presentation/workout_preferences_screen.dart';
+import '../features/settings/presentation/training_settings_screen.dart';
 import '../features/workout/presentation/active_workout_screen.dart';
 import '../features/workout/presentation/rest_timer_screen.dart';
 import '../features/workout/presentation/workout_summary_screen.dart';
@@ -391,9 +394,24 @@ GoRouter router(Ref ref) {
                             appPage(state, const CatalogueSettingsScreen()),
                       ),
                       GoRoute(
-                        path: 'workout',
+                        path: 'training',
                         pageBuilder: (context, state) =>
-                            appPage(state, const WorkoutPreferencesScreen()),
+                            appPage(state, const TrainingSettingsScreen()),
+                      ),
+                      GoRoute(
+                        path: 'meldingen',
+                        pageBuilder: (context, state) =>
+                            appPage(state, const NotificationSettingsScreen()),
+                      ),
+                      GoRoute(
+                        path: 'herstel',
+                        pageBuilder: (context, state) =>
+                            appPage(state, const RecoverySettingsScreen()),
+                      ),
+                      GoRoute(
+                        path: 'weergave',
+                        pageBuilder: (context, state) =>
+                            appPage(state, const DisplaySettingsScreen()),
                       ),
                       GoRoute(
                         path: 'beveiliging',

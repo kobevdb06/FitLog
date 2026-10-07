@@ -96,7 +96,10 @@ abstract final class Routes {
 
   /// The chat, as the fourth tab. Only there once there is a key.
   static const chat = '/chat';
-  static const settingsWorkout = '/profiel/instellingen/workout';
+  static const settingsTraining = '/profiel/instellingen/training';
+  static const settingsNotifications = '/profiel/instellingen/meldingen';
+  static const settingsRecovery = '/profiel/instellingen/herstel';
+  static const settingsDisplay = '/profiel/instellingen/weergave';
   static const settingsSecurity = '/profiel/instellingen/beveiliging';
   static const settingsBackup = '/profiel/instellingen/backup';
   static const settingsAbout = '/profiel/instellingen/over';

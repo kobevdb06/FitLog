@@ -22,11 +22,57 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Instellingen')),
       body: ListView(
         children: [
+          // Grouped by what you are doing when you go looking: training,
+          // recovering, or setting up the app itself.
+          const SectionHeader('Trainen'),
+          _Entry(
+            icon: Icons.fitness_center,
+            title: 'Training',
+            subtitle:
+                'Rusttijd, opwarmen, RPE, hints, PR-pogingen, stang en '
+                'schijven',
+            route: Routes.settingsTraining,
+          ),
+          _Entry(
+            icon: Icons.category_outlined,
+            title: 'Eigen keuzelijsten',
+            subtitle: 'Spiergroepen, materiaal en categorieën toevoegen',
+            route: Routes.settingsCatalogue,
+          ),
+          const SectionHeader('Herstel'),
+          _Entry(
+            icon: Icons.bedtime_outlined,
+            title: 'Herstel',
+            subtitle: 'Slaapfasen en alcohol bijhouden',
+            route: Routes.settingsRecovery,
+          ),
+          _Entry(
+            icon: Icons.favorite_outline,
+            title: 'Health Connect',
+            subtitle: ref.watch(healthConnectEnabledProvider)
+                ? 'Verbonden. Slaap, HRV, gewicht en cardio van je horloge'
+                : 'Slaap, HRV, gewicht en cardio van je horloge ophalen',
+            route: Routes.healthConnect,
+          ),
           const SectionHeader('App'),
+          _Entry(
+            icon: Icons.notifications_outlined,
+            title: 'Meldingen',
+            subtitle: 'Rusttimer, records, ochtendrapport en weekoverzicht',
+            route: Routes.settingsNotifications,
+          ),
+          _Entry(
+            icon: Icons.palette_outlined,
+            title: 'Weergave en eenheden',
+            subtitle: 'Thema, kg of lb, cm of inch, km of mi',
+            route: Routes.settingsDisplay,
+          ),
           ListTile(
             leading: const Icon(Icons.dashboard_customize_outlined),
             title: const Text('Startscherm'),
-            subtitle: const Text('Welke blokken je ziet, waar, en hoe groot'),
+            subtitle: const Text(
+              'Opent het Start-tabblad om je blokken te schikken',
+            ),
             trailing: const Icon(Icons.chevron_right),
             // You arrange the Start tab on the Start tab: a list of words
             // here could never show what the screen would look like, and it
@@ -36,54 +82,19 @@ class SettingsScreen extends ConsumerWidget {
               context.go(Routes.dashboard);
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.tune),
-            title: const Text('Workout-voorkeuren'),
-            subtitle: const Text(
-              'Rusttimer, geluiden, eenheden, stang en schijven',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.settingsWorkout),
+          _Entry(
+            icon: Icons.smart_toy_outlined,
+            title: 'AI-coach',
+            subtitle: ref.watch(coachEnabledProvider)
+                ? 'Aan. Het enige deel van de app dat internet gebruikt'
+                : 'Uit. Werkt alleen met een API-sleutel van jezelf',
+            route: Routes.settingsCoach,
           ),
-          ListTile(
-            leading: const Icon(Icons.category_outlined),
-            title: const Text('Eigen keuzelijsten'),
-            subtitle: const Text(
-              'Spiergroepen, materiaal en categorieën toevoegen',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.settingsCatalogue),
-          ),
-          ListTile(
-            leading: const Icon(Icons.smart_toy_outlined),
-            title: const Text('AI-coach'),
-            subtitle: Text(
-              ref.watch(coachEnabledProvider)
-                  ? 'Aan. Het enige deel van de app dat internet gebruikt'
-                  : 'Uit. Werkt alleen met een API-sleutel van jezelf',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.settingsCoach),
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite_outline),
-            title: const Text('Health Connect'),
-            subtitle: Text(
-              ref.watch(healthConnectEnabledProvider)
-                  ? 'Verbonden. Slaap, HRV, gewicht en cardio van je horloge'
-                  : 'Slaap, HRV, gewicht en cardio van je horloge ophalen',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.healthConnect),
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock_outline),
-            title: const Text('Beveiliging'),
-            subtitle: const Text(
-              'Pincode, biometrie, auto-vergrendelen, herstelzin',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.settingsSecurity),
+          _Entry(
+            icon: Icons.lock_outline,
+            title: 'Beveiliging',
+            subtitle: 'Pincode, biometrie, auto-vergrendelen, herstelzin',
+            route: Routes.settingsSecurity,
           ),
           const SectionHeader('Gegevens'),
           ListTile(
@@ -139,6 +150,32 @@ class SettingsScreen extends ConsumerWidget {
     if (!second) return;
 
     await ref.read(appControllerProvider.notifier).wipeEverything();
+  }
+}
+
+/// One way into a part of the settings.
+class _Entry extends StatelessWidget {
+  const _Entry({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.route,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String route;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(route),
+    );
   }
 }
 

@@ -3777,3 +3777,31 @@ had ≡), en de opgepakte oefening is in beide een kaart met een schaduw. In de
 editor werd ze een witte balk over de hele breedte, de standaard van een
 `ReorderableListView`. De sleutel van een oefening in de editor is nu de
 oefening zelf en niet haar plaats, zodat ze bij het verslepen dezelfde blijft.
+
+## 187. Instellingen, geordend
+
+*Workout-voorkeuren* was een rommelzak geworden: twaalf onderwerpen op één
+lange pagina, van de rusttimer tot het thema, met opwarmen en RPE onder het
+kopje *Rusttimer*. De omschrijving in het overzicht noemde er vier, dus wat
+er nog meer stond, vond je alleen door te scrollen. Het ochtendrapport stond
+dan weer bij Health Connect, terwijl het weekoverzicht bij de
+workout-voorkeuren stond.
+
+De regel is nu: één scherm, één onderwerp, en een instelling staat waar je
+ze zoekt. Het overzicht is gegroepeerd naar wat je aan het doen bent:
+
+- **Trainen**: *Training* (rusttijd; tijdens een training opwarmen, RPE en de
+  hint; PR-pogingen; stang en schijven) en *Eigen keuzelijsten*.
+- **Herstel**: *Herstel* (slaapfasen, alcohol) en *Health Connect*.
+- **App**: *Meldingen* (alles wat piept of meldt: einde rust, het klikje bij
+  een set, records, het ochtendrapport, het weekoverzicht), *Weergave en
+  eenheden*, *Startscherm*, *AI-coach* en *Beveiliging*.
+- **Gegevens** en **Over** zoals voorheen.
+
+Het ochtendrapport werkt zonder Health Connect (het gebruikt het alleen als
+het er is), dus het staat nu bij de meldingen; Health Connect wijst ernaar.
+Het thema en de eenheden kies je met een rij knoppen die de hele breedte
+deelt, zoals de andere keuzes, in plaats van in een blad of naast de titel.
+*Startscherm* zegt nu dat het het Start-tabblad opent, want dat doet het.
+
+Geen databasewijziging: alleen waar de schakelaars staan, is veranderd.

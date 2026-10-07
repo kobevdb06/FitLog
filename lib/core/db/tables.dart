@@ -61,6 +61,11 @@ class AppSettingsTable extends Table {
   /// right without any extra bookkeeping.
   IntColumn get lastBackupAt => integer().named('last_backup_at').nullable()();
 
+  /// The folder an automatic backup goes to every week, as the content URI
+  /// Android handed over when you picked it; null when it is off.
+  TextColumn get autoBackupFolder =>
+      text().named('auto_backup_folder').nullable()();
+
   /// One of [PickKind] while a photo is being picked, null otherwise.
   ///
   /// Android may kill the app while the camera is in front of it. The note

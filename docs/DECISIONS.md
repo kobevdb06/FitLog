@@ -3884,3 +3884,40 @@ De schijvenberekening rekent met een marge van een gram, dus 135 lb op een
 stang van 45 lb komt nog altijd uit op één 45 per kant. Twee schijven zijn
 dezelfde als ze minder dan een gram verschillen (`samePlate`), wat de afronding
 van een omrekening opvangt.
+
+## 193. Een automatische back-up, elke week
+
+Een back-up maakte je alleen met de hand. Gegevens die maar op één toestel
+staan, zijn één ongeluk van weg - en dat ongeluk is al eens gebeurd.
+
+Nu kies je onder *Back-up en export* één keer een map, en zet FitLog er elke
+week een versleutelde back-up in (`AutoBackup`):
+
+- **Een map die jij kiest**, via het opslagkader van Android
+  (`ACTION_OPEN_DOCUMENT_TREE`). FitLog krijgt alleen toegang tot die ene map,
+  heeft geen opslagtoestemming nodig, en de map staat buiten de app: na het
+  verwijderen of wissen van de app is de back-up er nog. Een map die je gsm
+  naar de cloud kopieert, brengt ze ook van de gsm af - zonder dat FitLog zelf
+  iets verstuurt. De Kotlin-kant staat in `MainActivity` (kanaal
+  `be.fitlog.app/folders`): kiezen, schrijven, oplijsten, verwijderen en de
+  toegang teruggeven, het werk met bestanden buiten de hoofdthread.
+- **Als de app open is en ontgrendeld**, twintig seconden na het ontgrendelen,
+  wanneer de laatste back-up een week oud is - ook een die je zelf maakte.
+  Niet op de achtergrond: met een pincode is de database dan dicht, en de
+  back-up heeft de sleutel en de herstelzin nodig. Twintig seconden, omdat
+  ze de database en alle foto's inpakt, en de eerste ogenblikken na het
+  openen van jou zijn.
+- **De laatste drie** automatische back-ups (`FitLog-auto-JJJJ-MM-DD.fitlog`)
+  blijven; oudere gaan weg. Wat er verder in de map staat, ook je eigen
+  back-ups, blijft onaangeroerd.
+- **Lukt het niet** (map weg, toegang ingetrokken), dan wordt het tijdstip
+  van de laatste back-up teruggezet: een back-up die niet in de map kwam, is
+  geen back-up, en de herinnering op het Start-tabblad blijft tellen. Het
+  scherm zegt dat de map niet meer bereikbaar is.
+- **De eerste komt meteen** als je de map kiest: zo zie je dat het werkt.
+
+De map staat in `app_settings.auto_backup_folder` (v48), als de content-URI
+die Android gaf. Uitzetten maakt die leeg en geeft de toegang terug. De
+handmatige back-up en de automatische maken het bestand op dezelfde manier
+(`backupMakerProvider`).
+

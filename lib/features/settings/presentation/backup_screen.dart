@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/security/recovery_phrase.dart';
@@ -13,6 +15,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../backup/data/auto_backup.dart';
 import '../../backup/data/backup_service.dart';
 import '../../backup/presentation/backup_providers.dart';
 
@@ -64,28 +67,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   // --- Backup ---------------------------------------------------------------
 
   Future<void> _createBackup() => _run(() async {
-    final controller = ref.read(appControllerProvider.notifier);
-    final manager = ref.read(keyManagerProvider);
-    final dek = controller.currentDek ?? await manager.readDirectKey();
-    final db = controller.databaseOrNull;
-
-    if (dek == null || db == null) {
-      throw StateError('De database is niet open.');
-    }
-
-    final phrase = await manager.readRecoveryPhrase(dek);
-    if (phrase == null) {
-      throw StateError(
-        'Er is geen herstelzin op dit toestel, dus de back-up kan niet '
-        'versleuteld worden.',
-      );
-    }
-
-    final paths = await ref.read(appPathsProvider.future);
-    final file = await BackupService(
-      db: db,
-      paths: paths,
-    ).createBackup(recoveryPhrase: phrase, dek: dek);
+    final file = await ref.read(backupMakerProvider)();
 
     await SharePlus.instance.share(
       ShareParams(
@@ -101,6 +83,50 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         () => _message = 'Back-up gemaakt: ${file.uri.pathSegments.last}',
       );
     }
+  });
+
+  // --- Every week -----------------------------------------------------------
+
+  /// Picks the folder, and makes the first backup in it right away: seeing
+  /// it there is how you know it works.
+  Future<void> _pickFolder() => _run(() async {
+    final folder = ref.read(backupFolderProvider);
+    final previous = ref.read(settingsProvider).value?.autoBackupFolder;
+    final picked = await folder.pick();
+    if (picked == null) return;
+    if (previous != null && previous != picked.uri) {
+      await folder.release(previous);
+    }
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          AppSettingsTableCompanion(autoBackupFolder: Value(picked.uri)),
+        );
+    ref.invalidate(autoBackupFolderNameProvider(picked.uri));
+
+    final outcome = await ref.read(autoBackupProvider).runNow();
+    if (!mounted) return;
+    setState(
+      () => _message = switch (outcome) {
+        AutoBackupOutcome.made =>
+          'De eerste automatische back-up staat in "${picked.name}". Elke '
+              'week komt er een bij.',
+        _ =>
+          'De map is gekozen, maar er kon niets in geschreven worden. Kies '
+              'een andere map.',
+      },
+    );
+  });
+
+  Future<void> _stopAutomatic(String uri) => _run(() async {
+    await ref.read(backupFolderProvider).release(uri);
+    await ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          const AppSettingsTableCompanion(autoBackupFolder: Value(null)),
+        );
   });
 
   /// Two confirmations and typing the word, because there is no undo and no
@@ -265,6 +291,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   ),
                 ),
             ],
+            const SectionHeader('Elke week'),
+            _AutomaticTile(onPick: _pickFolder, onStop: _stopAutomatic),
             const SectionHeader('Back-up'),
             const _LastBackupLine(),
             ListTile(
@@ -364,6 +392,60 @@ class _LastBackupLine extends ConsumerWidget {
           color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
+    );
+  }
+}
+
+/// The weekly backup: off, on with the folder it goes to, or on with a
+/// folder that is no longer there.
+class _AutomaticTile extends ConsumerWidget {
+  const _AutomaticTile({required this.onPick, required this.onStop});
+
+  final VoidCallback onPick;
+  final ValueChanged<String> onStop;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uri = ref.watch(settingsProvider).value?.autoBackupFolder;
+    if (uri == null) {
+      return SwitchListTile(
+        secondary: const Icon(Icons.event_repeat_outlined),
+        title: const Text('Automatische back-up'),
+        subtitle: const Text(
+          'Elke week een versleutelde back-up in een map die je kiest, '
+          'bijvoorbeeld een die je gsm naar de cloud kopieert. De laatste '
+          '$kAutoBackupsKept blijven bewaard.',
+        ),
+        value: false,
+        onChanged: (_) => onPick(),
+      );
+    }
+
+    final name = ref.watch(autoBackupFolderNameProvider(uri));
+    return Column(
+      children: [
+        SwitchListTile(
+          secondary: const Icon(Icons.event_repeat_outlined),
+          title: const Text('Automatische back-up'),
+          subtitle: Text(switch (name) {
+            AsyncData(value: final folder?) =>
+              'Elke week naar "$folder". De laatste $kAutoBackupsKept '
+                  'blijven bewaard.',
+            AsyncData() || AsyncError() =>
+              'De map is niet meer bereikbaar. Kies ze opnieuw, anders '
+                  'komt er geen back-up bij.',
+            _ => 'Elke week naar de map die je koos.',
+          }),
+          value: true,
+          onChanged: (_) => onStop(uri),
+        ),
+        ListTile(
+          leading: const Icon(Icons.folder_open_outlined),
+          title: const Text('Andere map kiezen'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: onPick,
+        ),
+      ],
     );
   }
 }

@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **47**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **48**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -75,6 +75,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 45 | `week_reviews`: wat de coach over een week schreef. |
 | 46 | `app_settings.week_review_notify`: de melding van het weekoverzicht op zondagavond, standaard aan. |
 | 47 | `routine_folders.is_collapsed`: een map die dichtgeklapt staat onder Trainen; elke bestaande map open. |
+| 48 | `app_settings.auto_backup_folder`: de map voor de wekelijkse automatische back-up; leeg, tot je er een kiest. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -124,6 +125,7 @@ Geboortedatum, geslacht en lengte gaan alleen naar de coach met
 | `seed_version` | INT | 0: tot welke versie de catalogus is bijgewerkt |
 | `auto_lock_seconds` | INT | 60 (`0` = meteen, `-1` = nooit) |
 | `last_backup_at` | INT? | wanneer de laatste back-up gemaakt is |
+| `auto_backup_folder` | TEXT? | de content-URI van de map voor de wekelijkse back-up; null is uit |
 | `pending_pick_kind`, `pending_pick_ref` | TEXT? | een fotokeuze die Android onderbrak |
 | `home_layout` | TEXT? | JSON; leeg = de standaardschikking |
 | **Trainen** | | |

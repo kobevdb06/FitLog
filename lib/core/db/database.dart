@@ -67,7 +67,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 47;
+  int get schemaVersion => 48;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -445,6 +445,13 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(
             routineFoldersTable,
             routineFoldersTable.isCollapsed,
+          );
+        }
+        if (from < 48) {
+          // Where the weekly backup goes. Nowhere yet: you pick the folder.
+          await m.addColumn(
+            appSettingsTable,
+            appSettingsTable.autoBackupFolder,
           );
         }
       });

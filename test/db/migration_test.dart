@@ -2,6 +2,7 @@ import 'dart:io';
 
 // Only for NativeDatabase; the drift query builder exports an `isNull` that
 // collides with the matcher of the same name.
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
@@ -118,6 +119,7 @@ void main() {
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
+      ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -148,6 +150,7 @@ void main() {
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
+      ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -176,6 +179,7 @@ void main() {
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
+      ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -201,6 +205,7 @@ void main() {
 
     final raw = sqlite3.open(path)
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
+      ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('PRAGMA user_version = 46');
     raw.close();
 
@@ -211,6 +216,30 @@ void main() {
     expect(folders.every((f) => !f.isCollapsed), isTrue);
     await db.close();
   });
+
+  test(
+    'a database from v47 keeps its last backup, and picks no folder',
+    () async {
+      final path = '${dir.path}/v47.db';
+      final fresh = AppDatabase(NativeDatabase(File(path)));
+      await fresh.settingsDao.ensureInitialized();
+      await fresh.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(lastBackupAt: Value(1760000000000)),
+      );
+      await fresh.close();
+
+      final raw = sqlite3.open(path)
+        ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
+        ..execute('PRAGMA user_version = 47');
+      raw.close();
+
+      final db = AppDatabase(NativeDatabase(File(path)));
+      final settings = await db.settingsDao.getSettings();
+      expect(settings.lastBackupAt, 1760000000000);
+      expect(settings.autoBackupFolder, isNull);
+      await db.close();
+    },
+  );
 
   test('a database that migrated past the tables of v29, v30 and v33 gets '
       'their indexes after all', () async {
@@ -229,6 +258,7 @@ void main() {
       ..execute('DROP TABLE week_reviews')
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
+      ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -299,7 +329,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 47);
+    expect(raw.select('PRAGMA user_version').first.values.first, 48);
     raw.close();
   });
 
@@ -506,7 +536,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 47);
+    expect(db.schemaVersion, 48);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

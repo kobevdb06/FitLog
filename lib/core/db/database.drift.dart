@@ -592,6 +592,17 @@ class $AppSettingsTableTable extends AppSettingsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _autoBackupFolderMeta = const VerificationMeta(
+    'autoBackupFolder',
+  );
+  @override
+  late final GeneratedColumn<String> autoBackupFolder = GeneratedColumn<String>(
+    'auto_backup_folder',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _pendingPickKindMeta = const VerificationMeta(
     'pendingPickKind',
   );
@@ -1038,6 +1049,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     setCheckSoundEnabled,
     prAlertEnabled,
     lastBackupAt,
+    autoBackupFolder,
     pendingPickKind,
     pendingPickRef,
     themeMode,
@@ -1154,6 +1166,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         lastBackupAt.isAcceptableOrUnknown(
           data['last_backup_at']!,
           _lastBackupAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('auto_backup_folder')) {
+      context.handle(
+        _autoBackupFolderMeta,
+        autoBackupFolder.isAcceptableOrUnknown(
+          data['auto_backup_folder']!,
+          _autoBackupFolderMeta,
         ),
       );
     }
@@ -1498,6 +1519,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}last_backup_at'],
       ),
+      autoBackupFolder: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auto_backup_folder'],
+      ),
       pendingPickKind: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}pending_pick_kind'],
@@ -1669,6 +1694,10 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// a backup is that backup's own moment: after a restore the reminder is
   /// right without any extra bookkeeping.
   final int? lastBackupAt;
+
+  /// The folder an automatic backup goes to every week, as the content URI
+  /// Android handed over when you picked it; null when it is off.
+  final String? autoBackupFolder;
 
   /// One of [PickKind] while a photo is being picked, null otherwise.
   ///
@@ -1845,6 +1874,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.setCheckSoundEnabled,
     required this.prAlertEnabled,
     this.lastBackupAt,
+    this.autoBackupFolder,
     this.pendingPickKind,
     this.pendingPickRef,
     required this.themeMode,
@@ -1894,6 +1924,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     map['pr_alert_enabled'] = Variable<bool>(prAlertEnabled);
     if (!nullToAbsent || lastBackupAt != null) {
       map['last_backup_at'] = Variable<int>(lastBackupAt);
+    }
+    if (!nullToAbsent || autoBackupFolder != null) {
+      map['auto_backup_folder'] = Variable<String>(autoBackupFolder);
     }
     if (!nullToAbsent || pendingPickKind != null) {
       map['pending_pick_kind'] = Variable<String>(pendingPickKind);
@@ -1974,6 +2007,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       lastBackupAt: lastBackupAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastBackupAt),
+      autoBackupFolder: autoBackupFolder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(autoBackupFolder),
       pendingPickKind: pendingPickKind == null && nullToAbsent
           ? const Value.absent()
           : Value(pendingPickKind),
@@ -2055,6 +2091,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       ),
       prAlertEnabled: serializer.fromJson<bool>(json['prAlertEnabled']),
       lastBackupAt: serializer.fromJson<int?>(json['lastBackupAt']),
+      autoBackupFolder: serializer.fromJson<String?>(json['autoBackupFolder']),
       pendingPickKind: serializer.fromJson<String?>(json['pendingPickKind']),
       pendingPickRef: serializer.fromJson<String?>(json['pendingPickRef']),
       themeMode: serializer.fromJson<String>(json['themeMode']),
@@ -2119,6 +2156,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'setCheckSoundEnabled': serializer.toJson<bool>(setCheckSoundEnabled),
       'prAlertEnabled': serializer.toJson<bool>(prAlertEnabled),
       'lastBackupAt': serializer.toJson<int?>(lastBackupAt),
+      'autoBackupFolder': serializer.toJson<String?>(autoBackupFolder),
       'pendingPickKind': serializer.toJson<String?>(pendingPickKind),
       'pendingPickRef': serializer.toJson<String?>(pendingPickRef),
       'themeMode': serializer.toJson<String>(themeMode),
@@ -2169,6 +2207,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? setCheckSoundEnabled,
     bool? prAlertEnabled,
     Value<int?> lastBackupAt = const Value.absent(),
+    Value<String?> autoBackupFolder = const Value.absent(),
     Value<String?> pendingPickKind = const Value.absent(),
     Value<String?> pendingPickRef = const Value.absent(),
     String? themeMode,
@@ -2214,6 +2253,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     setCheckSoundEnabled: setCheckSoundEnabled ?? this.setCheckSoundEnabled,
     prAlertEnabled: prAlertEnabled ?? this.prAlertEnabled,
     lastBackupAt: lastBackupAt.present ? lastBackupAt.value : this.lastBackupAt,
+    autoBackupFolder: autoBackupFolder.present
+        ? autoBackupFolder.value
+        : this.autoBackupFolder,
     pendingPickKind: pendingPickKind.present
         ? pendingPickKind.value
         : this.pendingPickKind,
@@ -2295,6 +2337,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       lastBackupAt: data.lastBackupAt.present
           ? data.lastBackupAt.value
           : this.lastBackupAt,
+      autoBackupFolder: data.autoBackupFolder.present
+          ? data.autoBackupFolder.value
+          : this.autoBackupFolder,
       pendingPickKind: data.pendingPickKind.present
           ? data.pendingPickKind.value
           : this.pendingPickKind,
@@ -2403,6 +2448,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('setCheckSoundEnabled: $setCheckSoundEnabled, ')
           ..write('prAlertEnabled: $prAlertEnabled, ')
           ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('autoBackupFolder: $autoBackupFolder, ')
           ..write('pendingPickKind: $pendingPickKind, ')
           ..write('pendingPickRef: $pendingPickRef, ')
           ..write('themeMode: $themeMode, ')
@@ -2453,6 +2499,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     setCheckSoundEnabled,
     prAlertEnabled,
     lastBackupAt,
+    autoBackupFolder,
     pendingPickKind,
     pendingPickRef,
     themeMode,
@@ -2502,6 +2549,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.setCheckSoundEnabled == this.setCheckSoundEnabled &&
           other.prAlertEnabled == this.prAlertEnabled &&
           other.lastBackupAt == this.lastBackupAt &&
+          other.autoBackupFolder == this.autoBackupFolder &&
           other.pendingPickKind == this.pendingPickKind &&
           other.pendingPickRef == this.pendingPickRef &&
           other.themeMode == this.themeMode &&
@@ -2549,6 +2597,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> setCheckSoundEnabled;
   final Value<bool> prAlertEnabled;
   final Value<int?> lastBackupAt;
+  final Value<String?> autoBackupFolder;
   final Value<String?> pendingPickKind;
   final Value<String?> pendingPickRef;
   final Value<String> themeMode;
@@ -2595,6 +2644,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.setCheckSoundEnabled = const Value.absent(),
     this.prAlertEnabled = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.autoBackupFolder = const Value.absent(),
     this.pendingPickKind = const Value.absent(),
     this.pendingPickRef = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -2642,6 +2692,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.setCheckSoundEnabled = const Value.absent(),
     this.prAlertEnabled = const Value.absent(),
     this.lastBackupAt = const Value.absent(),
+    this.autoBackupFolder = const Value.absent(),
     this.pendingPickKind = const Value.absent(),
     this.pendingPickRef = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -2690,6 +2741,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? setCheckSoundEnabled,
     Expression<bool>? prAlertEnabled,
     Expression<int>? lastBackupAt,
+    Expression<String>? autoBackupFolder,
     Expression<String>? pendingPickKind,
     Expression<String>? pendingPickRef,
     Expression<String>? themeMode,
@@ -2739,6 +2791,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         'set_check_sound_enabled': setCheckSoundEnabled,
       if (prAlertEnabled != null) 'pr_alert_enabled': prAlertEnabled,
       if (lastBackupAt != null) 'last_backup_at': lastBackupAt,
+      if (autoBackupFolder != null) 'auto_backup_folder': autoBackupFolder,
       if (pendingPickKind != null) 'pending_pick_kind': pendingPickKind,
       if (pendingPickRef != null) 'pending_pick_ref': pendingPickRef,
       if (themeMode != null) 'theme_mode': themeMode,
@@ -2795,6 +2848,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? setCheckSoundEnabled,
     Value<bool>? prAlertEnabled,
     Value<int?>? lastBackupAt,
+    Value<String?>? autoBackupFolder,
     Value<String?>? pendingPickKind,
     Value<String?>? pendingPickRef,
     Value<String>? themeMode,
@@ -2842,6 +2896,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       setCheckSoundEnabled: setCheckSoundEnabled ?? this.setCheckSoundEnabled,
       prAlertEnabled: prAlertEnabled ?? this.prAlertEnabled,
       lastBackupAt: lastBackupAt ?? this.lastBackupAt,
+      autoBackupFolder: autoBackupFolder ?? this.autoBackupFolder,
       pendingPickKind: pendingPickKind ?? this.pendingPickKind,
       pendingPickRef: pendingPickRef ?? this.pendingPickRef,
       themeMode: themeMode ?? this.themeMode,
@@ -2915,6 +2970,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     }
     if (lastBackupAt.present) {
       map['last_backup_at'] = Variable<int>(lastBackupAt.value);
+    }
+    if (autoBackupFolder.present) {
+      map['auto_backup_folder'] = Variable<String>(autoBackupFolder.value);
     }
     if (pendingPickKind.present) {
       map['pending_pick_kind'] = Variable<String>(pendingPickKind.value);
@@ -3049,6 +3107,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('setCheckSoundEnabled: $setCheckSoundEnabled, ')
           ..write('prAlertEnabled: $prAlertEnabled, ')
           ..write('lastBackupAt: $lastBackupAt, ')
+          ..write('autoBackupFolder: $autoBackupFolder, ')
           ..write('pendingPickKind: $pendingPickKind, ')
           ..write('pendingPickRef: $pendingPickRef, ')
           ..write('themeMode: $themeMode, ')
@@ -15562,6 +15621,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> setCheckSoundEnabled,
       Value<bool> prAlertEnabled,
       Value<int?> lastBackupAt,
+      Value<String?> autoBackupFolder,
       Value<String?> pendingPickKind,
       Value<String?> pendingPickRef,
       Value<String> themeMode,
@@ -15610,6 +15670,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> setCheckSoundEnabled,
       Value<bool> prAlertEnabled,
       Value<int?> lastBackupAt,
+      Value<String?> autoBackupFolder,
       Value<String?> pendingPickKind,
       Value<String?> pendingPickRef,
       Value<String> themeMode,
@@ -15699,6 +15760,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<int> get lastBackupAt => $composableBuilder(
     column: $table.lastBackupAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get autoBackupFolder => $composableBuilder(
+    column: $table.autoBackupFolder,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15932,6 +15998,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get autoBackupFolder => $composableBuilder(
+    column: $table.autoBackupFolder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get pendingPickKind => $composableBuilder(
     column: $table.pendingPickKind,
     builder: (column) => ColumnOrderings(column),
@@ -16160,6 +16231,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get autoBackupFolder => $composableBuilder(
+    column: $table.autoBackupFolder,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get pendingPickKind => $composableBuilder(
     column: $table.pendingPickKind,
     builder: (column) => column,
@@ -16370,6 +16446,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> setCheckSoundEnabled = const Value.absent(),
                 Value<bool> prAlertEnabled = const Value.absent(),
                 Value<int?> lastBackupAt = const Value.absent(),
+                Value<String?> autoBackupFolder = const Value.absent(),
                 Value<String?> pendingPickKind = const Value.absent(),
                 Value<String?> pendingPickRef = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
@@ -16416,6 +16493,7 @@ class $$AppSettingsTableTableTableManager
                 setCheckSoundEnabled: setCheckSoundEnabled,
                 prAlertEnabled: prAlertEnabled,
                 lastBackupAt: lastBackupAt,
+                autoBackupFolder: autoBackupFolder,
                 pendingPickKind: pendingPickKind,
                 pendingPickRef: pendingPickRef,
                 themeMode: themeMode,
@@ -16464,6 +16542,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> setCheckSoundEnabled = const Value.absent(),
                 Value<bool> prAlertEnabled = const Value.absent(),
                 Value<int?> lastBackupAt = const Value.absent(),
+                Value<String?> autoBackupFolder = const Value.absent(),
                 Value<String?> pendingPickKind = const Value.absent(),
                 Value<String?> pendingPickRef = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
@@ -16510,6 +16589,7 @@ class $$AppSettingsTableTableTableManager
                 setCheckSoundEnabled: setCheckSoundEnabled,
                 prAlertEnabled: prAlertEnabled,
                 lastBackupAt: lastBackupAt,
+                autoBackupFolder: autoBackupFolder,
                 pendingPickKind: pendingPickKind,
                 pendingPickRef: pendingPickRef,
                 themeMode: themeMode,

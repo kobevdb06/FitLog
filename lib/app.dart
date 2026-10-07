@@ -13,6 +13,8 @@ import 'core/providers/core_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/util/notification_service.dart';
 import 'core/widgets/field_focus.dart';
+import 'features/backup/data/auto_backup.dart';
+import 'features/backup/presentation/backup_providers.dart';
 import 'features/health/presentation/health_providers.dart';
 import 'features/morning/data/morning_alarm.dart';
 import 'features/morning/presentation/morning_providers.dart';
@@ -44,6 +46,9 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
 
   /// A route a notification asked for, waiting for the app to be unlocked.
   String? _pendingRoute;
+
+  /// The weekly backup, waiting for the app to settle after an unlock.
+  Timer? _autoBackup;
 
   @override
   void initState() {
@@ -91,6 +96,7 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
 
   @override
   void dispose() {
+    _autoBackup?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     IsolateNameServer.removePortNameMapping(kMorningPortName);
     _morningPort.close();
@@ -135,6 +141,29 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
       final week = ref.read(weekNotifyProvider);
       unawaited(week.syncAlarm().then((_) => week.catchUp()));
       _openPendingRoute();
+      _scheduleAutoBackup();
+    });
+  }
+
+  /// The weekly backup into the folder you picked, if one is due - a little
+  /// after opening, because it packs the database and every photo, and the
+  /// first moments after unlocking are yours. A failure is not shown here:
+  /// the backup screen says when the folder is gone, and the reminder on the
+  /// Start tab keeps counting.
+  void _scheduleAutoBackup() {
+    _autoBackup?.cancel();
+    _autoBackup = Timer(kAutoBackupDelay, () {
+      if (!mounted || ref.read(appControllerProvider) is! AppReady) return;
+      unawaited(
+        ref
+            .read(autoBackupProvider)
+            .runIfDue()
+            .then(
+              (outcome) => debugPrint('FitLog auto backup: ${outcome.name}'),
+              onError: (Object error) =>
+                  debugPrint('FitLog auto backup failed: $error'),
+            ),
+      );
     });
   }
 

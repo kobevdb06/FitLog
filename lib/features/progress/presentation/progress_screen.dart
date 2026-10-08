@@ -12,6 +12,8 @@ import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/muscle_bars.dart';
 import '../../../routing/routes.dart';
+import '../../history/presentation/history_providers.dart';
+import '../../photos/presentation/photo_providers.dart';
 import 'plateau_card.dart';
 import 'progress_providers.dart';
 import 'recovery_providers.dart';
@@ -40,36 +42,7 @@ class ProgressScreen extends ConsumerWidget {
           _Training(period: period),
           _MuscleSets(period: period),
           _BodyWeight(period: period),
-          // Your records and measurements are on Profiel, with the rest of
-          // what is about you; one place for each.
-          const SectionHeader('Meer'),
-          const _RecoveryTile(),
-          ListTile(
-            leading: const Icon(Icons.calendar_view_week_outlined),
-            title: const Text('Weekoverzicht'),
-            subtitle: const Text('Je week op een rij'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.weekReview),
-          ),
-          ListTile(
-            leading: const Icon(Icons.favorite_border),
-            title: const Text('Gezondheid'),
-            subtitle: const Text('Slaap, HRV, hartslag, gewicht en lopen'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.health),
-          ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Geschiedenis'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.history),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text("Voortgangsfoto's"),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.photos),
-          ),
+          const _More(),
         ],
       ),
     );
@@ -504,6 +477,84 @@ class _BodyWeight extends ConsumerWidget {
 
   static String _change(Formatters formatters, double kg) =>
       '${kg > 0 ? '+' : ''}${formatters.weight(kg)}';
+}
+
+/// The way in to everything else that tracks progress, each saying in
+/// passing how it stands, the way Herstel always did.
+///
+/// What you did comes first - every workout, then this week - and what is
+/// about your body after it. Your records and measurements are on Profiel,
+/// with the rest of what is about you; one place for each.
+class _More extends ConsumerWidget {
+  const _More();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = ref.watch(finishedWorkoutDatesProvider).value;
+    final week = ref.watch(thisWeekStatsProvider).value;
+    final photos = ref.watch(progressPhotosProvider).value;
+    String last(DateTime at) =>
+        'laatste ${Formatters.relativeDay(at).toLowerCase()}';
+
+    // Until the numbers are in, an empty line rather than none: the rows
+    // keep their height instead of jumping when they arrive.
+    final history = switch (dates) {
+      null => '',
+      [] => 'Nog geen workouts',
+      [..., final newest] =>
+        '${Formatters.amount(dates.length, 'workout', 'workouts')} · '
+            '${last(newest)}',
+    };
+    final thisWeek = switch (week?.workouts) {
+      null => '',
+      0 => 'Deze week nog geen workout',
+      final count =>
+        'Deze week ${Formatters.amount(count, 'workout', 'workouts')}',
+    };
+    final pictures = switch (photos) {
+      null => '',
+      [] => "Nog geen foto's",
+      [final newest, ...] =>
+        "${Formatters.amount(photos.length, 'foto', "foto's")} · "
+            '${last(DateTime.fromMillisecondsSinceEpoch(newest.takenAt))}',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader('Meer'),
+        ListTile(
+          leading: const Icon(Icons.history),
+          title: const Text('Geschiedenis'),
+          subtitle: Text(history),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(Routes.history),
+        ),
+        ListTile(
+          leading: const Icon(Icons.calendar_view_week_outlined),
+          title: const Text('Weekoverzicht'),
+          subtitle: Text(thisWeek),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(Routes.weekReview),
+        ),
+        const _RecoveryTile(),
+        ListTile(
+          leading: const Icon(Icons.photo_library_outlined),
+          title: const Text("Voortgangsfoto's"),
+          subtitle: Text(pictures),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(Routes.photos),
+        ),
+        ListTile(
+          leading: const Icon(Icons.favorite_border),
+          title: const Text('Gezondheid'),
+          subtitle: const Text('Slaap, HRV, hartslag, gewicht en lopen'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(Routes.health),
+        ),
+      ],
+    );
+  }
 }
 
 /// The way into Herstel, saying in passing how things stand.

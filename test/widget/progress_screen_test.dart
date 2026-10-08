@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
+import 'package:fitlog/core/calc/streak.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/formatting/formatters.dart';
 import 'package:fitlog/core/security/secret_store.dart';
@@ -115,8 +116,11 @@ void main() {
     }
   }
 
-  Future<void> pump(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(400, 3000);
+  Future<void> pump(
+    WidgetTester tester, {
+    Size size = const Size(400, 3000),
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -408,5 +412,46 @@ void main() {
     expect(find.widgetWithText(ListTile, "Voortgangsfoto's"), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Persoonlijke records'), findsNothing);
     expect(find.widgetWithText(ListTile, 'Lichaamsmetingen'), findsNothing);
+  });
+
+  testWidgets('Meer: eerst wat je deed, en bij elk hoe het ervoor staat', (
+    tester,
+  ) async {
+    final done = [daysAgo(2), daysAgo(10), daysAgo(30)];
+    await tester.runAsync(() async {
+      for (final at in done) {
+        await workout(at);
+      }
+    });
+    await pump(tester);
+
+    final order = [
+      'Geschiedenis',
+      'Weekoverzicht',
+      'Herstel',
+      "Voortgangsfoto's",
+      'Gezondheid',
+    ];
+    for (var i = 1; i < order.length; i++) {
+      expect(
+        tester.getTopLeft(find.widgetWithText(ListTile, order[i - 1])).dy,
+        lessThan(tester.getTopLeft(find.widgetWithText(ListTile, order[i])).dy),
+        reason: '${order[i - 1]} above ${order[i]}',
+      );
+    }
+
+    final relative = Formatters.relativeDay(daysAgo(2)).toLowerCase();
+    expect(find.text('3 workouts · laatste $relative'), findsOneWidget);
+    final thisWeek = done.where((at) => !at.isBefore(startOfWeek(now))).length;
+    expect(
+      find.text(
+        thisWeek == 0
+            ? 'Deze week nog geen workout'
+            : 'Deze week ${Formatters.amount(thisWeek, 'workout', 'workouts')}',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text("Nog geen foto's"), findsOneWidget);
+    expect(find.text('Alles hersteld'), findsOneWidget);
   });
 }

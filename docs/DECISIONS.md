@@ -4060,3 +4060,18 @@ voor de even lange periode ervoor.
   weekoverzicht gebruikt dezelfde.
 - **Op een halve set.** Een tiende van een set per week zegt niets.
 
+## 199. Meer, opgeruimd
+
+Onderaan Voortgang stonden vijf ingangen in de volgorde waarin ze er
+bijkwamen, en alleen *Herstel* zei iets over hoe het ervoor stond. Nu staat
+wat je deed eerst - *Geschiedenis*, dan het *Weekoverzicht* - en wat over je
+lichaam gaat erna: *Herstel*, *Voortgangsfoto's*, *Gezondheid*.
+
+Elke ingang zegt in één regel hoe het ervoor staat, zoals *Herstel* al deed:
+hoeveel workouts en wanneer de laatste, hoeveel deze week, hoeveel foto's en
+wanneer de laatste. Een rij die alleen een naam heeft, moet je openen om te
+weten of er iets nieuws is. *Gezondheid* houdt zijn beschrijving: wat er
+staat, hangt af van wat Health Connect levert, en daar is geen kort getal
+voor. Zolang de getallen laden, staat er een lege regel, zodat de rijen niet
+verspringen als ze binnenkomen.
+

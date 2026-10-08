@@ -57,6 +57,13 @@ void main() {
     // Android, adaptive foreground: the glyph alone; the launcher supplies the
     // shape, and `ic_launcher_background` the colour of the tile.
     final foreground = FitLogMarkPainter(glyphScale: _adaptiveSafeScale);
+    // The light icon, Android only: the launcher entry you can switch to.
+    const legacyLight = FitLogMarkPainter.light(
+      tile: FitLogMarkPainter.lightIconBackground,
+    );
+    final foregroundLight = FitLogMarkPainter.light(
+      glyphScale: _adaptiveSafeScale,
+    );
     // iOS masks the corners itself and rejects transparency, so it gets the
     // full-bleed square.
     const ios = FitLogMarkPainter(
@@ -71,6 +78,12 @@ void main() {
         '$dir/ic_launcher_foreground.png',
         (entry.value * _adaptiveDp / 48).round(),
         foreground,
+      );
+      await _write('$dir/ic_launcher_light.png', entry.value, legacyLight);
+      await _write(
+        '$dir/ic_launcher_light_foreground.png',
+        (entry.value * _adaptiveDp / 48).round(),
+        foregroundLight,
       );
     }
 

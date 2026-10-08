@@ -110,6 +110,84 @@ void main() {
       );
     });
 
+    test('the light icon, for whoever chooses it', () {
+      final icon = read('$res/mipmap-xxxhdpi/ic_launcher_light.png');
+      expect(icon.width, 192);
+      double at(double unit) => unit / 100 * 192;
+      img.Pixel px(double x, double y) =>
+          icon.getPixel(at(x).round(), at(y).round());
+      bool is_(img.Pixel p, Color c) =>
+          p.r.round() == (c.r * 255).round() &&
+          p.g.round() == (c.g * 255).round() &&
+          p.b.round() == (c.b * 255).round();
+
+      expect(is_(px(56, 30), AppColors.accent), isTrue, reason: 'a plate');
+      expect(
+        is_(px(20, 50), FitLogMarkPainter.lightBar),
+        isTrue,
+        reason: 'the bar, in its light tone',
+      );
+      expect(
+        is_(px(79, 25), FitLogMarkPainter.lightSpark),
+        isTrue,
+        reason: 'the spark, in its light tone',
+      );
+      expect(
+        is_(px(5, 50), FitLogMarkPainter.lightIconBackground),
+        isTrue,
+        reason: 'the light tile',
+      );
+
+      final fg = read('$res/mipmap-xxxhdpi/ic_launcher_light_foreground.png');
+      expect(fg.width, 432);
+      expect(fg.getPixel(2, 2).a, 0);
+
+      final adaptive = File('$res/mipmap-anydpi-v26/ic_launcher_light.xml')
+          .readAsStringSync();
+      expect(adaptive, contains('@mipmap/ic_launcher_light_foreground'));
+      expect(adaptive, contains('@color/ic_launcher_light_background'));
+      expect(
+        File('$res/values/ic_launcher_background.xml').readAsStringSync(),
+        contains('#FFEEF2FA'),
+      );
+    });
+
+    test('two ways in from the launcher, the dark one under the old name', () {
+      final manifest = File('android/app/src/main/AndroidManifest.xml')
+          .readAsStringSync();
+      String alias(String name) => RegExp(
+        r'<activity-alias[^>]*android:name="\.'
+        '$name'
+        r'"[^>]*>',
+      ).firstMatch(manifest)!.group(0)!;
+
+      // An icon already on a home screen points at ".MainActivity": with
+      // that name gone, the update would take it off.
+      final dark = alias('MainActivity');
+      expect(dark, contains('android:enabled="true"'));
+      expect(dark, contains('android:icon="@mipmap/ic_launcher"'));
+      expect(dark, contains('android:targetActivity=".FitLogActivity"'));
+
+      final light = alias('MainActivityLight');
+      expect(light, contains('android:enabled="false"'));
+      expect(light, contains('android:icon="@mipmap/ic_launcher_light"'));
+      expect(light, contains('android:targetActivity=".FitLogActivity"'));
+
+      // The activity itself is no way in: that would be a third icon.
+      final activity = RegExp(
+        r'<activity\s+android:name="\.FitLogActivity".*?</activity>',
+        dotAll: true,
+      ).firstMatch(manifest)!.group(0)!;
+      expect(activity, isNot(contains('category.LAUNCHER')));
+
+      // And the switch names the same two.
+      final kotlin = File(
+        'android/app/src/main/kotlin/be/fitlog/app/FitLogActivity.kt',
+      ).readAsStringSync();
+      expect(kotlin, contains('"be.fitlog.app.MainActivity"'));
+      expect(kotlin, contains('"be.fitlog.app.MainActivityLight"'));
+    });
+
     test('the adaptive foreground is transparent outside the glyph', () {
       final fg = read('$res/mipmap-xxxhdpi/ic_launcher_foreground.png');
       expect(fg.width, 432, reason: '108dp at xxxhdpi');
@@ -119,14 +197,18 @@ void main() {
 
     test('every density has both layers', () {
       for (final bucket in ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
-        expect(
-          File('$res/mipmap-$bucket/ic_launcher.png').existsSync(),
-          isTrue,
-        );
-        expect(
-          File('$res/mipmap-$bucket/ic_launcher_foreground.png').existsSync(),
-          isTrue,
-        );
+        for (final name in [
+          'ic_launcher',
+          'ic_launcher_foreground',
+          'ic_launcher_light',
+          'ic_launcher_light_foreground',
+        ]) {
+          expect(
+            File('$res/mipmap-$bucket/$name.png').existsSync(),
+            isTrue,
+            reason: '$bucket/$name',
+          );
+        }
       }
       expect(
         File('$res/mipmap-anydpi-v26/ic_launcher.xml').existsSync(),

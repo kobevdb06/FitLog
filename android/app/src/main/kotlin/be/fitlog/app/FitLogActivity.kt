@@ -1,6 +1,8 @@
 package be.fitlog.app
 
+import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -22,9 +24,20 @@ import java.io.File
  * access framework: the automatic backup goes there, outside the app, so it
  * is still there after an uninstall or a wiped phone - and no storage
  * permission is needed, only the one you give for that one folder.
+ *
+ * And it switches the icon on the home screen. The launcher entries are two
+ * aliases of this activity, each with its own icon, and one of them is on.
+ * The dark one is called `.MainActivity`, the name this activity had: a
+ * home-screen icon points at that name, and it would have gone from every
+ * home screen with the update that brought the choice.
  */
-class MainActivity : FlutterFragmentActivity() {
+class FitLogActivity : FlutterFragmentActivity() {
+
     private var pendingPick: MethodChannel.Result? = null
+
+    /** The icon being switched to and the one being switched off, while
+     *  this window closes for it. */
+    private var switching: Pair<ComponentName, ComponentName>? = null
     private lateinit var pickFolder: ActivityResultLauncher<Uri?>
     private val main = Handler(Looper.getMainLooper())
 
@@ -51,11 +64,75 @@ class MainActivity : FlutterFragmentActivity() {
             }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        val (on, off) = switching ?: return
+        switching = null
+        applicationContext.startActivity(
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setComponent(on)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+        turn(off, on = false)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/folders")
             .setMethodCallHandler(::onFolderCall)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/icon")
+            .setMethodCallHandler(::onIconCall)
     }
+
+    private val darkIcon get() = ComponentName(this, "be.fitlog.app.MainActivity")
+    private val lightIcon get() = ComponentName(this, "be.fitlog.app.MainActivityLight")
+
+    private fun onIconCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "current" -> result.success(if (isOn(lightIcon, byDefault = false)) "light" else "dark")
+            "use" -> {
+                val light = call.argument<String>("icon") == "light"
+                val on = if (light) lightIcon else darkIcon
+                val off = if (light) darkIcon else lightIcon
+                result.success(null)
+                // Switching the old entry off closes the window that was
+                // opened through it - this one - so the app has to open
+                // again through the new one. Not while this window is still
+                // there: Android would hand the start to it, and then close
+                // both. So this window closes first, and the app reopens
+                // when it is gone (onDestroy). The old entry goes off only
+                // after that, so there is never a moment without a way in.
+                main.post {
+                    turn(on, on = true)
+                    switching = on to off
+                    finishAndRemoveTask()
+                }
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    /** Whether [component] is on, falling back to what the manifest says. */
+    private fun isOn(component: ComponentName, byDefault: Boolean): Boolean =
+        when (packageManager.getComponentEnabledSetting(component)) {
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT -> byDefault
+            else -> false
+        }
+
+    private fun turn(component: ComponentName, on: Boolean) =
+        packageManager.setComponentEnabledSetting(
+            component,
+            if (on) {
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            } else {
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+            },
+            // Switching the icon is not a reason to close the app you are
+            // switching it in.
+            PackageManager.DONT_KILL_APP,
+        )
 
     private fun onFolderCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {

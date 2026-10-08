@@ -41,7 +41,7 @@ abstract interface class BackupFolder {
   Future<void> release(String uri);
 }
 
-/// The Android storage access framework, through `MainActivity`.
+/// The Android storage access framework, through `FitLogActivity`.
 class AndroidBackupFolder implements BackupFolder {
   const AndroidBackupFolder();
 

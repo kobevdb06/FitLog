@@ -4,4 +4,7 @@
          and the amber spark keep their contrast. The same colour as
          FitLogMarkPainter.iconBackground. -->
     <color name="ic_launcher_background">#FF10141C</color>
+    <!-- And the light tile, for the light icon. The same colour as
+         FitLogMarkPainter.lightIconBackground. -->
+    <color name="ic_launcher_light_background">#FFEEF2FA</color>
 </resources>

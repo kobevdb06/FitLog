@@ -4075,3 +4075,42 @@ staat, hangt af van wat Health Connect levert, en daar is geen kort getal
 voor. Zolang de getallen laden, staat er een lege regel, zodat de rijen niet
 verspringen als ze binnenkomen.
 
+## 200. Een app-icoon naar keuze, los van het thema
+
+De vraag was of het icoon op het beginscherm het thema van de app kan volgen.
+Niet goed: Android kent geen app-icoon dat zelf meewisselt met donker en
+licht, en een app kan alleen van icoon wisselen terwijl ze draait. Bij
+*Systeem* zou het icoon achterlopen tot je de app opent, en elke wissel sluit
+de app (zie verder). Daarom een aparte keuze onder *Weergave en eenheden*:
+*App-icoon*, donker of licht, die je één keer maakt.
+
+- **Twee ingangen.** De ingangen in de launcher zijn twee `activity-alias`-en
+  van `FitLogActivity`, elk met een eigen icoon. De app zet er één aan en de
+  andere uit (`setComponentEnabledSetting`, `DONT_KILL_APP`). Welke aan
+  staat, vraagt de app aan Android en staat niet in de database: Android is
+  wat het toont, en een back-up op een andere telefoon zou een icoon beweren
+  dat die telefoon nooit kreeg.
+- **De oude naam blijft.** De activiteit heette `MainActivity`, en een icoon
+  op een beginscherm wijst naar die naam. De activiteit heet nu
+  `FitLogActivity`, en de donkere ingang draagt de oude naam. Zo blijft het
+  icoon bij de update op ieders beginscherm staan; op de emulator nagekeken.
+  Een test bewaakt de twee namen in het manifest en in de Kotlin-code.
+- **De app start opnieuw op.** Android sluit het venster dat via de
+  uitgezette ingang geopend werd. FitLog sluit daarom zelf zijn venster en
+  opent zich opnieuw via de nieuwe ingang zodra het oude weg is
+  (`onDestroy`). Eerder werkt niet: zolang het oude venster er is, geeft
+  Android de start aan dat venster, en sluit het daarna allebei - zo ging het
+  twee keer mis op de emulator. De nieuwe ingang gaat aan voor de oude uit,
+  zodat er nooit een moment is zonder ingang. Het is een nieuwe start: heb je
+  een pincode, dan vraagt FitLog die opnieuw, en de snelkoppelingen onder het
+  icoon komen er weer op zoals bij elke start.
+- **Wat de launcher doet.** Op de Pixel-launcher bleef het icoon op dezelfde
+  plek en kreeg het de nieuwe tekening. Een andere launcher kan het
+  weghalen; de vraag vooraf zegt dat, en waar je de app dan terugvindt.
+- **Alleen Android.** Op iOS kan een app ook van icoon wisselen, maar met een
+  systeemmelding elke keer, en FitLog wordt daar niet gebouwd. Daar staat de
+  keuze er niet.
+
+Het lichte icoon is de lichte versie uit 195: de diepere stang en het diepere
+amber op een lichte tegel (`#EEF2FA`), getekend door dezelfde painter.
+

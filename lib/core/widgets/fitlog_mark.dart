@@ -77,6 +77,10 @@ class FitLogMarkPainter extends CustomPainter {
   /// (`ic_launcher_background`) is this same colour.
   static const Color iconBackground = Color(0xFF10141C);
 
+  /// The tile of the light launcher icon, for whoever chooses it
+  /// (`ic_launcher_light_background`).
+  static const Color lightIconBackground = Color(0xFFEEF2FA);
+
   /// The glyph's own box inside the 100-unit canvas, centred on (50, 50), so
   /// callers can scale it to fit a given area instead of guessing.
   static const double glyphWidth = 80;

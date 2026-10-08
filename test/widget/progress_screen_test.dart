@@ -54,6 +54,61 @@ void main() {
         ),
       );
 
+  Future<void> exercise(String id, String name, {bool archived = false}) => db
+      .into(db.exercisesTable)
+      .insert(
+        ExercisesTableCompanion.insert(
+          id: id,
+          name: name,
+          primaryMuscle: 'borst',
+          category: 'barbell',
+          createdAt: 0,
+          isArchived: Value(archived),
+        ),
+      );
+
+  /// One session of [exerciseId] at [at]: three sets of three at [kg], an
+  /// estimated 1RM of [kg] times 1.1.
+  Future<void> session(String exerciseId, DateTime at, double kg) async {
+    final id = '$exerciseId-${at.millisecondsSinceEpoch}';
+    await db
+        .into(db.workoutsTable)
+        .insert(
+          WorkoutsTableCompanion.insert(
+            id: id,
+            name: 'Training',
+            startedAt: at.millisecondsSinceEpoch,
+            endedAt: Value(
+              at.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+            ),
+          ),
+        );
+    await db
+        .into(db.workoutExercisesTable)
+        .insert(
+          WorkoutExercisesTableCompanion.insert(
+            id: 'we-$id',
+            workoutId: id,
+            exerciseId: exerciseId,
+            sortOrder: 0,
+          ),
+        );
+    for (var i = 0; i < 3; i++) {
+      await db
+          .into(db.workoutSetsTable)
+          .insert(
+            WorkoutSetsTableCompanion.insert(
+              id: 'ws-$id-$i',
+              workoutExerciseId: 'we-$id',
+              sortOrder: i,
+              weightKg: Value(kg),
+              reps: const Value(3),
+              isCompleted: const Value(true),
+            ),
+          );
+    }
+  }
+
   Future<void> pump(WidgetTester tester) async {
     tester.view.physicalSize = const Size(400, 3000);
     tester.view.devicePixelRatio = 1;
@@ -134,6 +189,116 @@ void main() {
       await pump(tester);
 
       expect(find.text('Volume per maand'), findsOneWidget);
+    });
+  });
+
+  group('hoofdoefeningen', () {
+    testWidgets('de vaakst gedane, met hoe ver ze kwamen', (tester) async {
+      await tester.runAsync(() async {
+        await exercise('bench', 'Bench Press');
+        await exercise('squat', 'Back Squat');
+        await exercise('row', 'Barbell Row');
+        await exercise('curl', 'Barbell Curl', archived: true);
+        await exercise('lunge', 'Lunge');
+        for (final (days, kg) in [
+          (70, 100.0),
+          (63, 100.0),
+          (56, 102.5),
+          (49, 102.5),
+          (14, 105.0),
+          (7, 107.5),
+        ]) {
+          await session('bench', daysAgo(days), kg);
+        }
+        for (final days in [60, 40, 20, 5]) {
+          await session('squat', daysAgo(days), 140);
+        }
+        await session('row', daysAgo(30), 80);
+        await session('row', daysAgo(3), 82.5);
+        // Put away: however often it was done, it is not followed.
+        for (var days = 10; days < 80; days += 10) {
+          await session('curl', daysAgo(days), 40);
+        }
+        // Once is not a direction.
+        await session('lunge', daysAgo(4), 60);
+      });
+      await pump(tester);
+
+      expect(find.text('HOOFDOEFENINGEN'), findsOneWidget);
+      // The squat has stood still, so it is under Staat stil as well.
+      Finder lift(String name) => find.descendant(
+        of: find.ancestor(
+          of: find.byType(Sparkline),
+          matching: find.byType(InkWell),
+        ),
+        matching: find.text(name),
+      );
+      final rows = ['Bench Press', 'Back Squat', 'Barbell Row'];
+      for (var i = 1; i < rows.length; i++) {
+        expect(
+          tester.getTopLeft(lift(rows[i - 1])).dy,
+          lessThan(tester.getTopLeft(lift(rows[i])).dy),
+          reason: '${rows[i - 1]} above ${rows[i]}',
+        );
+      }
+      expect(find.text('Barbell Curl'), findsNothing);
+      expect(find.text('Lunge'), findsNothing);
+
+      // 107.5 for three, against 100 for three at the start.
+      expect(find.text('118,25 kg'), findsOneWidget);
+      expect(find.text('Geschatte 1RM · 6 sessies'), findsOneWidget);
+      expect(
+        find.text('+8,25 kg sinds ${Formatters.dayMonth(daysAgo(70))}'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Gelijk sinds ${Formatters.dayMonth(daysAgo(60))}'),
+        findsOneWidget,
+      );
+      // Two sessions: where it stands, nothing to compare yet.
+      expect(find.text('Geschatte 1RM · 2 sessies'), findsOneWidget);
+      expect(
+        find.textContaining('sinds ${Formatters.dayMonth(daysAgo(30))}'),
+        findsNothing,
+      );
+      expect(find.byType(Sparkline), findsNWidgets(3));
+    });
+
+    testWidgets('hooguit vier', (tester) async {
+      await tester.runAsync(() async {
+        for (var i = 0; i < 6; i++) {
+          await exercise('ex$i', 'Oefening $i');
+          await session('ex$i', daysAgo(20 + i), 50);
+          await session('ex$i', daysAgo(10 + i), 50);
+        }
+      });
+      await pump(tester);
+
+      expect(find.byType(Sparkline), findsNWidgets(4));
+      // The ones done last.
+      expect(find.text('Oefening 0'), findsOneWidget);
+      expect(find.text('Oefening 5'), findsNothing);
+    });
+
+    testWidgets('volgen de gekozen periode', (tester) async {
+      await tester.runAsync(() async {
+        await exercise('bench', 'Bench Press');
+        await session('bench', daysAgo(200), 100);
+        await session('bench', daysAgo(190), 100);
+      });
+      await pump(tester);
+
+      expect(find.text('Bench Press'), findsNothing);
+      expect(
+        find.text(
+          'Doe een oefening twee keer in deze periode, en hier staat of ze '
+          'vooruitgaat.',
+        ),
+        findsOneWidget,
+      );
+
+      await choose(tester, '1 jaar');
+      expect(find.text('Bench Press'), findsOneWidget);
     });
   });
 

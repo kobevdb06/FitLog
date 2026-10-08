@@ -5,7 +5,9 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/security/key_manager.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
+import 'package:fitlog/core/widgets/charts.dart';
 import 'package:fitlog/features/exercises/presentation/exercise_detail_screen.dart';
+import 'package:fitlog/features/progress/presentation/plateau_card.dart';
 import 'package:fitlog/features/progress/presentation/progress_screen.dart';
 import 'package:fitlog/routing/routes.dart';
 import 'package:fitlog/routing/router.dart';
@@ -157,26 +159,27 @@ void main() {
     await tester.tap(find.text('Voortgang').last);
     await tester.pumpAndSettle();
 
-    final progress = find.byType(ProgressScreen);
+    // Both are main lifts as well; only the one that stalled is here.
+    final stalled = find.byType(PlateauSection);
     expect(
-      find.descendant(of: progress, matching: find.text('STAAT STIL')),
+      find.descendant(of: stalled, matching: find.text('STAAT STIL')),
       findsOneWidget,
     );
     expect(
       find.descendant(
-        of: progress,
+        of: stalled,
         matching: find.text('6 weken geen vooruitgang · beste 99,25 kg'),
       ),
       findsOneWidget,
     );
     // Wat vooruitgaat, staat er niet.
     expect(
-      find.descendant(of: progress, matching: find.text('Back Squat')),
+      find.descendant(of: stalled, matching: find.text('Back Squat')),
       findsNothing,
     );
 
     await tester.tap(
-      find.descendant(of: progress, matching: find.text('Bench Press')),
+      find.descendant(of: stalled, matching: find.text('Bench Press')),
     );
     await tester.pumpAndSettle();
 
@@ -195,6 +198,31 @@ void main() {
     expect(find.text('Nog niet hersteld'), findsOneWidget);
     // Zonder sleutel geen coach om iets te vragen.
     expect(find.text('Vraag de coach'), findsNothing);
+  });
+
+  testWidgets('een hoofdoefening opent haar grafieken', (tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.text('Voortgang').last);
+    await tester.pumpAndSettle();
+
+    final squat = find.descendant(
+      of: find.ancestor(
+        of: find.byType(Sparkline),
+        matching: find.byType(InkWell),
+      ),
+      matching: find.text('Back Squat'),
+    );
+    await tester.ensureVisible(squat);
+    await tester.tap(squat);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ExerciseDetailScreen), findsOneWidget);
+    expect(find.byType(ProgressScreen), findsNothing);
+    expect(
+      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
+      2,
+      reason: 'on Grafieken',
+    );
   });
 
   testWidgets('een stil teken op de oefening zelf', (tester) async {

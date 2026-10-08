@@ -4000,3 +4000,36 @@ en volgt alles eronder die ene keuze (`ProgressPeriod`).
 Het volumeblok op het Start-tabblad blijft acht weken: het is een blik, geen
 plek om rond te kijken.
 
+## 197. Je hoofdoefeningen bovenaan Voortgang
+
+Voortgang zei hoeveel je deed, niet of je sterker werd: dat stond per
+oefening op haar eigen pagina, een tik dieper, voor wie wist waar te kijken.
+Nu staan onder *Hoofdoefeningen*, meteen onder de keuze van de periode, de
+vier oefeningen die je in die periode het vaakst deed (`liftTrends`).
+
+- **Hetzelfde getal als Staat stil.** Elke sessie wordt één getal zoals bij
+  het stilstaan (173): het geschatte 1RM van de beste set, zonder gewicht de
+  meeste herhalingen, bij een plank de langste tijd, en met één arm alleen
+  vergeleken met één arm. Twee plekken die elk iets anders vooruitgang
+  noemen, zouden elkaar tegenspreken.
+- **Het vaakst gedaan, niet het zwaarst.** Wat je vaak doet, is waar je op
+  traint. Bij een gelijk aantal gaat de laatst gedane voor, daarna het id,
+  zodat de volgorde niet verspringt. Minstens twee sessies: één sessie is
+  een getal, geen richting. Geassisteerd werk en cardio vallen weg zoals bij
+  het stilstaan; een gearchiveerde oefening ook, en dan schuift de volgende
+  op.
+- **Het beste van twee tegen het beste van twee.** De vooruitgang is het
+  beste van de laatste twee sessies tegenover het beste van de eerste twee,
+  pas vanaf vier sessies, zodat beide kanten nooit dezelfde sessie zijn. Eén
+  lichte dag aan het eind of een uitschieter aan het begin beslist zo niet
+  over de hele periode. Wat na afronding nul is, heet *Gelijk*. Achteruit
+  staat in grijs en niet in rood: een periode van herstel is geen fout, en
+  het rood is in de app voor wat niet ongedaan kan.
+- **Een lijntje, geen grafiek.** Per oefening een lijn door elke sessie, een
+  stap per sessie, zonder assen: de vorm zegt genoeg, het getal staat ernaast,
+  en de echte grafiek is een tik verder (op het tabblad *Grafieken*).
+
+Een oefening die stilstaat en die je vaak doet, staat zowel onder *Staat
+stil* als onder *Hoofdoefeningen*. Dat is zo bedoeld: het ene is wat er te
+doen valt, het andere het overzicht.
+

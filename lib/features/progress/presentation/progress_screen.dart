@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/calc/plateau.dart';
 import '../../../core/calc/progress_period.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
@@ -13,9 +15,9 @@ import 'plateau_card.dart';
 import 'progress_providers.dart';
 import 'recovery_providers.dart';
 
-/// The Voortgang tab: what has stalled, what you did over the period you
-/// choose, your body weight, and the way in to everything else that tracks
-/// progress.
+/// The Voortgang tab: what has stalled, then over the period you choose
+/// whether your main exercises went up and what you did, your body weight,
+/// and the way in to everything else that tracks progress.
 class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key});
 
@@ -33,6 +35,7 @@ class ProgressScreen extends ConsumerWidget {
           // does not follow it: stalling is measured over weeks of its own.
           const PlateauSection(),
           const _PeriodPicker(),
+          _MainLifts(period: period),
           _Training(period: period),
           _BodyWeight(period: period),
           // Your records and measurements are on Profiel, with the rest of
@@ -99,6 +102,177 @@ class _PeriodPicker extends ConsumerWidget {
             .choose(chosen.first),
       ),
     );
+  }
+}
+
+/// Whether the exercises you do most went up over the period.
+///
+/// First after the choice, because it is the question the tab is for: the
+/// rest says how much you did, this says what came of it.
+class _MainLifts extends ConsumerWidget {
+  const _MainLifts({required this.period});
+
+  final ProgressPeriod period;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final lifts = ref.watch(mainLiftsProvider(period)).value;
+    // Nothing until the first answer, rather than the empty text flashing
+    // by on every change of period.
+    if (lifts == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader('Hoofdoefeningen'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: AppCard(
+            padding: lifts.isEmpty
+                ? const EdgeInsets.all(AppSpacing.lg)
+                : const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: lifts.isEmpty
+                ? Text(
+                    'Doe een oefening twee keer in deze periode, en hier '
+                    'staat of ze vooruitgaat.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                : Column(
+                    children: [for (final lift in lifts) _LiftRow(lift: lift)],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One exercise: where it stands, how far it came, and the line between.
+class _LiftRow extends ConsumerWidget {
+  const _LiftRow({required this.lift});
+
+  final MainLift lift;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final formatters = ref.watch(formattersProvider);
+    final trend = lift.trend;
+    final change = trend.change;
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+
+    final what = switch (trend.measure) {
+      ProgressMeasure.oneRm => 'Geschatte 1RM',
+      ProgressMeasure.reps => 'Meeste herhalingen',
+      ProgressMeasure.hold => 'Langste tijd',
+    };
+    final sessions = Formatters.amount(
+      trend.points.length,
+      'sessie',
+      'sessies',
+    );
+    final moved = change == null
+        ? null
+        : '${_difference(formatters, trend.measure, change)} sinds '
+              '${Formatters.dayMonth(trend.since)}';
+    final up = change != null && _shown(formatters, trend.measure, change) > 0;
+
+    return InkWell(
+      onTap: () => context.push(Routes.exerciseCharts(lift.exercise.id)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            MergeSemantics(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          lift.exercise.name,
+                          style: theme.textTheme.titleSmall,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text('$what · $sessions', style: muted),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _value(formatters, trend.measure, trend.latest),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      if (moved != null)
+                        Text(
+                          moved,
+                          style: muted?.copyWith(
+                            color: up ? AppColors.success : null,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ExcludeSemantics(
+              child: Sparkline(values: [for (final p in trend.points) p.value]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _value(
+    Formatters formatters,
+    ProgressMeasure measure,
+    double value,
+  ) => switch (measure) {
+    ProgressMeasure.oneRm => formatters.weight(value),
+    ProgressMeasure.reps => '${value.round()} reps',
+    ProgressMeasure.hold => Formatters.minutesSeconds(value.round()),
+  };
+
+  /// The change as it will be shown: rounded the way the value is, so a
+  /// tenth of a kilo does not count as going up.
+  static double _shown(
+    Formatters formatters,
+    ProgressMeasure measure,
+    double change,
+  ) => switch (measure) {
+    ProgressMeasure.oneRm =>
+      formatters.toDisplayWeight(change.abs()) * change.sign,
+    _ => change.roundToDouble(),
+  };
+
+  static String _difference(
+    Formatters formatters,
+    ProgressMeasure measure,
+    double change,
+  ) {
+    final shown = _shown(formatters, measure, change);
+    if (shown == 0) return 'Gelijk';
+    final sign = shown > 0 ? '+' : '-';
+    return '$sign${_value(formatters, measure, change.abs())}';
   }
 }
 

@@ -266,6 +266,84 @@ class SimpleBarChart extends StatelessWidget {
   }
 }
 
+/// A line without axes or labels: the shape of a series at a glance, one
+/// step per value, with a dot on the newest.
+class Sparkline extends StatelessWidget {
+  const Sparkline({
+    super.key,
+    required this.values,
+    this.height = 32,
+    this.color = AppColors.accent,
+  });
+
+  final List<double> values;
+  final double height;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: CustomPaint(painter: _SparklinePainter(values, color)),
+    );
+  }
+}
+
+class _SparklinePainter extends CustomPainter {
+  const _SparklinePainter(this.values, this.color);
+
+  final List<double> values;
+  final Color color;
+
+  /// Room for the dot, so it is not cut off at the edges.
+  static const double _inset = 3;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+    final low = values.reduce((a, b) => a < b ? a : b);
+    final high = values.reduce((a, b) => a > b ? a : b);
+    final width = size.width - 2 * _inset;
+    final height = size.height - 2 * _inset;
+
+    Offset at(int i) => Offset(
+      _inset + width * i / (values.length - 1),
+      // A flat series is a flat line through the middle, not along the floor.
+      high == low
+          ? size.height / 2
+          : _inset + height * (1 - (values[i] - low) / (high - low)),
+    );
+
+    final path = Path()..moveTo(at(0).dx, at(0).dy);
+    for (var i = 1; i < values.length; i++) {
+      path.lineTo(at(i).dx, at(i).dy);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(at(values.length - 1), _inset, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_SparklinePainter old) =>
+      old.color != color || !_same(old.values, values);
+
+  static bool _same(List<double> a, List<double> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+}
+
 /// A tiny inline bar chart without axes, for the dashboard card.
 class MiniBarChart extends StatelessWidget {
   const MiniBarChart({

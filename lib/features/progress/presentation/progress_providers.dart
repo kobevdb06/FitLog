@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/main_lifts.dart';
 import '../../../core/calc/plateau.dart';
 import '../../../core/calc/progress_period.dart';
 import '../../../core/calc/streak.dart';
@@ -95,6 +96,41 @@ Stream<List<TrainingBucket>> trainingBuckets(Ref ref, ProgressPeriod period) {
   return db.workoutsDao
       .watchWorkoutsBetween(starts.first, now.add(const Duration(days: 1)))
       .map((workouts) => _sumPerBucket(starts, workouts, period.bucketOf));
+}
+
+/// An exercise Voortgang follows, with the row it belongs to.
+class MainLift {
+  const MainLift({required this.exercise, required this.trend});
+
+  final ExerciseRow exercise;
+  final LiftTrend trend;
+}
+
+/// The exercises you did most in [period], at most [kMainLifts].
+///
+/// A stream: the session you just finished is the newest point of the line.
+@riverpod
+Stream<List<MainLift>> mainLifts(Ref ref, ProgressPeriod period) {
+  final db = ref.watch(databaseProvider);
+  return db.workoutsDao
+      .watchProgressSets(since: period.start(DateTime.now()))
+      .asyncMap((sets) async {
+        final trends = liftTrends(sets);
+        if (trends.isEmpty) return const <MainLift>[];
+        final exercises = {
+          for (final row in await db.exercisesDao.getByIds([
+            for (final trend in trends) trend.exerciseId,
+          ]))
+            row.id: row,
+        };
+        // An archived exercise is one you put away; the next one moves up.
+        return [
+          for (final trend in trends)
+            if (exercises[trend.exerciseId] case final exercise?
+                when !exercise.isArchived)
+              MainLift(exercise: exercise, trend: trend),
+        ].take(kMainLifts).toList();
+      });
 }
 
 /// The current training streak.

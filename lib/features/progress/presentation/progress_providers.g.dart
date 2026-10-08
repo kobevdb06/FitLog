@@ -259,6 +259,100 @@ final class TrainingBucketsFamily extends $Family
   String toString() => r'trainingBucketsProvider';
 }
 
+/// The exercises you did most in [period], at most [kMainLifts].
+///
+/// A stream: the session you just finished is the newest point of the line.
+
+@ProviderFor(mainLifts)
+final mainLiftsProvider = MainLiftsFamily._();
+
+/// The exercises you did most in [period], at most [kMainLifts].
+///
+/// A stream: the session you just finished is the newest point of the line.
+
+final class MainLiftsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<MainLift>>,
+          List<MainLift>,
+          Stream<List<MainLift>>
+        >
+    with $FutureModifier<List<MainLift>>, $StreamProvider<List<MainLift>> {
+  /// The exercises you did most in [period], at most [kMainLifts].
+  ///
+  /// A stream: the session you just finished is the newest point of the line.
+  MainLiftsProvider._({
+    required MainLiftsFamily super.from,
+    required ProgressPeriod super.argument,
+  }) : super(
+         retry: null,
+         name: r'mainLiftsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$mainLiftsHash();
+
+  @override
+  String toString() {
+    return r'mainLiftsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<MainLift>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<MainLift>> create(Ref ref) {
+    final argument = this.argument as ProgressPeriod;
+    return mainLifts(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MainLiftsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$mainLiftsHash() => r'525198c848a70a5dd13a3074514d90717fcae105';
+
+/// The exercises you did most in [period], at most [kMainLifts].
+///
+/// A stream: the session you just finished is the newest point of the line.
+
+final class MainLiftsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<MainLift>>, ProgressPeriod> {
+  MainLiftsFamily._()
+    : super(
+        retry: null,
+        name: r'mainLiftsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The exercises you did most in [period], at most [kMainLifts].
+  ///
+  /// A stream: the session you just finished is the newest point of the line.
+
+  MainLiftsProvider call(ProgressPeriod period) =>
+      MainLiftsProvider._(argument: period, from: this);
+
+  @override
+  String toString() => r'mainLiftsProvider';
+}
+
 /// The current training streak.
 
 @ProviderFor(streak)

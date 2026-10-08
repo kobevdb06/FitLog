@@ -142,6 +142,7 @@ void main() {
 
   group('een periode voor alle grafieken', () {
     testWidgets('drie maanden tot je iets anders kiest', (tester) async {
+      await tester.runAsync(() => workout(daysAgo(3)));
       await pump(tester);
 
       final picker = tester.widget<SegmentedButton<Object?>>(
@@ -191,7 +192,21 @@ void main() {
       expect(bars.labels.last, Formatters.month(now));
     });
 
+    testWidgets('een periode zonder workouts zegt dat, zonder lege grafieken', (
+      tester,
+    ) async {
+      await tester.runAsync(() => workout(daysAgo(60)));
+      await pump(tester);
+      expect(find.byType(SimpleBarChart), findsNWidgets(2));
+
+      await choose(tester, '4 weken');
+      expect(find.text('Nog geen workouts in deze periode.'), findsOneWidget);
+      expect(find.byType(SimpleBarChart), findsNothing);
+      expect(find.text('Volume per week'), findsNothing);
+    });
+
     testWidgets('de keuze blijft staan als je terugkomt', (tester) async {
+      await tester.runAsync(() => workout(daysAgo(3)));
       await pump(tester);
       await choose(tester, '1 jaar');
 

@@ -119,7 +119,7 @@ class _MainLifts extends ConsumerWidget {
                 ? Text(
                     'Doe een oefening twee keer in deze periode, en hier '
                     'staat of ze vooruitgaat.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   )
@@ -267,8 +267,8 @@ class _Training extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final formatters = ref.watch(formattersProvider);
-    final buckets =
-        ref.watch(trainingBucketsProvider(period)).value ?? const [];
+    final buckets = ref.watch(trainingBucketsProvider(period)).value;
+    if (buckets == null) return const SizedBox.shrink();
 
     final per = period.byMonth ? 'maand' : 'week';
     final labels = [
@@ -302,41 +302,59 @@ class _Training extends ConsumerWidget {
         const SectionHeader('Training'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          // Without a workout in the period, one line instead of a row of
+          // noughts over two charts with no bars: that was most of a screen
+          // of nothing.
           child: AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                StatRow(
-                  children: [
-                    StatTile(
-                      value: formatters.count(workouts),
-                      label: 'Workouts',
+            child: workouts == 0
+                ? Text(
+                    'Nog geen workouts in deze periode.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    StatTile(value: formatters.count(sets), label: 'Sets'),
-                    StatTile(value: formatters.volume(volume), label: 'Volume'),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text('Volume per $per', style: caption),
-                const SizedBox(height: AppSpacing.sm),
-                SimpleBarChart(
-                  values: [for (final b in buckets) b.volumeKg],
-                  labels: labels,
-                  labelEvery: labelEvery,
-                  valueLabel: formatters.volume,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text('Workouts per $per', style: caption),
-                const SizedBox(height: AppSpacing.sm),
-                SimpleBarChart(
-                  values: [for (final b in buckets) b.workouts.toDouble()],
-                  labels: labels,
-                  labelEvery: labelEvery,
-                  height: 110,
-                  valueLabel: (v) => '${v.round()}',
-                ),
-              ],
-            ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      StatRow(
+                        children: [
+                          StatTile(
+                            value: formatters.count(workouts),
+                            label: 'Workouts',
+                          ),
+                          StatTile(
+                            value: formatters.count(sets),
+                            label: 'Sets',
+                          ),
+                          StatTile(
+                            value: formatters.volume(volume),
+                            label: 'Volume',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text('Volume per $per', style: caption),
+                      const SizedBox(height: AppSpacing.sm),
+                      SimpleBarChart(
+                        values: [for (final b in buckets) b.volumeKg],
+                        labels: labels,
+                        labelEvery: labelEvery,
+                        valueLabel: formatters.volume,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text('Workouts per $per', style: caption),
+                      const SizedBox(height: AppSpacing.sm),
+                      SimpleBarChart(
+                        values: [
+                          for (final b in buckets) b.workouts.toDouble(),
+                        ],
+                        labels: labels,
+                        labelEvery: labelEvery,
+                        height: 110,
+                        valueLabel: (v) => '${v.round()}',
+                      ),
+                    ],
+                  ),
           ),
         ),
       ],

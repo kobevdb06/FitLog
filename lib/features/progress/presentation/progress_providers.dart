@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/main_lifts.dart';
+import '../../../core/calc/muscle_sets.dart';
 import '../../../core/calc/plateau.dart';
 import '../../../core/calc/progress_period.dart';
 import '../../../core/calc/streak.dart';
@@ -131,6 +132,20 @@ Stream<List<MainLift>> mainLifts(Ref ref, ProgressPeriod period) {
               MainLift(exercise: exercise, trend: trend),
         ].take(kMainLifts).toList();
       });
+}
+
+/// The working sets per muscle per week of [period], against the stretch
+/// as long before it.
+@riverpod
+Stream<List<MuscleSets>> muscleSets(Ref ref, ProgressPeriod period) {
+  final db = ref.watch(databaseProvider);
+  final now = DateTime.now();
+  final start = period.start(now);
+  return db.workoutsDao
+      .watchProgressSets(since: start.subtract(now.difference(start)))
+      .map(
+        (sets) => muscleSetsPerWeek(sets, period: period, now: DateTime.now()),
+      );
 }
 
 /// The current training streak.

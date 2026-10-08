@@ -7,6 +7,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/muscle_bars.dart';
 import '../../../core/widgets/week_navigator.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
@@ -169,7 +170,18 @@ class _Week extends ConsumerWidget {
                   bottom: AppSpacing.sm,
                 ),
               ),
-              _MuscleBars(muscles: week.muscles),
+              MuscleBars(
+                bars: [
+                  for (final m in week.muscles)
+                    MuscleBar(
+                      muscle: m.muscle,
+                      value: m.sets.toDouble(),
+                      usual: m.usual,
+                      label: '${m.sets}',
+                      lagging: m.lagging,
+                    ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Het streepje is je gemiddelde van de 4 weken ervoor.',
@@ -272,97 +284,6 @@ class _Line extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// A bar per muscle: this week's sets, with a mark where the usual is. A
-/// muscle clearly short of its usual is coloured.
-class _MuscleBars extends StatelessWidget {
-  const _MuscleBars({required this.muscles});
-
-  final List<MuscleWeek> muscles;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scale = muscles
-        .expand((m) => [m.sets.toDouble(), m.usual])
-        .fold<double>(1, (a, b) => a > b ? a : b);
-
-    return Column(
-      children: [
-        for (final m in muscles)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 96,
-                  child: Text(
-                    m.muscle[0].toUpperCase() + m.muscle.substring(1),
-                    style: theme.textTheme.bodyMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, box) {
-                      final colour = m.lagging
-                          ? AppColors.record
-                          : theme.colorScheme.primary;
-                      return SizedBox(
-                        height: 14,
-                        child: Stack(
-                          alignment: Alignment.centerLeft,
-                          children: [
-                            Container(
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            Container(
-                              width: box.maxWidth * m.sets / scale,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: colour,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            if (m.usual > 0)
-                              Positioned(
-                                left: (box.maxWidth * m.usual / scale - 1)
-                                    .clamp(0, box.maxWidth - 2),
-                                child: Container(
-                                  width: 2,
-                                  height: 14,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                SizedBox(
-                  width: 32,
-                  child: Text(
-                    '${m.sets}',
-                    textAlign: TextAlign.right,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: m.lagging ? AppColors.record : null,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
     );
   }
 }

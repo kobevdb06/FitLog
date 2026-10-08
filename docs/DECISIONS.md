@@ -4033,3 +4033,30 @@ Een oefening die stilstaat en die je vaak doet, staat zowel onder *Staat
 stil* als onder *Hoofdoefeningen*. Dat is zo bedoeld: het ene is wat er te
 doen valt, het andere het overzicht.
 
+## 198. Sets per spiergroep over de periode
+
+Of je benen of je rug achterbleven, zag je alleen in het weekoverzicht, een
+week per keer. Onder *Sets per spiergroep* staan nu je werksets per week per
+spiergroep over de gekozen periode (`muscleSetsPerWeek`), met een streepje
+voor de even lange periode ervoor.
+
+- **Geteld zoals in het weekoverzicht.** Elke afgewerkte set die geen
+  opwarmset is, op de primaire spiergroep van de oefening. Secundaire
+  spieren tellen niet mee: een halve set triceps bij elke bankdruk maakt de
+  lijst langer, niet duidelijker, en het weekoverzicht en de coach tellen ook
+  zo. Twee schermen die verschillend tellen, spreken elkaar tegen.
+- **Per week, en door dezelfde weken gedeeld.** Zo zijn vier weken en een
+  jaar met elkaar te vergelijken, en met wat je ergens leest over sets per
+  week. Ook de periode ervoor wordt gedeeld door de weken van deze periode
+  tot nu: anders zou een periode die maandag begon altijd achterlopen op de
+  vorige.
+- **Wat je niet meer deed, staat er ook.** Elke spiergroep uit de periode of
+  de periode ervoor staat erin, met 0 als je ze niet meer trainde. Dat is
+  precies de spiergroep die je moet zien, en ze zou ontbreken als alleen de
+  periode telde.
+- **Dezelfde regel voor achterblijven.** Onder zeven tiende van een gewoonte
+  van minstens vier sets per week, zoals in het weekoverzicht. De regel
+  (`laggingBehind`) en de balken (`MuscleBars`) staan nu in `core`, en het
+  weekoverzicht gebruikt dezelfde.
+- **Op een halve set.** Een tiende van een set per week zegt niets.
+

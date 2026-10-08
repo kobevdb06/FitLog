@@ -353,6 +353,95 @@ final class MainLiftsFamily extends $Family
   String toString() => r'mainLiftsProvider';
 }
 
+/// The working sets per muscle per week of [period], against the stretch
+/// as long before it.
+
+@ProviderFor(muscleSets)
+final muscleSetsProvider = MuscleSetsFamily._();
+
+/// The working sets per muscle per week of [period], against the stretch
+/// as long before it.
+
+final class MuscleSetsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<MuscleSets>>,
+          List<MuscleSets>,
+          Stream<List<MuscleSets>>
+        >
+    with $FutureModifier<List<MuscleSets>>, $StreamProvider<List<MuscleSets>> {
+  /// The working sets per muscle per week of [period], against the stretch
+  /// as long before it.
+  MuscleSetsProvider._({
+    required MuscleSetsFamily super.from,
+    required ProgressPeriod super.argument,
+  }) : super(
+         retry: null,
+         name: r'muscleSetsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$muscleSetsHash();
+
+  @override
+  String toString() {
+    return r'muscleSetsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<MuscleSets>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<MuscleSets>> create(Ref ref) {
+    final argument = this.argument as ProgressPeriod;
+    return muscleSets(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MuscleSetsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$muscleSetsHash() => r'b9fe7b2ccb805eedf8e9677a71a12e6380d75d9d';
+
+/// The working sets per muscle per week of [period], against the stretch
+/// as long before it.
+
+final class MuscleSetsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<MuscleSets>>, ProgressPeriod> {
+  MuscleSetsFamily._()
+    : super(
+        retry: null,
+        name: r'muscleSetsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The working sets per muscle per week of [period], against the stretch
+  /// as long before it.
+
+  MuscleSetsProvider call(ProgressPeriod period) =>
+      MuscleSetsProvider._(argument: period, from: this);
+
+  @override
+  String toString() => r'muscleSetsProvider';
+}
+
 /// The current training streak.
 
 @ProviderFor(streak)

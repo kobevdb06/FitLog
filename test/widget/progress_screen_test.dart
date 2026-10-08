@@ -5,6 +5,7 @@ import 'package:fitlog/core/formatting/formatters.dart';
 import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/core/widgets/charts.dart';
 import 'package:fitlog/core/widgets/common.dart';
+import 'package:fitlog/core/widgets/muscle_bars.dart';
 import 'package:fitlog/features/progress/presentation/progress_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,13 +55,18 @@ void main() {
         ),
       );
 
-  Future<void> exercise(String id, String name, {bool archived = false}) => db
+  Future<void> exercise(
+    String id,
+    String name, {
+    String muscle = 'borst',
+    bool archived = false,
+  }) => db
       .into(db.exercisesTable)
       .insert(
         ExercisesTableCompanion.insert(
           id: id,
           name: name,
-          primaryMuscle: 'borst',
+          primaryMuscle: muscle,
           category: 'barbell',
           createdAt: 0,
           isArchived: Value(archived),
@@ -299,6 +305,50 @@ void main() {
 
       await choose(tester, '1 jaar');
       expect(find.text('Bench Press'), findsOneWidget);
+    });
+  });
+
+  group('sets per spiergroep', () {
+    testWidgets('per week, tegen de periode ervoor', (tester) async {
+      await tester.runAsync(() async {
+        await exercise('bench', 'Bench Press');
+        await exercise('row', 'Barbell Row', muscle: 'lats');
+        await exercise('squat', 'Back Squat', muscle: 'quadriceps');
+        for (final days in [2, 5, 9, 12]) {
+          await session('bench', daysAgo(days), 60);
+        }
+        // Eight times in the four weeks before, once in these four.
+        for (var days = 29; days <= 36; days++) {
+          await session('row', daysAgo(days), 60);
+        }
+        await session('row', daysAgo(6), 60);
+        // Not at all any more.
+        await session('squat', daysAgo(37), 100);
+        await session('squat', daysAgo(39), 100);
+      });
+      await pump(tester);
+      await choose(tester, '4 weken');
+
+      expect(find.text('SETS PER SPIERGROEP'), findsOneWidget);
+      final bars = tester.widget<MuscleBars>(find.byType(MuscleBars)).bars;
+      expect([for (final b in bars) b.muscle], ['borst', 'lats', 'quadriceps']);
+      expect(bars[0].usual, 0);
+      expect(bars[1].lagging, isTrue, reason: 'far below the weeks before');
+      expect(bars[2].value, 0, reason: 'stopped, and still listed');
+      expect(bars[2].lagging, isFalse, reason: 'two sessions is no habit');
+      expect(find.text('Lats'), findsOneWidget);
+      expect(find.text('Quadriceps'), findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(MuscleBars), matching: find.text('0')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('zonder sets zegt het dat', (tester) async {
+      await pump(tester);
+
+      expect(find.text('Nog geen sets in deze periode.'), findsOneWidget);
+      expect(find.byType(MuscleBars), findsNothing);
     });
   });
 

@@ -6,6 +6,8 @@
 /// Sunday night is in it. What the coach was shown is kept with its text.
 library;
 
+import '../../../core/calc/muscle_sets.dart';
+
 /// A routine that was planned on days of the week and not done as often.
 class MissedRoutine {
   const MissedRoutine({
@@ -82,7 +84,7 @@ class MuscleWeek {
   /// Clearly less than usual: under seven tenths of it, and only where the
   /// usual is enough to fall short of - a muscle you trained once a month is
   /// not lagging the week you skip it.
-  bool get lagging => usual >= kLaggingFrom && sets < usual * kLaggingShare;
+  bool get lagging => laggingBehind(sets.toDouble(), usual);
 
   Map<String, Object?> toJson() => {
     'muscle': muscle,
@@ -96,12 +98,6 @@ class MuscleWeek {
     usual: (json['usual_per_week'] as num).toDouble(),
   );
 }
-
-/// Below this many sets a week as usual, a muscle is not called lagging.
-const double kLaggingFrom = 4;
-
-/// And it lags under this share of its usual.
-const double kLaggingShare = 0.7;
 
 /// An exercise that stood still at the end of the week.
 class StalledExercise {

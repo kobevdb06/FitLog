@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/muscle_bars.dart';
 import '../../../routing/routes.dart';
 import 'plateau_card.dart';
 import 'progress_providers.dart';
@@ -37,6 +38,7 @@ class ProgressScreen extends ConsumerWidget {
           const _PeriodPicker(),
           _MainLifts(period: period),
           _Training(period: period),
+          _MuscleSets(period: period),
           _BodyWeight(period: period),
           // Your records and measurements are on Profiel, with the rest of
           // what is about you; one place for each.
@@ -356,6 +358,64 @@ class _Training extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Where the sets of the period went, and which muscle has fallen behind
+/// the stretch before it.
+class _MuscleSets extends ConsumerWidget {
+  const _MuscleSets({required this.period});
+
+  final ProgressPeriod period;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final formatters = ref.watch(formattersProvider);
+    final muscles = ref.watch(muscleSetsProvider(period)).value;
+    if (muscles == null) return const SizedBox.shrink();
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    // To the half set: a tenth of a set a week says nothing.
+    String perWeek(double sets) => formatters.decimal((sets * 2).round() / 2);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader('Sets per spiergroep'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: AppCard(
+            child: muscles.isEmpty
+                ? Text('Nog geen sets in deze periode.', style: muted)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MuscleBars(
+                        bars: [
+                          for (final m in muscles)
+                            MuscleBar(
+                              muscle: m.muscle,
+                              value: m.perWeek,
+                              usual: m.usualPerWeek,
+                              label: perWeek(m.perWeek),
+                              lagging: m.lagging,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Werksets per week. Het streepje is de periode ervoor; '
+                        'wat daar duidelijk onder zakte, staat in het oranje.',
+                        style: muted,
+                      ),
+                    ],
+                  ),
           ),
         ),
       ],

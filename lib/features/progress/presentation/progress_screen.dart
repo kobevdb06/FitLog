@@ -167,43 +167,41 @@ class _LiftRow extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Only the value beside the name: the change has a date in it,
+            // and next to a long name on a narrow phone with a large font it
+            // ran off the card.
             MergeSemantics(
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
                           lift.exercise.name,
                           style: theme.textTheme.titleSmall,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text('$what · $sessions', style: muted),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
+                      ),
+                      const SizedBox(width: AppSpacing.md),
                       Text(
                         _value(formatters, trend.measure, trend.latest),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
-                      if (moved != null)
-                        Text(
-                          moved,
-                          style: muted?.copyWith(
-                            color: up ? AppColors.success : null,
-                          ),
-                        ),
                     ],
                   ),
+                  Text('$what · $sessions', style: muted),
+                  if (moved != null)
+                    Text(
+                      moved,
+                      style: muted?.copyWith(
+                        color: up ? AppColors.success : null,
+                      ),
+                    ),
                 ],
               ),
             ),

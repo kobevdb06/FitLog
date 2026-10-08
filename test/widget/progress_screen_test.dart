@@ -414,6 +414,43 @@ void main() {
     expect(find.widgetWithText(ListTile, 'Lichaamsmetingen'), findsNothing);
   });
 
+  testWidgets('past op een smalle telefoon met grote letters', (tester) async {
+    await tester.runAsync(() async {
+      await exercise(
+        'bench',
+        'Incline Dumbbell Bench Press (neutral grip, paused)',
+      );
+      await exercise('curl', 'Hammer Curl', muscle: 'onderarmen');
+      await exercise('squat', 'Back Squat', muscle: 'quadriceps');
+      for (var days = 3; days < 300; days += 6) {
+        await session('bench', daysAgo(days), 102.5 + days / 10);
+        await session('curl', daysAgo(days + 1), 22.5);
+        await session('squat', daysAgo(days + 2), 187.5 - days / 20);
+        await workout(daysAgo(days), sets: 24, volume: 23456.5);
+      }
+      await db.recordsDao.addMeasurement(
+        type: MeasurementType.weight,
+        value: 104.75,
+        measuredAt: daysAgo(40),
+      );
+      await db.recordsDao.addMeasurement(
+        type: MeasurementType.weight,
+        value: 101.25,
+        measuredAt: daysAgo(1),
+      );
+    });
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pump(tester, size: const Size(360, 4000));
+
+    // An overflow anywhere fails the test on its own.
+    for (final period in ['4 weken', '1 jaar', '3 maanden']) {
+      await choose(tester, period);
+      expect(tester.takeException(), isNull, reason: period);
+    }
+    expect(find.byType(Sparkline), findsNWidgets(3));
+  });
+
   testWidgets('Meer: eerst wat je deed, en bij elk hoe het ervoor staat', (
     tester,
   ) async {

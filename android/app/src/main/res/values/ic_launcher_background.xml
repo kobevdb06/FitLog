@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The mark carries the colour, so the layer behind it is plain white. -->
-    <color name="ic_launcher_background">#FFFFFFFF</color>
+    <!-- The tile behind the mark: dark, the one ground on which the light bar
+         and the amber spark keep their contrast. The same colour as
+         FitLogMarkPainter.iconBackground. -->
+    <color name="ic_launcher_background">#FF10141C</color>
 </resources>

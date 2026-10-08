@@ -3934,3 +3934,40 @@ Nu heeft elk één plek. Je **persoonlijke records** en je
 De gewichtsgrafiek op Voortgang blijft naar je metingen wijzen: dat is geen
 tweede lijst, maar wat er gebeurt als je op de grafiek tikt. De records op het
 Start-tabblad blijven ook naar het recordscherm leiden, om dezelfde reden.
+
+## 195. Een nieuw merkteken: een stang met oplopende schijven
+
+De F uit één lint (31) was een letter: herkenbaar als de F van FitLog, maar
+zonder iets van wat de app doet. Het nieuwe merkteken is een stang van opzij,
+met drie schijven die van klein naar groot oplopen, een kraag, en naast de
+grootste schijf een amber vonkje. De stang en de schijven zijn de zaal, het
+oplopen is het logboek - wat je heft, gaat omhoog - en het vonkje is de coach.
+Een versie met een hartslaglijn voor gezondheid is geprobeerd en weggelaten.
+
+Van opzij, omdat een schijf van voren een ring is, en een ring op zich voor
+alles kan staan wat rond is. Een eerdere poging met een ring op een streep
+werd ook niet als schijf op een stang gelezen.
+
+Wat er verder mee veranderde:
+
+- **Twee tonen.** In de app tekent `FitLogMark` zonder tegel op het oppervlak
+  eronder, en kiest de tonen bij het thema: op donker een lichte stang
+  (`#7BA9FF`) en het record-amber, op licht een diepere stang (`#2A5BD7`) en
+  een diepere amber (`#E8940A`). De lichte stang en het felle amber
+  verdwijnen op wit; de diepere tonen zakken weg op zwart. De schijven blijven
+  het accent.
+- **Een donkere tegel op het beginscherm.** Een launcher heeft één icoon voor
+  een licht en een donker beginscherm samen; Android kent geen donkere variant
+  van een app-icoon. Het icoon staat op `#10141C`, met de tonen voor donker:
+  daar staan stang, schijven en vonkje het duidelijkst los van elkaar en van
+  de ondergrond. De F stond op wit.
+- **De veilige zone van 66dp.** De F werd geschaald tot de hoeken van zijn
+  omhullende vierkant binnen de cirkel van 72dp vielen (31), omdat die hoeken
+  leeg waren. Het verste punt van dit teken is de punt van het vonkje, en die
+  is inkt: de launcher zou hem als eerste afknippen. Het teken past nu binnen
+  de 66dp die elke vorm van launcher heel laat (`FitLogMarkPainter.glyphReach`).
+
+De werkwijze uit 31 blijft: één painter, en `tool/render_app_icon.dart` tekent
+er de iconen mee. De website (`docs/index.html`) tekent hetzelfde teken in SVG,
+met de tonen van het thema van de bezoeker.
+

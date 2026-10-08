@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// The FitLog mark: an F folded out of one ribbon.
+/// The FitLog mark: a bar with plates that climb from small to large towards
+/// the collar, and beside the largest an amber spark.
 ///
-/// Every edge that is not vertical or horizontal runs down-left at 45 degrees -
-/// the cut ends of the arms and the creases where they leave the stem alike.
-/// That is what makes the short arm line up with its crease; when the creases
-/// ran the other way they overhung the arm and sat crooked against it.
+/// The bar and plates say what the app is for, the climb is the log - what you
+/// lift going up over time - and the spark is the coach. The bar is seen from
+/// the side on purpose: a plate seen face-on is a ring, and a ring on its own
+/// reads as anything round.
 ///
 /// Drawn rather than bundled as a bitmap so the one geometry serves both the
 /// app and the launcher icon: `tool/render_app_icon.dart` paints this same
@@ -17,24 +18,35 @@ import '../theme/app_colors.dart';
 /// proportions identical from a 20pt notification badge to a 1024pt store
 /// icon.
 class FitLogMarkPainter extends CustomPainter {
+  /// The mark in its dark tones: on the launcher icon, and in the app in dark
+  /// mode.
   const FitLogMarkPainter({
-    this.stem = AppColors.accent,
-    this.arms = armTone,
-    this.crease = AppColors.accentDim,
+    this.bar = darkBar,
+    this.plates = AppColors.accent,
+    this.spark = AppColors.record,
     this.tile,
     this.cornerRadius = 22,
     this.glyphScale = 1,
   });
 
-  /// The upright of the F.
-  final Color stem;
+  /// The mark in its light tones, for a light surface, which the light bar
+  /// and the bright amber would fade into.
+  const FitLogMarkPainter.light({
+    this.tile,
+    this.cornerRadius = 22,
+    this.glyphScale = 1,
+  }) : bar = lightBar,
+       plates = AppColors.accent,
+       spark = lightSpark;
 
-  /// The two arms, a tint above the accent so the fold reads as depth rather
-  /// than as a second colour.
-  final Color arms;
+  /// The bar and the collar.
+  final Color bar;
 
-  /// The inside of each fold.
-  final Color crease;
+  /// The three plates.
+  final Color plates;
+
+  /// The spark beside the largest plate.
+  final Color spark;
 
   /// The rounded square behind the mark, or null for the glyph on its own -
   /// which is what the app and an Android adaptive foreground both want.
@@ -48,42 +60,47 @@ class FitLogMarkPainter extends CustomPainter {
   /// foreground and for filling a widget that has no tile.
   final double glyphScale;
 
-  /// The tint used for the arms. It is a lighter accent, not a second colour.
-  static const Color armTone = Color(0xFF7BA9FF);
+  /// The bar on a dark surface: a tint above the accent, so it reads as the
+  /// same metal as the plates rather than as a second colour.
+  static const Color darkBar = Color(0xFF7BA9FF);
+
+  /// The bar on a light surface: a shade below the accent, for the same
+  /// reason.
+  static const Color lightBar = Color(0xFF2A5BD7);
+
+  /// The spark on a light surface: the record amber, a step deeper.
+  static const Color lightSpark = Color(0xFFE8940A);
+
+  /// The tile of the launcher icon. Dark, because the launcher has one icon
+  /// for a light and a dark home screen alike, and the dark tones keep their
+  /// contrast only on dark. The Android background layer
+  /// (`ic_launcher_background`) is this same colour.
+  static const Color iconBackground = Color(0xFF10141C);
 
   /// The glyph's own box inside the 100-unit canvas, centred on (50, 50), so
   /// callers can scale it to fit a given area instead of guessing.
-  static const double glyphWidth = 58;
-  static const double glyphHeight = 78;
+  static const double glyphWidth = 80;
+  static const double glyphHeight = 62;
 
-  static const List<Offset> _stem = [
-    Offset(21, 11),
-    Offset(39, 11),
-    Offset(39, 89),
-    Offset(21, 89),
+  /// How far the glyph reaches from the centre of the box: the outer tip of
+  /// the spark, which lies further out than the ends of the bar. A round mask
+  /// has to leave that much.
+  static double get glyphReach =>
+      (_sparkCentre + const Offset(_sparkRadius, 0) - const Offset(50, 50))
+          .distance;
+
+  static const _bar = (rect: Rect.fromLTWH(10, 47, 80, 6), radius: 3.0);
+  static const _plates = [
+    (rect: Rect.fromLTWH(30, 36, 7, 28), radius: 2.5),
+    (rect: Rect.fromLTWH(39, 28, 9, 44), radius: 3.0),
+    (rect: Rect.fromLTWH(50, 20, 12, 60), radius: 3.5),
   ];
-  static const List<Offset> _topArm = [
-    Offset(39, 11),
-    Offset(79, 11),
-    Offset(61, 29),
-    Offset(39, 29),
-  ];
-  static const List<Offset> _midArm = [
-    Offset(39, 45),
-    Offset(69, 45),
-    Offset(51, 63),
-    Offset(39, 63),
-  ];
-  static const List<Offset> _topCrease = [
-    Offset(39, 11),
-    Offset(57, 11),
-    Offset(39, 29),
-  ];
-  static const List<Offset> _midCrease = [
-    Offset(39, 45),
-    Offset(57, 45),
-    Offset(39, 63),
-  ];
+  static const _collar = (rect: Rect.fromLTWH(64, 41, 5, 18), radius: 1.5);
+  static const _sparkCentre = Offset(79, 25);
+  static const double _sparkRadius = 7;
+
+  /// How close to the centre of the spark its sides pinch in.
+  static const double _sparkPinch = 1;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -108,37 +125,49 @@ class FitLogMarkPainter extends CustomPainter {
       canvas.translate(-50, -50);
     }
 
-    void shape(List<Offset> points, Color color) {
-      final path = Path()..moveTo(points.first.dx, points.first.dy);
-      for (final point in points.skip(1)) {
-        path.lineTo(point.dx, point.dy);
-      }
-      path.close();
-      canvas.drawPath(path, Paint()..color = color);
+    void block(({Rect rect, double radius}) shape, Color color) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(shape.rect, Radius.circular(shape.radius)),
+        Paint()..color = color,
+      );
     }
 
-    // The arms first, then the stem over them: the stem is the near edge of
-    // the ribbon, so it is what the folds turn away from.
-    shape(_topArm, arms);
-    shape(_midArm, arms);
-    shape(_stem, stem);
-    shape(_topCrease, crease);
-    shape(_midCrease, crease);
+    // The bar first, so the plates sit on it rather than under it.
+    block(_bar, bar);
+    for (final plate in _plates) {
+      block(plate, plates);
+    }
+    block(_collar, bar);
+
+    const o = _sparkCentre;
+    const r = _sparkRadius;
+    const p = _sparkPinch;
+    canvas.drawPath(
+      Path()
+        ..moveTo(o.dx, o.dy - r)
+        ..cubicTo(o.dx + p, o.dy - p, o.dx + p, o.dy - p, o.dx + r, o.dy)
+        ..cubicTo(o.dx + p, o.dy + p, o.dx + p, o.dy + p, o.dx, o.dy + r)
+        ..cubicTo(o.dx - p, o.dy + p, o.dx - p, o.dy + p, o.dx - r, o.dy)
+        ..cubicTo(o.dx - p, o.dy - p, o.dx - p, o.dy - p, o.dx, o.dy - r)
+        ..close(),
+      Paint()..color = spark,
+    );
 
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(FitLogMarkPainter old) =>
-      old.stem != stem ||
-      old.arms != arms ||
-      old.crease != crease ||
+      old.bar != bar ||
+      old.plates != plates ||
+      old.spark != spark ||
       old.tile != tile ||
       old.cornerRadius != cornerRadius ||
       old.glyphScale != glyphScale;
 }
 
-/// The mark on its own, filling a [size] by [size] box.
+/// The mark on its own, filling a [size] by [size] box, in the tones of the
+/// theme around it.
 ///
 /// No tile: inside the app the mark sits on the surface it is given, the way
 /// the launcher composes it over its own background.
@@ -149,12 +178,13 @@ class FitLogMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const fill = 100 / FitLogMarkPainter.glyphWidth;
     return SizedBox.square(
       dimension: size,
-      child: const CustomPaint(
-        painter: FitLogMarkPainter(
-          glyphScale: 100 / FitLogMarkPainter.glyphHeight,
-        ),
+      child: CustomPaint(
+        painter: Theme.of(context).brightness == Brightness.dark
+            ? const FitLogMarkPainter(glyphScale: fill)
+            : const FitLogMarkPainter.light(glyphScale: fill),
         isComplex: false,
       ),
     );

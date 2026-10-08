@@ -7,7 +7,6 @@
 // Flutter engine to rasterise, which is why it is a test file rather than a
 // plain Dart script; it touches nothing but the icon files.
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:fitlog/core/widgets/fitlog_mark.dart';
@@ -23,20 +22,18 @@ const Map<String, int> _androidBuckets = {
   'xxxhdpi': 192,
 };
 
-/// An adaptive icon canvas is 108dp and the launcher masks it down; a round
-/// mask keeps a 72dp circle. The glyph is scaled until its corners sit inside
-/// that circle, which is what stops the stem clipping on a round launcher.
+/// An adaptive icon canvas is 108dp and the launcher masks it down to a shape
+/// of its own; every shape keeps the 66dp circle in the middle, the safe zone.
+/// The glyph is scaled until its furthest point - the tip of the spark - sits
+/// on that circle, so no launcher clips it.
 ///
-/// The stricter 66dp circle Android calls the safe zone would leave the icon
-/// noticeably smaller than everything else on the home screen, and only the
-/// corners of the bounding box - empty space - would fall outside the 72.
+/// The F before it measured against the 72dp circle a round mask keeps: only
+/// the empty corners of its box fell outside the 66. The spark's tip is ink,
+/// and it would be the first thing cut.
 const double _adaptiveDp = 108;
-const double _adaptiveMaskDp = 72;
+const double _adaptiveSafeDp = 66;
 final double _adaptiveSafeScale =
-    (_adaptiveMaskDp / _adaptiveDp * 100 / 2) /
-    _halfDiagonal(FitLogMarkPainter.glyphWidth, FitLogMarkPainter.glyphHeight);
-
-double _halfDiagonal(double w, double h) => math.sqrt(w * w + h * h) / 2;
+    (_adaptiveSafeDp / _adaptiveDp * 100 / 2) / FitLogMarkPainter.glyphReach;
 
 const String _androidRes = 'android/app/src/main/res';
 const String _iosIcons = 'ios/Runner/Assets.xcassets/AppIcon.appiconset';
@@ -56,13 +53,16 @@ void main() {
 
   test('render the launcher icons', () async {
     // Android, legacy: the rounded tile, for launchers before adaptive icons.
-    const legacy = FitLogMarkPainter(tile: Colors.white);
-    // Android, adaptive foreground: the glyph alone, the launcher supplies the
-    // shape and the background colour.
+    const legacy = FitLogMarkPainter(tile: FitLogMarkPainter.iconBackground);
+    // Android, adaptive foreground: the glyph alone; the launcher supplies the
+    // shape, and `ic_launcher_background` the colour of the tile.
     final foreground = FitLogMarkPainter(glyphScale: _adaptiveSafeScale);
     // iOS masks the corners itself and rejects transparency, so it gets the
     // full-bleed square.
-    const ios = FitLogMarkPainter(tile: Colors.white, cornerRadius: 0);
+    const ios = FitLogMarkPainter(
+      tile: FitLogMarkPainter.iconBackground,
+      cornerRadius: 0,
+    );
 
     for (final entry in _androidBuckets.entries) {
       final dir = '$_androidRes/mipmap-${entry.key}';

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fitlog/core/theme/app_colors.dart';
+import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/core/widgets/common.dart';
 import 'package:fitlog/core/widgets/fitlog_mark.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,38 @@ void main() {
     expect(find.byType(FitLogMark), findsOneWidget);
     expect(find.text('FitLog'), findsOneWidget);
     expect(find.byIcon(Icons.fitness_center), findsNothing);
+  });
+
+  testWidgets('the mark in the app takes the tones of the theme', (
+    tester,
+  ) async {
+    FitLogMarkPainter painter() =>
+        tester
+                .widget<CustomPaint>(
+                  find.descendant(
+                    of: find.byType(FitLogMark),
+                    matching: find.byType(CustomPaint),
+                  ),
+                )
+                .painter!
+            as FitLogMarkPainter;
+
+    await tester.pumpWidget(wrapForTest(const Center(child: FitLogMark())));
+    expect(painter().bar, FitLogMarkPainter.darkBar);
+    expect(painter().spark, AppColors.record);
+    expect(painter().tile, isNull, reason: 'the surface is the background');
+
+    await tester.pumpWidget(
+      wrapForTest(
+        Theme(
+          data: AppTheme.light,
+          child: const Center(child: FitLogMark()),
+        ),
+      ),
+    );
+    expect(painter().bar, FitLogMarkPainter.lightBar);
+    expect(painter().spark, FitLogMarkPainter.lightSpark);
+    expect(painter().plates, AppColors.accent);
   });
 
   group('the rendered launcher icons', () {
@@ -51,29 +84,29 @@ void main() {
           p.b.round() == (c.b * 255).round();
 
       expect(
-        is_(px(30, 50), AppColors.accent),
+        is_(px(56, 30), AppColors.accent),
         isTrue,
-        reason: 'the stem of the F',
+        reason: 'the largest plate',
       );
       expect(
-        is_(px(70, 18), FitLogMarkPainter.armTone),
+        is_(px(20, 50), FitLogMarkPainter.darkBar),
         isTrue,
-        reason: 'the top arm, past its crease',
+        reason: 'the bar, before the plates',
       );
       expect(
-        is_(px(44, 15), AppColors.accentDim),
+        is_(px(79, 25), AppColors.record),
         isTrue,
-        reason: 'the crease where the top arm leaves the stem',
+        reason: 'the middle of the spark',
       );
       expect(
-        is_(px(50, 37), Colors.white),
+        is_(px(38, 30), FitLogMarkPainter.iconBackground),
         isTrue,
-        reason: 'the tile between the two arms',
+        reason: 'the tile above the smallest plate',
       );
       expect(
-        is_(px(8, 50), Colors.white),
+        is_(px(5, 50), FitLogMarkPainter.iconBackground),
         isTrue,
-        reason: 'the tile beside the F',
+        reason: 'the tile beside the bar',
       );
     });
 
@@ -81,12 +114,15 @@ void main() {
       final fg = read('$res/mipmap-xxxhdpi/ic_launcher_foreground.png');
       expect(fg.width, 432, reason: '108dp at xxxhdpi');
       expect(fg.getPixel(2, 2).a, 0);
-      expect(fg.getPixel(216, 216).a, 255, reason: 'the middle of the glyph');
+      expect(fg.getPixel(216, 216).a, 255, reason: 'the bar, in the middle');
     });
 
     test('every density has both layers', () {
       for (final bucket in ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
-        expect(File('$res/mipmap-$bucket/ic_launcher.png').existsSync(), isTrue);
+        expect(
+          File('$res/mipmap-$bucket/ic_launcher.png').existsSync(),
+          isTrue,
+        );
         expect(
           File('$res/mipmap-$bucket/ic_launcher_foreground.png').existsSync(),
           isTrue,
@@ -99,9 +135,9 @@ void main() {
       expect(
         File('$res/values/ic_launcher_background.xml')
             .readAsStringSync()
-            .contains('#FFFFFFFF'),
+            .contains('#FF10141C'),
         isTrue,
-        reason: 'the mark carries the colour, the layer behind it is white',
+        reason: 'the layer behind the mark is the tile of the other icons',
       );
     });
   });

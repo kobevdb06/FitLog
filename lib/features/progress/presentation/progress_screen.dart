@@ -69,7 +69,15 @@ class _PeriodPicker extends ConsumerWidget {
         showSelectedIcon: false,
         segments: [
           for (final value in ProgressPeriod.values)
-            ButtonSegment(value: value, label: Text(value.label)),
+            ButtonSegment(
+              value: value,
+              // On one line, a little smaller where it has to be: on a
+              // narrow phone with a large font "3 maanden" broke in two.
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(value.label, maxLines: 1, softWrap: false),
+              ),
+            ),
         ],
         selected: {period},
         onSelectionChanged: (chosen) => ref

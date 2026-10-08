@@ -443,6 +443,12 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pump(tester, size: const Size(360, 4000));
 
+    // Each choice on one line: "3 maanden" broke in two on the phone.
+    final line = tester.getSize(find.text('4 weken')).height;
+    for (final period in ['3 maanden', '1 jaar']) {
+      expect(tester.getSize(find.text(period)).height, line, reason: period);
+    }
+
     // An overflow anywhere fails the test on its own.
     for (final period in ['4 weken', '1 jaar', '3 maanden']) {
       await choose(tester, period);

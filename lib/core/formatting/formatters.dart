@@ -239,6 +239,7 @@ class Formatters {
   static final DateFormat _weekdayShort = DateFormat('E', _locale);
   static final DateFormat _weekdayDayMonth = DateFormat('EEEE d MMMM', _locale);
   static final DateFormat _monthYear = DateFormat('MMMM yyyy', _locale);
+  static final DateFormat _month = DateFormat('MMM', _locale);
   static final DateFormat _time = DateFormat('HH:mm', _locale);
 
   static String date(DateTime at) => _shortDate.format(at);
@@ -248,6 +249,9 @@ class Formatters {
   static String dayMonth(DateTime at) => _dayMonth.format(at);
 
   static String monthYear(DateTime at) => _monthYear.format(at);
+
+  /// `okt.`: a month on its own, under a bar.
+  static String month(DateTime at) => _month.format(at);
 
   static String weekday(DateTime at) => _weekday.format(at);
 

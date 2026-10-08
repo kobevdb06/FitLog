@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/plateau.dart';
+import '../../../core/calc/progress_period.dart';
 import '../../../core/calc/streak.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
@@ -10,65 +11,90 @@ import '../data/plateau_loader.dart';
 
 part 'progress_providers.g.dart';
 
-/// One bucket of the weekly volume chart.
-class WeekBucket {
-  const WeekBucket({
-    required this.weekStart,
+/// One bar of a training chart: a week, or a month.
+class TrainingBucket {
+  const TrainingBucket({
+    required this.start,
     required this.volumeKg,
     required this.workouts,
     required this.sets,
   });
 
-  final DateTime weekStart;
+  final DateTime start;
   final double volumeKg;
   final int workouts;
   final int sets;
 }
 
+/// The workouts summed per bar, one bar for each of [starts], oldest first.
+List<TrainingBucket> _sumPerBucket(
+  List<DateTime> starts,
+  Iterable<WorkoutRow> workouts,
+  DateTime Function(DateTime) bucketOf,
+) {
+  final sums = {
+    for (final start in starts) start: (volume: 0.0, count: 0, sets: 0),
+  };
+  for (final w in workouts) {
+    final key = bucketOf(DateTime.fromMillisecondsSinceEpoch(w.startedAt));
+    final current = sums[key];
+    if (current == null) continue;
+    sums[key] = (
+      volume: current.volume + w.totalVolumeKg,
+      count: current.count + 1,
+      sets: current.sets + w.totalSets,
+    );
+  }
+  return [
+    for (final start in starts)
+      TrainingBucket(
+        start: start,
+        volumeKg: sums[start]!.volume,
+        workouts: sums[start]!.count,
+        sets: sums[start]!.sets,
+      ),
+  ];
+}
+
 /// Volume, workouts and sets per calendar week, oldest bucket first.
 @riverpod
-Stream<List<WeekBucket>> weeklyBuckets(Ref ref, {int weeks = 8}) {
+Stream<List<TrainingBucket>> weeklyBuckets(Ref ref, {int weeks = 8}) {
   final db = ref.watch(databaseProvider);
   final now = DateTime.now();
-  final firstWeek = startOfWeek(
-    now.subtract(Duration(days: 7 * (weeks - 1))),
-  );
+  final thisWeek = startOfWeek(now);
+  final starts = [
+    for (var i = weeks - 1; i >= 0; i--)
+      DateTime(thisWeek.year, thisWeek.month, thisWeek.day - 7 * i),
+  ];
 
   return db.workoutsDao
-      .watchWorkoutsBetween(firstWeek, now.add(const Duration(days: 1)))
-      .map((workouts) {
-        final buckets = <DateTime, ({double volume, int count, int sets})>{};
-        for (var i = 0; i < weeks; i++) {
-          buckets[startOfWeek(firstWeek.add(Duration(days: 7 * i)))] = (
-            volume: 0,
-            count: 0,
-            sets: 0,
-          );
-        }
-        for (final w in workouts) {
-          final week = startOfWeek(
-            DateTime.fromMillisecondsSinceEpoch(w.startedAt),
-          );
-          final current = buckets[week];
-          if (current == null) continue;
-          buckets[week] = (
-            volume: current.volume + w.totalVolumeKg,
-            count: current.count + 1,
-            sets: current.sets + w.totalSets,
-          );
-        }
+      .watchWorkoutsBetween(starts.first, now.add(const Duration(days: 1)))
+      .map((workouts) => _sumPerBucket(starts, workouts, startOfWeek));
+}
 
-        final keys = buckets.keys.toList()..sort();
-        return [
-          for (final key in keys)
-            WeekBucket(
-              weekStart: key,
-              volumeKg: buckets[key]!.volume,
-              workouts: buckets[key]!.count,
-              sets: buckets[key]!.sets,
-            ),
-        ];
-      });
+/// What Voortgang looks back over.
+///
+/// A way of looking rather than a setting: it holds while the app is open,
+/// across tabs, and starts at three months - long enough for a line to mean
+/// something, short enough that last winter does not flatten it.
+@Riverpod(keepAlive: true)
+class ProgressPeriodChoice extends _$ProgressPeriodChoice {
+  @override
+  ProgressPeriod build() => ProgressPeriod.threeMonths;
+
+  void choose(ProgressPeriod period) => state = period;
+}
+
+/// Volume, workouts and sets per bar of [period], oldest first.
+@riverpod
+Stream<List<TrainingBucket>> trainingBuckets(Ref ref, ProgressPeriod period) {
+  final db = ref.watch(databaseProvider);
+  final now = DateTime.now();
+  final starts = period.bucketStarts(now);
+
+  return db.workoutsDao
+      .watchWorkoutsBetween(starts.first, now.add(const Duration(days: 1)))
+      .map((workouts) => _sumPerBucket(starts, workouts, period.bucketOf));
 }
 
 /// The current training streak.
@@ -100,15 +126,14 @@ Stream<List<ChartPoint>> bodyWeightSeries(Ref ref) {
       .recordsDao
       .watchMeasurements(type: MeasurementType.weight)
       .map(
-        (rows) =>
-            rows.reversed
-                .map(
-                  (r) => ChartPoint(
-                    DateTime.fromMillisecondsSinceEpoch(r.measuredAt),
-                    r.value,
-                  ),
-                )
-                .toList(),
+        (rows) => rows.reversed
+            .map(
+              (r) => ChartPoint(
+                DateTime.fromMillisecondsSinceEpoch(r.measuredAt),
+                r.value,
+              ),
+            )
+            .toList(),
       );
 }
 

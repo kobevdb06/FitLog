@@ -18,11 +18,13 @@ final weeklyBucketsProvider = WeeklyBucketsFamily._();
 final class WeeklyBucketsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<WeekBucket>>,
-          List<WeekBucket>,
-          Stream<List<WeekBucket>>
+          AsyncValue<List<TrainingBucket>>,
+          List<TrainingBucket>,
+          Stream<List<TrainingBucket>>
         >
-    with $FutureModifier<List<WeekBucket>>, $StreamProvider<List<WeekBucket>> {
+    with
+        $FutureModifier<List<TrainingBucket>>,
+        $StreamProvider<List<TrainingBucket>> {
   /// Volume, workouts and sets per calendar week, oldest bucket first.
   WeeklyBucketsProvider._({
     required WeeklyBucketsFamily super.from,
@@ -47,12 +49,12 @@ final class WeeklyBucketsProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<WeekBucket>> $createElement(
+  $StreamProviderElement<List<TrainingBucket>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<WeekBucket>> create(Ref ref) {
+  Stream<List<TrainingBucket>> create(Ref ref) {
     final argument = this.argument as int;
     return weeklyBuckets(ref, weeks: argument);
   }
@@ -68,12 +70,12 @@ final class WeeklyBucketsProvider
   }
 }
 
-String _$weeklyBucketsHash() => r'4c898d3af66b41cdfbc6631d2d1e57dc9e83f5a4';
+String _$weeklyBucketsHash() => r'93a2d00ae3612a144360f95e91227db518158c45';
 
 /// Volume, workouts and sets per calendar week, oldest bucket first.
 
 final class WeeklyBucketsFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<WeekBucket>>, int> {
+    with $FunctionalFamilyOverride<Stream<List<TrainingBucket>>, int> {
   WeeklyBucketsFamily._()
     : super(
         retry: null,
@@ -90,6 +92,171 @@ final class WeeklyBucketsFamily extends $Family
 
   @override
   String toString() => r'weeklyBucketsProvider';
+}
+
+/// What Voortgang looks back over.
+///
+/// A way of looking rather than a setting: it holds while the app is open,
+/// across tabs, and starts at three months - long enough for a line to mean
+/// something, short enough that last winter does not flatten it.
+
+@ProviderFor(ProgressPeriodChoice)
+final progressPeriodChoiceProvider = ProgressPeriodChoiceProvider._();
+
+/// What Voortgang looks back over.
+///
+/// A way of looking rather than a setting: it holds while the app is open,
+/// across tabs, and starts at three months - long enough for a line to mean
+/// something, short enough that last winter does not flatten it.
+final class ProgressPeriodChoiceProvider
+    extends $NotifierProvider<ProgressPeriodChoice, ProgressPeriod> {
+  /// What Voortgang looks back over.
+  ///
+  /// A way of looking rather than a setting: it holds while the app is open,
+  /// across tabs, and starts at three months - long enough for a line to mean
+  /// something, short enough that last winter does not flatten it.
+  ProgressPeriodChoiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'progressPeriodChoiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$progressPeriodChoiceHash();
+
+  @$internal
+  @override
+  ProgressPeriodChoice create() => ProgressPeriodChoice();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ProgressPeriod value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ProgressPeriod>(value),
+    );
+  }
+}
+
+String _$progressPeriodChoiceHash() =>
+    r'c0045caa9e879c3c6052453dace5eda8386d25ad';
+
+/// What Voortgang looks back over.
+///
+/// A way of looking rather than a setting: it holds while the app is open,
+/// across tabs, and starts at three months - long enough for a line to mean
+/// something, short enough that last winter does not flatten it.
+
+abstract class _$ProgressPeriodChoice extends $Notifier<ProgressPeriod> {
+  ProgressPeriod build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<ProgressPeriod, ProgressPeriod>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<ProgressPeriod, ProgressPeriod>,
+              ProgressPeriod,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
+/// Volume, workouts and sets per bar of [period], oldest first.
+
+@ProviderFor(trainingBuckets)
+final trainingBucketsProvider = TrainingBucketsFamily._();
+
+/// Volume, workouts and sets per bar of [period], oldest first.
+
+final class TrainingBucketsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<TrainingBucket>>,
+          List<TrainingBucket>,
+          Stream<List<TrainingBucket>>
+        >
+    with
+        $FutureModifier<List<TrainingBucket>>,
+        $StreamProvider<List<TrainingBucket>> {
+  /// Volume, workouts and sets per bar of [period], oldest first.
+  TrainingBucketsProvider._({
+    required TrainingBucketsFamily super.from,
+    required ProgressPeriod super.argument,
+  }) : super(
+         retry: null,
+         name: r'trainingBucketsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainingBucketsHash();
+
+  @override
+  String toString() {
+    return r'trainingBucketsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<TrainingBucket>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<TrainingBucket>> create(Ref ref) {
+    final argument = this.argument as ProgressPeriod;
+    return trainingBuckets(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TrainingBucketsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$trainingBucketsHash() => r'b3f6c505e232b1be57be33cf16aba06202a1b131';
+
+/// Volume, workouts and sets per bar of [period], oldest first.
+
+final class TrainingBucketsFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<List<TrainingBucket>>,
+          ProgressPeriod
+        > {
+  TrainingBucketsFamily._()
+    : super(
+        retry: null,
+        name: r'trainingBucketsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Volume, workouts and sets per bar of [period], oldest first.
+
+  TrainingBucketsProvider call(ProgressPeriod period) =>
+      TrainingBucketsProvider._(argument: period, from: this);
+
+  @override
+  String toString() => r'trainingBucketsProvider';
 }
 
 /// The current training streak.

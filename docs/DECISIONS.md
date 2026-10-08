@@ -3971,3 +3971,32 @@ De werkwijze uit 31 blijft: één painter, en `tool/render_app_icon.dart` tekent
 er de iconen mee. De website (`docs/index.html`) tekent hetzelfde teken in SVG,
 met de tonen van het thema van de bezoeker.
 
+## 196. Eén periode voor heel Voortgang
+
+Voortgang toonde het volume en de workouts van de laatste acht weken, en je
+gewicht van altijd: drie grafieken, elk met een eigen bereik, en geen manier om
+verder terug te kijken. Nu kies je bovenaan *4 weken*, *3 maanden* of *1 jaar*,
+en volgt alles eronder die ene keuze (`ProgressPeriod`).
+
+- **Een jaar in maanden.** Tweeënvijftig weekbalken passen niet op een
+  telefoon van 360dp breed, twaalf maandbalken wel, en ze zeggen hetzelfde.
+  Bij dertien weken staat er een datum onder elke derde balk, bij een jaar
+  onder elke tweede, geteld vanaf de nieuwste: die heeft er altijd een.
+  Dertien datums naast elkaar schoven over elkaar heen.
+- **Eerst de totalen.** Workouts, sets en volume van de periode staan boven
+  de balken waaruit ze opgeteld zijn: de keuze moet iets zichtbaar
+  veranderen, ook zonder balken te vergelijken.
+- **Het gewicht.** De laatste meting blijft de laatste, ook als ze van voor
+  de periode is. Het verschil en de lijn gaan over de periode, en het
+  verschil zegt waarvandaan: *Sinds 18 sep*. Staat er in de periode geen
+  meting, dan zegt de grafiek dat, in plaats van *Nog geen gegevens*.
+- **Geen instelling.** De keuze blijft zolang de app open is, ook als je van
+  tabblad wisselt, en begint op drie maanden. Het is een manier van kijken,
+  geen voorkeur om in de database te bewaren. Drie maanden: lang genoeg voor
+  een lijn die iets zegt, kort genoeg dat vorige winter haar niet platdrukt.
+- **Staat stil volgt de periode niet.** Of een oefening stilstaat, meet de
+  app over zijn eigen weken (173). De kaart staat daarom boven de keuze.
+
+Het volumeblok op het Start-tabblad blijft acht weken: het is een blik, geen
+plek om rond te kijken.
+

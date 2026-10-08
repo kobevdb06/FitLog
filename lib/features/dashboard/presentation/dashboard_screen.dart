@@ -695,7 +695,7 @@ class _VolumeBlock extends ConsumerWidget {
               Text(
                 buckets.isEmpty
                     ? ''
-                    : Formatters.dayMonth(buckets.first.weekStart),
+                    : Formatters.dayMonth(buckets.first.start),
                 style: muted,
               ),
               Text('nu', style: muted),

@@ -14,6 +14,7 @@ class TrendLineChart extends StatelessWidget {
     this.height = 200,
     this.color = AppColors.accent,
     this.valueLabel,
+    this.emptyMessage = 'Nog geen gegevens',
   });
 
   final List<ChartPoint> points;
@@ -22,6 +23,9 @@ class TrendLineChart extends StatelessWidget {
 
   /// Formats the value shown in the tooltip and on the left axis.
   final String Function(double value)? valueLabel;
+
+  /// What stands where the line would be, when there are no points.
+  final String emptyMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +36,7 @@ class TrendLineChart extends StatelessWidget {
         child: Center(
           child: Text(
             points.isEmpty
-                ? 'Nog geen gegevens'
+                ? emptyMessage
                 : 'Nog te weinig gegevens voor een lijn',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -161,6 +165,7 @@ class SimpleBarChart extends StatelessWidget {
     this.height = 160,
     this.color = AppColors.accent,
     this.valueLabel,
+    this.labelEvery = 1,
   });
 
   final List<double> values;
@@ -168,6 +173,10 @@ class SimpleBarChart extends StatelessWidget {
   final double height;
   final Color color;
   final String Function(double value)? valueLabel;
+
+  /// A label under every so many bars, counted back from the newest so the
+  /// newest always has one. Thirteen dates in a row do not fit on a phone.
+  final int labelEvery;
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +215,9 @@ class SimpleBarChart extends StatelessWidget {
                 reservedSize: 26,
                 getTitlesWidget: (value, meta) {
                   final index = value.round();
-                  if (index < 0 || index >= labels.length) {
+                  if (index < 0 ||
+                      index >= labels.length ||
+                      (labels.length - 1 - index) % labelEvery != 0) {
                     return const SizedBox.shrink();
                   }
                   return Padding(

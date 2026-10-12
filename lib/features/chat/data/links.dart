@@ -7,6 +7,10 @@ import 'package:flutter/services.dart';
 /// with it; the prompt gets there because the user pastes it.
 const String kGeminiUrl = 'https://gemini.google.com/app';
 
+/// Google's terms for the Gemini API: what it may do with what the coach
+/// sends on a free key.
+const String kGeminiTermsUrl = 'https://ai.google.dev/gemini-api/terms';
+
 /// Opens an address in whatever the phone opens it with.
 abstract interface class LinkOpener {
   /// False when nothing on the phone could open it.

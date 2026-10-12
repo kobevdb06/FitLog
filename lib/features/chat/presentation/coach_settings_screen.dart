@@ -15,6 +15,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../data/ai_client.dart';
+import '../data/links.dart';
 import '../domain/coach_budget.dart';
 import '../domain/coach_prompt.dart';
 import 'chat_providers.dart';
@@ -115,6 +116,19 @@ class _DailyBar extends ConsumerWidget {
     return buffer.toString();
   }
 }
+
+/// What leaves the phone with the coach, and what Google may do with it.
+///
+/// The second half is Google's own terms for a free key: what is sent may be
+/// used to improve its products, and read by people doing that. A free coach
+/// that kept quiet about that would be a promise this app does not make.
+const String kCoachPrivacy =
+    'Dit is het enige deel van FitLog dat internet gebruikt, en het werkt '
+    'alleen met een sleutel van jezelf. Je vraag gaat naar Google, samen met '
+    'wat de coach in je logboek opvraagt om te antwoorden; onder elk antwoord '
+    'staat wat dat was. Met een gratis sleutel mag Google je vragen en de '
+    'antwoorden gebruiken om zijn producten te verbeteren, en kunnen mensen '
+    'ze daarvoor lezen. Zonder sleutel maakt de app geen verbinding.';
 
 class CoachSettingsScreen extends ConsumerStatefulWidget {
   const CoachSettingsScreen({super.key});
@@ -478,16 +492,21 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               AppSpacing.lg,
               0,
             ),
-            child: InfoBanner(
-              icon: Icons.lock_outline,
-              message:
-                  'Dit is het enige deel van FitLog dat internet gebruikt, en '
-                  'het werkt alleen met een sleutel van jezelf. Je vraag gaat '
-                  'naar Google, samen met wat de coach in je logboek opvraagt '
-                  'om te antwoorden; onder elk antwoord staat wat dat was. '
-                  'Zonder sleutel maakt de app geen verbinding.',
-            ),
+            child: InfoBanner(icon: Icons.lock_outline, message: kCoachPrivacy),
           ),
+          // What Google says itself, for whoever wants it in its own words.
+          if (ref.watch(linkOpenerProvider) case final opener?)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () => opener.open(kGeminiTermsUrl),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: const Text('Voorwaarden van Google'),
+                ),
+              ),
+            ),
           const SectionHeader('Sleutel'),
           ListTile(
             leading: const Icon(Icons.key_outlined),

@@ -133,6 +133,23 @@ void main() {
     });
   });
 
+  group('wat er meegaat', () {
+    testWidgets('zegt wat Google met een gratis sleutel mag, en waar dat '
+        'staat', (tester) async {
+      final opener = _Opener();
+      await pump(tester, const CoachSettingsScreen(), opener: opener);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('om zijn producten te verbeteren'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Voorwaarden van Google'));
+      await tester.pumpAndSettle();
+      expect(opener.opened, [kGeminiTermsUrl]);
+    });
+  });
+
   group('tekenen staat uit', () {
     testWidgets('geen sectie Afbeeldingen, ook niet met een token', (
       tester,

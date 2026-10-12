@@ -4224,3 +4224,18 @@ dat, met `propose_exercise_change`.
   vraag om een oefening, dan geeft de coach ze mee in `propose_exercise`.
   Op die kaart staat dan geen *Toevoegen met foto's*: de foto's zijn er al.
 
+## 205. Wat Google met een gratis sleutel mag, staat erbij
+
+De uitleg bij de coach zei wat er naar Google gaat - je vraag, en wat de coach
+in je logboek opzoekt - maar niet wat Google ermee mag. Volgens zijn
+voorwaarden voor de Gemini API gebruikt Google bij een gratis sleutel wat je
+stuurt en wat terugkomt om zijn producten te verbeteren, en kunnen mensen het
+daarvoor lezen. Met een betaalde sleutel niet.
+
+Dat staat nu in de uitleg bij *Instellingen → AI-coach* (`kCoachPrivacy`), met
+een link naar Googles eigen woorden, en in de handleiding en op de website.
+Een app die belooft dat je gegevens op je toestel blijven, en dan de coach
+gratis aanbiedt zonder dit te zeggen, zou die belofte stilletjes breken. De
+link opent de pagina in de browser; FitLog zelf maakt daarvoor geen
+verbinding (202).
+

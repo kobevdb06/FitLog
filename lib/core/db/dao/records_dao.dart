@@ -408,9 +408,16 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
   }
 
   /// The body weight recorded closest to [at], used when comparing photos.
-  Future<BodyMeasurementRow?> weightNearest(DateTime at) async {
+  ///
+  /// [ownOnly] leaves out what a scale wrote to Health Connect: for the
+  /// coach, when that is not shared with it.
+  Future<BodyMeasurementRow?> weightNearest(
+    DateTime at, {
+    bool ownOnly = false,
+  }) async {
     final rows = await customSelect(
       "SELECT * FROM body_measurements WHERE type = 'weight' "
+      '${ownOnly ? 'AND source IS NULL ' : ''}'
       'ORDER BY ABS(measured_at - ?) ASC LIMIT 1',
       variables: [Variable.withInt(at.millisecondsSinceEpoch)],
       readsFrom: {bodyMeasurementsTable},

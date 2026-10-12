@@ -20,11 +20,13 @@ class ExercisePlateau {
 ///
 /// [sets] is every working set since [kPlateauLookback]. Everything else -
 /// the nights, and the recovery estimate session by session - is read once
-/// here, and only when something has stalled.
+/// here, and only when something has stalled. Without [healthConnect], from
+/// what you filled in yourself only, as for [loadRecoveryEstimates].
 Future<List<ExercisePlateau>> findPlateaus(
   AppDatabase db,
   List<ProgressSet> sets, {
   required DateTime now,
+  bool healthConnect = true,
 }) async {
   // Only what had happened by [now]: asked about a moment in the past - the
   // start of a week, for the weekly review - a later session must not count.
@@ -56,9 +58,13 @@ Future<List<ExercisePlateau>> findPlateaus(
   // The same estimate the Herstel screen makes, kept session by session, so
   // "nog niet hersteld" here means what it meant there at the time.
   final since = now.subtract(kPlateauLookback);
-  final weight = await db.recordsDao.weightNearest(now);
+  final weight = await db.recordsDao.weightNearest(
+    now,
+    ownOnly: !healthConnect,
+  );
   final nights = [
-    for (final row in await db.recoveryDao.sleepSince(since)) sleepNightOf(row),
+    for (final row in await db.recoveryDao.sleepSince(since))
+      if (healthConnect || row.source == null) sleepNightOf(row),
   ];
   final history = recoveryHistory(
     muscleSessions(
@@ -75,10 +81,11 @@ Future<List<ExercisePlateau>> findPlateaus(
         drinkDayOf(row),
     ],
     vitals: [
-      for (final row in await db.healthDao.vitalsSince(
-        since.subtract(kVitalsBaselineWindow),
-      ))
-        vitalsDayOf(row),
+      if (healthConnect)
+        for (final row in await db.healthDao.vitalsSince(
+          since.subtract(kVitalsBaselineWindow),
+        ))
+          vitalsDayOf(row),
     ],
     bodyWeightKg: weight?.value,
   );
@@ -107,11 +114,13 @@ Future<List<ExercisePlateau>> findPlateaus(
 Future<List<ExercisePlateau>> loadPlateaus(
   AppDatabase db, {
   DateTime? now,
+  bool healthConnect = true,
 }) async {
   final at = now ?? DateTime.now();
   return findPlateaus(
     db,
     await db.workoutsDao.progressSets(since: at.subtract(kPlateauLookback)),
     now: at,
+    healthConnect: healthConnect,
   );
 }

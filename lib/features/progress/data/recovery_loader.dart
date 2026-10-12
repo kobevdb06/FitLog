@@ -45,14 +45,20 @@ SorenessCheck? sorenessCheckOf(SorenessCheckRow row) {
 }
 
 /// The whole estimate as of [now], read once.
+///
+/// Without [healthConnect], from what you filled in yourself only: no
+/// readings, no runs, and only the nights and the weight you entered - the
+/// estimate as the coach may see it when Health Connect is not shared with
+/// it (DECISIONS 212).
 Future<List<RecoveryEstimate>> loadRecoveryEstimates(
   AppDatabase db, {
   DateTime? now,
+  bool healthConnect = true,
 }) async {
   final at = now ?? DateTime.now();
   final since = at.subtract(kRecoveryHistoryWindow);
   final sets = await db.workoutsDao.recoverySets(since: since);
-  final weight = await db.recordsDao.weightNearest(at);
+  final weight = await db.recordsDao.weightNearest(at, ownOnly: !healthConnect);
 
   return estimateRecovery(
     muscleSessions(sets, bodyWeightKg: weight?.value),
@@ -62,22 +68,24 @@ Future<List<RecoveryEstimate>> loadRecoveryEstimates(
     ],
     nights: [
       for (final row in await db.recoveryDao.watchSleepSince(since).first)
-        sleepNightOf(row),
+        if (healthConnect || row.source == null) sleepNightOf(row),
     ],
     drinks: [
       for (final row in await db.recoveryDao.watchDrinksSince(since).first)
         drinkDayOf(row),
     ],
     vitals: [
-      for (final row
-          in await db.healthDao
-              .watchVitalsSince(since.subtract(kVitalsBaselineWindow))
-              .first)
-        vitalsDayOf(row),
+      if (healthConnect)
+        for (final row
+            in await db.healthDao
+                .watchVitalsSince(since.subtract(kVitalsBaselineWindow))
+                .first)
+          vitalsDayOf(row),
     ],
     cardio: [
-      for (final row in await db.healthDao.watchCardioSince(since).first)
-        ?cardioSessionOf(row),
+      if (healthConnect)
+        for (final row in await db.healthDao.watchCardioSince(since).first)
+          ?cardioSessionOf(row),
     ],
     bodyWeightKg: weight?.value,
   );

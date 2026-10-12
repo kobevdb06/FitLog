@@ -126,7 +126,7 @@ void main() {
         lowest: 91,
       );
 
-      final lookup = await CoachTools(db).run('steps', const {});
+      final lookup = await CoachTools(db, health: true).run('steps', const {});
       final day =
           ((jsonDecode(lookup.json) as Map)['days'] as List).single as Map;
 

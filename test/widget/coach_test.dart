@@ -339,6 +339,66 @@ void main() {
     });
   });
 
+  group('gezondheidsgegevens', () {
+    final tile = find.widgetWithText(
+      SwitchListTile,
+      'Gezondheidsgegevens delen met de coach',
+    );
+
+    Future<bool> shared(WidgetTester tester) async =>
+        (await tester.runAsync(db.settingsDao.getSettings))!.coachSeesHealth;
+
+    testWidgets('staan uit, en aanzetten zegt eerst waar ze heen gaan', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      // Phone width, where the long title has to wrap.
+      await pump(
+        tester,
+        const CoachSettingsScreen(),
+        size: const Size(360, 2400),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<SwitchListTile>(tile).value, isFalse);
+      expect(
+        find.textContaining('Uit. Wat uit Health Connect komt'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(find.text('Gezondheidsgegevens delen?'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.textContaining('naar Google'),
+        ),
+        findsOneWidget,
+      );
+
+      // Annuleren laat het uit.
+      await tester.tap(find.text('Annuleren'));
+      await tester.pumpAndSettle();
+      expect(await shared(tester), isFalse);
+
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delen'));
+      await tester.pumpAndSettle();
+      expect(await shared(tester), isTrue);
+      expect(tester.widget<SwitchListTile>(tile).value, isTrue);
+
+      // Uitzetten vraagt niets.
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(find.text('Gezondheidsgegevens delen?'), findsNothing);
+      expect(await shared(tester), isFalse);
+    });
+  });
+
   group('waar je traint', () {
     testWidgets('staat op Profiel; hier alleen of de coach het ziet', (
       tester,

@@ -5,6 +5,7 @@ import 'package:fitlog/core/calc/recovery.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/domain/coach_budget.dart';
+import 'package:fitlog/features/health/data/health_importer.dart';
 import 'package:fitlog/features/health/data/health_source.dart';
 import 'package:fitlog/features/morning/data/morning_reporter.dart';
 import 'package:fitlog/features/morning/data/morning_run.dart';
@@ -291,6 +292,59 @@ void main() {
       );
       expect(usage.requests, 1);
       expect(usage.inputTokens, 300);
+    });
+
+    group('een nacht van het horloge', () {
+      setUp(() async {
+        await db.recoveryDao.clearSleep(DateTime(2026, 3, 3));
+        await HealthImporter(db).apply(
+          HealthSnapshot(
+            nights: [
+              ImportedNight(
+                fellAsleepAt: DateTime(2026, 3, 2, 22, 30),
+                wokeAt: DateTime(2026, 3, 3, 6, 30),
+                source: 'com.example.watch',
+              ),
+            ],
+          ),
+        );
+        await withKey();
+      });
+
+      test(
+        'gaat niet naar de coach zolang Health Connect niet gedeeld is',
+        () async {
+          final coach = gemini('Onmogelijk');
+
+          final report = await MorningReporter(
+            db,
+            clientFactory: coach.factory,
+          ).write(now: morning);
+
+          expect(coach.sent, isEmpty);
+          expect(report.coachText, isNull);
+          expect(report.coachError, contains('Health Connect'));
+          // The report itself is whole: it is the coach that is not told.
+          expect(report.facts.night!.fromWatch, isTrue);
+          expect(report.text, contains('Je sliep 8 u'));
+        },
+      );
+
+      test('en gedeeld wel', () async {
+        await db.settingsDao.updateSettings(
+          const AppSettingsTableCompanion(coachSeesHealth: Value(true)),
+        );
+        final coach = gemini('Lange nacht.');
+
+        final report = await MorningReporter(
+          db,
+          clientFactory: coach.factory,
+        ).write(now: morning);
+
+        expect(coach.sent, hasLength(1));
+        expect(jsonEncode(coach.sent.single), contains('22:30'));
+        expect(report.coachText, 'Lange nacht.');
+      });
     });
 
     test('aan de daglimiet vraagt hij niets en zegt hij waarom', () async {

@@ -118,13 +118,13 @@ class Coach {
           ? await client.send(
               system: system,
               messages: messages,
-              tools: CoachTools.definitions(),
+              tools: tools.offered,
               model: model,
             )
           : await client.sendStreaming(
               system: system,
               messages: messages,
-              tools: CoachTools.definitions(),
+              tools: tools.offered,
               model: model,
               onText: onText,
             );

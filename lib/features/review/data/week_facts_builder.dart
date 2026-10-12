@@ -26,10 +26,15 @@ const List<String> _recordOrder = [
 ///
 /// A week still running is read up to [now]: a planned day only counts as
 /// missed once it is over, and today is not over yet.
+///
+/// Without [healthConnect], the week as the coach may see it when Health
+/// Connect is not shared with it: only the nights you filled in yourself,
+/// and no readings or steps (DECISIONS 212).
 Future<WeekFacts> buildWeekFacts(
   AppDatabase db,
   DateTime start, {
   DateTime? now,
+  bool healthConnect = true,
 }) async {
   final at = now ?? DateTime.now();
   final end = DateTime(start.year, start.month, start.day + 7);
@@ -168,8 +173,12 @@ Future<WeekFacts> buildWeekFacts(
 
   // --- Standing still, and moving again ------------------------------------
 
-  final atEnd = await loadPlateaus(db, now: upTo);
-  final atStart = await loadPlateaus(db, now: start);
+  final atEnd = await loadPlateaus(db, now: upTo, healthConnect: healthConnect);
+  final atStart = await loadPlateaus(
+    db,
+    now: start,
+    healthConnect: healthConnect,
+  );
   final doneThisWeek = {
     for (final row
         in await db
@@ -192,13 +201,15 @@ Future<WeekFacts> buildWeekFacts(
   // --- Nights and the watch ------------------------------------------------
 
   final nights = [
-    for (final row in await db.recoveryDao.sleepSince(before)) row,
+    for (final row in await db.recoveryDao.sleepSince(before))
+      if (healthConnect || row.source == null) row,
   ];
   final vitals = [
-    for (final row in await db.healthDao.vitalsSince(
-      before.subtract(kVitalsBaselineWindow),
-    ))
-      vitalsDayOf(row),
+    if (healthConnect)
+      for (final row in await db.healthDao.vitalsSince(
+        before.subtract(kVitalsBaselineWindow),
+      ))
+        vitalsDayOf(row),
   ];
   bool inWeek(DateTime d) => !d.isBefore(start) && d.isBefore(end);
   bool inUsual(DateTime d) => !d.isBefore(before) && d.isBefore(start);
@@ -255,13 +266,18 @@ Future<WeekFacts> buildWeekFacts(
     for (final v in vitals)
       if (inUsual(v.day)) v,
   ];
-  final steps = await db
-      .customSelect(
-        'SELECT AVG(steps) AS steps FROM daily_vitals '
-        'WHERE steps IS NOT NULL AND day >= ? AND day < ?',
-        variables: [Variable.withInt(ms(start)), Variable.withInt(ms(end))],
-      )
-      .getSingle();
+  final steps = healthConnect
+      ? await db
+            .customSelect(
+              'SELECT AVG(steps) AS steps FROM daily_vitals '
+              'WHERE steps IS NOT NULL AND day >= ? AND day < ?',
+              variables: [
+                Variable.withInt(ms(start)),
+                Variable.withInt(ms(end)),
+              ],
+            )
+            .getSingle()
+      : null;
 
   return WeekFacts(
     start: start,
@@ -303,6 +319,6 @@ Future<WeekFacts> buildWeekFacts(
     usualRestingHr: oneDecimal(
       median([for (final v in usualVitals) ?v.restingHr]),
     ),
-    steps: steps.read<double?>('steps')?.round(),
+    steps: steps?.read<double?>('steps')?.round(),
   );
 }

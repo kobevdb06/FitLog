@@ -445,6 +445,9 @@ void main() {
   });
 
   group('wat je horloge en je herstel zeggen', () {
+    // Shared: these are what the coach sees once the user switches it on.
+    setUp(() => tools = CoachTools(db, health: true));
+
     test('nachten, met hun fasen, score en waar ze vandaan kwamen', () async {
       await db.recoveryDao.setSleep(
         fellAsleepAt: DateTime(2026, 3, 1, 23, 30),
@@ -565,6 +568,136 @@ void main() {
       final day = (decode(lookup)['days']! as List).single as Map;
 
       expect(day, {'date': '2026-03-01', 'drinks': 4});
+    });
+  });
+
+  group('zonder Health Connect gedeeld', () {
+    // The default: tools as setUp made them.
+
+    test('worden de opzoekingen met alleen dat erin niet aangeboden, en niet '
+        'gedaan', () async {
+      final today = DateTime.now();
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          hrv: [
+            ImportedReading(
+              at: DateTime(today.year, today.month, today.day - 1, 3),
+              value: 41,
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        tools.offered.map((d) => d['name']).toSet(),
+        CoachTools.names.difference(CoachTools.healthOnly),
+      );
+      for (final name in CoachTools.healthOnly) {
+        final lookup = await tools.run(name, const {});
+        expect(decode(lookup).keys, ['error'], reason: name);
+        expect(lookup.summary, contains('niet gedeeld'), reason: name);
+      }
+    });
+
+    test('ziet de coach alleen de nachten die je zelf invulde', () async {
+      await db.recoveryDao.setSleep(
+        fellAsleepAt: DateTime(2026, 3, 1, 23, 30),
+        wokeAt: DateTime(2026, 3, 2, 7, 30),
+      );
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          nights: [
+            ImportedNight(
+              fellAsleepAt: DateTime(2026, 3, 2, 23),
+              wokeAt: DateTime(2026, 3, 3, 5),
+              source: 'com.example.watch',
+            ),
+          ],
+        ),
+      );
+
+      final nights =
+          (decode(await tools.run('sleep', const {}))['nights']! as List)
+              .cast<Map<String, Object?>>();
+
+      expect(nights, hasLength(1));
+      expect(nights.single['morning'], '2026-03-02');
+      expect(nights.single['from'], 'zelf ingevuld');
+      // And it is told why there are not more, and where that changes.
+      expect(
+        decode(await tools.run('sleep', const {}))['health_connect'],
+        contains('Instellingen, AI-coach'),
+      );
+    });
+
+    test('en alleen de metingen die je zelf deed', () async {
+      await db.recordsDao.addMeasurement(
+        type: MeasurementType.weight,
+        value: 81.5,
+        measuredAt: DateTime(2026, 3, 1, 8),
+      );
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          weights: [
+            ImportedWeight(
+              id: 'w1',
+              at: DateTime(2026, 3, 3, 7),
+              kg: 80.2,
+              source: 'com.example.scale',
+            ),
+          ],
+        ),
+      );
+
+      final measurements =
+          (decode(
+                    await tools.run('body_measurements', const {
+                      'type': 'weight',
+                    }),
+                  )['measurements']!
+                  as List)
+              .cast<Map<String, Object?>>();
+
+      expect(measurements.map((m) => m['value']), [81.5]);
+    });
+
+    test('rekent het herstel zonder een loop die binnenkwam', () async {
+      final now = DateTime.now();
+      await logSet(
+        exerciseId: 'ex-squat',
+        // Nearly recovered by now, so a long run since then keeps it from
+        // being ready.
+        on: now.subtract(const Duration(hours: 80)),
+        weight: 100,
+      );
+      await HealthImporter(db).apply(
+        HealthSnapshot(
+          cardio: [
+            ImportedCardio(
+              id: 'r1',
+              start: now.subtract(const Duration(hours: 10)),
+              end: now.subtract(const Duration(hours: 8)),
+              kind: CardioKind.running,
+              source: 'com.strava',
+            ),
+          ],
+        ),
+      );
+
+      Future<Map> quadriceps(CoachTools tools) async =>
+          (decode(await tools.run('recovery', const {}))['muscles']! as List)
+                  .single
+              as Map;
+
+      // Shared, the run holds the legs back; not shared, it is not there.
+      final shared = await quadriceps(CoachTools(db, health: true));
+      final own = await quadriceps(tools);
+      expect(shared.containsKey('held_back_by'), isTrue);
+      expect(own.containsKey('held_back_by'), isFalse);
+      expect(
+        own['hours_left'] as int? ?? 0,
+        lessThan(shared['hours_left'] as int),
+      );
     });
   });
 

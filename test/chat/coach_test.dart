@@ -161,8 +161,28 @@ void main() {
 
       await coach.ask(history: const [], question: 'Is 3x8 genoeg?');
 
+      // Health Connect is not shared until the user says so, and the
+      // lookups with nothing else in them are not offered.
       final tools = sent.single['tools']! as List<Object?>;
-      expect(tools, hasLength(CoachTools.names.length));
+      final offered = CoachTools.names.difference(CoachTools.healthOnly);
+      expect(tools, hasLength(offered.length));
+      expect(
+        tools.map((t) => (t! as Map<String, Object?>)['name']).toSet(),
+        offered,
+      );
+    });
+
+    test('and with Health Connect shared, every one of them', () async {
+      final coach = Coach(
+        client: clientSaying([says('Ja.')]),
+        tools: CoachTools(db, health: true),
+        model: CoachModel.sonnet.wire,
+        system: buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
+      );
+
+      await coach.ask(history: const [], question: 'Hoe sliep ik?');
+
+      final tools = sent.single['tools']! as List<Object?>;
       expect(
         tools.map((t) => (t! as Map<String, Object?>)['name']).toSet(),
         CoachTools.names,
@@ -404,7 +424,7 @@ void main() {
               as List;
       expect(
         declarations.map((d) => (d! as Map<String, Object?>)['name']).toSet(),
-        CoachTools.names,
+        CoachTools.names.difference(CoachTools.healthOnly),
       );
     });
   });
@@ -461,6 +481,19 @@ void main() {
       // En dat het zelf niets aanmaakt.
       expect(prompt, contains('propose_exercise'));
       expect(prompt, contains('gebruiker tikt zelf'));
+    });
+
+    test('says when Health Connect is not shared, and where it goes on', () {
+      String prompt({required bool seesHealth}) => buildCoachPrompt(
+        now: DateTime(2026, 3, 2),
+        weightUnit: 'kg',
+        seesHealth: seesHealth,
+      );
+
+      expect(prompt(seesHealth: true), isNot(contains('Health Connect')));
+      expect(prompt(seesHealth: false), contains('deelt Health Connect niet'));
+      // Within the budget below, with the line in it.
+      expect(prompt(seesHealth: false).length, lessThan(4300));
     });
 
     test('and carries no data about the user beyond their name', () {

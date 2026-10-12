@@ -124,12 +124,34 @@ void main() {
     test('de coach ziet ze bij je laatste sessies', () async {
       await db.healthDao.setWorkoutHeartRate('w1', average: 115, highest: 150);
 
-      final lookup = await CoachTools(db).run('recent_workouts', const {});
+      final lookup = await CoachTools(
+        db,
+        health: true,
+      ).run('recent_workouts', const {});
       final session =
           ((jsonDecode(lookup.json) as Map)['workouts'] as List).single as Map;
 
       expect(session['heart_rate'], {'average': 115, 'highest': 150});
     });
+
+    test(
+      'tenzij Health Connect niet gedeeld wordt: dan de sessie zonder',
+      () async {
+        await db.healthDao.setWorkoutHeartRate(
+          'w1',
+          average: 115,
+          highest: 150,
+        );
+
+        final lookup = await CoachTools(db).run('recent_workouts', const {});
+        final session =
+            ((jsonDecode(lookup.json) as Map)['workouts'] as List).single
+                as Map;
+
+        expect(session['name'], 'Push');
+        expect(session.containsKey('heart_rate'), isFalse);
+      },
+    );
 
     testWidgets('en ze staan bij de training', (tester) async {
       await tester.runAsync(

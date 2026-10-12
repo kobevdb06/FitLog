@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
+import 'package:fitlog/features/health/data/health_importer.dart';
+import 'package:fitlog/features/health/data/health_source.dart';
 import 'package:fitlog/features/review/data/week_reviewer.dart';
 import 'package:fitlog/features/review/domain/week_facts.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,6 +103,61 @@ void main() {
         expect(spent.requests, 1);
       },
     );
+
+    group('met een horloge', () {
+      setUp(
+        () => HealthImporter(db).apply(
+          HealthSnapshot(
+            nights: [
+              ImportedNight(
+                fellAsleepAt: DateTime(2026, 9, 29, 23),
+                wokeAt: DateTime(2026, 9, 30, 7),
+                source: 'com.example.watch',
+              ),
+            ],
+            hrv: [ImportedReading(at: DateTime(2026, 9, 30, 3), value: 48)],
+          ),
+        ),
+      );
+
+      /// The week as the coach was told it.
+      Map<String, Object?> told() {
+        final body = jsonDecode(sent.single) as Map<String, Object?>;
+        final text =
+            ((((body['contents']! as List).single as Map)['parts']! as List)
+                        .single
+                    as Map)['text']!
+                as String;
+        return jsonDecode(text) as Map<String, Object?>;
+      }
+
+      test('zonder Health Connect gedeeld: de week zonder het horloge, '
+          'en het overzicht zelf heeft alles', () async {
+        final review = (await WeekReviewer(
+          db,
+          clientFactory: client,
+        ).write(monday, now: sundayEvening))!;
+
+        expect(told()['sleep_minutes'], isNull);
+        expect(told()['hrv_ms'], isNull);
+        expect(review.facts.sleepMinutes, 480);
+        expect(review.facts.hrvMs, 48);
+      });
+
+      test('gedeeld: ook de nachten en het hart', () async {
+        await db.settingsDao.updateSettings(
+          const AppSettingsTableCompanion(coachSeesHealth: Value(true)),
+        );
+
+        await WeekReviewer(
+          db,
+          clientFactory: client,
+        ).write(monday, now: sundayEvening);
+
+        expect(told()['sleep_minutes'], 480);
+        expect(told()['hrv_ms'], 48);
+      });
+    });
 
     test('aan de daglimiet vraagt het niets, en zegt waarom', () async {
       await db.settingsDao.updateSettings(

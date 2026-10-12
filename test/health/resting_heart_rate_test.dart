@@ -134,7 +134,10 @@ void main() {
     test('de coach ziet dat FitLog ze berekende', () async {
       await db.healthDao.setDerivedRestingHr(DateTime.now(), 51);
 
-      final lookup = await CoachTools(db).run('heart_readings', const {});
+      final lookup = await CoachTools(
+        db,
+        health: true,
+      ).run('heart_readings', const {});
       final reading =
           ((jsonDecode(lookup.json) as Map)['days'] as List).single as Map;
 

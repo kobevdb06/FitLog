@@ -368,13 +368,14 @@ class CoachController extends _$CoachController {
       final now = DateTime.now();
       final coach = Coach(
         client: client,
-        tools: CoachTools(db, photos: inPlay),
+        tools: CoachTools(db, photos: inPlay, health: settings.coachSeesHealth),
         model: ref.read(coachModelProvider),
         system: buildCoachPrompt(
           now: now,
           weightUnit: settings.unitWeight,
           displayName: profile?.displayName,
           exerciseCount: await db.exercisesDao.countExercises(),
+          seesHealth: settings.coachSeesHealth,
           aboutUser: settings.coachSeesProfile && profile != null
               ? describeProfile(
                   now: now,

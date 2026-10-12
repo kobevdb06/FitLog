@@ -156,6 +156,14 @@ class AppSettingsTable extends Table {
       .named('coach_sees_profile')
       .withDefault(const Constant(false))();
 
+  /// Whether the coach may read what came in through Health Connect: the
+  /// nights, heart readings, steps, runs and rides, and what FitLog works
+  /// out from them. Off until you switch it on, for everyone - also for
+  /// someone who used the coach before there was a choice. What you filled
+  /// in yourself it sees either way.
+  BoolColumn get coachSeesHealth =>
+      boolean().named('coach_sees_health').withDefault(const Constant(false))();
+
   /// Whether every exercise in a running session says what to try today,
   /// from what you did last time. On until you switch it off.
   BoolColumn get progressionHints =>

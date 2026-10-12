@@ -121,6 +121,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -153,6 +154,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -183,6 +185,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -210,6 +213,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
       ..execute('PRAGMA user_version = 46');
     raw.close();
 
@@ -235,6 +239,7 @@ void main() {
       final raw = sqlite3.open(path)
         ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
         ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+        ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
         ..execute('PRAGMA user_version = 47');
       raw.close();
 
@@ -269,6 +274,7 @@ void main() {
 
       final raw = sqlite3.open(path)
         ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+        ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
         ..execute(
           "UPDATE chat_messages SET image_file = 'toestel.jpg' "
           "WHERE id = 'met'",
@@ -299,6 +305,31 @@ void main() {
     },
   );
 
+  test('a database from v49 keeps Health Connect from the coach, also when '
+      'the coach was on', () async {
+    final path = '${dir.path}/v49.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+    await fresh.settingsDao.updateSettings(
+      const AppSettingsTableCompanion(coachSeesProfile: Value(true)),
+    );
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+      ..execute('PRAGMA user_version = 49');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final settings = await db.settingsDao.getSettings();
+    expect(settings.coachSeesHealth, isFalse);
+    // What was chosen before stays chosen.
+    expect(settings.anthropicApiKey, 'AQ.Ab8RNiZhX2Mkg');
+    expect(settings.coachSeesProfile, isTrue);
+    await db.close();
+  });
+
   test('a database that migrated past the tables of v29, v30 and v33 gets '
       'their indexes after all', () async {
     // createTable makes a table without its indexes, so a phone that had
@@ -318,6 +349,7 @@ void main() {
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -388,7 +420,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 49);
+    expect(raw.select('PRAGMA user_version').first.values.first, 50);
     raw.close();
   });
 
@@ -546,6 +578,8 @@ void main() {
       contains('requests'),
     );
     expect(settings.coachDailyLimit, isNull);
+    // v50: Health Connect data for the coach, off.
+    expect(settings.coachSeesHealth, isFalse);
     // v25: wat de coach aanbiedt toe te voegen, tot je erop tikt.
     expect(
       chatColumns.map((row) => row.read<String>('name')),
@@ -596,7 +630,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 49);
+    expect(db.schemaVersion, 50);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

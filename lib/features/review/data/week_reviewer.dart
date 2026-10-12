@@ -80,6 +80,12 @@ class WeekReviewer {
     if (key == null || key.isEmpty) return null;
 
     final facts = await buildWeekFacts(db, start, now: at);
+    // The review keeps the whole week; the coach is told what it may see.
+    // Without Health Connect shared, that is the week without the watch:
+    // the training, and only the nights filled in by hand.
+    final told = settings.coachSeesHealth
+        ? facts
+        : await buildWeekFacts(db, start, now: at, healthConnect: false);
     final chosen = CoachProvider.fromWire(settings.chatProvider);
     final provider = chosen != null && kOfferedProviders.contains(chosen)
         ? chosen
@@ -99,7 +105,7 @@ class WeekReviewer {
       try {
         final reply = await client.send(
           system: kWeekReviewSystem,
-          messages: [CoachMessage.user(jsonEncode(facts.forCoach()))],
+          messages: [CoachMessage.user(jsonEncode(told.forCoach()))],
           tools: const [],
           model: CoachModel.resolveWire(settings.chatModel, provider),
           maxTokens: 512,

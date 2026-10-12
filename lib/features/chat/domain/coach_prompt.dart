@@ -197,6 +197,7 @@ String buildCoachPrompt({
   String? displayName,
   int? exerciseCount,
   String? aboutUser,
+  bool seesHealth = true,
 }) {
   final today = '${now.year}-${_two(now.month)}-${_two(now.day)}';
   final weekday = const [
@@ -213,8 +214,13 @@ String buildCoachPrompt({
 $_coachRules
 $_appFacts
 Vandaag is het $weekday $today.
-De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}
+De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}
 ''';
 }
+
+/// Why there is no watch in what the coach finds, so it says so rather than
+/// concluding that the user does not sleep. One line, for the budget: the
+/// lookups that come back without it say where it is switched on.
+const String _noHealth = 'De gebruiker deelt Health Connect niet met je.';
 
 String _two(int value) => value.toString().padLeft(2, '0');

@@ -4379,3 +4379,43 @@ melden aan de maker, vanuit de app. Onder elk antwoord van de coach staat nu
 - **De `mailto:` wordt met de hand gecodeerd.** `Uri(queryParameters:)`
   schrijft een spatie als `+`, en mail-apps tonen die `+` letterlijk.
 
+## 212. Wat uit Health Connect komt, deelt de coach alleen als je dat aanzet
+
+De coach kon alles opzoeken wat Health Connect binnenbracht: nachten, HRV,
+rusthartslag, stappen, zuurstof, lopen en fietsen, en de hartslag bij een
+training. Dat gaat met de vraag naar Google, en met een gratis sleutel mag
+Google het lezen. Google Play stelt aan gezondheidsgegevens die een app
+doorgeeft strengere eisen dan aan de rest, en "je koos voor een coach" is
+geen keuze om je hartslag te delen. Dus een eigen schakelaar:
+*Gezondheidsgegevens delen met de coach*, onder *Wat de coach over je weet*.
+
+- **Uit, voor iedereen** (`app_settings.coach_sees_health`, v50). Ook wie de
+  coach al gebruikte, moet het zelf aanzetten: delen is iets wat je kiest, niet
+  iets wat een update voor je koos.
+- **Aanzetten vraagt eerst**, met waar het heen gaat: naar Google, en met een
+  gratis sleutel ook voor Google zelf. Uitzetten vraagt niets.
+- **Eén regel: niets uit Health Connect, en niets wat ervan afgeleid is.** Wat
+  je zelf invulde, blijft hij zien.
+  - `heart_readings`, `steps` en `cardio_sessions` hebben niets anders in zich
+    en worden niet aangeboden; vraagt het model er toch om (het zag ze eerder
+    in het gesprek), dan krijgt het "niet gedeeld" terug.
+  - `sleep` en `body_measurements` geven alleen rijen zonder `source`; een
+    nacht krijgt zijn score dan zonder HRV en rusthartslag.
+  - `recovery` en `plateaus` rekenen met wat je zelf invulde: zonder metingen
+    van het horloge, zonder lopen en fietsen, met alleen je eigen nachten en
+    je eigen gewicht (`healthConnect: false` in de laders).
+  - `recent_workouts` laat de hartslag bij een training weg.
+  - Een opzoeking die zo ingekort is, zegt dat (`health_connect`: niet
+    gedeeld), zodat de coach een lege lijst niet leest als geen slaap. De
+    systeemprompt krijgt er één zin bij; de rest staat in de opzoeking, waar
+    het alleen kost als het nodig is. Zo blijft de prompt onder zijn budget
+    van 4300 tekens.
+- **Het weekoverzicht** krijgt de week zoals de coach ze mag zien: de
+  training, en alleen de nachten die je zelf invulde. Het overzicht zelf
+  bewaart en toont de hele week.
+- **Het ochtendrapport** is anders: daar vervangen de woorden van de coach die
+  van de app, en woorden over een ochtend zonder zijn nacht zouden naast de
+  cijfers van die nacht staan. Dus schrijft de coach het rapport alleen als
+  wat hij mag zien de hele ochtend is - zoals bij wie zijn nachten zelf
+  invult. Staat er iets van het horloge in, dan staat het rapport er in de
+  woorden van de app, met de reden in `coach_error`.

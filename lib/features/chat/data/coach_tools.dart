@@ -15,7 +15,7 @@ library;
 import 'dart:convert';
 
 import 'package:drift/drift.dart'
-    show BooleanExpressionOperators, OrderingTerm, QueryRow, Variable;
+    show BooleanExpressionOperators, Constant, OrderingTerm, QueryRow, Variable;
 
 import '../../../core/calc/plateau.dart';
 import '../../../core/calc/recovery.dart';
@@ -51,17 +51,39 @@ class CoachLookup {
 const int kCoachRowCap = 40;
 
 class CoachTools {
-  CoachTools(this.db, {this.photos = const []});
+  CoachTools(this.db, {this.photos = const [], this.health = false});
 
   final AppDatabase db;
+
+  /// Whether what came in through Health Connect may be read: the nights,
+  /// readings, steps, runs and rides, and what FitLog works out from them
+  /// (DECISIONS 212). Without it the coach sees what the user filled in
+  /// themselves, and the lookups that hold nothing else are not offered.
+  final bool health;
+
+  /// The lookups with nothing in them but Health Connect.
+  static const Set<String> healthOnly = {
+    'heart_readings',
+    'steps',
+    'cardio_sessions',
+  };
+
+  /// The lookups this coach may use, as the API wants them.
+  List<Map<String, Object?>> get offered => definitions(health: health);
 
   /// The photos the coach may put on an exercise, as file names in the photo
   /// directory: those of the newest message in the conversation that had
   /// any - the same ones it was shown, numbered from 1 in the same order.
   final List<String> photos;
 
-  /// The tool definitions, as the API wants them.
-  static List<Map<String, Object?>> definitions() => [
+  /// The tool definitions, as the API wants them; without [health], the
+  /// ones in [healthOnly] left out.
+  static List<Map<String, Object?>> definitions({bool health = true}) => [
+    for (final tool in _definitions)
+      if (health || !healthOnly.contains(tool['name'])) tool,
+  ];
+
+  static final List<Map<String, Object?>> _definitions = [
     {
       'name': 'search_exercises',
       'description':
@@ -499,6 +521,18 @@ class CoachTools {
   /// Runs one lookup. An unknown name is an answer, not a crash: the model
   /// invented it, and telling it so is better than failing the whole turn.
   Future<CoachLookup> run(String name, Map<String, Object?> input) async {
+    // Not offered, but a model can still ask for a tool it saw earlier in
+    // the conversation, before the switch went off.
+    if (!health && healthOnly.contains(name)) {
+      return CoachLookup(
+        json: jsonEncode({
+          'error':
+              'De gebruiker deelt Health Connect niet met de coach. Aanzetten '
+              'kan bij Instellingen, AI-coach.',
+        }),
+        summary: 'gegevens uit Health Connect: niet gedeeld, niets bekeken',
+      );
+    }
     return switch (name) {
       'propose_exercise' => _proposeExercise(input),
       'propose_exercise_change' => _proposeExerciseChange(input),
@@ -526,6 +560,17 @@ class CoachTools {
       ),
     };
   }
+
+  /// Said in a lookup that holds only what the user filled in, so the coach
+  /// does not take an empty list of nights for nights without sleep, and
+  /// knows where the rest is switched on.
+  Map<String, Object?> get _unshared => health
+      ? const {}
+      : const {
+          'health_connect':
+              'niet gedeeld: alleen wat de gebruiker zelf invulde. Aanzetten '
+              'kan bij Instellingen, AI-coach.',
+        };
 
   int _limit(Object? value, int fallback) {
     final asked = value is int ? value : int.tryParse('$value');
@@ -1062,7 +1107,7 @@ class CoachTools {
         'sets': row.read<int?>('total_sets'),
         'felt': row.read<String?>('perceived_effort'),
         'notes': ?_text(row.read<String?>('notes')),
-        if (row.read<int?>('avg_heart_rate') case final average?)
+        if (row.read<int?>('avg_heart_rate') case final average? when health)
           'heart_rate': {
             'average': average,
             'highest': row.read<int?>('max_heart_rate'),
@@ -1363,10 +1408,15 @@ class CoachTools {
     final type = _measurementType(_text(input['type']));
     final limit = _limit(input['limit'], 10);
 
+    final where = [
+      if (type != null) 'type = ?',
+      // A scale that writes to Health Connect is the watch's business.
+      if (!health) 'source IS NULL',
+    ];
     final rows = await db
         .customSelect(
           'SELECT type, value, measured_at FROM body_measurements '
-          '${type == null ? '' : 'WHERE type = ? '}'
+          '${where.isEmpty ? '' : 'WHERE ${where.join(' AND ')} '}'
           'ORDER BY measured_at DESC LIMIT ?',
           variables: [
             if (type != null) Variable.withString(type),
@@ -1377,6 +1427,7 @@ class CoachTools {
 
     return CoachLookup(
       json: jsonEncode({
+        ..._unshared,
         'unit': 'metrisch: kg, cm, %',
         'measurements': [
           for (final row in rows)
@@ -1405,12 +1456,14 @@ class CoachTools {
     final limit = _limit(input['limit'], 7);
     final nights =
         await (db.select(db.sleepEntriesTable)
+              ..where((t) => health ? const Constant(true) : t.source.isNull())
               ..orderBy([(t) => OrderingTerm.desc(t.wokeAt)])
               ..limit(limit))
             .get();
 
-    // The score of a night needs the four weeks of readings before it.
-    final vitals = nights.isEmpty
+    // The score of a night needs the four weeks of readings before it -
+    // without them, it is scored on the night alone.
+    final vitals = nights.isEmpty || !health
         ? const <VitalsDay>[]
         : [
             for (final row
@@ -1425,6 +1478,7 @@ class CoachTools {
 
     return CoachLookup(
       json: jsonEncode({
+        ..._unshared,
         'nights': [
           for (final night in nights)
             {
@@ -1528,13 +1582,18 @@ class CoachTools {
 
   Future<CoachLookup> _recovery() async {
     final now = DateTime.now();
-    final estimates = await loadRecoveryEstimates(db, now: now);
+    final estimates = await loadRecoveryEstimates(
+      db,
+      now: now,
+      healthConnect: health,
+    );
     const shown = Duration(hours: 96);
 
     String percent(double factor) => '+${((factor - 1) * 100).round()}%';
 
     return CoachLookup(
       json: jsonEncode({
+        ..._unshared,
         'muscles': [
           for (final e in estimates)
             if (!e.isReadyAt(now) || now.difference(e.trainedAt) < shown)
@@ -1659,7 +1718,7 @@ class CoachTools {
   }
 
   Future<CoachLookup> _plateaus() async {
-    final found = await loadPlateaus(db);
+    final found = await loadPlateaus(db, healthConnect: health);
     double one(double value) => (value * 10).round() / 10;
     Map<String, Object?> compared(Object? now, Object? before) => {
       'now': now,
@@ -1668,6 +1727,7 @@ class CoachTools {
 
     return CoachLookup(
       json: jsonEncode({
+        ..._unshared,
         'plateaus': [
           for (final item in found.take(kCoachRowCap))
             {

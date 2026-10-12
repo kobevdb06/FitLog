@@ -76,27 +76,54 @@ class MorningReporter {
   Future<MorningReport> write({DateTime? now, String? importError}) async {
     final at = now ?? DateTime.now();
 
-    final facts = buildMorningFacts(
-      now: at,
-      nights: await db.recoveryDao
-          .watchSleepSince(at.subtract(const Duration(days: 2)))
-          .first,
-      vitals: [
-        for (final row
-            in await db.healthDao
-                .watchVitalsSince(at.subtract(kVitalsBaselineWindow))
-                .first)
-          vitalsDayOf(row),
-      ],
-      estimates: await loadRecoveryEstimates(db, now: at),
-    );
+    Future<MorningFacts> build({required bool healthConnect}) async =>
+        buildMorningFacts(
+          now: at,
+          nights: [
+            for (final row
+                in await db.recoveryDao
+                    .watchSleepSince(at.subtract(const Duration(days: 2)))
+                    .first)
+              if (healthConnect || row.source == null) row,
+          ],
+          vitals: [
+            if (healthConnect)
+              for (final row
+                  in await db.healthDao
+                      .watchVitalsSince(at.subtract(kVitalsBaselineWindow))
+                      .first)
+                vitalsDayOf(row),
+          ],
+          estimates: await loadRecoveryEstimates(
+            db,
+            now: at,
+            healthConnect: healthConnect,
+          ),
+        );
+    final facts = await build(healthConnect: true);
 
     String? text;
     String? error;
     CoachUsage? usage;
     final settings = await db.settingsDao.getSettings();
     final key = settings.anthropicApiKey;
-    if (key != null && key.isNotEmpty) {
+    // A morning that holds something from Health Connect is not the coach's
+    // to see unless that is shared. Leaving it out would not do either: the
+    // coach's words replace the app's on the report, and words about a
+    // morning without its night would contradict the numbers beside them.
+    // So the coach writes only when what it may see is the whole morning -
+    // as it is for someone who fills in their nights by hand.
+    final withheld =
+        key != null &&
+        key.isNotEmpty &&
+        !settings.coachSeesHealth &&
+        jsonEncode((await build(healthConnect: false)).forCoach()) !=
+            jsonEncode(facts.forCoach());
+    if (withheld) {
+      error =
+          'Je deelt Health Connect niet met de coach, dus dit rapport staat '
+          'er zonder zijn woorden.';
+    } else if (key != null && key.isNotEmpty) {
       final chosen = CoachProvider.fromWire(settings.chatProvider);
       final provider = chosen != null && kOfferedProviders.contains(chosen)
           ? chosen

@@ -549,6 +549,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             ),
             const SectionHeader('Wat de coach over je weet'),
             const _ProfileSwitch(),
+            const _HealthSwitch(),
             // Drawing is switched off for the app, and then none of this is
             // shown - not even to someone who still has a token stored.
             if (ref.watch(imageGenerationProvider)) ...[
@@ -731,6 +732,57 @@ class _ProfileSwitch extends ConsumerWidget {
           .updateSettings(
             AppSettingsTableCompanion(coachSeesProfile: Value(value)),
           ),
+    );
+  }
+}
+
+/// Whether the coach may read what came in through Health Connect.
+///
+/// Off until switched on, and switching it on says first where it goes: a
+/// night or a heart rate is health data, and on a free key Google may read
+/// what the coach sends (DECISIONS 212).
+class _HealthSwitch extends ConsumerWidget {
+  const _HealthSwitch();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final on = ref.watch(settingsProvider).value?.coachSeesHealth ?? false;
+
+    Future<void> set(bool value) => ref
+        .read(databaseProvider)
+        .settingsDao
+        .updateSettings(
+          AppSettingsTableCompanion(coachSeesHealth: Value(value)),
+        );
+
+    return SwitchListTile(
+      secondary: const Icon(Icons.monitor_heart_outlined),
+      title: const Text('Gezondheidsgegevens delen met de coach'),
+      subtitle: Text(
+        on
+            ? 'Je nachten, HRV, rusthartslag, stappen en loop- en '
+                  'fietssessies uit Health Connect zoekt hij op als je iets '
+                  'vraagt, en het ochtendrapport en weekoverzicht gebruiken ze.'
+            : 'Uit. Wat uit Health Connect komt, ziet de coach niet; nachten '
+                  'en metingen die je zelf invulde wel.',
+      ),
+      value: on,
+      onChanged: (value) async {
+        if (!value) return set(false);
+        final agreed = await confirm(
+          context,
+          title: 'Gezondheidsgegevens delen?',
+          message:
+              'Vraag je de coach iets, dan mag hij je nachten, HRV, '
+              'rusthartslag, stappen en loop- en fietssessies uit Health '
+              'Connect opzoeken. Wat hij opzoekt, gaat met je vraag naar '
+              'Google, en staat onder het antwoord. Met een gratis sleutel mag '
+              'Google het gebruiken om zijn producten te verbeteren. Je kan '
+              'dit altijd weer uitzetten.',
+          confirmLabel: 'Delen',
+        );
+        if (agreed) await set(true);
+      },
     );
   }
 }

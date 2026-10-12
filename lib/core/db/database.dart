@@ -68,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 49;
+  int get schemaVersion => 50;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -461,6 +461,12 @@ class AppDatabase extends _$AppDatabase {
           // older question stays in image_file, where it was, and is read
           // from there.
           await m.addColumn(chatMessagesTable, chatMessagesTable.imageFiles);
+        }
+        if (from < 50) {
+          // Health Connect data for the coach: off, also for someone whose
+          // coach could read it until now. Sharing it is something you
+          // choose, not something an update chose for you.
+          await m.addColumn(appSettingsTable, appSettingsTable.coachSeesHealth);
         }
       });
 

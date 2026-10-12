@@ -658,8 +658,6 @@ class CoachController extends _$CoachController {
 
   void clearError() => state = const CoachState();
 
-  /// One cheap call, to find out whether a key works before the user types a
-  /// question and waits for a failure.
   /// Asks the coach for the two sentences a pair of drawings is made from.
   ///
   /// A separate call with only that job in it: the rules for these sentences
@@ -726,26 +724,29 @@ class CoachController extends _$CoachController {
     return pair;
   }
 
-  Future<String?> testKey(String key) async {
+  /// Whether [key] works, found out before the user types a question and
+  /// waits for a failure: null when it does, the reason when it does not.
+  ///
+  /// By asking for the list of models. That costs nothing of the day's
+  /// asking; a question to test with - which is what this did - spent one of
+  /// a free tier's few hundred calls a day on the word "ok".
+  Future<CoachException?> checkKey(String key) async {
     final client = ref.read(coachClientFactoryProvider)(
       key.trim(),
       ref.read(coachProviderProvider),
     );
     try {
-      await client.send(
-        system: 'Antwoord met het woord ok.',
-        messages: [CoachMessage.user('ok')],
-        tools: const [],
-        model: ref.read(coachModelProvider),
-        maxTokens: 8,
-      );
+      await client.listModels();
       return null;
     } on CoachException catch (error) {
-      return error.message;
+      return error;
     } finally {
       client.close();
     }
   }
+
+  /// [checkKey], as the line the settings show.
+  Future<String?> testKey(String key) async => (await checkKey(key))?.message;
 }
 
 /// A question another screen has put ready for the coach, not sent yet.

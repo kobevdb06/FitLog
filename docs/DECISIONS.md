@@ -4239,3 +4239,12 @@ gratis aanbiedt zonder dit te zeggen, zou die belofte stilletjes breken. De
 link opent de pagina in de browser; FitLog zelf maakt daarvoor geen
 verbinding (202).
 
+## 206. Een sleutel testen kost geen vraag
+
+*Sleutel testen* stelde de coach een vraag van één woord. Dat werkte, maar
+het kostte een van de paar honderd vragen die een gratis sleutel per dag
+heeft, en wie twijfelt, tikt er drie keer op. Nu vraagt de test de lijst met
+modellen op (`checkKey`): die telt niet mee voor de daglimiet, en een
+geweigerde sleutel zegt daar net zo duidelijk dat ze geweigerd is. De sleutel
+gaat mee in de header, zoals bij elke vraag, nooit in het adres.
+

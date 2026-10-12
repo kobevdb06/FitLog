@@ -4170,3 +4170,28 @@ Bij het tekenen gebruikte de app dezelfde twee velden. Komt het tekenen ooit
 terug, dan krijgt het deze Nederlandse prompts te lezen; dat is dan het
 eerste om na te kijken.
 
+## 203. Tot vier foto's bij een vraag, naast de ene van vroeger
+
+Eén foto per vraag was genoeg om een toestel te laten herkennen, niet om de
+coach de begin- en de eindfoto van een oefening te geven (202). Een vraag
+draagt er nu tot vier: begin en eind, en een foto van het toestel of een
+tweede poging erbij. Meer gaat er niet mee; elke foto kost tokens.
+
+- **Een kolom erbij, geen kolom herschreven.** `chat_messages.image_files`
+  (v49) houdt de foto's als JSON-lijst. De ene foto van een oudere vraag
+  blijft in `image_file`, waar ze stond, en wordt daar gelezen
+  (`ChatMessagePhotos.photos`). Ze verhuizen zou een kolom met gegevens van
+  de gebruiker herschrijven, en dat doet een migratie hier niet (DATA_MODEL).
+  Een eerste versie bouwde de tabel om; die is teruggedraaid voor ze werd
+  vastgelegd.
+- **Genummerd.** Met meer dan één foto gaat elke foto naar de dienst onder
+  *Foto 1*, *Foto 2*: zo kan de coach zeggen welke hij bedoelt, en straks
+  welke op de oefening komt. Eén foto krijgt geen nummer; dat zou alleen
+  tokens kosten.
+- **Wat er meegaat bij een vervolgvraag**: de foto's van het laatste bericht
+  dat er had, allemaal - zoals eerder de ene. Die van verder terug niet.
+- **Kiezen**: uit de galerij meerdere tegelijk, nooit meer dan er nog plaats
+  is; de camera één per keer. De knop gaat uit bij vier.
+- **De opruiming** bij het opstarten kent beide kolommen, zodat geen
+  meegestuurde foto als wees wordt weggegooid.
+

@@ -286,7 +286,7 @@ class CoachToolResult {
 /// Neither service's shape: both are translated on the way out, so the loop
 /// that runs the lookups does not have to know which one it is talking to.
 class CoachMessage {
-  const CoachMessage.user(String this.text, {this.image})
+  const CoachMessage.user(String this.text, {this.images = const []})
     : role = 'user',
       toolCalls = const [],
       toolResults = const [],
@@ -297,13 +297,13 @@ class CoachMessage {
     this.toolCalls = const [],
     this.textSignature,
   }) : role = 'assistant',
-       image = null,
+       images = const [],
        toolResults = const [];
 
   const CoachMessage.results(this.toolResults)
     : role = 'user',
       text = null,
-      image = null,
+      images = const [],
       toolCalls = const [],
       textSignature = null;
 
@@ -312,8 +312,10 @@ class CoachMessage {
   final List<CoachToolCall> toolCalls;
   final List<CoachToolResult> toolResults;
 
-  /// A photo the user sent with this question.
-  final CoachImage? image;
+  /// The photos the user sent with this question, in the order they were
+  /// picked. With more than one, each goes out under its number - "Foto 1",
+  /// "Foto 2" - so the coach can say which it means.
+  final List<CoachImage> images;
 
   /// Google's thought signature on the text part, carried back untouched for
   /// the same reason as [CoachToolCall.signature].
@@ -969,23 +971,27 @@ class AiClient {
       };
     }
     if (message.toolCalls.isEmpty) {
-      final image = message.image;
-      if (image == null) {
+      final images = message.images;
+      if (images.isEmpty) {
         return {'role': message.role, 'content': message.text ?? ''};
       }
-      // The picture first: a question about it reads better after it, and
-      // both services are happier that way round.
+      // The pictures first: a question about them reads better after them,
+      // and both services are happier that way round.
       return {
         'role': message.role,
         'content': [
-          {
-            'type': 'image',
-            'source': {
-              'type': 'base64',
-              'media_type': image.mediaType,
-              'data': image.base64,
+          for (final (index, image) in images.indexed) ...[
+            if (images.length > 1)
+              {'type': 'text', 'text': 'Foto ${index + 1}'},
+            {
+              'type': 'image',
+              'source': {
+                'type': 'base64',
+                'media_type': image.mediaType,
+                'data': image.base64,
+              },
             },
-          },
+          ],
           if (message.text != null && message.text!.isNotEmpty)
             {'type': 'text', 'text': message.text},
         ],
@@ -1046,14 +1052,16 @@ class AiClient {
         ],
       };
     }
-    final image = message.image;
+    final images = message.images;
     return {
       'role': message.role == 'assistant' ? 'model' : 'user',
       'parts': [
-        if (image != null)
+        for (final (index, image) in images.indexed) ...[
+          if (images.length > 1) {'text': 'Foto ${index + 1}'},
           {
             'inlineData': {'mimeType': image.mediaType, 'data': image.base64},
           },
+        ],
         if (message.text != null && message.text!.isNotEmpty)
           {'text': message.text, 'thoughtSignature': ?message.textSignature},
         for (final call in message.toolCalls)

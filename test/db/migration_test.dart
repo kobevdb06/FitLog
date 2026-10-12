@@ -120,6 +120,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
+      ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -151,6 +152,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
+      ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -180,6 +182,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
+      ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -206,6 +209,7 @@ void main() {
     final raw = sqlite3.open(path)
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
+      ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('PRAGMA user_version = 46');
     raw.close();
 
@@ -230,6 +234,7 @@ void main() {
 
       final raw = sqlite3.open(path)
         ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
+        ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
         ..execute('PRAGMA user_version = 47');
       raw.close();
 
@@ -238,6 +243,59 @@ void main() {
       expect(settings.lastBackupAt, 1760000000000);
       expect(settings.autoBackupFolder, isNull);
       await db.close();
+    },
+  );
+
+  test(
+    'a database from v48 keeps the photo of a question, now in a list',
+    () async {
+      final path = '${dir.path}/v48.db';
+      final fresh = AppDatabase(NativeDatabase(File(path)));
+      await fresh.settingsDao.ensureInitialized();
+      await fresh.chatDao.createThread('t-1', 'Wat is dit?');
+      await fresh.chatDao.addMessage(
+        id: 'met',
+        threadId: 't-1',
+        role: 'user',
+        content: 'Wat is dit?',
+      );
+      await fresh.chatDao.addMessage(
+        id: 'zonder',
+        threadId: 't-1',
+        role: 'user',
+        content: 'En dit?',
+      );
+      await fresh.close();
+
+      final raw = sqlite3.open(path)
+        ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
+        ..execute(
+          "UPDATE chat_messages SET image_file = 'toestel.jpg' "
+          "WHERE id = 'met'",
+        )
+        ..execute('PRAGMA user_version = 48');
+      raw.close();
+
+      final db = AppDatabase(NativeDatabase(File(path)));
+      final messages = {
+        for (final m in await db.chatDao.messages('t-1')) m.id: m,
+      };
+      expect(messages['met']!.photos, ['toestel.jpg']);
+      expect(messages['zonder']!.photos, isEmpty);
+      // Waar ze stond: een migratie herschrijft geen kolom van de gebruiker.
+      expect(messages['met']!.imageFile, 'toestel.jpg');
+      expect(messages['met']!.imageFiles, '[]');
+      expect(messages['met']!.content, 'Wat is dit?');
+      expect(await db.chatDao.imageFileNames(), {'toestel.jpg'});
+      await db.close();
+
+      final check = sqlite3.open(path);
+      final columns = check.select('PRAGMA table_info(chat_messages)');
+      check.close();
+      expect(
+        columns.map((c) => c['name']),
+        containsAll(['image_file', 'image_files']),
+      );
     },
   );
 
@@ -259,6 +317,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN week_review_notify')
       ..execute('ALTER TABLE routine_folders DROP COLUMN is_collapsed')
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
+      ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -329,7 +388,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 48);
+    expect(raw.select('PRAGMA user_version').first.values.first, 49);
     raw.close();
   });
 
@@ -470,15 +529,16 @@ void main() {
     // v22: null means "work the service out from the key", which is what the
     // app did before the column existed.
     expect(settings.chatProvider, isNull);
-    // v23: a photo with a question. A conversation that predates it has none,
-    // and a database migrating from before the chat existed gets the column
-    // with the table rather than after it.
+    // v23: a photo with a question; v49: up to four, as a list next to it. A
+    // conversation that predates it has none, and a database migrating from
+    // before the chat existed gets the columns with the table rather than
+    // after it.
     final chatColumns = await db
         .customSelect("SELECT name FROM pragma_table_info('chat_messages')")
         .get();
     expect(
       chatColumns.map((row) => row.read<String>('name')),
-      contains('image_file'),
+      allOf(contains('image_file'), contains('image_files')),
     );
     // v24: how many calls an answer took, and a daily budget of your own.
     expect(
@@ -536,7 +596,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 48);
+    expect(db.schemaVersion, 49);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

@@ -50,8 +50,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   String? _threadId;
   var _loaded = false;
 
-  /// A photo picked but not sent yet, as a file name in the photo directory.
-  String? _photo;
+  /// Photos picked but not sent yet, as file names in the photo directory,
+  /// in the order they were picked.
+  final List<String> _photos = [];
 
   /// A question another screen put ready came in, so this is a new
   /// conversation and not the newest one.
@@ -79,7 +80,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       _loaded = true;
       _drafted = true;
       _threadId = null;
-      _photo = null;
+      _photos.clear();
     });
     _controller.value = TextEditingValue(
       text: draft,
@@ -117,23 +118,30 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       setState(() => _threadId = thread);
     }
 
-    final photo = _photo;
+    final photos = List.of(_photos);
     _controller.clear();
-    setState(() => _photo = null);
+    setState(_photos.clear);
     await controller.ask(
       threadId: thread,
       question: question,
-      imageFile: photo,
+      imageFiles: photos,
     );
     _toBottom();
   }
 
-  /// Picks a photo to ask about. It is stored straight away and shown above
-  /// the field, so what is about to be sent is visible before it goes.
+  /// Picks photos to ask about, up to [CoachController.photosPerQuestion].
+  /// They are stored straight away and shown above the field, so what is
+  /// about to be sent is visible before it goes.
   Future<void> _pickPhoto() async {
+    final room = CoachController.photosPerQuestion - _photos.length;
+    if (room <= 0) return;
     final source = await showAppSheet<ImageSource>(
       context: context,
-      title: 'Welke foto?',
+      title: room == CoachController.photosPerQuestion
+          ? "Welke foto's?"
+          : room == 1
+          ? 'Nog één foto'
+          : "Nog $room foto's",
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -153,16 +161,24 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     );
     if (source == null) return;
 
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      maxWidth: 2400,
-    );
-    if (picked == null || !mounted) return;
+    final picker = ImagePicker();
+    // From the gallery several at once, never more than there is room for;
+    // the camera takes one at a time.
+    final picked = source == ImageSource.gallery
+        ? room == 1
+              ? [?await picker.pickImage(source: source, maxWidth: 2400)]
+              : await picker.pickMultiImage(maxWidth: 2400, limit: room)
+        : [?await picker.pickImage(source: source, maxWidth: 2400)];
+    if (picked.isEmpty || !mounted) return;
 
-    final stored = await ref
-        .read(coachControllerProvider.notifier)
-        .importPhoto(File(picked.path));
-    if (mounted) setState(() => _photo = stored);
+    final coach = ref.read(coachControllerProvider.notifier);
+    final stored = <String>[];
+    for (final file in picked.take(room)) {
+      if (await coach.importPhoto(File(file.path)) case final name?) {
+        stored.add(name);
+      }
+    }
+    if (mounted) setState(() => _photos.addAll(stored));
   }
 
   void _toBottom() {
@@ -292,16 +308,18 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                 onRetry: () =>
                     ref.read(coachControllerProvider.notifier).clearError(),
               ),
-            if (_photo != null)
-              _PickedPhoto(
-                fileName: _photo!,
-                onRemove: () => setState(() => _photo = null),
+            if (_photos.isNotEmpty)
+              _PickedPhotos(
+                fileNames: _photos,
+                onRemove: (name) => setState(() => _photos.remove(name)),
               ),
             _Ask(
               controller: _controller,
               busy: state.sending,
               onSend: _send,
-              onPickPhoto: _pickPhoto,
+              onPickPhoto: _photos.length < CoachController.photosPerQuestion
+                  ? _pickPhoto
+                  : null,
             ),
           ],
         ),
@@ -372,6 +390,7 @@ class _Bubble extends StatelessWidget {
     final theme = Theme.of(context);
     final mine = message.role == 'user';
     final lookups = message.lookups?.split('\n') ?? const <String>[];
+    final photos = message.photos;
 
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
@@ -384,8 +403,22 @@ class _Bubble extends StatelessWidget {
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
-            if (message.imageFile != null)
-              _SentPhoto(fileName: message.imageFile!),
+            if (photos.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final name in photos)
+                      _SentPhoto(
+                        fileName: name,
+                        width: photos.length == 1 ? 180 : 112,
+                      ),
+                  ],
+                ),
+              ),
             Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
               padding: const EdgeInsets.symmetric(
@@ -763,16 +796,18 @@ class _Lookups extends StatelessWidget {
   }
 }
 
-/// The photo that is about to be sent, above the field.
-class _PickedPhoto extends ConsumerWidget {
-  const _PickedPhoto({required this.fileName, required this.onRemove});
+/// The photos that are about to be sent, above the field, each with a way
+/// to take it back.
+class _PickedPhotos extends ConsumerWidget {
+  const _PickedPhotos({required this.fileNames, required this.onRemove});
 
-  final String fileName;
-  final VoidCallback onRemove;
+  final List<String> fileNames;
+  final void Function(String fileName) onRemove;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final paths = ref.watch(appPathsProvider).value;
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
@@ -780,29 +815,50 @@ class _PickedPhoto extends ConsumerWidget {
         AppSpacing.lg,
         AppSpacing.sm,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (paths != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-              child: Image.file(
-                PhotoStore(paths).fileFor(fileName),
-                width: 56,
-                height: 56,
-                fit: BoxFit.cover,
-              ),
-            ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Deze foto gaat mee met je vraag.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+          Text(
+            fileNames.length == 1
+                ? 'Deze foto gaat mee met je vraag.'
+                : "Deze ${fileNames.length} foto's gaan mee met je vraag.",
+            style: theme.textTheme.bodySmall,
           ),
-          IconButton(
-            tooltip: 'Toch niet',
-            onPressed: onRemove,
-            icon: const Icon(Icons.close),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final (index, name) in fileNames.indexed)
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (paths != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusSm,
+                        ),
+                        child: Image.file(
+                          PhotoStore(paths).fileFor(name),
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    Positioned(
+                      top: -10,
+                      right: -10,
+                      child: IconButton.filledTonal(
+                        tooltip: 'Foto ${index + 1} toch niet',
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 16,
+                        onPressed: () => onRemove(name),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
           ),
         ],
       ),
@@ -812,9 +868,10 @@ class _PickedPhoto extends ConsumerWidget {
 
 /// A photo inside a message, tappable to see it whole.
 class _SentPhoto extends ConsumerWidget {
-  const _SentPhoto({required this.fileName});
+  const _SentPhoto({required this.fileName, this.width = 180});
 
   final String fileName;
+  final double width;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -822,25 +879,22 @@ class _SentPhoto extends ConsumerWidget {
     if (paths == null) return const SizedBox.shrink();
 
     final file = PhotoStore(paths).fileFor(fileName);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        child: GestureDetector(
-          onTap: () => showDialog<void>(
-            context: context,
-            builder: (context) => Dialog(
-              insetPadding: const EdgeInsets.all(AppSpacing.md),
-              child: InteractiveViewer(child: Image.file(file)),
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      child: GestureDetector(
+        onTap: () => showDialog<void>(
+          context: context,
+          builder: (context) => Dialog(
+            insetPadding: const EdgeInsets.all(AppSpacing.md),
+            child: InteractiveViewer(child: Image.file(file)),
           ),
-          child: Image.file(
-            file,
-            width: 180,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stack) =>
-                const MissingPhotoPlaceholder(),
-          ),
+        ),
+        child: Image.file(
+          file,
+          width: width,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stack) =>
+              const MissingPhotoPlaceholder(),
         ),
       ),
     );
@@ -925,7 +979,9 @@ class _Ask extends StatelessWidget {
   final TextEditingController controller;
   final bool busy;
   final void Function(String question) onSend;
-  final VoidCallback onPickPhoto;
+
+  /// Null once there are as many photos as go with one question.
+  final VoidCallback? onPickPhoto;
 
   @override
   Widget build(BuildContext context) {

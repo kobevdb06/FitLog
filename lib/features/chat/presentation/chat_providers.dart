@@ -260,6 +260,12 @@ class CoachController extends _$CoachController {
   /// be recognisable.
   static const int photoLongEdge = 768;
 
+  /// How many photos go with one question.
+  ///
+  /// Enough for a start and an end position, and a picture of the machine or
+  /// a second try besides. Each one is paid for in tokens.
+  static const int photosPerQuestion = 4;
+
   /// Copies a picked photo into the photo directory, scaled down.
   ///
   /// It is stored before anything is sent, so what you asked about is still
@@ -276,9 +282,10 @@ class CoachController extends _$CoachController {
   Future<void> ask({
     required String threadId,
     required String question,
-    String? imageFile,
+    List<String> imageFiles = const [],
   }) async {
     final text = question.trim();
+    final photos = imageFiles.take(photosPerQuestion).toList();
     if (text.isEmpty || state.sending) return;
 
     final db = ref.read(databaseProvider);
@@ -301,7 +308,7 @@ class CoachController extends _$CoachController {
       threadId: threadId,
       role: 'user',
       content: text,
-      imageFile: imageFile,
+      imageFiles: photos,
     );
 
     final paths = await ref.read(appPathsProvider.future);
@@ -310,11 +317,11 @@ class CoachController extends _$CoachController {
         if (row.content != text || row.role != 'user') row,
     ];
 
-    // Only the newest photo of a conversation rides along with a follow-up
-    // question. Sending every picture again on every turn is what makes a
-    // long thread quietly expensive, and the one being talked about is nearly
-    // always the last one.
-    final lastWithPhoto = earlier.lastIndexWhere((r) => r.imageFile != null);
+    // Only the newest photos of a conversation ride along with a follow-up
+    // question - those of the last message that had any. Sending every
+    // picture again on every turn is what makes a long thread quietly
+    // expensive, and the ones being talked about are nearly always the last.
+    final lastWithPhotos = earlier.lastIndexWhere((r) => r.photos.isNotEmpty);
     final history = <CoachTurn>[];
     for (var i = 0; i < earlier.length; i++) {
       final row = earlier[i];
@@ -322,14 +329,14 @@ class CoachController extends _$CoachController {
         CoachTurn(
           role: row.role,
           text: row.content,
-          image: i == lastWithPhoto && imageFile == null
-              ? await _encode(paths, row.imageFile!)
-              : null,
+          images: i == lastWithPhotos && photos.isEmpty
+              ? await _encodeAll(paths, row.photos)
+              : const [],
         ),
       );
     }
 
-    final image = imageFile == null ? null : await _encode(paths, imageFile);
+    final images = await _encodeAll(paths, photos);
 
     final client = ref.read(coachClientFactoryProvider)(
       key,
@@ -368,13 +375,14 @@ class CoachController extends _$CoachController {
       final answer = await coach.ask(
         history: history,
         question: text,
-        image: image,
+        images: images,
       );
 
-      // The photo is part of what left the device, so it belongs on the same
-      // line as the lookups.
+      // The photos are part of what left the device, so they belong on the
+      // same line as the lookups.
       final reported = [
-        if (image != null) 'de foto die je meestuurde',
+        if (images.length == 1) 'de foto die je meestuurde',
+        if (images.length > 1) "de ${images.length} foto's die je meestuurde",
         ...answer.lookups,
       ];
       await db.chatDao.addMessage(
@@ -408,6 +416,12 @@ class CoachController extends _$CoachController {
     if (!await file.exists()) return null;
     return CoachImage(base64: base64Encode(await file.readAsBytes()));
   }
+
+  /// [_encode] for each, leaving out the ones that are gone.
+  Future<List<CoachImage>> _encodeAll(
+    AppPaths paths,
+    List<String> fileNames,
+  ) async => [for (final name in fileNames) ?await _encode(paths, name)];
 
   /// Creates what a proposal describes, and remembers that it was taken up.
   ///

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../database.dart';
@@ -73,7 +75,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     required String role,
     required String content,
     String? lookups,
-    String? imageFile,
+    List<String> imageFiles = const [],
     String? proposals,
     int? requests,
     int? inputTokens,
@@ -88,7 +90,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
           role: role,
           content: content,
           lookups: Value(lookups),
-          imageFile: Value(imageFile),
+          imageFiles: Value(jsonEncode(imageFiles)),
           proposals: Value(proposals),
           requests: Value(requests),
           inputTokens: Value(inputTokens),
@@ -212,10 +214,16 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   /// take them for orphans and delete them.
   Future<Set<String>> imageFileNames() async {
     final rows = await customSelect(
-      'SELECT image_file AS f FROM chat_messages WHERE image_file IS NOT NULL',
+      'SELECT image_file AS one, image_files AS more FROM chat_messages '
+      "WHERE image_file IS NOT NULL OR image_files != '[]'",
       readsFrom: {chatMessagesTable},
     ).get();
-    return {for (final row in rows) row.read<String>('f')};
+    return {
+      for (final row in rows) ...[
+        ?row.readNullable<String>('one'),
+        ...decodeImageFiles(row.read<String>('more')),
+      ],
+    };
   }
 
   Future<int> countThreads() async {
@@ -224,5 +232,29 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
       chatThreadsTable,
     )..addColumns([count])).getSingle();
     return row.read(count) ?? 0;
+  }
+}
+
+/// The photos sent with a message, in the order they were picked: the one
+/// a question from before v49 kept in its own column, or the list of a newer
+/// one.
+extension ChatMessagePhotos on ChatMessageRow {
+  List<String> get photos => [?imageFile, ...decodeImageFiles(imageFiles)];
+}
+
+/// The photos of a message, from the JSON its row stores them as.
+///
+/// Damaged JSON is no photos rather than an error: a picture that cannot be
+/// found back should cost the picture, not the conversation.
+List<String> decodeImageFiles(String raw) {
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return const [];
+    return [
+      for (final name in decoded)
+        if (name is String && name.isNotEmpty) name,
+    ];
+  } on FormatException {
+    return const [];
   }
 }

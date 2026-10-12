@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **48**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **49**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -76,6 +76,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 46 | `app_settings.week_review_notify`: de melding van het weekoverzicht op zondagavond, standaard aan. |
 | 47 | `routine_folders.is_collapsed`: een map die dichtgeklapt staat onder Trainen; elke bestaande map open. |
 | 48 | `app_settings.auto_backup_folder`: de map voor de wekelijkse automatische back-up; leeg, tot je er een kiest. |
+| 49 | `chat_messages.image_files`: tot vier foto's bij een vraag, als JSON-lijst; `[]` voor elk bestaand bericht. De ene foto van een oudere vraag blijft in `image_file`. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -454,7 +455,8 @@ telkens opnieuw berekend; alleen de tekst van de coach komt hier vandaan.
 | `role` | TEXT | `user` \| `assistant` |
 | `content` | TEXT | |
 | `lookups` | TEXT? | JSON-array: wat de coach opzocht, in leesbare zinnen |
-| `image_file` | TEXT? | bestandsnaam van een meegestuurde foto, in de fotomap |
+| `image_file` | TEXT? | de ene foto van een vraag van voor v49, in de fotomap; wordt gelezen, niet meer geschreven |
+| `image_files` | TEXT | JSON-array: de foto's bij een vraag (hoogstens vier), in de fotomap; standaard `[]` |
 | `proposals` | TEXT? | JSON: kaarten bij het antwoord - een voorstel met een knop, of een routine die de coach maakte of aanpaste |
 | `requests` | INT? | hoeveel aanvragen het antwoord kostte |
 | `input_tokens`, `output_tokens` | INT? | |

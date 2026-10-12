@@ -369,10 +369,17 @@ class ChatMessagesTable extends Table {
   /// answer arrives.
   TextColumn get lookups => text().nullable()();
 
-  /// A photo the user sent with this question, as a file name in the photo
-  /// directory - the same directory, and the same reconcile, as progress
-  /// photos and exercise frames.
+  /// The one photo a question could carry before v49, as a file name in the
+  /// photo directory. Read, never written any more: a newer question keeps
+  /// its photos in [imageFiles]. Left where it is rather than moved, because
+  /// a migration does not rewrite a column of the user's (DATA_MODEL).
   TextColumn get imageFile => text().named('image_file').nullable()();
+
+  /// The photos the user sent with this question - up to four - as a JSON
+  /// array of file names in the photo directory: the same directory, and the
+  /// same reconcile, as progress photos and exercise frames. `[]` for none.
+  TextColumn get imageFiles =>
+      text().named('image_files').withDefault(const Constant('[]'))();
 
   /// What the coach offered to add, as JSON, or null for an ordinary answer.
   ///

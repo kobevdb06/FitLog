@@ -597,7 +597,9 @@ void main() {
 
       await client.send(
         system: 'x',
-        messages: [CoachMessage.user('Wat is dit?', image: photo)],
+        messages: [
+          CoachMessage.user('Wat is dit?', images: const [photo]),
+        ],
         tools: const [],
         model: CoachModel.sonnet.wire,
       );
@@ -629,7 +631,9 @@ void main() {
 
       await client.send(
         system: 'x',
-        messages: [CoachMessage.user('Wat is dit?', image: photo)],
+        messages: [
+          CoachMessage.user('Wat is dit?', images: const [photo]),
+        ],
         tools: const [],
         model: CoachModel.geminiFlash.wire,
       );
@@ -640,6 +644,45 @@ void main() {
       final first = (parts['parts']! as List).first as Map<String, Object?>;
       expect((first['inlineData']! as Map)['mimeType'], 'image/jpeg');
       expect((first['inlineData']! as Map)['data'], 'AAAAfoto');
+    });
+
+    test('met meer dan één krijgt elke foto haar nummer', () async {
+      final client = clientThatAnswers(200, {
+        'candidates': [
+          {
+            'content': {
+              'parts': [
+                {'text': 'Begin en eind, ja.'},
+              ],
+            },
+          },
+        ],
+      }, key: 'AIzaSyGeheim123');
+
+      await client.send(
+        system: 'x',
+        messages: [
+          CoachMessage.user(
+            'Zet deze op mijn oefening',
+            images: const [
+              photo,
+              CoachImage(base64: 'BBBBfoto'),
+            ],
+          ),
+        ],
+        tools: const [],
+        model: CoachModel.geminiFlash.wire,
+      );
+
+      final parts =
+          (((jsonDecode(sent.body) as Map)['contents'] as List).single
+                  as Map)['parts']!
+              as List;
+      expect((parts[0] as Map)['text'], 'Foto 1');
+      expect(((parts[1] as Map)['inlineData'] as Map)['data'], 'AAAAfoto');
+      expect((parts[2] as Map)['text'], 'Foto 2');
+      expect(((parts[3] as Map)['inlineData'] as Map)['data'], 'BBBBfoto');
+      expect((parts[4] as Map)['text'], 'Zet deze op mijn oefening');
     });
 
     test('en zonder foto blijft een vraag gewone tekst', () async {

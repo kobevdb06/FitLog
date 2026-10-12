@@ -117,14 +117,14 @@ void main() {
     await coach.ask(
       threadId: thread,
       question: 'Wat is dit voor toestel?',
-      imageFile: stored,
+      imageFiles: [stored!],
     );
 
     expect(sent, hasLength(1));
     expect('inlineData'.allMatches(sent.single).length, 1);
 
     final messages = await db.chatDao.messages(thread);
-    expect(messages.first.imageFile, stored);
+    expect(decodeImageFiles(messages.first.imageFiles), [stored]);
     // En het antwoord zegt dat de foto is meegegaan.
     expect(messages.last.lookups, contains('de foto die je meestuurde'));
   });
@@ -138,7 +138,7 @@ void main() {
     await coach.ask(
       threadId: thread,
       question: 'Wat is dit voor toestel?',
-      imageFile: stored,
+      imageFiles: [stored!],
     );
     await coach.ask(threadId: thread, question: 'En voor mijn rug?');
     await coach.ask(threadId: thread, question: 'Hoeveel sets dan?');
@@ -151,6 +151,31 @@ void main() {
     }
   });
 
+  test("tot vier foto's gaan mee, elk één keer", () async {
+    container = containerSaying('Begin en eind.');
+    final coach = container!.read(coachControllerProvider.notifier);
+
+    final stored = [
+      for (var i = 0; i < 5; i++) (await coach.importPhoto(await aPhoto()))!,
+    ];
+    final thread = await coach.startThread('Mijn oefening');
+    await coach.ask(
+      threadId: thread,
+      question: 'Zet deze op mijn oefening',
+      imageFiles: stored,
+    );
+    await coach.ask(threadId: thread, question: 'En welke is het begin?');
+
+    // Vier en niet vijf: meer gaat er niet mee met één vraag.
+    expect('inlineData'.allMatches(sent.first).length, 4);
+    // De vervolgvraag gaat over dezelfde foto's, en draagt ze nog een keer.
+    expect('inlineData'.allMatches(sent.last).length, 4);
+
+    final messages = await db.chatDao.messages(thread);
+    expect(decodeImageFiles(messages.first.imageFiles), stored.take(4));
+    expect(messages[1].lookups, contains("de 4 foto's die je meestuurde"));
+  });
+
   test('een vraag zonder foto stuurt er ook geen', () async {
     container = containerSaying('Tussen 10 en 20 sets.');
     final coach = container!.read(coachControllerProvider.notifier);
@@ -160,7 +185,7 @@ void main() {
 
     expect(sent.single, isNot(contains('inlineData')));
     final messages = await db.chatDao.messages(thread);
-    expect(messages.first.imageFile, isNull);
+    expect(decodeImageFiles(messages.first.imageFiles), isEmpty);
     expect(messages.last.lookups, isNull);
   });
 
@@ -176,7 +201,7 @@ void main() {
     await coach.ask(
       threadId: thread,
       question: 'Wat is dit?',
-      imageFile: stored,
+      imageFiles: [stored],
     );
 
     await PhotoLibrary(db: db, store: PhotoStore(paths)).cleanup();

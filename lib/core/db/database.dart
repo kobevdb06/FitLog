@@ -11,6 +11,7 @@ import 'dao/settings_dao.dart';
 import 'dao/workouts_dao.dart';
 import 'tables.dart';
 
+export 'dao/chat_dao.dart' show ChatMessagePhotos, decodeImageFiles;
 export 'dao/exercises_dao.dart' show ExerciseFilter;
 export 'dao/routines_dao.dart'
     show RoutineDraft, RoutineExerciseDraft, RoutineSetDraft;
@@ -67,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 48;
+  int get schemaVersion => 49;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -453,6 +454,13 @@ class AppDatabase extends _$AppDatabase {
             appSettingsTable,
             appSettingsTable.autoBackupFolder,
           );
+        }
+        if (from >= 21 && from < 49) {
+          // Up to four photos with a question, where there was room for one.
+          // An empty list for every message that exists; the one photo of an
+          // older question stays in image_file, where it was, and is read
+          // from there.
+          await m.addColumn(chatMessagesTable, chatMessagesTable.imageFiles);
         }
       });
 

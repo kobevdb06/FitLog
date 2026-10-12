@@ -138,6 +138,37 @@ class NotificationService {
     }
   }
 
+  /// Whether a notification can be planned to the second: on Android 12 and
+  /// later only once the user allowed it. Elsewhere there is nothing to allow.
+  Future<bool> canTimeExactly() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      return await _plugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >()
+              ?.canScheduleExactNotifications() ??
+          false;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Opens the system page where the user allows notifications on the
+  /// second, for the rest timer.
+  Future<void> askToTimeExactly() async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestExactAlarmsPermission();
+    } on Object catch (error) {
+      debugPrint('FitLog: exacte meldingen niet gevraagd ($error)');
+    }
+  }
+
   /// Asks for the runtime permissions the rest timer needs. Safe to call more
   /// than once; the platform only prompts the first time.
   Future<bool> requestPermissions() async {
@@ -146,9 +177,10 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
-      final granted = await android?.requestNotificationsPermission() ?? false;
-      await android?.requestExactAlarmsPermission();
-      return granted;
+      // Not exact alarms: asking for those opens a system page, which at the
+      // start of every workout is a door slammed in your face. The rest timer
+      // asks for them in its own place, Meldingen.
+      return await android?.requestNotificationsPermission() ?? false;
     }
     if (Platform.isIOS) {
       final ios = _plugin
@@ -388,10 +420,15 @@ class NotificationService {
                 ),
                 iOS: DarwinNotificationDetails(presentSound: false),
               ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        // On the second when the user allowed it; otherwise Android picks
+        // the moment, close to it. Asking for exact without the permission
+        // throws, and then nothing would come at all.
+        androidScheduleMode: await canTimeExactly()
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
       );
     } on Object catch (error) {
-      // Exact alarms can be refused by the user; the in-app timer still works.
+      // The in-app timer still works.
       debugPrint('FitLog: rusttimermelding niet gepland ($error)');
     }
   }

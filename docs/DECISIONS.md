@@ -4331,3 +4331,28 @@ nu (`AiClient.sendStreaming`).
   tokens zijn dezelfde: het is dezelfde vraag, anders afgeleverd. Het blijft
   het ene bestand dat het internet op kan, met de sleutel in de header.
 
+## 210. De rusttimer vraagt zelf om exacte tijd; de rest is niet exact
+
+FitLog vroeg `USE_EXACT_ALARM` aan in het manifest: die toestemming krijgt een
+app bij de installatie, zonder dat iemand iets hoeft te doen. Google Play
+geeft hem alleen aan apps waarvan een wekker of een agenda de kern is, en
+vraagt elke andere app om een verklaring die het zou weigeren. Een rusttimer
+is geen wekker.
+
+- **Weg uit het manifest.** `SCHEDULE_EXACT_ALARM` blijft: die mag elke app
+  aanvragen, maar vanaf Android 14 moet de gebruiker hem zelf aanzetten.
+- **Niet meer vragen bij elke workout.** `requestPermissions` vroeg ook om
+  exacte wekkers, en die vraag opent een systeempagina. Tot nu toe zag
+  niemand die, omdat `USE_EXACT_ALARM` hem al gaf; zonder die toestemming had
+  elke workoutstart je naar de instellingen van Android gestuurd. Die vraag
+  zit nu op één plek: *Instellingen → Meldingen → Rusttimer op de seconde*,
+  met wat het doet erbij, en het scherm kijkt opnieuw als je terugkomt.
+- **De rusttimer kiest zelf.** Met toestemming plant hij de melding op de
+  seconde (`exactAllowWhileIdle`), zonder laat hij Android het moment kiezen
+  (`inexactAllowWhileIdle`). Exact vragen zonder toestemming gooit een fout,
+  en dan kwam er helemaal geen melding. De timer op het scherm telt hoe dan
+  ook op de seconde; het gaat alleen om de melding met de gsm in je zak.
+- **Ochtendrapport en weekoverzicht zijn niet exact** (`exact: false`). Een
+  rapport om 7:04 is hetzelfde rapport, en zo hangen ze niet af van een
+  toestemming die alleen de rusttimer nodig heeft.
+

@@ -87,7 +87,10 @@ class AndroidMorningAlarm implements MorningAlarm {
       at,
       id,
       morningAlarm,
-      exact: true,
+      // Not to the second: a report a few minutes after the hour is the same
+      // report, and an exact alarm needs a permission this app keeps for the
+      // rest timer.
+      exact: false,
       wakeup: true,
       allowWhileIdle: true,
       rescheduleOnReboot: true,

@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../morning/presentation/morning_settings.dart';
 import '../../review/presentation/review_providers.dart';
+import 'exact_timer_tile.dart';
 import 'settings_tiles.dart';
 
 /// Everything that sounds or notifies, in one place: during a session, in
@@ -35,6 +36,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
           const NotificationsOffBanner(),
           const SectionHeader('Tijdens een training'),
+          const ExactTimerTile(),
           SwitchListTile(
             title: const Text('Geluid bij einde rust'),
             subtitle: const Text(

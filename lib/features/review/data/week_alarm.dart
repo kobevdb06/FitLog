@@ -89,7 +89,8 @@ class AndroidWeekAlarm implements WeekAlarm {
       at,
       id,
       weekAlarm,
-      exact: true,
+      // Not to the second, for the same reason as the morning report.
+      exact: false,
       wakeup: true,
       allowWhileIdle: true,
       rescheduleOnReboot: true,

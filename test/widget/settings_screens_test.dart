@@ -5,6 +5,7 @@ import 'package:fitlog/core/providers/core_providers.dart';
 import 'package:fitlog/core/widgets/numeric_keypad.dart';
 import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/settings/presentation/display_settings_screen.dart';
+import 'package:fitlog/features/settings/presentation/exact_timer_tile.dart';
 import 'package:fitlog/features/settings/presentation/notification_settings_screen.dart';
 import 'package:fitlog/features/settings/presentation/recovery_settings_screen.dart';
 import 'package:fitlog/features/settings/presentation/settings_screen.dart';
@@ -257,6 +258,61 @@ void main() {
       ]) {
         expect(find.text(title), findsOneWidget, reason: title);
       }
+    });
+
+    group('rusttimer op de seconde', () {
+      /// The screen with Android answering [answers] in turn, one per ask.
+      Future<void> pumpAsking(WidgetTester tester, List<bool> answers) async {
+        final queue = [...answers];
+        container.dispose();
+        container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            secretStoreProvider.overrideWithValue(InMemorySecretStore()),
+            exactRestTimerProvider.overrideWith(
+              (ref) async => queue.length > 1 ? queue.removeAt(0) : queue.first,
+            ),
+          ],
+        );
+        await pump(
+          tester,
+          screen: const NotificationSettingsScreen(),
+          textScale: 1.4,
+        );
+      }
+
+      testWidgets('zonder toestemming zegt hij wat je mist, en waar je het '
+          'aanzet', (tester) async {
+        await pumpAsking(tester, [false]);
+
+        final tile = find.widgetWithText(ListTile, 'Rusttimer op de seconde');
+        expect(tile, findsOneWidget);
+        expect(find.textContaining('Uit.'), findsOneWidget);
+        expect(tester.widget<ListTile>(tile).onTap, isNotNull);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('met toestemming is er niets meer te doen', (tester) async {
+        await pumpAsking(tester, [true]);
+
+        final tile = find.widgetWithText(ListTile, 'Rusttimer op de seconde');
+        expect(find.textContaining('Aan.'), findsOneWidget);
+        expect(tester.widget<ListTile>(tile).onTap, isNull);
+      });
+
+      testWidgets('terug van de systeempagina kijkt hij opnieuw', (
+        tester,
+      ) async {
+        await pumpAsking(tester, [false, true]);
+        expect(find.textContaining('Uit.'), findsOneWidget);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Aan.'), findsOneWidget);
+      });
     });
 
     testWidgets('de melding van het weekoverzicht staat aan, en gaat uit', (

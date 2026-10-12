@@ -18,6 +18,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/formatting/formatters.dart';
+
 /// The services the coach can talk to, and the only addresses this app knows.
 enum CoachProvider {
   anthropic('anthropic', 'Anthropic', 'https://api.anthropic.com/v1/messages', [
@@ -354,18 +356,30 @@ class CoachReply {
   bool get wantsTools => toolCalls.isNotEmpty;
 }
 
+/// Which limit a refusal hit, as far as the service said.
+enum CoachLimit {
+  /// The day's asking is spent; it comes back when the service's day begins.
+  perDay,
+
+  /// Too much in too short a time; a minute's wait does it.
+  perMinute,
+}
+
 /// Something went wrong on the way out or on the way back.
 ///
 /// [message] is Dutch, meant to be shown as it is, and never contains the key:
 /// everything that goes into it passes through [_redact] first.
 class CoachException implements Exception {
-  const CoachException(this.message, {this.badKey = false});
+  const CoachException(this.message, {this.badKey = false, this.limit});
 
   final String message;
 
-  /// The key itself is the problem, so the settings screen is where the user
-  /// has to go.
+  /// The key itself is the problem, so pasting another one is the way on.
   final bool badKey;
+
+  /// The limit that was hit, when it was one. For [CoachLimit.perDay] the
+  /// caller adds when it comes back; that depends on the service's clock.
+  final CoachLimit? limit;
 
   @override
   String toString() => message;
@@ -1118,8 +1132,8 @@ class AiClient {
 
     if (aboutTheKey) {
       return const CoachException(
-        'Die API-sleutel wordt niet aanvaard. Controleer hem bij '
-        'Instellingen, AI-coach.',
+        'Die API-sleutel wordt niet aanvaard. Plak hem opnieuw, of maak in '
+        'AI Studio een nieuwe.',
         badKey: true,
       );
     }
@@ -1130,10 +1144,25 @@ class AiClient {
       );
     }
     if (status == 429) {
-      return const CoachException(
-        'Te veel vragen na elkaar, of je gratis limiet is op. Wacht even en '
-        'probeer opnieuw.',
-      );
+      // Google says which limit it was, and how long to wait: the day's
+      // asking and a minute's are different answers to "when can I again".
+      final (limit, wait) = _limitOf(response.body);
+      return switch (limit) {
+        CoachLimit.perDay => const CoachException(
+          'Je gratis daglimiet bij Google is op.',
+          limit: CoachLimit.perDay,
+        ),
+        CoachLimit.perMinute => CoachException(
+          'Even te veel vragen na elkaar. Probeer het over '
+          '${wait == null ? 'een minuut' : Formatters.minutesSeconds(wait.inSeconds < 1 ? 1 : wait.inSeconds)} '
+          'opnieuw.',
+          limit: CoachLimit.perMinute,
+        ),
+        null => const CoachException(
+          'Te veel vragen na elkaar, of je gratis limiet is op. Wacht even en '
+          'probeer opnieuw.',
+        ),
+      };
     }
     if (status >= 500) {
       return const CoachException(
@@ -1144,6 +1173,47 @@ class AiClient {
   }
 
   /// The error message the service sent, if it sent one we can read.
+  /// Which limit a refusal from Google hit, and how long it says to wait.
+  ///
+  /// Read from the details it sends along: a quota whose name says PerDay
+  /// or PerMinute, and a retry delay like "37s". The day wins when both are
+  /// there - waiting a minute would not help.
+  static (CoachLimit?, Duration?) _limitOf(String body) {
+    try {
+      final json = jsonDecode(body);
+      final error = json is Map ? json['error'] : null;
+      final details = error is Map ? error['details'] : null;
+      if (details is! List) return (null, null);
+
+      CoachLimit? limit;
+      Duration? wait;
+      for (final detail in details) {
+        if (detail is! Map) continue;
+        if (detail['violations'] case final List violations) {
+          for (final violation in violations) {
+            final id = violation is Map ? '${violation['quotaId'] ?? ''}' : '';
+            if (id.contains('PerDay')) {
+              limit = CoachLimit.perDay;
+            } else if (id.contains('PerMinute')) {
+              limit ??= CoachLimit.perMinute;
+            }
+          }
+        }
+        if (detail['retryDelay'] case final String delay) {
+          final seconds = RegExp(r'^(\d+(?:\.\d+)?)s$').firstMatch(delay);
+          if (seconds != null) {
+            wait = Duration(
+              milliseconds: (double.parse(seconds[1]!) * 1000).round(),
+            );
+          }
+        }
+      }
+      return (limit, wait);
+    } on FormatException {
+      return (null, null);
+    }
+  }
+
   String _detail(String body) {
     try {
       final json = jsonDecode(body);

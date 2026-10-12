@@ -14,6 +14,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/util/paths.dart';
 import '../../exercises/presentation/exercise_providers.dart';
@@ -407,10 +408,19 @@ class CoachController extends _$CoachController {
       );
       state = const CoachState();
     } on CoachException catch (error) {
-      state = CoachState(error: error.message, keyRejected: error.badKey);
+      state = CoachState(error: _say(error), keyRejected: error.badKey);
     } finally {
       client.close();
     }
+  }
+
+  /// What a failure says on screen. A spent daily limit says when it comes
+  /// back: at the service's midnight, which here is in the morning.
+  String _say(CoachException error) {
+    if (error.limit != CoachLimit.perDay) return error.message;
+    final back = coachDayEnd(DateTime.now(), ref.read(coachProviderProvider));
+    return '${error.message} Vanaf '
+        '${Formatters.relativeDayTime(back).toLowerCase()} kan het weer.';
   }
 
   /// Reads a stored photo back as something that can be sent.

@@ -44,6 +44,17 @@ DateTime coachDayStart(DateTime now, CoachProvider provider) {
   return midnight.toLocal();
 }
 
+/// The moment the next day of counting begins: when a spent daily limit
+/// comes back.
+///
+/// From the start of this one, plus a day measured at the service's clock -
+/// not 24 hours, which a change to summer time there makes 23 or 25.
+DateTime coachDayEnd(DateTime now, CoachProvider provider) {
+  final start = coachDayStart(now, provider);
+  // 25 hours on always lands inside the next day, whatever its length.
+  return coachDayStart(start.add(const Duration(hours: 25)), provider);
+}
+
 /// What has been spent since then.
 class CoachDayUsage {
   const CoachDayUsage({

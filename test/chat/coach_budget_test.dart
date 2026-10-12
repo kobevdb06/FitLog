@@ -113,6 +113,26 @@ void main() {
       expect(start.isBefore(afternoon), isTrue);
     });
 
+    test('de volgende dag begint één dag later, op de klok van Google', () {
+      final afternoon = DateTime(2026, 6, 15, 14);
+      final start = coachDayStart(afternoon, CoachProvider.gemini);
+      final end = coachDayEnd(afternoon, CoachProvider.gemini);
+
+      expect(end.difference(start), const Duration(hours: 24));
+      expect(end.isAfter(afternoon), isTrue);
+    });
+
+    test('ook op de dag dat de klok daar een uur terug gaat', () {
+      // 1 november 2026: in Californië duurt die dag 25 uur. Een dag van 24
+      // uur erbij landde nog in dezelfde dag.
+      final there = DateTime.utc(2026, 11, 1, 8, 30); // 01:30 PDT
+      final start = coachDayStart(there.toLocal(), CoachProvider.gemini);
+      final end = coachDayEnd(there.toLocal(), CoachProvider.gemini);
+
+      expect(end.difference(start), const Duration(hours: 25));
+      expect(end.isAfter(there.toLocal()), isTrue);
+    });
+
     test('bij Anthropic is het je eigen middernacht', () {
       final start = coachDayStart(
         DateTime(2026, 6, 15, 8),

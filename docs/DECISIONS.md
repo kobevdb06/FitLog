@@ -4280,3 +4280,25 @@ regel, meteen naar de derde stap. De sleutel blijft in de versleutelde
 database en in de eigen, versleutelde back-up: zo werkt de coach meteen na
 het terugzetten op een nieuwe gsm. De Android-back-up staat al uit.
 
+## 208. Een limiet zegt welke, en wanneer het weer kan
+
+Een 429 van Google heette "te veel vragen na elkaar, of je gratis limiet is
+op": twee heel verschillende dingen in één zin, en de gebruiker moest raden
+welke. Google zegt het zelf, in de details die het meestuurt: een quotum
+waarvan de naam *PerDay* of *PerMinute* bevat, en hoelang te wachten
+(`retryDelay`).
+
+- **Daglimiet** (`CoachLimit.perDay`): "Je gratis daglimiet bij Google is
+  op. Vanaf morgen om 09:00 kan het weer." Het tijdstip is middernacht in
+  Californië op de lokale klok (`coachDayEnd`), een dag verder op Googles
+  eigen klok - niet 24 uur, want op de dag dat de klok daar verspringt duurt
+  een dag 23 of 25 uur. Staat zowel een dag- als een minuutquotum in de
+  details, dan wint de dag: een minuut wachten helpt dan niet.
+- **Per minuut** (`CoachLimit.perMinute`): "Even te veel vragen na elkaar.
+  Probeer het over 37 s opnieuw", met de wachttijd van Google, of "een
+  minuut" als die er niet bij staat.
+- **Zegt Google niets**, dan blijft de oude zin, die beide noemt.
+- **Een geweigerde sleutel** heeft één weg verder, een andere sleutel: de
+  knop onder de fout heet nu *Sleutel opnieuw plakken* en opent de flow bij
+  het plakken (207), in plaats van de instellingen.
+

@@ -702,7 +702,7 @@ void main() {
   });
 
   group('als het misgaat', () {
-    test('een geweigerde sleutel wijst naar de instellingen', () async {
+    test('een geweigerde sleutel zegt: opnieuw plakken', () async {
       final client = clientThatAnswers(401, {
         'error': {'message': 'invalid x-api-key'},
       });
@@ -712,7 +712,11 @@ void main() {
         throwsA(
           isA<CoachException>()
               .having((e) => e.badKey, 'badKey', isTrue)
-              .having((e) => e.message, 'message', contains('Instellingen')),
+              .having(
+                (e) => e.message,
+                'message',
+                contains('Plak hem opnieuw'),
+              ),
         ),
       );
     });
@@ -742,6 +746,74 @@ void main() {
           isA<CoachException>()
               .having((e) => e.badKey, 'badKey', isFalse)
               .having((e) => e.message, 'message', contains('gratis limiet')),
+        ),
+      );
+    });
+
+    test('een daglimiet zegt dat het de daglimiet is', () async {
+      final client = clientThatAnswers(429, {
+        'error': {
+          'code': 429,
+          'message': 'You exceeded your current quota.',
+          'status': 'RESOURCE_EXHAUSTED',
+          'details': [
+            {
+              '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+              'violations': [
+                {
+                  'quotaMetric':
+                      'generativelanguage.googleapis.com/'
+                      'generate_content_free_tier_requests',
+                  'quotaId':
+                      'GenerateRequestsPerDayPerProjectPerModel-FreeTier',
+                },
+              ],
+            },
+            {
+              '@type': 'type.googleapis.com/google.rpc.RetryInfo',
+              'retryDelay': '37s',
+            },
+          ],
+        },
+      }, key: 'AIzaSyGeheim123');
+
+      await expectLater(
+        ask(client),
+        throwsA(
+          isA<CoachException>()
+              .having((e) => e.limit, 'limit', CoachLimit.perDay)
+              .having((e) => e.badKey, 'badKey', isFalse)
+              .having((e) => e.message, 'message', contains('daglimiet')),
+        ),
+      );
+    });
+
+    test('en te snel na elkaar zegt hoe lang te wachten', () async {
+      final client = clientThatAnswers(429, {
+        'error': {
+          'code': 429,
+          'status': 'RESOURCE_EXHAUSTED',
+          'details': [
+            {
+              '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+              'violations': [
+                {'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel'},
+              ],
+            },
+            {
+              '@type': 'type.googleapis.com/google.rpc.RetryInfo',
+              'retryDelay': '37.4s',
+            },
+          ],
+        },
+      }, key: 'AIzaSyGeheim123');
+
+      await expectLater(
+        ask(client),
+        throwsA(
+          isA<CoachException>()
+              .having((e) => e.limit, 'limit', CoachLimit.perMinute)
+              .having((e) => e.message, 'message', contains('over 37 s')),
         ),
       );
     });

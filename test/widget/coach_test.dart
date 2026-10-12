@@ -1257,9 +1257,42 @@ void main() {
       expect(find.textContaining('Bekeken: je routines'), findsOneWidget);
     });
 
-    testWidgets('een geweigerde sleutel wijst naar de instellingen', (
+    testWidgets('een opgebruikte daglimiet zegt wanneer het weer kan', (
       tester,
     ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying({
+          'error': {
+            'code': 429,
+            'details': [
+              {
+                '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+                'violations': [
+                  {'quotaId': 'GenerateRequestsPerDayPerProjectPerModel'},
+                ],
+              },
+            ],
+          },
+        }, status: 429),
+      );
+
+      await tester.enterText(find.byType(TextField), 'Hoi');
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Je gratis daglimiet bij Google is op. Vanaf '),
+        findsOneWidget,
+      );
+      expect(find.textContaining('kan het weer.'), findsOneWidget);
+      // Geen kapotte sleutel: niets te plakken.
+      expect(find.text('Sleutel opnieuw plakken'), findsNothing);
+    });
+
+    testWidgets('een geweigerde sleutel wijst naar plakken', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNfout');
       await pump(
         tester,
@@ -1274,7 +1307,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('wordt niet aanvaard'), findsOneWidget);
-      expect(find.text('Naar instellingen'), findsOneWidget);
+      expect(find.text('Sleutel opnieuw plakken'), findsOneWidget);
       // De vraag blijft staan: een mislukt antwoord mag hem niet meenemen.
       expect(find.text('Hoi'), findsOneWidget);
     });

@@ -1060,13 +1060,14 @@ class _Failure extends StatelessWidget {
         children: [
           Text(message, style: theme.textTheme.bodySmall),
           const SizedBox(height: AppSpacing.xs),
-          Row(
+          Wrap(
             children: [
               TextButton(onPressed: onRetry, child: const Text('Sluiten')),
+              // A refused key has one way on: another one, pasted.
               if (keyRejected)
                 TextButton(
-                  onPressed: () => context.push(Routes.settingsCoach),
-                  child: const Text('Naar instellingen'),
+                  onPressed: () => context.push(Routes.coachKeyPaste),
+                  child: const Text('Sleutel opnieuw plakken'),
                 ),
             ],
           ),

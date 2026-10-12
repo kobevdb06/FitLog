@@ -670,8 +670,55 @@ final class CoachImageEquipmentProvider
 String _$coachImageEquipmentHash() =>
     r'c9d05f1a16b1beb55cf430c40793b5b01f80dd7d';
 
+/// [kImageGeneration], as a provider so a test can switch it on.
+
+@ProviderFor(imageGeneration)
+final imageGenerationProvider = ImageGenerationProvider._();
+
+/// [kImageGeneration], as a provider so a test can switch it on.
+
+final class ImageGenerationProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  /// [kImageGeneration], as a provider so a test can switch it on.
+  ImageGenerationProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'imageGenerationProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$imageGenerationHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return imageGeneration(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$imageGenerationHash() => r'a65b4da3fb968bb913ffa19c67d638b2499ae7f8';
+
 /// Whether an illustration can be drawn at all.
 ///
+/// Not while drawing is switched off for the app ([kImageGeneration]).
 /// Without a token nothing is ever generated, whatever else is switched on -
 /// it is a separate service and separate money. And a service that wants an
 /// account as well is not set up until both are there: half of it drawn is
@@ -682,6 +729,7 @@ final canDrawImagesProvider = CanDrawImagesProvider._();
 
 /// Whether an illustration can be drawn at all.
 ///
+/// Not while drawing is switched off for the app ([kImageGeneration]).
 /// Without a token nothing is ever generated, whatever else is switched on -
 /// it is a separate service and separate money. And a service that wants an
 /// account as well is not set up until both are there: half of it drawn is
@@ -691,6 +739,7 @@ final class CanDrawImagesProvider extends $FunctionalProvider<bool, bool, bool>
     with $Provider<bool> {
   /// Whether an illustration can be drawn at all.
   ///
+  /// Not while drawing is switched off for the app ([kImageGeneration]).
   /// Without a token nothing is ever generated, whatever else is switched on -
   /// it is a separate service and separate money. And a service that wants an
   /// account as well is not set up until both are there: half of it drawn is
@@ -728,7 +777,7 @@ final class CanDrawImagesProvider extends $FunctionalProvider<bool, bool, bool>
   }
 }
 
-String _$canDrawImagesHash() => r'3c5842afd4d1e2fdf09b5e87d1ee95928747b0a1';
+String _$canDrawImagesHash() => r'be3b5336fae0db9cfb0cc40d9690cb61a2cdbb46';
 
 @ProviderFor(imageGeneratorFactory)
 final imageGeneratorFactoryProvider = ImageGeneratorFactoryProvider._();
@@ -912,7 +961,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'fd57c1b2885735474f9fc2c8a89c2d54bd92f60f';
+String _$coachControllerHash() => r'4f6c94101d7533ede8395a749a2a1c7af2ffbe80';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

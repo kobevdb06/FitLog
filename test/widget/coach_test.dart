@@ -72,7 +72,12 @@ void main() {
     'usageMetadata': {'promptTokenCount': 900, 'candidatesTokenCount': 30},
   };
 
-  Future<void> pump(WidgetTester tester, Widget screen, {Object? api}) async {
+  Future<void> pump(
+    WidgetTester tester,
+    Widget screen, {
+    Object? api,
+    bool drawing = false,
+  }) async {
     tester.view.physicalSize = const Size(1100, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -85,6 +90,7 @@ void main() {
           coachClientFactoryProvider.overrideWithValue(
             api as CoachClientFactory,
           ),
+        if (drawing) imageGenerationProvider.overrideWithValue(true),
       ],
     );
 
@@ -122,12 +128,64 @@ void main() {
     });
   });
 
+  group('tekenen staat uit', () {
+    testWidgets('geen sectie Afbeeldingen, ook niet met een token', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await pump(tester, const CoachSettingsScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('AFBEELDINGEN'), findsNothing);
+      expect(find.text('Hugging Face'), findsNothing);
+      expect(find.text('Materiaal mee tekenen'), findsNothing);
+      expect(container!.read(canDrawImagesProvider), isFalse);
+      // De rest van de instellingen staat er gewoon.
+      expect(find.text('MODEL'), findsOneWidget);
+    });
+
+    testWidgets('en geen knop met tekeningen op een voorstel', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await db.chatDao.createThread('t-1', 'Maak een oefening');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem maken.',
+        proposals: encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              startImagePrompt: 'A person crouched behind a sled',
+              endImagePrompt: 'A person leaning into the sled',
+            ),
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Oefening toevoegen'), findsOneWidget);
+      expect(find.text('Toevoegen mét tekeningen'), findsNothing);
+      expect(find.textContaining('Hugging Face'), findsNothing);
+    });
+  });
+
   group('wie de tekeningen maakt', () {
     /// Het tekenen staat los van de coach, maar wordt op hetzelfde scherm
-    /// ingesteld, dus er moet een sleutel zijn om er iets van te zien.
+    /// ingesteld, dus er moet een sleutel zijn om er iets van te zien. En het
+    /// staat uit voor de app; hier aan, om de logica te bewaken die blijft.
     Future<void> openSettings(WidgetTester tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
-      await pump(tester, const CoachSettingsScreen());
+      await pump(tester, const CoachSettingsScreen(), drawing: true);
       await tester.pumpAndSettle();
     }
 
@@ -617,7 +675,12 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        drawing: true,
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Oefening toevoegen'), findsOneWidget);

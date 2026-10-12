@@ -76,6 +76,9 @@ void main() {
           client: MockClient((request) async => http.Response('{}', 500)),
         ),
       ),
+      // Tekenen staat uit voor de app; hier aan, om de logica te bewaken die
+      // blijft voor als het terugkomt.
+      imageGenerationProvider.overrideWithValue(true),
       imageGeneratorFactoryProvider.overrideWithValue(
         (apiKey, {provider = DrawingService.huggingFace, accountId}) =>
             ImageGenerator(

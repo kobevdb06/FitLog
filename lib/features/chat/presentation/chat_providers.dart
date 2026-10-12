@@ -144,14 +144,29 @@ String? coachImageAccount(Ref ref) {
 bool coachImageEquipment(Ref ref) =>
     ref.watch(settingsProvider).value?.imageEquipment ?? true;
 
+/// Drawing exercise pictures with a model, for the whole app.
+///
+/// Off. A month of drawings, and nearly every one had to be redone by hand.
+/// The code stays - the two services, the tokens, the buttons - so a paid
+/// tier can switch it back on. While it is off nobody sees any of it: no
+/// section in the settings, no button on a card, no option under a photo,
+/// and nothing is drawn whoever asks.
+const bool kImageGeneration = false;
+
+/// [kImageGeneration], as a provider so a test can switch it on.
+@Riverpod(keepAlive: true)
+bool imageGeneration(Ref ref) => kImageGeneration;
+
 /// Whether an illustration can be drawn at all.
 ///
+/// Not while drawing is switched off for the app ([kImageGeneration]).
 /// Without a token nothing is ever generated, whatever else is switched on -
 /// it is a separate service and separate money. And a service that wants an
 /// account as well is not set up until both are there: half of it drawn is
 /// nothing drawn.
 @riverpod
 bool canDrawImages(Ref ref) {
+  if (!ref.watch(imageGenerationProvider)) return false;
   if (ref.watch(coachImageKeyProvider) == null) return false;
   if (!ref.watch(coachDrawingServiceProvider).needsAccount) return true;
   return ref.watch(coachImageAccountProvider) != null;
@@ -466,7 +481,9 @@ class CoachController extends _$CoachController {
     // of what start and end look like.
     String? startImage;
     String? endImage;
-    if (withImages && proposal.canBeDrawn) {
+    if (withImages &&
+        proposal.canBeDrawn &&
+        ref.read(imageGenerationProvider)) {
       final editor = ref.read(exerciseEditorProvider);
       // One seed for both, so the two drawings are the same person in the
       // same room and the only thing that changes is the posture.

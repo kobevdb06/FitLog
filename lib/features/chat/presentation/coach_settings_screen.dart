@@ -553,94 +553,100 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             ),
             const SectionHeader('Wat de coach over je weet'),
             const _ProfileSwitch(),
-            const SectionHeader('Afbeeldingen'),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                0,
-                AppSpacing.lg,
-                AppSpacing.sm,
+            // Drawing is switched off for the app, and then none of this is
+            // shown - not even to someone who still has a token stored.
+            if (ref.watch(imageGenerationProvider)) ...[
+              const SectionHeader('Afbeeldingen'),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                ),
+                child: InfoBanner(
+                  icon: Icons.auto_awesome,
+                  message:
+                      'Met een eigen token kan je bij een oefening een '
+                      'illustratie laten tekenen. Alleen daar, en nergens '
+                      'anders: elke tekening kost tegoed. Kies eerst wie er '
+                      'tekent; zonder token wordt er nooit iets getekend.',
+                ),
               ),
-              child: InfoBanner(
-                icon: Icons.auto_awesome,
-                message:
-                    'Met een eigen token kan je bij een oefening een '
-                    'illustratie laten tekenen. Alleen daar, en nergens '
-                    'anders: elke tekening kost tegoed. Kies eerst wie er '
-                    'tekent; zonder token wordt er nooit iets getekend.',
-              ),
-            ),
-            // First who draws, then what they need from you. The two services
-            // ask for different things, so asking before the choice is made is
-            // asking for the wrong thing.
-            ListTile(
-              leading: const Icon(Icons.palette_outlined),
-              title: Text(drawnBy.label),
-              subtitle: Text(drawnBy.blurb),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickDrawingService,
-            ),
-            if (drawnBy.needsAccount)
+              // First who draws, then what they need from you. The two services
+              // ask for different things, so asking before the choice is made is
+              // asking for the wrong thing.
               ListTile(
-                leading: const Icon(Icons.badge_outlined),
-                title: Text(imageAccount ?? 'Nog geen account-ID'),
-                subtitle: const Text(
-                  'Staat in de URL van je Cloudflare-dashboard.',
+                leading: const Icon(Icons.palette_outlined),
+                title: Text(drawnBy.label),
+                subtitle: Text(drawnBy.blurb),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _pickDrawingService,
+              ),
+              if (drawnBy.needsAccount)
+                ListTile(
+                  leading: const Icon(Icons.badge_outlined),
+                  title: Text(imageAccount ?? 'Nog geen account-ID'),
+                  subtitle: const Text(
+                    'Staat in de URL van je Cloudflare-dashboard.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _enterImageAccount,
+                ),
+              ListTile(
+                leading: const Icon(Icons.brush_outlined),
+                title: Text(
+                  imageKey == null ? 'Nog geen token' : _masked(imageKey),
+                ),
+                subtitle: Text(
+                  imageKey == null
+                      ? switch (drawnBy) {
+                          DrawingService.huggingFace =>
+                            'Maak er een in je Hugging Face-account, bij Access '
+                                'Tokens',
+                          DrawingService.cloudflare =>
+                            'Maak er een bij Cloudflare, met de rechten Workers '
+                                'AI Read en Edit',
+                        }
+                      : 'Bewaard naast je andere sleutel, achter je pincode.',
                 ),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: _enterImageAccount,
+                onTap: _enterImageKey,
               ),
-            ListTile(
-              leading: const Icon(Icons.brush_outlined),
-              title: Text(
-                imageKey == null ? 'Nog geen token' : _masked(imageKey),
-              ),
-              subtitle: Text(
-                imageKey == null
-                    ? switch (drawnBy) {
-                        DrawingService.huggingFace =>
-                          'Maak er een in je Hugging Face-account, bij Access '
-                              'Tokens',
-                        DrawingService.cloudflare =>
-                          'Maak er een bij Cloudflare, met de rechten Workers '
-                              'AI Read en Edit',
-                      }
-                    : 'Bewaard naast je andere sleutel, achter je pincode.',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _enterImageKey,
-            ),
-            // What a drawing may attempt, which is a matter of taste as much
-            // as of accuracy: kit that is drawn wrong is worse than kit that
-            // is left out, but an exercise without its bar can read as a
-            // different exercise. So it is yours to set, not ours to decide.
-            SwitchListTile(
-              secondary: const Icon(Icons.fitness_center),
-              title: const Text('Materiaal mee tekenen'),
-              subtitle: Text(
-                withEquipment
-                    ? 'De tekening probeert de stang, kabel of machine erbij '
-                          'te zetten. Die klopt niet altijd.'
-                    : 'Alleen de houding, met lege handen. Wat er niet in '
-                          'staat, kan ook niet fout staan.',
-              ),
-              value: withEquipment,
-              onChanged: (value) => ref
-                  .read(databaseProvider)
-                  .settingsDao
-                  .updateSettings(
-                    AppSettingsTableCompanion(imageEquipment: Value(value)),
-                  ),
-            ),
-            if (imageKey != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: TextButton.icon(
-                  onPressed: _removeImageKey,
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Token verwijderen'),
+              // What a drawing may attempt, which is a matter of taste as much
+              // as of accuracy: kit that is drawn wrong is worse than kit that
+              // is left out, but an exercise without its bar can read as a
+              // different exercise. So it is yours to set, not ours to decide.
+              SwitchListTile(
+                secondary: const Icon(Icons.fitness_center),
+                title: const Text('Materiaal mee tekenen'),
+                subtitle: Text(
+                  withEquipment
+                      ? 'De tekening probeert de stang, kabel of machine erbij '
+                            'te zetten. Die klopt niet altijd.'
+                      : 'Alleen de houding, met lege handen. Wat er niet in '
+                            'staat, kan ook niet fout staan.',
                 ),
+                value: withEquipment,
+                onChanged: (value) => ref
+                    .read(databaseProvider)
+                    .settingsDao
+                    .updateSettings(
+                      AppSettingsTableCompanion(imageEquipment: Value(value)),
+                    ),
               ),
+              if (imageKey != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: TextButton.icon(
+                    onPressed: _removeImageKey,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Token verwijderen'),
+                  ),
+                ),
+            ],
             const SectionHeader('Model'),
             ListTile(
               leading: const Icon(Icons.tune),

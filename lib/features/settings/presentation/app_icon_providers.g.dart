@@ -105,4 +105,4 @@ final class CurrentAppIconProvider
   }
 }
 
-String _$currentAppIconHash() => r'ea1a59f81269033370e4b5f4f9bed1712cbe0e4f';
+String _$currentAppIconHash() => r'9f1be13cb634eddf6f4c012ed4ea1ef3717b40bd';

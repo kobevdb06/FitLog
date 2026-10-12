@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/core/widgets/common.dart';
 import 'package:fitlog/features/exercises/presentation/custom_exercise_screen.dart';
@@ -130,6 +131,21 @@ void main() {
   });
 
   group('een tekening laten maken', () {
+    /// Tekenen staat uit voor de app; deze tests zetten het aan, om de
+    /// logica te bewaken die blijft.
+    void drawingOn() {
+      container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          appPathsProvider.overrideWith(
+            (ref) => AppPaths(Directory.systemTemp),
+          ),
+          imageGenerationProvider.overrideWithValue(true),
+        ],
+      );
+      addTearDown(container.dispose);
+    }
+
     /// De fotovakken staan onderaan het formulier, buiten beeld.
     Future<void> openFrameSheet(WidgetTester tester) async {
       // Het label is niet het tikvlak; het vak eronder wel.
@@ -151,7 +167,22 @@ void main() {
       expect(find.text('Laten tekenen'), findsNothing);
     });
 
+    testWidgets('en ook niet met een token, zolang tekenen uit staat', (
+      tester,
+    ) async {
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
+      );
+      await pumpForm(tester);
+
+      await openFrameSheet(tester);
+
+      expect(find.text('Uit de galerij kiezen'), findsOneWidget);
+      expect(find.text('Laten tekenen'), findsNothing);
+    });
+
     testWidgets('en er wel zodra er een token staat', (tester) async {
+      drawingOn();
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
       );
@@ -166,6 +197,7 @@ void main() {
     testWidgets('en je ziet eerst wat er gevraagd wordt', (tester) async {
       // Geen enkele vaste formulering krijgt elke oefening goed - dus krijg je
       // de zin te zien voor er tegoed aan opgaat, en mag je ze herschrijven.
+      drawingOn();
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
       );
@@ -197,6 +229,7 @@ void main() {
 
     testWidgets('en zonder naam wordt er niets getekend', (tester) async {
       // Een tekening van "" is weggegooid tegoed.
+      drawingOn();
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(imageApiKey: Value('hf_test')),
       );

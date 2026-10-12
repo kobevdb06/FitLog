@@ -4114,3 +4114,27 @@ de app (zie verder). Daarom een aparte keuze onder *Weergave en eenheden*:
 Het lichte icoon is de lichte versie uit 195: de diepere stang en het diepere
 amber op een lichte tegel (`#EEF2FA`), getekend door dezelfde painter.
 
+## 201. Tekenen staat uit, en blijft in de code
+
+Een maand lang kon FitLog de begin- en eindpositie van een oefening laten
+tekenen, via Hugging Face of Cloudflare (138 tot 151). Bijna elke tekening
+moest daarna toch met de hand vervangen worden. Het tekenen staat nu uit voor
+de hele app, met één schakelaar (`kImageGeneration`).
+
+- **Niets meer te zien.** Geen sectie *Afbeeldingen* in de instellingen van de
+  coach, geen knop *Toevoegen mét tekeningen* op een voorstel, geen *Laten
+  tekenen* bij een foto - ook niet voor wie nog een token heeft staan.
+- **Niets meer getekend.** De controller en de editor tekenen niet zolang de
+  schakelaar uit staat, wie het ook vraagt. Een knop die ergens toch
+  opduikt, kan zo geen tegoed kosten.
+- **De code blijft.** De twee diensten, de tokens in de database, de stijl
+  en de tests: een betalende laag kan het later terugzetten. De tests zetten
+  het voor zichzelf aan, zodat de logica niet ongemerkt verroest terwijl
+  niemand ze gebruikt.
+- **Wat getekend is, blijft getekend.** Een oefening met een getekende
+  afbeelding houdt haar regel *Afbeelding getekend door AI* (140): die is nog
+  altijd waar.
+- **Een opgeslagen token blijft staan**, onzichtbaar. Het weghalen zou iets
+  ongedaan maken dat de gebruiker zelf instelde, en het is alleen weer nodig
+  als het tekenen terugkomt.
+

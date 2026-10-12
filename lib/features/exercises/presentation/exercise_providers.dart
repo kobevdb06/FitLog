@@ -464,6 +464,10 @@ class ExerciseEditor {
     String? prompt,
     int? seed,
   }) async {
+    // Drawing is switched off for the app; a caller that still asks gets
+    // nothing, the same as without a token.
+    if (!ref.read(imageGenerationProvider)) return null;
+
     // Straight from the database, not from the settings stream: reading a
     // stream nobody is listening to answers "still loading", which here would
     // read as "no token" and quietly draw nothing.

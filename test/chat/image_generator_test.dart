@@ -61,6 +61,9 @@ void main() {
     overrides: [
       databaseProvider.overrideWithValue(db),
       appPathsProvider.overrideWith((ref) => paths),
+      // Tekenen staat uit voor de app; hier aan, om de logica te bewaken die
+      // blijft voor als het terugkomt.
+      imageGenerationProvider.overrideWithValue(true),
       imageGeneratorFactoryProvider.overrideWithValue(
         (apiKey, {provider = DrawingService.huggingFace, accountId}) =>
             ImageGenerator(

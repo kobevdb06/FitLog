@@ -27,6 +27,7 @@ import '../domain/coach_proposal.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
 import 'photo_prompts_sheet.dart';
+import 'report_answer_sheet.dart';
 
 /// What a new conversation offers when there is nothing to show yet.
 const List<String> kCoachOpeners = [
@@ -346,7 +347,10 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                             onGrow: _follow,
                           );
                         }
-                        return _Bubble(message: messages[index]);
+                        return _Bubble(
+                          message: messages[index],
+                          question: _questionBefore(messages, index),
+                        );
                       },
                     ),
             ),
@@ -374,6 +378,15 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         ),
       ),
     );
+  }
+
+  /// What the answer at [index] was to: the last thing the user said
+  /// before it.
+  static String? _questionBefore(List<ChatMessageRow> messages, int index) {
+    for (var i = index - 1; i >= 0; i--) {
+      if (messages[i].role == 'user') return messages[i].content;
+    }
+    return null;
   }
 
   /// Kicked off from build, once: the newest thread is a database read and
@@ -430,9 +443,12 @@ class _Opening extends StatelessWidget {
 
 /// One message. Yours on the right, the coach's on the left with its receipts.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message});
+  const _Bubble({required this.message, this.question});
 
   final ChatMessageRow message;
+
+  /// For an answer: the question it answered, for a report about it.
+  final String? question;
 
   @override
   Widget build(BuildContext context) {
@@ -494,15 +510,42 @@ class _Bubble extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: _Lookups(lookups: lookups),
               ),
-            if (!mine && message.outputTokens != null)
+            if (!mine)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: Text(
-                  '${message.inputTokens ?? 0} in · '
-                  '${message.outputTokens} uit',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: AppSpacing.sm,
+                  children: [
+                    if (message.outputTokens != null)
+                      Text(
+                        '${message.inputTokens ?? 0} in · '
+                        '${message.outputTokens} uit',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    Tooltip(
+                      message: 'Meld dit antwoord',
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          foregroundColor: theme.colorScheme.onSurfaceVariant,
+                          textStyle: theme.textTheme.labelSmall,
+                        ),
+                        onPressed: () => showReportAnswer(
+                          context,
+                          answer: message.content,
+                          answeredAt: DateTime.fromMillisecondsSinceEpoch(
+                            message.createdAt,
+                          ),
+                          question: question,
+                        ),
+                        icon: const Icon(Icons.outlined_flag, size: 16),
+                        label: const Text('Melden'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],

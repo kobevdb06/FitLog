@@ -9,6 +9,7 @@ import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/data/links.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
+import 'package:fitlog/features/chat/domain/answer_report.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
@@ -1375,16 +1376,127 @@ void main() {
       expect(sent.single, isNot(contains('sk-ant')));
     });
   });
+
+  group('een antwoord melden', () {
+    Future<void> conversation(WidgetTester tester, {LinkOpener? opener}) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Pijn');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'user',
+        content: 'Mag ik squatten met pijn in mijn knie?',
+      );
+      await db.chatDao.addMessage(
+        id: 'm-2',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Train gewoon door de pijn heen.',
+        inputTokens: 900,
+        outputTokens: 30,
+      );
+      // Phone width: the button sits next to the token count.
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        opener: opener,
+        size: const Size(360, 800),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('kan onder het antwoord van de coach, niet onder je vraag', (
+      tester,
+    ) async {
+      await conversation(tester);
+
+      expect(find.text('Melden'), findsOneWidget);
+      expect(find.byTooltip('Meld dit antwoord'), findsOneWidget);
+      expect(find.text('900 in · 30 uit'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('vraagt eerst waarom, en stelt dan een e-mail op met alles '
+        'erin', (tester) async {
+      final opener = _Opener();
+      await conversation(tester, opener: opener);
+
+      await tester.tap(find.text('Melden'));
+      await tester.pumpAndSettle();
+      expect(find.text('Dit antwoord melden'), findsOneWidget);
+      expect(find.textContaining(kReportAddress), findsOneWidget);
+
+      final compose = find.widgetWithText(FilledButton, 'E-mail opstellen');
+      expect(tester.widget<FilledButton>(compose).onPressed, isNull);
+
+      await tester.tap(find.text('Gevaarlijk of schadelijk advies'));
+      await tester.enterText(find.byType(TextField).last, 'Mijn knie.');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(compose);
+      await tester.tap(compose);
+      await tester.pumpAndSettle();
+
+      final mail = Uri.parse(opener.opened.single);
+      expect(mail.scheme, 'mailto');
+      expect(mail.path, kReportAddress);
+      final body = mail.queryParameters['body']!;
+      expect(body, contains('Reden: Gevaarlijk of schadelijk advies'));
+      expect(body, contains('Toelichting: Mijn knie.'));
+      expect(body, contains('Mag ik squatten met pijn in mijn knie?'));
+      expect(body, contains('Train gewoon door de pijn heen.'));
+      expect(find.text('Dit antwoord melden'), findsNothing);
+    });
+
+    testWidgets('zonder mail-app staat het op het klembord, en zegt hij dat', (
+      tester,
+    ) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await conversation(tester, opener: _Opener(works: false));
+
+      await tester.tap(find.text('Melden'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Klopt niet'));
+      await tester.pumpAndSettle();
+      final compose = find.widgetWithText(FilledButton, 'E-mail opstellen');
+      await tester.ensureVisible(compose);
+      await tester.tap(compose);
+      await tester.pumpAndSettle();
+
+      expect(copied, contains('Reden: Klopt niet'));
+      expect(copied, contains('Train gewoon door de pijn heen.'));
+      expect(find.textContaining('klembord'), findsOneWidget);
+    });
+  });
 }
 
 /// Android's way to another app, as far as these tests go: it remembers.
 class _Opener implements LinkOpener {
+  _Opener({this.works = true});
+
+  /// False for a phone with nothing that opens the address.
+  final bool works;
   final opened = <String>[];
 
   @override
   Future<bool> open(String url) async {
     opened.add(url);
-    return true;
+    return works;
   }
 
   @override

@@ -4356,3 +4356,26 @@ is geen wekker.
   rapport om 7:04 is hetzelfde rapport, en zo hangen ze niet af van een
   toestemming die alleen de rusttimer nodig heeft.
 
+## 211. Een antwoord melden, als e-mail die je zelf verstuurt
+
+Google Play vraagt van een app die met AI schrijft dat je wat ze schreef kan
+melden aan de maker, vanuit de app. Onder elk antwoord van de coach staat nu
+*Melden*.
+
+- **Het melden gebeurt in de app.** Een blad vraagt waarom (gevaarlijk,
+  kwetsend, klopt niet, iets anders) en laat ruimte voor een toelichting. Pas
+  met een reden kan het verder.
+- **Het versturen gaat per e-mail**, aan kobe.vandenberk@gmail.com, met de
+  reden, de vraag ervoor, het antwoord, de versie en het uur. FitLog heeft
+  geen server, en een tweede adres waar de app zelf naartoe praat zou de
+  belofte breken dat alleen de coach online gaat (`test/security`). Je mail-app
+  toont alles voor het weggaat; wat erin staat, is wat jij zelf verstuurt.
+- **Geen mail-app** (of een die `mailto:` niet opent): het verslag gaat op het
+  klembord, en het blad zegt waar het heen moet. Dat staat in het blad zelf,
+  omdat een snackbar erachter zou vallen.
+- **Niets bewaard.** Of je iets meldde, houdt de app niet bij: het zou een
+  kolom zijn voor een vlag die alleen de maker iets zegt, en die krijgt de
+  e-mail.
+- **De `mailto:` wordt met de hand gecodeerd.** `Uri(queryParameters:)`
+  schrijft een spatie als `+`, en mail-apps tonen die `+` letterlijk.
+

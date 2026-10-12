@@ -60,6 +60,26 @@ void main() {
   }
 
   group('het scherm', () {
+    testWidgets('zegt van de hartslag dat ook de nacht gelezen wordt', (
+      tester,
+    ) async {
+      // FitLog reads the heart rate between falling asleep and waking up,
+      // for a resting heart rate when the watch hands over none
+      // (HealthImport.restingFromNights). The list is what someone reads
+      // before granting it, so it has to say so.
+      await pumpScreen(tester);
+
+      final heart = find.ancestor(
+        of: find.text('Hartslag'),
+        matching: find.byType(ListTile),
+      );
+      expect(heart, findsOneWidget);
+      expect(
+        find.descendant(of: heart, matching: find.textContaining('slaap')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('zonder Health Connect wijst het naar de Play Store', (
       tester,
     ) async {

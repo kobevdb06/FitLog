@@ -182,9 +182,10 @@ const List<(IconData, String, String)> _whatWeRead = [
   ),
   (
     Icons.favorite_border,
-    'Hartslag tijdens je trainingen',
-    'Alleen de minuten van je trainingen in FitLog: het gemiddelde en het '
-        'hoogste staan dan bij die training.',
+    'Hartslag',
+    'Tijdens je trainingen in FitLog: het gemiddelde en het hoogste staan '
+        'dan bij die training. En tijdens je slaap, als je horloge zelf geen '
+        'rusthartslag doorgeeft: FitLog berekent die dan uit je nacht.',
   ),
 ];
 

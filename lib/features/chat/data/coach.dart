@@ -88,10 +88,16 @@ class Coach {
   /// bill.
   static const int historyTurns = 20;
 
+  /// [onText], when given, gets the answer while it is being written, piece
+  /// by piece. Text of a round that then turns out to look something up is
+  /// not the answer: [onLookup] says so, with what is being looked up, and
+  /// whoever shows the text starts over.
   Future<CoachAnswer> ask({
     required List<CoachTurn> history,
     required String question,
     List<CoachImage> images = const [],
+    void Function(String text)? onText,
+    void Function(String lookup)? onLookup,
   }) async {
     final trimmed = history.length > historyTurns
         ? history.sublist(history.length - historyTurns)
@@ -108,12 +114,20 @@ class Coach {
     var requests = 0;
 
     for (var round = 0; round <= maxToolRounds; round++) {
-      final reply = await client.send(
-        system: system,
-        messages: messages,
-        tools: CoachTools.definitions(),
-        model: model,
-      );
+      final reply = onText == null
+          ? await client.send(
+              system: system,
+              messages: messages,
+              tools: CoachTools.definitions(),
+              model: model,
+            )
+          : await client.sendStreaming(
+              system: system,
+              messages: messages,
+              tools: CoachTools.definitions(),
+              model: model,
+              onText: onText,
+            );
       usage = usage.plus(reply.usage);
       requests++;
 
@@ -155,6 +169,7 @@ class Coach {
       final results = <CoachToolResult>[];
       for (final call in reply.toolCalls) {
         final lookup = await tools.run(call.name, call.input);
+        onLookup?.call(lookup.summary);
         if (!lookups.contains(lookup.summary)) lookups.add(lookup.summary);
         if (lookup.proposal case final proposal?) proposals.add(proposal);
         results.add(CoachToolResult(call: call, json: lookup.json));

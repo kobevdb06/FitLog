@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -1138,6 +1139,54 @@ void main() {
 
       expect(find.text('Vraag je coach'), findsOneWidget);
       expect(find.text(kCoachOpeners.first), findsOneWidget);
+    });
+
+    testWidgets('het antwoord groeit terwijl het geschreven wordt', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      final pieces = StreamController<List<int>>();
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: (String apiKey, CoachProvider provider) => AiClient(
+          apiKey: apiKey,
+          provider: provider,
+          client: MockClient.streaming(
+            (request, _) async => http.StreamedResponse(
+              pieces.stream,
+              200,
+              headers: {'content-type': 'text/event-stream'},
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'Hoeveel sets?');
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      await tester.pump();
+      expect(find.text('De coach denkt na…'), findsOneWidget);
+
+      pieces.add(utf8.encode('data: ${jsonEncode(says('Tussen tien '))}\n\n'));
+      await tester.pumpAndSettle();
+
+      // Al te lezen, en nog niet bewaard.
+      expect(find.text('Tussen tien '), findsOneWidget);
+      expect(find.text('De coach denkt na…'), findsNothing);
+      expect(await db.chatDao.newestThread(), isNotNull);
+      final thread = (await db.chatDao.newestThread())!;
+      expect(await db.chatDao.messages(thread.id), hasLength(1));
+
+      pieces.add(
+        utf8.encode('data: ${jsonEncode(says('en twintig sets.'))}\n\n'),
+      );
+      await pieces.close();
+      await tester.pumpAndSettle();
+
+      // Eén keer: het bewaarde antwoord neemt de plaats in van het
+      // geschreven, zonder dat het er twee keer staat.
+      expect(find.text('Tussen tien en twintig sets.'), findsOneWidget);
+      expect(await db.chatDao.messages(thread.id), hasLength(2));
     });
 
     testWidgets('bewaart je vraag en het antwoord', (tester) async {

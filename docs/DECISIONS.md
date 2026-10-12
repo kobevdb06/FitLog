@@ -4302,3 +4302,32 @@ waarvan de naam *PerDay* of *PerMinute* bevat, en hoelang te wachten
   knop onder de fout heet nu *Sleutel opnieuw plakken* en opent de flow bij
   het plakken (207), in plaats van de instellingen.
 
+## 209. Het antwoord verschijnt terwijl het geschreven wordt
+
+De coach schreef zijn antwoord in één keer neer, na een paar seconden "De
+coach denkt na…". Google kan het antwoord doorsturen terwijl het geschreven
+wordt (`streamGenerateContent`, als server-sent events), en dat doet de chat
+nu (`AiClient.sendStreaming`).
+
+- **Letter per letter, op het scherm.** Google stuurt stukjes van een paar
+  woorden tot een zin. Zo getoond is dat een schok elke halve seconde; de app
+  laat de letters het binnengekomene inhalen (`_Typing`): één per frame
+  zolang er weinig wacht, sneller als er een groot stuk kwam, zodat het nooit
+  ver achterloopt. Met minder animaties aan staat alles er meteen.
+- **Wat hij opzoekt.** Een ronde die eindigt met opzoeken was niet het
+  antwoord: wat er al stond verdwijnt, en *Bekijkt je laatste sessies…*
+  komt in de plaats van de stille spinner.
+- **Pas bewaard als het af is**, zoals voorheen; een half antwoord komt niet
+  in het gesprek. Tussen het laatste stukje en het bewaarde antwoord blijft
+  het geschreven antwoord staan tot het bewaarde in de lijst staat, anders
+  zou het één frame wegknipperen.
+- **Eén tijdslimiet over het hele antwoord**, twee keer die voor een vraag.
+  Een limiet per stukje (`Stream.timeout`) liet in de widgettests de stream
+  nooit eindigen: de neptijd van de tests en een timer die bij elk stukje
+  opnieuw begint, gaan niet samen. Valt een antwoord stil, dan wordt de
+  verbinding losgelaten en zegt de app dat het stokte.
+- **Alleen de chat.** Het ochtendrapport en het weekoverzicht schrijven op de
+  achtergrond; daar kijkt niemand mee, en ze vragen zoals voorheen. Kosten en
+  tokens zijn dezelfde: het is dezelfde vraag, anders afgeleverd. Het blijft
+  het ene bestand dat het internet op kan, met de sleutel in de header.
+

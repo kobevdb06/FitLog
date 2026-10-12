@@ -860,6 +860,216 @@ class AiClient {
         : _parseGemini(response.body);
   }
 
+  /// [send], with the answer handed over while it is being written: [onText]
+  /// gets every piece of text the moment it arrives. What comes back is the
+  /// whole reply, the same as [send] gives.
+  ///
+  /// Google sends the answer as server-sent events while it writes, a few
+  /// words to a sentence at a time. Anthropic's answer is handed over in one
+  /// piece: it is not on offer, and a stream of its own shape would be code
+  /// nobody runs.
+  Future<CoachReply> sendStreaming({
+    required String system,
+    required List<CoachMessage> messages,
+    required List<Map<String, Object?>> tools,
+    required String model,
+    required void Function(String text) onText,
+    int maxTokens = 1024,
+  }) async {
+    if (provider == CoachProvider.anthropic) {
+      final reply = await send(
+        system: system,
+        messages: messages,
+        tools: tools,
+        model: model,
+        maxTokens: maxTokens,
+      );
+      if (reply.text.isNotEmpty) onText(reply.text);
+      return reply;
+    }
+
+    final request =
+        http.Request(
+            'POST',
+            Uri.parse(
+              '${provider.endpoint}/$model:streamGenerateContent?alt=sse',
+            ),
+          )
+          ..headers.addAll({
+            'content-type': 'application/json',
+            // In a header, as with every other call: never in the URL.
+            'x-goog-api-key': apiKey,
+          })
+          ..body = jsonEncode(_geminiBody(system, messages, tools, maxTokens));
+
+    final http.StreamedResponse response;
+    try {
+      response = await _client.send(request).timeout(timeout);
+    } on TimeoutException {
+      throw const CoachException(
+        'De coach antwoordde niet op tijd. Probeer het opnieuw.',
+      );
+    } on SocketException {
+      throw const CoachException(
+        'Geen verbinding. De coach is het enige dat internet nodig heeft; de '
+        'rest van FitLog werkt gewoon verder.',
+      );
+    } on http.ClientException catch (error) {
+      throw CoachException(
+        'De verbinding werd afgebroken: ${_redact(error.message)}',
+      );
+    }
+
+    if (response.statusCode != 200) {
+      final body = await response.stream.bytesToString();
+      throw _errorFor(http.Response(body, response.statusCode));
+    }
+
+    final chunks = <Map<String, Object?>>[];
+    final finished = Completer<void>();
+    final subscription = _events(response.stream).listen(
+      (chunk) {
+        chunks.add(chunk);
+        final piece = _textOf(chunk);
+        if (piece.isNotEmpty) onText(piece);
+      },
+      onError: (Object error, StackTrace stack) {
+        if (!finished.isCompleted) finished.completeError(error, stack);
+      },
+      onDone: () {
+        if (!finished.isCompleted) finished.complete();
+      },
+      cancelOnError: true,
+    );
+    try {
+      // One limit over the whole answer, twice that for a question: an
+      // answer that stops coming is let go, and the connection with it.
+      await finished.future.timeout(timeout * 2);
+    } on TimeoutException {
+      // Not waited for: a stream that stopped may not hurry to say it has
+      // stopped, and the answer is the error, now.
+      unawaited(subscription.cancel());
+      throw const CoachException(
+        'Het antwoord stokte halverwege. Probeer het opnieuw.',
+      );
+    } on SocketException {
+      throw const CoachException(
+        'De verbinding viel weg tijdens het antwoord. Probeer het opnieuw.',
+      );
+    } on http.ClientException catch (error) {
+      throw CoachException(
+        'De verbinding werd afgebroken: ${_redact(error.message)}',
+      );
+    }
+
+    return _geminiReply(_merged(chunks));
+  }
+
+  /// The chunks of a streamed answer, as they arrive.
+  ///
+  /// Google sends them as server-sent events: `data: {...}` and an empty
+  /// line, in UTF-8 like any JSON. A body that is plain JSON instead - one answer, or a list of them,
+  /// which is what Google sends without `alt=sse` - is read whole: the same
+  /// chunks, all at once.
+  static Stream<Map<String, Object?>> _events(Stream<List<int>> bytes) async* {
+    final lines = bytes.transform(utf8.decoder).transform(const LineSplitter());
+    final data = StringBuffer();
+    final plain = StringBuffer();
+    var events = true;
+
+    await for (final line in lines) {
+      if (!events) {
+        plain.writeln(line);
+      } else if (line.startsWith('data:')) {
+        if (data.isNotEmpty) data.write('\n');
+        data.write(line.substring(5).trimLeft());
+      } else if (line.isEmpty) {
+        if (data.isNotEmpty) {
+          yield* Stream.fromIterable(_chunksOf(data.toString()));
+          data.clear();
+        }
+      } else if (line.startsWith(':') ||
+          line.startsWith('event:') ||
+          line.startsWith('id:') ||
+          line.startsWith('retry:')) {
+        // Part of the event format, nothing of the answer's.
+      } else {
+        events = false;
+        plain.writeln(line);
+      }
+    }
+    if (data.isNotEmpty) yield* Stream.fromIterable(_chunksOf('$data'));
+    if (plain.isNotEmpty) yield* Stream.fromIterable(_chunksOf('$plain'));
+  }
+
+  static List<Map<String, Object?>> _chunksOf(String json) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(json);
+    } on FormatException {
+      throw const CoachException('Het antwoord was onleesbaar.');
+    }
+    Map<String, Object?> chunk(Map<Object?, Object?> map) =>
+        map.map((key, value) => MapEntry('$key', value));
+    return switch (decoded) {
+      final Map<Object?, Object?> one => [chunk(one)],
+      final List<Object?> many => [
+        for (final entry in many)
+          if (entry is Map) chunk(entry),
+      ],
+      _ => throw const CoachException(
+        'Het antwoord had een vorm die niet klopt.',
+      ),
+    };
+  }
+
+  /// The text in one chunk: a piece of the answer.
+  static String _textOf(Map<String, Object?> chunk) {
+    final candidates = chunk['candidates'];
+    if (candidates is! List || candidates.isEmpty) return '';
+    final first = candidates.first;
+    final content = first is Map ? first['content'] : null;
+    final parts = content is Map ? content['parts'] : null;
+    if (parts is! List) return '';
+    final text = StringBuffer();
+    for (final part in parts) {
+      if (part is Map && part['text'] is String) text.write(part['text']);
+    }
+    return '$text';
+  }
+
+  /// The chunks of a streamed answer put back together into the one answer
+  /// [send] would have had: every part in order, the usage of the last chunk
+  /// that had one - it counts the whole answer - and the refusal, if any.
+  static Map<String, Object?> _merged(List<Map<String, Object?>> chunks) {
+    final parts = <Object?>[];
+    Object? usage;
+    Object? feedback;
+    var answered = false;
+    for (final chunk in chunks) {
+      if (chunk['usageMetadata'] case final Object found) usage = found;
+      if (chunk['promptFeedback'] case final Object found) feedback = found;
+      final candidates = chunk['candidates'];
+      if (candidates is! List || candidates.isEmpty) continue;
+      answered = true;
+      final first = candidates.first;
+      final content = first is Map ? first['content'] : null;
+      if (content is Map && content['parts'] is List) {
+        parts.addAll(content['parts']! as List);
+      }
+    }
+    return {
+      if (answered)
+        'candidates': [
+          {
+            'content': {'parts': parts},
+          },
+        ],
+      'usageMetadata': ?usage,
+      'promptFeedback': ?feedback,
+    };
+  }
+
   /// Which models this key may actually use, straight from the service.
   ///
   /// The app ships with a handful of names it happens to know, and those go
@@ -1277,8 +1487,9 @@ class AiClient {
     );
   }
 
-  CoachReply _parseGemini(String body) {
-    final json = _decode(body);
+  CoachReply _parseGemini(String body) => _geminiReply(_decode(body));
+
+  CoachReply _geminiReply(Map<String, Object?> json) {
     final candidates = json['candidates'];
     if (candidates is! List || candidates.isEmpty) {
       // A prompt Google refuses to answer comes back without candidates.

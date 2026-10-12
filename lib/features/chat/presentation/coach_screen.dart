@@ -9,6 +9,7 @@ library;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -57,6 +58,14 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   /// A question another screen put ready came in, so this is a new
   /// conversation and not the newest one.
   var _drafted = false;
+
+  /// The answer as it was written, kept on screen until the stored one is in
+  /// the list: between the two, it would blink away for a frame.
+  String? _held;
+
+  /// When the question that [_held] answers was sent. The stored answer is
+  /// the first of the coach's after it.
+  var _askedAt = 0;
 
   @override
   void initState() {
@@ -120,7 +129,11 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
     final photos = List.of(_photos);
     _controller.clear();
-    setState(_photos.clear);
+    setState(() {
+      _photos.clear();
+      _held = null;
+      _askedAt = DateTime.now().millisecondsSinceEpoch;
+    });
     await controller.ask(
       threadId: thread,
       question: question,
@@ -179,6 +192,19 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       }
     }
     if (mounted) setState(() => _photos.addAll(stored));
+  }
+
+  /// Keeps the newest line in sight while the answer grows - unless the user
+  /// scrolled up to read something, which this does not take away from them.
+  void _follow() {
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    if (position.maxScrollExtent - position.pixels > 160) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.jumpTo(_scroll.position.maxScrollExtent);
+      }
+    });
   }
 
   void _toBottom() {
@@ -262,6 +288,23 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     final messages = _threadId == null
         ? const <ChatMessageRow>[]
         : ref.watch(chatMessagesProvider(_threadId!)).value ?? const [];
+    ref.listen<CoachState>(coachControllerProvider, (previous, next) {
+      if (previous == null) return;
+      if (previous.sending &&
+          !next.sending &&
+          next.error == null &&
+          previous.answer.isNotEmpty) {
+        setState(() => _held = previous.answer);
+      }
+      if (next.answer != previous.answer) _follow();
+    });
+    // Held only until the stored answer is in the list - which may already
+    // be the case by the time the writing stops.
+    final stored = messages.any(
+      (m) => m.role == 'assistant' && m.createdAt >= _askedAt,
+    );
+    final held = stored ? null : _held;
+    final writing = state.sending || held != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -289,14 +332,20 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         child: Column(
           children: [
             Expanded(
-              child: messages.isEmpty && !state.sending
+              child: messages.isEmpty && !writing
                   ? _Opening(onPick: _send)
                   : ListView.builder(
                       controller: _scroll,
                       padding: const EdgeInsets.all(AppSpacing.lg),
-                      itemCount: messages.length + (state.sending ? 1 : 0),
+                      itemCount: messages.length + (writing ? 1 : 0),
                       itemBuilder: (context, index) {
-                        if (index == messages.length) return const _Thinking();
+                        if (index == messages.length) {
+                          return _Writing(
+                            answer: state.sending ? state.answer : held!,
+                            looking: state.sending ? state.looking : null,
+                            onGrow: _follow,
+                          );
+                        }
                         return _Bubble(message: messages[index]);
                       },
                     ),
@@ -1009,32 +1058,148 @@ class _SentPhoto extends ConsumerWidget {
   }
 }
 
-class _Thinking extends StatelessWidget {
-  const _Thinking();
+/// The answer while it is being written: what the coach is looking up
+/// first, then the text as it comes in.
+class _Writing extends StatelessWidget {
+  const _Writing({required this.answer, this.looking, required this.onGrow});
+
+  final String answer;
+  final String? looking;
+  final VoidCallback onGrow;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      child: Row(
-        children: [
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            'De coach denkt na…',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    // A leading line break is how a piece often starts; the stored answer is
+    // trimmed, and this should not jump when it replaces it.
+    final text = answer.trimLeft();
+
+    if (text.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                looking == null ? 'De coach denkt na…' : 'Bekijkt $looking…',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.85,
+        ),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
-        ],
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          ),
+          child: _Typing(
+            text: text,
+            style: theme.textTheme.bodyMedium,
+            onGrow: onGrow,
+          ),
+        ),
       ),
     );
   }
+}
+
+/// Text that types itself out.
+///
+/// The service sends a few words to a sentence at a time; shown as they come
+/// that is a jerk every half second. This lets the letters catch up with
+/// what has arrived instead: one a frame while little is waiting, faster
+/// when a big piece came in, so it never falls far behind. With reduced
+/// motion switched on, everything that arrived is there at once.
+class _Typing extends StatefulWidget {
+  const _Typing({required this.text, this.style, required this.onGrow});
+
+  final String text;
+  final TextStyle? style;
+
+  /// Called each time more is shown, so the list can keep it in sight.
+  final VoidCallback onGrow;
+
+  @override
+  State<_Typing> createState() => _TypingState();
+}
+
+class _TypingState extends State<_Typing> with SingleTickerProviderStateMixin {
+  late final Ticker _ticker = createTicker(_tick);
+  var _shown = 0;
+
+  /// How many frames a backlog is allowed to take to show.
+  static const int _catchUpFrames = 8;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _keepUp();
+  }
+
+  @override
+  void didUpdateWidget(_Typing old) {
+    super.didUpdateWidget(old);
+    if (_shown > widget.text.length) _shown = widget.text.length;
+    _keepUp();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  void _keepUp() {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _shown = widget.text.length;
+      return;
+    }
+    if (_shown < widget.text.length && !_ticker.isActive) _ticker.start();
+  }
+
+  void _tick(Duration _) {
+    final behind = widget.text.length - _shown;
+    if (behind <= 0) {
+      _ticker.stop();
+      return;
+    }
+    var next = _shown + (behind / _catchUpFrames).ceil();
+    // Never half of a character made of two code units, like an emoji.
+    if (next < widget.text.length &&
+        _isHighSurrogate(widget.text.codeUnitAt(next - 1))) {
+      next++;
+    }
+    setState(() => _shown = next);
+    widget.onGrow();
+  }
+
+  static bool _isHighSurrogate(int unit) => unit >= 0xD800 && unit <= 0xDBFF;
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(widget.text.substring(0, _shown), style: widget.style);
 }
 
 class _Failure extends StatelessWidget {

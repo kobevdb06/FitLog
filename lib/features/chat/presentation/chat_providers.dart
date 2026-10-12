@@ -229,9 +229,18 @@ class CoachState {
     this.sending = false,
     this.error,
     this.keyRejected = false,
+    this.answer = '',
+    this.looking,
   });
 
   final bool sending;
+
+  /// What the coach has written so far, while it is still writing. Not
+  /// stored: the answer is written down once it is whole.
+  final String answer;
+
+  /// What it is looking up in the logbook right now, before it answers.
+  final String? looking;
 
   /// The last failure, in Dutch, or null. Shown under the conversation with a
   /// button to try again.
@@ -384,6 +393,12 @@ class CoachController extends _$CoachController {
         history: history,
         question: text,
         images: images,
+        onText: (piece) =>
+            state = CoachState(sending: true, answer: state.answer + piece),
+        // A round that looks something up was not the answer: what it
+        // wrote on the way goes, and what it is looking at shows instead.
+        onLookup: (lookup) =>
+            state = CoachState(sending: true, looking: lookup),
       );
 
       // The photos are part of what left the device, so they belong on the

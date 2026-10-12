@@ -394,6 +394,28 @@ void main() {
     });
   });
 
+  group('op een smal toestel met grote letters', () {
+    testWidgets('passen de knoppen bij de sleutel op het scherm', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNgeheimgeheim1234');
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      await pump(
+        tester,
+        const CoachSettingsScreen(),
+        size: const Size(360, 2400),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sleutel testen'), findsOneWidget);
+      expect(find.text('Verwijderen'), findsOneWidget);
+      // An overflow anywhere fails the test on its own.
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('een sleutel invullen', () {
     testWidgets('zet de coach aan en toont hem afgeschermd', (tester) async {
       await pump(tester, const CoachSettingsScreen());

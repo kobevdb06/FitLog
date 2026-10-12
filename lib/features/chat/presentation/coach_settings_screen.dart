@@ -524,7 +524,12 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
           if (key != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Row(
+              // A second line when the two do not fit on one: in a row they
+              // ran off the edge of a narrow phone with a large font.
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   OutlinedButton.icon(
                     onPressed: _testing ? null : _test,
@@ -537,7 +542,6 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
                         : const Icon(Icons.wifi_tethering),
                     label: const Text('Sleutel testen'),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
                   TextButton.icon(
                     onPressed: _removeKey,
                     icon: const Icon(Icons.delete_outline),

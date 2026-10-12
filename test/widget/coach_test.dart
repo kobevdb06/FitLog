@@ -80,8 +80,9 @@ void main() {
     Object? api,
     bool drawing = false,
     LinkOpener? opener,
+    Size size = const Size(1100, 2400),
   }) async {
-    tester.view.physicalSize = const Size(1100, 2400);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
@@ -788,6 +789,80 @@ void main() {
       expect(row.instructions, 'Duw laag.');
       expect(find.text('Toegepast'), findsOneWidget);
       expect(find.text('Toepassen'), findsNothing);
+    });
+
+    testWidgets('past op een smalle telefoon met grote letters', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-own',
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              category: 'duration',
+              isCustom: const Value(true),
+              createdAt: 0,
+            ),
+          );
+      await db.chatDao.createThread('t-1', 'Oefeningen');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Twee voorstellen.',
+        proposals: encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(
+              name: 'Single-Arm Landmine Press (half kneeling, neutral grip)',
+              primaryMuscle: 'schouders',
+              secondaryMuscles: ['triceps', 'buik'],
+              equipment: 'landmine',
+              startImagePrompt:
+                  'Een realistische foto van een persoon in sportkleding die '
+                  'halfgeknield naast een landmine zit, de stang op '
+                  'schouderhoogte in één hand, van opzij gezien.',
+              endImagePrompt:
+                  'Dezelfde persoon, op dezelfde plek en vanuit dezelfde hoek, '
+                  'nu aan het eind van de beweging: de arm gestrekt schuin '
+                  'omhoog.',
+            ),
+          ),
+          CoachProposal.ofExerciseChange(
+            const ExerciseChangeProposal(
+              exerciseId: 'ex-own',
+              exerciseName: 'Sledepush',
+              name: 'Sledepush met lage handen',
+              primaryMuscle: 'quadriceps',
+              secondaryMuscles: ['bilspieren', 'kuiten'],
+              equipment: 'slee',
+              instructions:
+                  'Duw laag, met gestrekte armen, en houd je rug recht.',
+              reason: 'Een duidelijkere naam en uitleg.',
+            ),
+          ),
+        ]),
+      );
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        opener: _Opener(),
+        size: const Size(360, 2600),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text("Toevoegen met foto's"));
+      await tester.pumpAndSettle();
+      expect(find.text("Foto's maken met Gemini"), findsOneWidget);
+      // An overflow anywhere fails the test on its own.
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets("zonder prompts geen knop met foto's", (tester) async {

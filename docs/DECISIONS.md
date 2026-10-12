@@ -4248,3 +4248,35 @@ modellen op (`checkKey`): die telt niet mee voor de daglimiet, en een
 geweigerde sleutel zegt daar net zo duidelijk dat ze geweigerd is. De sleutel
 gaat mee in de header, zoals bij elke vraag, nooit in het adres.
 
+## 207. De coach aanzetten in drie stappen
+
+Een sleutel invullen was een kaal tekstveld met "AIza... of AQ...." erin: voor
+wie niet wist wat een API-sleutel is of waar die vandaan komt, een muur.
+Een sleutel kan niet zonder de gebruiker naar de app: Google geeft hem aan
+een mens, niet aan een app. Dus gaat het om de paar tikken daartussen, en
+die zijn nu een flow, *Coach aanzetten* (`CoachKeyScreen`), vanuit
+*Instellingen → AI-coach*.
+
+1. **Waarom.** Een eigen gratis sleutel, geen account of server bij FitLog,
+   en wat er meegaat en wat Google ermee mag (205).
+2. **Haal mijn gratis sleutel.** Opent AI Studio in een Chrome Custom Tab,
+   over de app, met de weg terug op één tik (`androidx.browser`, de enige
+   nieuwe bibliotheek). Drie stapjes zeggen wat daar te doen is, getekend in
+   de stijl van de app en zonder de namen van Googles knoppen: die
+   veranderen, en schermafbeeldingen van een andermans scherm verouderen
+   bij elke update. Wie al een sleutel heeft, slaat de stap over.
+3. **Plakken en testen.** Een knop *Plak sleutel* en een veld. Komt de
+   gebruiker terug, dan kijkt de app alleen *of* er tekst op het klembord
+   staat (`Clipboard.hasStrings`), zonder ze te lezen: lezen laat Android
+   een melding tonen, en dat hoort na een tik, niet ervoor. Spaties en
+   regeleinden worden weggehaald; een sleutel heeft er nooit. De vorm wordt
+   niet streng gecontroleerd - Google geeft sleutels met `AIza` en met
+   `AQ.` - alleen een sleutel die duidelijk van een andere dienst is, wordt
+   geweigerd zonder iets te versturen. Dan test de app de sleutel (206) en
+   bewaart hem pas als hij werkt.
+
+Daarna: *Stel je eerste vraag*. Een sleutel vervangen gaat via dezelfde
+regel, meteen naar de derde stap. De sleutel blijft in de versleutelde
+database en in de eigen, versleutelde back-up: zo werkt de coach meteen na
+het terugzetten op een nieuwe gsm. De Android-back-up staat al uit.
+

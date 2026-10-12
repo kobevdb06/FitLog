@@ -97,4 +97,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    // Chrome Custom Tabs: Google AI Studio opens over the app, with the way
+    // back to it one tap away, while the user fetches a key for the coach.
+    implementation("androidx.browser:browser:1.8.0")
 }

@@ -116,7 +116,7 @@ void main() {
       await pump(tester, const CoachSettingsScreen());
 
       expect(
-        find.textContaining('Een sleutel van Google AI Studio'),
+        find.textContaining('sleutel van Google AI Studio'),
         findsOneWidget,
       );
       expect(find.textContaining('Anthropic'), findsNothing);
@@ -127,7 +127,7 @@ void main() {
     ) async {
       await pump(tester, const CoachSettingsScreen());
 
-      expect(find.text('Nog geen sleutel'), findsOneWidget);
+      expect(find.text('Coach aanzetten'), findsOneWidget);
       expect(find.text('Sleutel testen'), findsNothing);
       expect(find.text('MODEL'), findsNothing);
     });
@@ -372,26 +372,6 @@ void main() {
       expect(find.text('Gemini 2.5 Flash'), findsOneWidget);
       expect(find.text('Sonnet 5'), findsNothing);
     });
-
-    testWidgets('een sleutel van een andere dienst wordt geweigerd', (
-      tester,
-    ) async {
-      // Anders zou de eerste vraag pas mislukken, met een foutmelding die
-      // niets uitlegt.
-      await pump(tester, const CoachSettingsScreen());
-
-      await tester.tap(find.text('Nog geen sleutel'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), 'sk-ant-api03-geheim');
-      await tester.tap(find.widgetWithText(FilledButton, 'Bewaren'));
-      await tester.pumpAndSettle();
-
-      expect(await db.settingsDao.apiKey(), isNull);
-      expect(
-        find.textContaining('alleen met een sleutel van Google'),
-        findsOneWidget,
-      );
-    });
   });
 
   group('op een smal toestel met grote letters', () {
@@ -417,19 +397,12 @@ void main() {
   });
 
   group('een sleutel invullen', () {
-    testWidgets('zet de coach aan en toont hem afgeschermd', (tester) async {
+    testWidgets('een bewaarde sleutel staat er afgeschermd', (tester) async {
+      // Invullen gebeurt in Coach aanzetten (coach_key_test).
+      await db.settingsDao.setApiKey('AQ.Ab8RNgeheimgeheim1234');
       await pump(tester, const CoachSettingsScreen());
-
-      await tester.tap(find.text('Nog geen sleutel'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byType(TextField),
-        'AQ.Ab8RNgeheimgeheim1234',
-      );
-      await tester.tap(find.widgetWithText(FilledButton, 'Bewaren'));
       await tester.pumpAndSettle();
 
-      expect(await db.settingsDao.apiKey(), 'AQ.Ab8RNgeheimgeheim1234');
       // Enough to recognise, not enough to use.
       expect(find.text('AQ.Ab8RN…1234'), findsOneWidget);
       expect(find.text('AQ.Ab8RNgeheimgeheim1234'), findsNothing);
@@ -1324,6 +1297,12 @@ class _Opener implements LinkOpener {
 
   @override
   Future<bool> open(String url) async {
+    opened.add(url);
+    return true;
+  }
+
+  @override
+  Future<bool> openOver(String url) async {
     opened.add(url);
     return true;
   }

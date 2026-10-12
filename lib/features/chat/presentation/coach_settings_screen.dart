@@ -148,39 +148,6 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
       ? '••••'
       : '${key.substring(0, 8)}…${key.substring(key.length - 4)}';
 
-  Future<void> _enterKey() async {
-    final key = await promptForText(
-      context,
-      title: 'API-sleutel',
-      hintText: 'AIza... of AQ....',
-      confirmLabel: 'Bewaren',
-    );
-    if (key == null || !mounted) return;
-
-    final trimmed = key.trim();
-    if (trimmed.isEmpty) {
-      await ref.read(databaseProvider).settingsDao.setApiKey(null);
-      if (mounted) setState(() => _result = null);
-      return;
-    }
-
-    // A key that unmistakably belongs to a service this version does not
-    // offer is refused here rather than on the first question - the failure
-    // would otherwise arrive as a rejected request that says nothing useful.
-    final belongsTo = CoachProvider.forKey(trimmed);
-    if (!kOfferedProviders.contains(belongsTo)) {
-      showSnack(
-        context,
-        'Dat lijkt een sleutel van ${belongsTo.label}. FitLog werkt op dit '
-        'moment alleen met een sleutel van Google AI Studio.',
-      );
-      return;
-    }
-
-    await ref.read(databaseProvider).settingsDao.setApiKey(trimmed);
-    if (mounted) setState(() => _result = null);
-  }
-
   /// Which service draws. Asked first, because what it needs from you after
   /// that differs: one wants a token, the other a token and an account.
   Future<void> _pickDrawingService() async {
@@ -510,15 +477,21 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
           const SectionHeader('Sleutel'),
           ListTile(
             leading: const Icon(Icons.key_outlined),
-            title: Text(key == null ? 'Nog geen sleutel' : _masked(key)),
+            title: Text(key == null ? 'Coach aanzetten' : _masked(key)),
             subtitle: Text(
               key == null
-                  ? 'Een sleutel van Google AI Studio. Die heeft een gratis '
-                        'laag; maak er een aan op aistudio.google.com/apikey.'
-                  : 'Bewaard in je versleutelde database, achter je pincode.',
+                  ? 'Met een gratis sleutel van Google AI Studio. We helpen je '
+                        'hem in een paar tikken te halen.'
+                  : 'Bewaard in je versleutelde database, achter je pincode. '
+                        'Tik om een andere te plakken.',
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: _enterKey,
+            // The guided way, also for replacing one: a bare field was all
+            // there was, and it asked for something most people did not
+            // know how to get.
+            onTap: () => context.push(
+              key == null ? Routes.coachKey : Routes.coachKeyPaste,
+            ),
           ),
 
           if (key != null) ...[

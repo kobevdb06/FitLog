@@ -11,6 +11,7 @@ import android.os.Looper
 import android.provider.DocumentsContract
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.browser.customtabs.CustomTabsIntent
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -92,19 +93,34 @@ class FitLogActivity : FlutterFragmentActivity() {
      * Hands an address to whatever opens it - Gemini's app, or the browser.
      * The app itself does not go there: Android starts the other app, and
      * that is the end of FitLog's part.
+     *
+     * "tab" opens it as a Chrome Custom Tab, over the app, for a page the user
+     * visits on the way back here - fetching a key for the coach. A phone
+     * whose browser does no custom tabs gets the ordinary way.
      */
     private fun onLinkCall(call: MethodCall, result: MethodChannel.Result) {
-        if (call.method != "open") {
-            result.notImplemented()
-            return
-        }
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(call.argument<String>("url"))))
-            result.success(true)
-        } catch (error: ActivityNotFoundException) {
-            result.success(false)
+        val uri = Uri.parse(call.argument<String>("url"))
+        when (call.method) {
+            "open" -> result.success(view(uri))
+            "tab" -> {
+                try {
+                    CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(this, uri)
+                    result.success(true)
+                } catch (error: ActivityNotFoundException) {
+                    result.success(view(uri))
+                }
+            }
+            else -> result.notImplemented()
         }
     }
+
+    private fun view(uri: Uri): Boolean =
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
+            true
+        } catch (error: ActivityNotFoundException) {
+            false
+        }
 
     private val darkIcon get() = ComponentName(this, "be.fitlog.app.MainActivity")
     private val lightIcon get() = ComponentName(this, "be.fitlog.app.MainActivityLight")

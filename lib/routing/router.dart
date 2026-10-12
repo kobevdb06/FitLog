@@ -10,6 +10,7 @@ import '../core/widgets/common.dart';
 import '../core/widgets/dialogs.dart';
 import '../features/chat/presentation/chat_providers.dart';
 import '../features/chat/presentation/coach_screen.dart';
+import '../features/chat/presentation/coach_key_screen.dart';
 import '../features/chat/presentation/coach_settings_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/exercises/presentation/custom_exercise_screen.dart';
@@ -158,6 +159,16 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
             appPage(state, const CoachSettingsScreen()),
+      ),
+      GoRoute(
+        path: Routes.coachKey,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) => appPage(
+          state,
+          CoachKeyScreen(
+            pasteFirst: state.uri.queryParameters['stap'] == 'plakken',
+          ),
+        ),
       ),
       // Opened from the Start tab and from Voortgang alike, so it lives at the
       // root for the same reason as the coach's settings.

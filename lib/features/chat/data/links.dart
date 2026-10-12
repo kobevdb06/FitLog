@@ -11,10 +11,17 @@ const String kGeminiUrl = 'https://gemini.google.com/app';
 /// sends on a free key.
 const String kGeminiTermsUrl = 'https://ai.google.dev/gemini-api/terms';
 
+/// Where a key for the coach is made. New users find one waiting there.
+const String kAiStudioKeyUrl = 'https://aistudio.google.com/apikey';
+
 /// Opens an address in whatever the phone opens it with.
 abstract interface class LinkOpener {
   /// False when nothing on the phone could open it.
   Future<bool> open(String url);
+
+  /// The same, over the app rather than instead of it: a Chrome Custom Tab,
+  /// for a page the user comes back from.
+  Future<bool> openOver(String url);
 }
 
 /// Android's own answer to a link, through `FitLogActivity`.
@@ -26,4 +33,8 @@ class AndroidLinkOpener implements LinkOpener {
   @override
   Future<bool> open(String url) async =>
       await _channel.invokeMethod<bool>('open', {'url': url}) ?? false;
+
+  @override
+  Future<bool> openOver(String url) async =>
+      await _channel.invokeMethod<bool>('tab', {'url': url}) ?? false;
 }

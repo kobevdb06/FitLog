@@ -4195,3 +4195,32 @@ tweede poging erbij. Meer gaat er niet mee; elke foto kost tokens.
 - **De opruiming** bij het opstarten kent beide kolommen, zodat geen
   meegestuurde foto als wees wordt weggegooid.
 
+## 204. De coach past je eigen oefeningen aan, met een kaart
+
+De coach kon een oefening voorstellen, niet een bestaande verbeteren - ook
+niet de foto's erop zetten die de gebruiker in Gemini maakte (202). Nu kan
+dat, met `propose_exercise_change`.
+
+- **Een kaart, geen daad.** Zoals bij een nieuwe oefening: de coach
+  beschrijft, de kaart zegt wat er verandert, en pas *Toepassen* verandert
+  het. Bij het toepassen kijkt de app opnieuw of de oefening nog bestaat en
+  van de gebruiker is: een kaart kan dagen later aangetikt worden.
+- **Alleen eigen oefeningen** (`is_custom`): die de gebruiker of de coach
+  maakte. De catalogus is voor iedereen dezelfde, met haar animaties; een
+  variant daarvan is een nieuwe oefening, en die stelt de coach voor met
+  `propose_exercise`.
+- **Alleen wat verandert.** Wat de coach niet noemt, blijft zoals het was. Een
+  voorstel dat niets verandert, of een naam die al bestaat, is geen kaart.
+- **Foto's bij nummer, op de kaart bij naam.** De coach noemt het nummer uit
+  het laatste bericht met foto's (*Foto 1*, *Foto 2*; 203). Op de kaart
+  staat de bestandsnaam, zodat een kaart die later wordt aangetikt naar
+  dezelfde foto's wijst. De kaart toont ze met *Start* en *Eind* eronder:
+  een verwisseling zie je voor je tikt.
+- **Een kopie.** De oefening krijgt een eigen kopie op framegrootte; het
+  gesprek houdt de zijne. Wie het gesprek wist, houdt de foto's op de
+  oefening. De frames die vervangen werden, worden opgeruimd, en de regel
+  *getekend door AI* verdwijnt zodra er geen getekend beeld meer staat.
+- **Ook bij een nieuwe oefening.** Stuurt de gebruiker de foto's mee met de
+  vraag om een oefening, dan geeft de coach ze mee in `propose_exercise`.
+  Op die kaart staat dan geen *Toevoegen met foto's*: de foto's zijn er al.
+

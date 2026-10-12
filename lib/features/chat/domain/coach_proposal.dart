@@ -7,7 +7,9 @@
 ///
 /// So for an exercise the coach describes instead. A proposal is stored with
 /// the answer it came with, drawn as a card, and nothing exists until you tap
-/// the button on it.
+/// the button on it. The same goes for a change to one of your own
+/// exercises: the card says what would change, and nothing does until you
+/// tap Toepassen.
 ///
 /// A routine in the coach's folder is the exception: those it makes and
 /// changes itself, because you asked for one or put one there knowing it
@@ -26,7 +28,10 @@ enum ProposalKind {
   routine('routine'),
 
   /// A routine the coach made or changed in its own folder.
-  coachRoutine('coach_routine');
+  coachRoutine('coach_routine'),
+
+  /// A change to one of the user's own exercises, offered with a button.
+  exerciseChange('exercise_change');
 
   const ProposalKind(this.wire);
 
@@ -51,6 +56,8 @@ class ExerciseProposal {
     this.instructions,
     this.startImagePrompt,
     this.endImagePrompt,
+    this.startPhoto,
+    this.endPhoto,
   });
 
   final String name;
@@ -75,6 +82,14 @@ class ExerciseProposal {
   final String? startImagePrompt;
   final String? endImagePrompt;
 
+  /// Photos from the conversation for the start and the end, as file names
+  /// in the photo directory: the user sent them, the coach said which is
+  /// which. Copied onto the exercise when it is added.
+  final String? startPhoto;
+  final String? endPhoto;
+
+  bool get hasPhotos => startPhoto != null || endPhoto != null;
+
   bool get hasFramePrompts =>
       startImagePrompt != null &&
       endImagePrompt != null &&
@@ -90,6 +105,8 @@ class ExerciseProposal {
     'instructions': instructions,
     'start_image_prompt': startImagePrompt,
     'end_image_prompt': endImagePrompt,
+    'start_photo': ?startPhoto,
+    'end_photo': ?endPhoto,
   };
 
   static ExerciseProposal fromJson(Map<String, Object?> json) =>
@@ -105,6 +122,86 @@ class ExerciseProposal {
         instructions: json['instructions'] as String?,
         startImagePrompt: json['start_image_prompt'] as String?,
         endImagePrompt: json['end_image_prompt'] as String?,
+        startPhoto: json['start_photo'] as String?,
+        endPhoto: json['end_photo'] as String?,
+      );
+}
+
+/// A change to one of the user's own exercises, as the coach would make it.
+///
+/// Only what changes is set; everything left null stays as it is. Never a
+/// built-in exercise: those are the catalogue's, with their animation.
+class ExerciseChangeProposal {
+  const ExerciseChangeProposal({
+    required this.exerciseId,
+    required this.exerciseName,
+    this.name,
+    this.primaryMuscle,
+    this.secondaryMuscles,
+    this.equipment,
+    this.instructions,
+    this.startPhoto,
+    this.endPhoto,
+    this.reason,
+  });
+
+  final String exerciseId;
+
+  /// What the exercise was called when the change was proposed: what the
+  /// card is headed with, also once the name itself has changed.
+  final String exerciseName;
+
+  final String? name;
+  final String? primaryMuscle;
+  final List<String>? secondaryMuscles;
+  final String? equipment;
+  final String? instructions;
+
+  /// Photos from the conversation for the start and the end, as file names
+  /// in the photo directory.
+  final String? startPhoto;
+  final String? endPhoto;
+
+  /// What changes and why, in one sentence of the coach's.
+  final String? reason;
+
+  bool get changesSomething =>
+      name != null ||
+      primaryMuscle != null ||
+      secondaryMuscles != null ||
+      equipment != null ||
+      instructions != null ||
+      startPhoto != null ||
+      endPhoto != null;
+
+  Map<String, Object?> toJson() => {
+    'exercise_id': exerciseId,
+    'exercise_name': exerciseName,
+    'name': ?name,
+    'primary_muscle': ?primaryMuscle,
+    'secondary_muscles': ?secondaryMuscles,
+    'equipment': ?equipment,
+    'instructions': ?instructions,
+    'start_photo': ?startPhoto,
+    'end_photo': ?endPhoto,
+    'reason': ?reason,
+  };
+
+  static ExerciseChangeProposal fromJson(Map<String, Object?> json) =>
+      ExerciseChangeProposal(
+        exerciseId: '${json['exercise_id']}',
+        exerciseName: '${json['exercise_name']}',
+        name: json['name'] as String?,
+        primaryMuscle: json['primary_muscle'] as String?,
+        secondaryMuscles: switch (json['secondary_muscles']) {
+          final List<Object?> list => [for (final m in list) '$m'],
+          _ => null,
+        },
+        equipment: json['equipment'] as String?,
+        instructions: json['instructions'] as String?,
+        startPhoto: json['start_photo'] as String?,
+        endPhoto: json['end_photo'] as String?,
+        reason: json['reason'] as String?,
       );
 }
 
@@ -179,19 +276,31 @@ class CoachProposal {
     this.appliedId,
     this.made = false,
     this.change,
+    this.exerciseChange,
   });
 
   CoachProposal.ofExercise(ExerciseProposal this.exercise, {this.appliedId})
     : kind = ProposalKind.exercise,
       routine = null,
       made = false,
-      change = null;
+      change = null,
+      exerciseChange = null;
 
   CoachProposal.ofRoutine(RoutineProposal this.routine, {this.appliedId})
     : kind = ProposalKind.routine,
       exercise = null,
       made = false,
-      change = null;
+      change = null,
+      exerciseChange = null;
+
+  CoachProposal.ofExerciseChange(
+    ExerciseChangeProposal this.exerciseChange, {
+    this.appliedId,
+  }) : kind = ProposalKind.exerciseChange,
+       exercise = null,
+       routine = null,
+       made = false,
+       change = null;
 
   /// A routine the coach [made] - or changed, when false - in its own
   /// folder: already there, so [appliedId] is its id from the start.
@@ -201,7 +310,8 @@ class CoachProposal {
     required this.made,
     this.change,
   }) : kind = ProposalKind.coachRoutine,
-       exercise = null;
+       exercise = null,
+       exerciseChange = null;
 
   final ProposalKind kind;
   final ExerciseProposal? exercise;
@@ -217,11 +327,14 @@ class CoachProposal {
   /// For a routine of the coach: what it did and why, in one sentence.
   final String? change;
 
+  final ExerciseChangeProposal? exerciseChange;
+
   bool get isApplied => appliedId != null;
 
   String get title => switch (kind) {
     ProposalKind.exercise => exercise!.name,
     ProposalKind.routine || ProposalKind.coachRoutine => routine!.name,
+    ProposalKind.exerciseChange => exerciseChange!.exerciseName,
   };
 
   CoachProposal applied(String id) => CoachProposal(
@@ -231,6 +344,7 @@ class CoachProposal {
     appliedId: id,
     made: made,
     change: change,
+    exerciseChange: exerciseChange,
   );
 
   Map<String, Object?> toJson() => {
@@ -238,6 +352,7 @@ class CoachProposal {
     'applied_id': appliedId,
     if (exercise != null) 'exercise': exercise!.toJson(),
     if (routine != null) 'routine': routine!.toJson(),
+    if (exerciseChange != null) 'exercise_change': exerciseChange!.toJson(),
     if (kind == ProposalKind.coachRoutine) ...{'made': made, 'change': change},
   };
 
@@ -265,6 +380,11 @@ class CoachProposal {
           appliedId: applied,
           made: json['made'] == true,
           change: json['change'] as String?,
+        ),
+      ProposalKind.exerciseChange when json['exercise_change'] is Map =>
+        CoachProposal.ofExerciseChange(
+          ExerciseChangeProposal.fromJson(body('exercise_change')),
+          appliedId: applied,
         ),
       _ => null,
     };

@@ -77,7 +77,8 @@ class _PhotoPrompts extends ConsumerWidget {
           ],
           const SizedBox(height: AppSpacing.md),
           Text(
-            "Bewaar de twee foto's en zet ze op \"$exercise\" via Bewerken.",
+            "Bewaar de twee foto's en zet ze op \"$exercise\" via Bewerken. "
+            'Of stuur ze hier naar de coach: die zet ze er voor je op.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

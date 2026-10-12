@@ -518,6 +518,20 @@ class ExerciseEditor {
       .exercisesDao
       .setFavourite(id, favourite: favourite);
 
+  /// Copies a photo the user sent the coach onto an exercise, as a frame of
+  /// its own.
+  ///
+  /// A copy, not the same file: the conversation and the exercise each keep
+  /// theirs, so deleting the one never takes the picture from the other.
+  /// Null when the photo is no longer there.
+  Future<String?> frameFromChat(String fileName) async {
+    final paths = await ref.read(appPathsProvider.future);
+    final store = PhotoStore(paths);
+    final source = store.fileFor(fileName);
+    if (!await source.exists()) return null;
+    return store.import(source, maxLongEdge: frameLongEdge);
+  }
+
   Future<void> discardFrame(String fileName) async {
     final paths = await ref.read(appPathsProvider.future);
     await PhotoStore(paths).deleteFile(fileName);

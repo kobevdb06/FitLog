@@ -551,14 +551,15 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
         _showPrompts();
         return;
       }
-      showSnack(
-        context,
-        widget.proposal.kind == ProposalKind.exercise
-            ? withImages
-                  ? 'Oefening toegevoegd, met tekeningen.'
-                  : 'Oefening toegevoegd.'
-            : 'Routine toegevoegd.',
-      );
+      showSnack(context, switch (widget.proposal.kind) {
+        ProposalKind.exercise =>
+          withImages
+              ? 'Oefening toegevoegd, met tekeningen.'
+              : 'Oefening toegevoegd.',
+        ProposalKind.exerciseChange => 'Oefening aangepast.',
+        ProposalKind.routine ||
+        ProposalKind.coachRoutine => 'Routine toegevoegd.',
+      });
     } on CoachException catch (error) {
       // The exercise itself may well have been made; only the drawing failed.
       if (mounted) showSnack(context, error.message);
@@ -578,7 +579,8 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
   }
 
   void _open(String id) => switch (widget.proposal.kind) {
-    ProposalKind.exercise => context.push(Routes.exerciseDetail(id)),
+    ProposalKind.exercise ||
+    ProposalKind.exerciseChange => context.push(Routes.exerciseDetail(id)),
     ProposalKind.routine ||
     ProposalKind.coachRoutine => context.push(Routes.routineDetail(id)),
   };
@@ -589,6 +591,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
     final proposal = widget.proposal;
     final exercise = proposal.exercise;
     final routine = proposal.routine;
+    final change = proposal.exerciseChange;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -604,6 +607,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                     ProposalKind.exercise => Icons.fitness_center,
                     ProposalKind.routine => Icons.list_alt,
                     ProposalKind.coachRoutine => Icons.smart_toy_outlined,
+                    ProposalKind.exerciseChange => Icons.edit_outlined,
                   },
                   size: 18,
                   color: theme.colorScheme.primary,
@@ -618,6 +622,8 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                         proposal.made
                             ? 'Gemaakt door de coach'
                             : 'Aangepast door de coach',
+                      ProposalKind.exerciseChange =>
+                        'Voorstel: oefening aanpassen',
                     },
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -630,10 +636,19 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             const SizedBox(height: AppSpacing.xs),
             Text(proposal.title, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
-            if (proposal.change case final change?) ...[
-              Text(change, style: theme.textTheme.bodySmall),
+            if (proposal.change ?? change?.reason case final why?) ...[
+              Text(why, style: theme.textTheme.bodySmall),
               const SizedBox(height: AppSpacing.xs),
             ],
+            if (change != null) _ChangeLines(change: change),
+            if (exercise != null && exercise.hasPhotos)
+              _ProposalPhotos(
+                start: exercise.startPhoto,
+                end: exercise.endPhoto,
+              ),
+            if (change != null &&
+                (change.startPhoto != null || change.endPhoto != null))
+              _ProposalPhotos(start: change.startPhoto, end: change.endPhoto),
             if (exercise != null)
               Text(
                 [
@@ -673,12 +688,12 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                   Icon(Icons.check_circle, size: 18, color: AppColors.success),
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
-                    child: Text(
-                      proposal.kind == ProposalKind.coachRoutine
-                          ? 'In de map Coach'
-                          : 'Toegevoegd',
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    child: Text(switch (proposal.kind) {
+                      ProposalKind.coachRoutine => 'In de map Coach',
+                      ProposalKind.exerciseChange => 'Toegepast',
+                      ProposalKind.exercise ||
+                      ProposalKind.routine => 'Toegevoegd',
+                    }, style: theme.textTheme.bodySmall),
                   ),
                   TextButton(
                     onPressed: () => _open(id),
@@ -688,7 +703,9 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
               ),
               // The prompts stay where the coach wrote them, for whoever
               // makes the photos later - or the second one after the first.
-              if (exercise != null && exercise.hasFramePrompts)
+              if (exercise != null &&
+                  exercise.hasFramePrompts &&
+                  !exercise.hasPhotos)
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
@@ -708,17 +725,21 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.add),
-                  label: Text(
-                    proposal.kind == ProposalKind.exercise
-                        ? 'Oefening toevoegen'
-                        : 'Routine toevoegen',
-                  ),
+                      : Icon(change != null ? Icons.check : Icons.add),
+                  label: Text(switch (proposal.kind) {
+                    ProposalKind.exercise => 'Oefening toevoegen',
+                    ProposalKind.exerciseChange => 'Toepassen',
+                    ProposalKind.routine ||
+                    ProposalKind.coachRoutine => 'Routine toevoegen',
+                  }),
                 ),
               ),
               // The photos are made in Gemini, from the coach's two prompts;
-              // this adds the exercise and shows them.
-              if (exercise != null && exercise.hasFramePrompts) ...[
+              // this adds the exercise and shows them. Not when the photos
+              // are already here, sent along by the user.
+              if (exercise != null &&
+                  exercise.hasFramePrompts &&
+                  !exercise.hasPhotos) ...[
                 const SizedBox(height: AppSpacing.xs),
                 SizedBox(
                   width: double.infinity,
@@ -764,6 +785,93 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// What a proposed change does to the exercise, a line per field.
+class _ChangeLines extends StatelessWidget {
+  const _ChangeLines({required this.change});
+
+  final ExerciseChangeProposal change;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muscles = [?change.primaryMuscle, ...?change.secondaryMuscles];
+    final lines = [
+      if (change.name case final name?) 'Naam: $name',
+      if (muscles.isNotEmpty) 'Spiergroepen: ${muscles.join(' · ')}',
+      if (change.equipment case final equipment?) 'Materiaal: $equipment',
+      if (change.instructions case final instructions?) 'Uitleg: $instructions',
+      if (change.startPhoto != null && change.endPhoto != null)
+        "Foto's: start en eind"
+      else if (change.startPhoto != null)
+        'Foto: start'
+      else if (change.endPhoto != null)
+        'Foto: eind',
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final line in lines)
+            Text(
+              line,
+              style: theme.textTheme.bodySmall,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The photos a card would put on the exercise, start and end, with which is
+/// which under each: the user checks that before tapping.
+class _ProposalPhotos extends ConsumerWidget {
+  const _ProposalPhotos({this.start, this.end});
+
+  final String? start;
+  final String? end;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paths = ref.watch(appPathsProvider).value;
+    if (paths == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    Widget frame(String fileName, String label) => Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          child: Image.file(
+            PhotoStore(paths).fileFor(fileName),
+            width: 88,
+            height: 88,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stack) => const SizedBox.square(
+              dimension: 88,
+              child: MissingPhotoPlaceholder(compact: true),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(label, style: theme.textTheme.labelSmall),
+      ],
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.xs),
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        children: [
+          if (start case final name?) frame(name, 'Start'),
+          if (end case final name?) frame(name, 'Eind'),
+        ],
       ),
     );
   }

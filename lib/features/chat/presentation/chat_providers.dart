@@ -337,6 +337,13 @@ class CoachController extends _$CoachController {
     }
 
     final images = await _encodeAll(paths, photos);
+    // The ones the coach may put on an exercise: those it is shown with this
+    // question, numbered the same way.
+    final inPlay = photos.isNotEmpty
+        ? photos
+        : lastWithPhotos >= 0
+        ? earlier[lastWithPhotos].photos
+        : const <String>[];
 
     final client = ref.read(coachClientFactoryProvider)(
       key,
@@ -351,7 +358,7 @@ class CoachController extends _$CoachController {
       final now = DateTime.now();
       final coach = Coach(
         client: client,
-        tools: CoachTools(db),
+        tools: CoachTools(db, photos: inPlay),
         model: ref.read(coachModelProvider),
         system: buildCoachPrompt(
           now: now,
@@ -457,6 +464,8 @@ class CoachController extends _$CoachController {
       // Made by the coach itself, so already there; isApplied caught it.
       case ProposalKind.coachRoutine:
         return proposal.appliedId;
+      case ProposalKind.exerciseChange:
+        id = await _applyChange(db, proposal.exerciseChange!);
     }
 
     proposals[index] = proposal.applied(id);
@@ -471,23 +480,11 @@ class CoachController extends _$CoachController {
     String? startPrompt,
     String? endPrompt,
   }) async {
-    // A muscle or a piece of kit the app has never seen is added to the
-    // pickers too, or the exercise would point at a name nothing else knows.
-    final muscles = await db.exercisesDao.distinctPrimaryMuscles();
-    for (final muscle in [
-      proposal.primaryMuscle,
-      ...proposal.secondaryMuscles,
-    ]) {
-      if (!muscles.contains(muscle)) {
-        await db.exercisesDao.addCustomMuscle(muscle);
-      }
-    }
-    if (proposal.equipment case final equipment?) {
-      final known = await db.exercisesDao.distinctEquipment();
-      if (!known.contains(equipment)) {
-        await db.exercisesDao.addCustomEquipment(equipment);
-      }
-    }
+    await _learnNames(
+      db,
+      muscles: [proposal.primaryMuscle, ...proposal.secondaryMuscles],
+      equipment: proposal.equipment,
+    );
 
     // A category the user already made keeps its own name; anything else is
     // read as one of the built-in eight.
@@ -502,10 +499,17 @@ class CoachController extends _$CoachController {
     // of what start and end look like.
     String? startImage;
     String? endImage;
+    // The photos the user sent along, when the coach said which is which.
+    final editor = ref.read(exerciseEditorProvider);
+    if (proposal.startPhoto case final photo?) {
+      startImage = await editor.frameFromChat(photo);
+    }
+    if (proposal.endPhoto case final photo?) {
+      endImage = await editor.frameFromChat(photo);
+    }
     if (withImages &&
         proposal.hasFramePrompts &&
         ref.read(imageGenerationProvider)) {
-      final editor = ref.read(exerciseEditorProvider);
       // One seed for both, so the two drawings are the same person in the
       // same room and the only thing that changes is the posture.
       final seed = _random.nextInt(_seedCeiling);
@@ -536,9 +540,102 @@ class CoachController extends _$CoachController {
           instructions: proposal.instructions,
           startImageFile: startImage,
           endImageFile: endImage,
-          imagesGenerated: startImage != null || endImage != null,
+          imagesGenerated:
+              !proposal.hasPhotos && (startImage != null || endImage != null),
         );
   }
+
+  /// A muscle or a piece of kit the app has never seen is added to the
+  /// pickers too, or the exercise would point at a name nothing else knows.
+  Future<void> _learnNames(
+    AppDatabase db, {
+    required List<String> muscles,
+    String? equipment,
+  }) async {
+    final known = await db.exercisesDao.distinctPrimaryMuscles();
+    for (final muscle in muscles) {
+      if (!known.contains(muscle)) {
+        await db.exercisesDao.addCustomMuscle(muscle);
+      }
+    }
+    if (equipment != null) {
+      final kit = await db.exercisesDao.distinctEquipment();
+      if (!kit.contains(equipment)) {
+        await db.exercisesDao.addCustomEquipment(equipment);
+      }
+    }
+  }
+
+  /// Makes the change a card describes to one of the user's own exercises.
+  ///
+  /// Checked again here, not only when the coach proposed it: the card can
+  /// be tapped days later, after the exercise was archived or renamed.
+  Future<String> _applyChange(
+    AppDatabase db,
+    ExerciseChangeProposal change,
+  ) async {
+    final row = await db.exercisesDao.getById(change.exerciseId);
+    if (row == null || row.isArchived) {
+      throw const CoachException('Die oefening bestaat niet meer.');
+    }
+    if (!row.isCustom) {
+      throw const CoachException(
+        'Een ingebouwde oefening past de coach niet aan.',
+      );
+    }
+
+    final secondary =
+        change.secondaryMuscles ?? decodeSecondaryMuscles(row.secondaryMuscles);
+    await _learnNames(
+      db,
+      muscles: [change.primaryMuscle ?? row.primaryMuscle, ...secondary],
+      equipment: change.equipment,
+    );
+
+    final editor = ref.read(exerciseEditorProvider);
+    String? start;
+    String? end;
+    if (change.startPhoto case final photo?) {
+      start = await editor.frameFromChat(photo);
+      if (start == null) throw const CoachException(_photoGone);
+    }
+    if (change.endPhoto case final photo?) {
+      end = await editor.frameFromChat(photo);
+      if (end == null) throw const CoachException(_photoGone);
+    }
+
+    // The line "getekend door AI" stays only while a drawn picture does.
+    final drawnLeft =
+        row.imagesGenerated &&
+        ((start == null && row.startImageFile != null) ||
+            (end == null && row.endImageFile != null));
+
+    await editor.update(
+      id: row.id,
+      name: change.name ?? row.name,
+      primaryMuscle: change.primaryMuscle ?? row.primaryMuscle,
+      secondaryMuscles: secondary,
+      category: row.categoryChoice,
+      equipment: change.equipment ?? row.equipment,
+      instructions: change.instructions ?? row.instructions,
+      startImageFile: start ?? row.startImageFile,
+      endImageFile: end ?? row.endImageFile,
+      imagesGenerated: drawnLeft,
+    );
+
+    // Only now, with the row pointing at the new ones, are the old frames
+    // nobody's.
+    if (start != null && row.startImageFile != null) {
+      await editor.discardFrame(row.startImageFile!);
+    }
+    if (end != null && row.endImageFile != null) {
+      await editor.discardFrame(row.endImageFile!);
+    }
+    return row.id;
+  }
+
+  static const String _photoGone =
+      'Die foto staat niet meer in het gesprek. Stuur ze opnieuw.';
 
   Future<String> _createRoutine(AppDatabase db, RoutineProposal proposal) {
     return db.routinesDao.createRoutine(

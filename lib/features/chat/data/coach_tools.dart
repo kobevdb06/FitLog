@@ -51,9 +51,14 @@ class CoachLookup {
 const int kCoachRowCap = 40;
 
 class CoachTools {
-  CoachTools(this.db);
+  CoachTools(this.db, {this.photos = const []});
 
   final AppDatabase db;
+
+  /// The photos the coach may put on an exercise, as file names in the photo
+  /// directory: those of the newest message in the conversation that had
+  /// any - the same ones it was shown, numbered from 1 in the same order.
+  final List<String> photos;
 
   /// The tool definitions, as the API wants them.
   static List<Map<String, Object?>> definitions() => [
@@ -208,8 +213,63 @@ class CoachTools {
                 'extension: begin met gebogen ellebogen, eind met gestrekte '
                 'armen.',
           },
+          'start_photo': {
+            'type': 'integer',
+            'description':
+                'Welke foto uit het laatste bericht met foto\'s de STARTpositie '
+                'toont: 1 voor Foto 1, 2 voor Foto 2. Bij één foto is het 1. '
+                'Alleen als de gebruiker die foto\'s voor deze oefening '
+                'stuurde.',
+          },
+          'end_photo': {
+            'type': 'integer',
+            'description': 'Hetzelfde voor de EINDpositie.',
+          },
         },
         'required': ['name', 'primary_muscle'],
+      },
+    },
+    {
+      'name': 'propose_exercise_change',
+      'description':
+          'Stel een wijziging voor aan een EIGEN oefening van de gebruiker - '
+          'een die de gebruiker of jij maakte (own: true in '
+          'search_exercises). Ingebouwde oefeningen pas je nooit aan. Geef '
+          'alleen mee wat verandert. Verandert zelf niets: de gebruiker ziet '
+          'een kaart en tikt op Toepassen.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'exercise': {
+            'type': 'string',
+            'description': 'De naam van de oefening zoals ze in de app staat.',
+          },
+          'name': {'type': 'string', 'description': 'Een nieuwe naam.'},
+          'primary_muscle': {'type': 'string'},
+          'secondary_muscles': {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          'equipment': {'type': 'string'},
+          'instructions': {'type': 'string'},
+          'start_photo': {
+            'type': 'integer',
+            'description':
+                'Welke foto uit het laatste bericht met foto\'s de STARTpositie '
+                'toont: 1 voor Foto 1, 2 voor Foto 2. Bij één foto is het 1. '
+                'Alleen als de gebruiker die foto\'s voor deze oefening '
+                'stuurde.',
+          },
+          'end_photo': {
+            'type': 'integer',
+            'description': 'Hetzelfde voor de EINDpositie.',
+          },
+          'reason': {
+            'type': 'string',
+            'description': 'Wat je verandert en waarom, in één korte zin.',
+          },
+        },
+        'required': ['exercise'],
       },
     },
     {
@@ -415,6 +475,7 @@ class CoachTools {
 
   static const Set<String> names = {
     'propose_exercise',
+    'propose_exercise_change',
     'coach_routines',
     'save_coach_routine',
     'search_exercises',
@@ -440,6 +501,7 @@ class CoachTools {
   Future<CoachLookup> run(String name, Map<String, Object?> input) async {
     return switch (name) {
       'propose_exercise' => _proposeExercise(input),
+      'propose_exercise_change' => _proposeExerciseChange(input),
       'coach_routines' => _coachRoutines(),
       'save_coach_routine' => _saveCoachRoutine(input),
       'search_exercises' => _searchExercises(input),
@@ -506,6 +568,9 @@ class CoachTools {
       );
     }
 
+    final (start, end, wrongPhoto) = _photosFor(input);
+    if (wrongPhoto != null) return wrongPhoto;
+
     final proposal = ExerciseProposal(
       name: name,
       primaryMuscle: muscle.toLowerCase(),
@@ -518,6 +583,8 @@ class CoachTools {
       instructions: _text(input['instructions']),
       startImagePrompt: _text(input['start_image_prompt']),
       endImagePrompt: _text(input['end_image_prompt']),
+      startPhoto: start,
+      endPhoto: end,
     );
 
     return CoachLookup(
@@ -530,6 +597,143 @@ class CoachTools {
       }),
       summary: 'een voorstel voor de oefening "$name"',
       proposal: CoachProposal.ofExercise(proposal),
+    );
+  }
+
+  /// A change to one of the user's own exercises. Nothing is written here.
+  Future<CoachLookup> _proposeExerciseChange(Map<String, Object?> input) async {
+    final target = _text(input['exercise']);
+    if (target == null) {
+      return const CoachLookup(
+        json: '{"ok":false,"error":"geef de naam van de oefening"}',
+        summary: 'een wijziging zonder oefening',
+      );
+    }
+
+    final row = await db
+        .customSelect(
+          'SELECT id, name, is_custom FROM exercises '
+          'WHERE LOWER(name) = LOWER(?) AND is_archived = 0 LIMIT 1',
+          variables: [Variable.withString(target)],
+        )
+        .getSingleOrNull();
+    if (row == null) {
+      return CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error': 'die oefening bestaat niet; zoek ze met search_exercises',
+        }),
+        summary: 'of "$target" bestaat',
+      );
+    }
+    final name = row.read<String>('name');
+    // The catalogue's exercises have their animation and are the same for
+    // everyone; a variant of one is a new exercise, not a change.
+    if (!row.read<bool>('is_custom')) {
+      return CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error':
+              'dat is een ingebouwde oefening; die pas je niet aan. Stel '
+              'eventueel een eigen variant voor met propose_exercise',
+        }),
+        summary: 'of "$name" een eigen oefening is',
+      );
+    }
+
+    final (start, end, wrongPhoto) = _photosFor(input);
+    if (wrongPhoto != null) return wrongPhoto;
+
+    final newName = _text(input['name']);
+    if (newName != null && newName.toLowerCase() != name.toLowerCase()) {
+      final taken = await db
+          .customSelect(
+            'SELECT 1 FROM exercises WHERE LOWER(name) = LOWER(?) '
+            'AND is_archived = 0 LIMIT 1',
+            variables: [Variable.withString(newName)],
+          )
+          .getSingleOrNull();
+      if (taken != null) {
+        return CoachLookup(
+          json: jsonEncode({
+            'ok': false,
+            'error': 'er bestaat al een oefening "$newName"',
+          }),
+          summary: 'of "$newName" al bestaat',
+        );
+      }
+    }
+
+    final change = ExerciseChangeProposal(
+      exerciseId: row.read<String>('id'),
+      exerciseName: name,
+      name: newName == null || newName == name ? null : newName,
+      primaryMuscle: _text(input['primary_muscle'])?.toLowerCase(),
+      secondaryMuscles: switch (input['secondary_muscles']) {
+        final List<Object?> list => [
+          for (final entry in list)
+            if (_text(entry) case final muscle?) muscle.toLowerCase(),
+        ],
+        _ => null,
+      },
+      equipment: _text(input['equipment']),
+      instructions: _text(input['instructions']),
+      startPhoto: start,
+      endPhoto: end,
+      reason: _text(input['reason']),
+    );
+    if (!change.changesSomething) {
+      return CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error': 'er verandert niets; geef mee wat anders moet',
+        }),
+        summary: 'een wijziging aan "$name"',
+      );
+    }
+
+    return CoachLookup(
+      json: jsonEncode({
+        'ok': true,
+        'shown_to_user': true,
+        'note':
+            'De wijziging staat als kaart in het gesprek. Zeg kort wat je '
+            'voorstelt; de gebruiker tikt zelf op Toepassen.',
+      }),
+      summary: 'een wijziging aan "$name"',
+      proposal: CoachProposal.ofExerciseChange(change),
+    );
+  }
+
+  /// The photos [input] names for the start and the end, as file names, or
+  /// the answer that says a number is wrong.
+  (String?, String?, CoachLookup?) _photosFor(Map<String, Object?> input) {
+    String? wrong;
+    String? pick(Object? value) {
+      if (value == null) return null;
+      final number = value is int ? value : int.tryParse('$value');
+      if (number == null || number < 1 || number > photos.length) {
+        wrong ??= '$value';
+        return null;
+      }
+      return photos[number - 1];
+    }
+
+    final start = pick(input['start_photo']);
+    final end = pick(input['end_photo']);
+    if (wrong == null) return (start, end, null);
+    return (
+      null,
+      null,
+      CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error': photos.isEmpty
+              ? 'de gebruiker stuurde geen foto mee'
+              : 'er is geen foto $wrong; er zijn er ${photos.length}',
+        }),
+        summary: 'welke foto bij welke positie hoort',
+      ),
     );
   }
 

@@ -734,6 +734,62 @@ void main() {
       expect(find.text(end), findsOneWidget);
     });
 
+    testWidgets('een wijziging aan een eigen oefening: wat, en Toepassen', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-own',
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              category: 'duration',
+              isCustom: const Value(true),
+              createdAt: 0,
+            ),
+          );
+      await db.chatDao.createThread('t-1', 'Pas mijn oefening aan');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem aanpassen.',
+        proposals: encodeProposals([
+          CoachProposal.ofExerciseChange(
+            const ExerciseChangeProposal(
+              exerciseId: 'ex-own',
+              exerciseName: 'Sledepush',
+              equipment: 'slee',
+              instructions: 'Duw laag.',
+              reason: 'Met het materiaal erbij.',
+            ),
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Voorstel: oefening aanpassen'), findsOneWidget);
+      expect(find.text('Sledepush'), findsOneWidget);
+      expect(find.text('Met het materiaal erbij.'), findsOneWidget);
+      expect(find.text('Materiaal: slee'), findsOneWidget);
+      expect(find.text('Uitleg: Duw laag.'), findsOneWidget);
+      // Nog niets veranderd.
+      expect((await db.exercisesDao.getById('ex-own'))!.equipment, isNull);
+
+      await tester.tap(find.text('Toepassen'));
+      await tester.pumpAndSettle();
+
+      final row = (await db.exercisesDao.getById('ex-own'))!;
+      expect(row.equipment, 'slee');
+      expect(row.instructions, 'Duw laag.');
+      expect(find.text('Toegepast'), findsOneWidget);
+      expect(find.text('Toepassen'), findsNothing);
+    });
+
     testWidgets("zonder prompts geen knop met foto's", (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
       await db.chatDao.createThread('t-1', 'Maak een oefening');

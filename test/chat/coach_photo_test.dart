@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
+import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/photos/data/photo_library.dart';
 import 'package:fitlog/features/photos/data/photo_store.dart';
@@ -174,6 +176,80 @@ void main() {
     final messages = await db.chatDao.messages(thread);
     expect(decodeImageFiles(messages.first.imageFiles), stored.take(4));
     expect(messages[1].lookups, contains("de 4 foto's die je meestuurde"));
+  });
+
+  test("de coach kan de foto's die je stuurde op je oefening zetten", () async {
+    // Twee rondes: eerst vraagt het model de wijziging, dan antwoordt het.
+    await db
+        .into(db.exercisesTable)
+        .insert(
+          ExercisesTableCompanion.insert(
+            id: 'ex-own',
+            name: 'Sledepush',
+            primaryMuscle: 'benen',
+            category: 'duration',
+            isCustom: const Value(true),
+            createdAt: 0,
+          ),
+        );
+    var round = 0;
+    container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        appPathsProvider.overrideWith((ref) => paths),
+        coachClientFactoryProvider.overrideWithValue(
+          (apiKey, provider) => AiClient(
+            apiKey: apiKey,
+            provider: provider,
+            client: MockClient((request) async {
+              sent.add(request.body);
+              final parts = round++ == 0
+                  ? [
+                      {
+                        'functionCall': {
+                          'name': 'propose_exercise_change',
+                          'args': {
+                            'exercise': 'Sledepush',
+                            'start_photo': 2,
+                            'end_photo': 1,
+                          },
+                        },
+                      },
+                    ]
+                  : [
+                      {'text': 'Foto 2 is de start, foto 1 het eind.'},
+                    ];
+              return http.Response(
+                jsonEncode({
+                  'candidates': [
+                    {
+                      'content': {'parts': parts},
+                    },
+                  ],
+                }),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+    final coach = container!.read(coachControllerProvider.notifier);
+    final first = (await coach.importPhoto(await aPhoto()))!;
+    final second = (await coach.importPhoto(await aPhoto()))!;
+    final thread = await coach.startThread("Mijn foto's");
+
+    await coach.ask(
+      threadId: thread,
+      question: 'Zet deze op mijn sledepush',
+      imageFiles: [first, second],
+    );
+
+    final answer = (await db.chatDao.messages(thread)).last;
+    final change = parseProposals(answer.proposals).single.exerciseChange!;
+    expect(change.startPhoto, second);
+    expect(change.endPhoto, first);
   });
 
   test('een vraag zonder foto stuurt er ook geen', () async {

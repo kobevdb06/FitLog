@@ -110,6 +110,10 @@ void main() {
 
       expect(find.text('De coach staat uit'), findsOneWidget);
       expect(find.textContaining('geen enkele verbinding'), findsOneWidget);
+      // Alleen Google wordt nog aangeboden, en de weg erheen is de flow.
+      expect(find.textContaining('Anthropic'), findsNothing);
+      expect(find.textContaining('Google'), findsOneWidget);
+      expect(find.text('Coach aanzetten'), findsOneWidget);
     });
 
     testWidgets('en het scherm wijst naar Google AI Studio', (tester) async {

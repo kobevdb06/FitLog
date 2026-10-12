@@ -1151,10 +1151,11 @@ class CoachDisabledScreen extends StatelessWidget {
           icon: Icons.smart_toy_outlined,
           title: 'De coach staat uit',
           message:
-              'Vul een Anthropic API-sleutel in om hem aan te zetten. Zonder '
-              'sleutel maakt FitLog geen enkele verbinding.',
-          actionLabel: 'Naar instellingen',
-          onAction: () => context.push(Routes.settingsCoach),
+              'De coach praat met Gemini van Google, met een gratis sleutel '
+              'van jezelf. Zonder sleutel maakt FitLog geen enkele '
+              'verbinding.',
+          actionLabel: 'Coach aanzetten',
+          onAction: () => context.push(Routes.coachKey),
         ),
       ),
     );

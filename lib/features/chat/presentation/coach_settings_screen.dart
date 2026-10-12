@@ -778,7 +778,7 @@ class _HealthSwitch extends ConsumerWidget {
         if (!value) return set(false);
         final agreed = await confirm(
           context,
-          title: 'Gezondheidsgegevens delen?',
+          title: 'Delen met de coach?',
           message:
               'Vraag je de coach iets, dan mag hij je nachten, HRV, '
               'rusthartslag, stappen en loop- en fietssessies uit Health '

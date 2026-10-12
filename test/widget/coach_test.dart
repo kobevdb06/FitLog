@@ -390,7 +390,7 @@ void main() {
       await tester.ensureVisible(tile);
       await tester.tap(tile);
       await tester.pumpAndSettle();
-      expect(find.text('Gezondheidsgegevens delen?'), findsOneWidget);
+      expect(find.text('Delen met de coach?'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(AlertDialog),
@@ -414,7 +414,7 @@ void main() {
       // Uitzetten vraagt niets.
       await tester.tap(tile);
       await tester.pumpAndSettle();
-      expect(find.text('Gezondheidsgegevens delen?'), findsNothing);
+      expect(find.text('Delen met de coach?'), findsNothing);
       expect(await shared(tester), isFalse);
     });
   });

@@ -189,25 +189,24 @@ class CoachTools {
           'start_image_prompt': {
             'type': 'string',
             'description':
-                'EEN korte Engelse zin voor de tekening van het begin, '
-                'hoogstens 25 woorden. Begin met de camerahoek en de naam van '
-                'de beweging ("Side view of a person doing a standing '
-                'overhead triceps extension") en zeg er dan in een paar '
-                'woorden bij hoe de gewrichten staan. Noem geen stang of '
-                'handvat boven het hoofd - het tekenmodel maakt daar een '
-                'optrekbeweging van. Geen merknaam van een machine, maar hoe '
-                'ze werkt. Wordt gebruikt om een tekening te maken, als de '
-                'gebruiker daar een token voor heeft.',
+                'Een prompt in het Nederlands die de gebruiker zelf in Gemini '
+                'plakt, voor een realistische foto van de STARTpositie. '
+                'Beschrijf in één alinea van hoogstens 60 woorden: een '
+                'persoon in sportkleding in een fitnesszaal, de camerahoek '
+                '(bv. van opzij), het materiaal, en hoe het lichaam staat aan '
+                'het begin van de beweging - gewrichten, grip, voeten. Geen '
+                'merknaam van een machine, maar hoe ze werkt.',
           },
           'end_image_prompt': {
             'type': 'string',
             'description':
-                'Hetzelfde voor de HOUDING aan het eind, even kort. De twee '
-                'zinnen moeten verschillen in de stand van de armen of de '
-                'benen - staat er in allebei hetzelfde ("arms overhead"), dan '
-                'krijgt de gebruiker twee keer dezelfde tekening en heeft het '
-                'paar geen inhoud. Bij een triceps extension: begin met '
-                'gebogen ellebogen, eind met gestrekte armen.',
+                'De prompt voor de EINDpositie, voor hetzelfde Gemini-gesprek '
+                'na de eerste. Begin met "Dezelfde persoon, op dezelfde plek '
+                'en vanuit dezelfde hoek, nu aan het eind van de beweging:" '
+                'en beschrijf dan alleen wat er anders staat. De houding moet '
+                'duidelijk verschillen van de start - bij een triceps '
+                'extension: begin met gebogen ellebogen, eind met gestrekte '
+                'armen.',
           },
         },
         'required': ['name', 'primary_muscle'],

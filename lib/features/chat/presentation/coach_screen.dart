@@ -25,6 +25,7 @@ import '../data/ai_client.dart';
 import '../domain/coach_proposal.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
+import 'photo_prompts_sheet.dart';
 
 /// What a new conversation offers when there is nothing to show yet.
 const List<String> kCoachOpeners = [
@@ -452,7 +453,12 @@ class _ProposalCard extends ConsumerStatefulWidget {
 class _ProposalCardState extends ConsumerState<_ProposalCard> {
   bool _busy = false;
 
-  Future<void> _accept({bool withImages = false}) async {
+  /// [withPhotos]: added from "Toevoegen met foto's", after which the
+  /// coach's two prompts are shown, with the way to Gemini.
+  Future<void> _accept({
+    bool withImages = false,
+    bool withPhotos = false,
+  }) async {
     // What gets drawn is worth reading before it is paid for. The coach picks
     // the exercise name too, and a name like "Overhead Extension - V-Bar
     // Attachment" drags the word bar into the picture, where the model turns
@@ -508,6 +514,10 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
       if (!mounted) return;
       if (id == null) return;
 
+      if (withPhotos) {
+        _showPrompts();
+        return;
+      }
       showSnack(
         context,
         widget.proposal.kind == ProposalKind.exercise
@@ -522,6 +532,16 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _showPrompts() {
+    final exercise = widget.proposal.exercise!;
+    showPhotoPrompts(
+      context,
+      exercise: exercise.name,
+      start: exercise.startImagePrompt!,
+      end: exercise.endImagePrompt!,
+    );
   }
 
   void _open(String id) => switch (widget.proposal.kind) {
@@ -614,25 +634,37 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                 ],
               ),
             const SizedBox(height: AppSpacing.sm),
-            if (proposal.appliedId case final id?)
+            if (proposal.appliedId case final id?) ...[
               Row(
                 children: [
                   Icon(Icons.check_circle, size: 18, color: AppColors.success),
                   const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    proposal.kind == ProposalKind.coachRoutine
-                        ? 'In de map Coach'
-                        : 'Toegevoegd',
-                    style: theme.textTheme.bodySmall,
+                  Expanded(
+                    child: Text(
+                      proposal.kind == ProposalKind.coachRoutine
+                          ? 'In de map Coach'
+                          : 'Toegevoegd',
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
-                  const Spacer(),
                   TextButton(
                     onPressed: () => _open(id),
                     child: const Text('Bekijken'),
                   ),
                 ],
-              )
-            else ...[
+              ),
+              // The prompts stay where the coach wrote them, for whoever
+              // makes the photos later - or the second one after the first.
+              if (exercise != null && exercise.hasFramePrompts)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: _showPrompts,
+                    icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+                    label: const Text("Prompts voor de foto's"),
+                  ),
+                ),
+            ] else ...[
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -651,11 +683,32 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                   ),
                 ),
               ),
+              // The photos are made in Gemini, from the coach's two prompts;
+              // this adds the exercise and shows them.
+              if (exercise != null && exercise.hasFramePrompts) ...[
+                const SizedBox(height: AppSpacing.xs),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _busy ? null : () => _accept(withPhotos: true),
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                    label: const Text("Toevoegen met foto's"),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  "Je krijgt twee prompts voor Gemini; de foto's maak je daar "
+                  'zelf.',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
               // A second button rather than a switch: two drawings cost
               // credit, and the difference between the buttons is what you
-              // are agreeing to.
+              // are agreeing to. Only while drawing is on (DECISIONS 201).
               if (exercise != null &&
-                  exercise.canBeDrawn &&
+                  exercise.hasFramePrompts &&
                   ref.watch(canDrawImagesProvider)) ...[
                 const SizedBox(height: AppSpacing.xs),
                 SizedBox(

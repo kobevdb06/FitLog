@@ -1,5 +1,6 @@
 package be.fitlog.app
 
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -83,6 +84,26 @@ class FitLogActivity : FlutterFragmentActivity() {
             .setMethodCallHandler(::onFolderCall)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/icon")
             .setMethodCallHandler(::onIconCall)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/links")
+            .setMethodCallHandler(::onLinkCall)
+    }
+
+    /**
+     * Hands an address to whatever opens it - Gemini's app, or the browser.
+     * The app itself does not go there: Android starts the other app, and
+     * that is the end of FitLog's part.
+     */
+    private fun onLinkCall(call: MethodCall, result: MethodChannel.Result) {
+        if (call.method != "open") {
+            result.notImplemented()
+            return
+        }
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(call.argument<String>("url"))))
+            result.success(true)
+        } catch (error: ActivityNotFoundException) {
+            result.success(false)
+        }
     }
 
     private val darkIcon get() = ComponentName(this, "be.fitlog.app.MainActivity")

@@ -318,7 +318,7 @@ void main() {
       final proposal = lookup.proposal!.exercise!;
       expect(proposal.startImagePrompt, contains('crouched'));
       expect(proposal.endImagePrompt, contains('leaning forward'));
-      expect(proposal.canBeDrawn, isTrue);
+      expect(proposal.hasFramePrompts, isTrue);
     });
 
     test('en zonder die twee valt er niets te tekenen', () async {
@@ -327,7 +327,7 @@ void main() {
         'primary_muscle': 'benen',
       });
 
-      expect(lookup.proposal!.exercise!.canBeDrawn, isFalse);
+      expect(lookup.proposal!.exercise!.hasFramePrompts, isFalse);
     });
 
     test('ze overleven opschrijven en teruglezen', () {

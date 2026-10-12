@@ -670,6 +670,55 @@ final class CoachImageEquipmentProvider
 String _$coachImageEquipmentHash() =>
     r'c9d05f1a16b1beb55cf430c40793b5b01f80dd7d';
 
+/// What opens an address in another app - Gemini, for the photos of an
+/// exercise - or null where there is nothing to hand it to.
+
+@ProviderFor(linkOpener)
+final linkOpenerProvider = LinkOpenerProvider._();
+
+/// What opens an address in another app - Gemini, for the photos of an
+/// exercise - or null where there is nothing to hand it to.
+
+final class LinkOpenerProvider
+    extends $FunctionalProvider<LinkOpener?, LinkOpener?, LinkOpener?>
+    with $Provider<LinkOpener?> {
+  /// What opens an address in another app - Gemini, for the photos of an
+  /// exercise - or null where there is nothing to hand it to.
+  LinkOpenerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'linkOpenerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$linkOpenerHash();
+
+  @$internal
+  @override
+  $ProviderElement<LinkOpener?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  LinkOpener? create(Ref ref) {
+    return linkOpener(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(LinkOpener? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<LinkOpener?>(value),
+    );
+  }
+}
+
+String _$linkOpenerHash() => r'ddd52c756cd16c25f5fa93a2aa5b0740010e9187';
+
 /// [kImageGeneration], as a provider so a test can switch it on.
 
 @ProviderFor(imageGeneration)
@@ -961,7 +1010,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'4f6c94101d7533ede8395a749a2a1c7af2ffbe80';
+String _$coachControllerHash() => r'6b034bf57ef49a7edc3cdb3b6ea69313535947f4';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

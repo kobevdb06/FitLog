@@ -21,6 +21,7 @@ import '../../photos/data/photo_store.dart';
 import '../data/ai_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
+import '../data/links.dart';
 import '../domain/coach_budget.dart';
 import '../domain/coach_prompt.dart';
 import '../domain/coach_proposal.dart';
@@ -152,6 +153,12 @@ bool coachImageEquipment(Ref ref) =>
 /// section in the settings, no button on a card, no option under a photo,
 /// and nothing is drawn whoever asks.
 const bool kImageGeneration = false;
+
+/// What opens an address in another app - Gemini, for the photos of an
+/// exercise - or null where there is nothing to hand it to.
+@Riverpod(keepAlive: true)
+LinkOpener? linkOpener(Ref ref) =>
+    Platform.isAndroid ? const AndroidLinkOpener() : null;
 
 /// [kImageGeneration], as a provider so a test can switch it on.
 @Riverpod(keepAlive: true)
@@ -482,7 +489,7 @@ class CoachController extends _$CoachController {
     String? startImage;
     String? endImage;
     if (withImages &&
-        proposal.canBeDrawn &&
+        proposal.hasFramePrompts &&
         ref.read(imageGenerationProvider)) {
       final editor = ref.read(exerciseEditorProvider);
       // One seed for both, so the two drawings are the same person in the

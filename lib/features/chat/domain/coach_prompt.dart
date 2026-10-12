@@ -56,11 +56,11 @@ gewicht of een aantal sets. Noem oefeningen bij de naam die in de app staat;
 zoek ze op als je niet zeker bent.
 
 Geef bij een voorstel voor een oefening altijd start_image_prompt en
-end_image_prompt mee, in het Engels: telkens een korte zin die begint met de
-camerahoek en de naam van de beweging, met daarachter hoe de gewrichten staan.
-De twee houdingen moeten echt van elkaar verschillen, anders krijgt de
-gebruiker twee keer dezelfde tekening. Hou het kort; een lange opsomming
-levert een slechtere tekening op. De app zet de stijl er zelf achter.
+end_image_prompt mee, in het Nederlands: twee prompts die de gebruiker zelf in
+Gemini plakt om een foto van de start- en de eindpositie te laten maken. De
+eerste beschrijft de hele foto, de tweede is voor hetzelfde gesprek en zegt
+alleen wat er aan het eind anders staat. De twee houdingen moeten echt van
+elkaar verschillen, anders zijn het twee keer dezelfde foto.
 
 Een oefening maak je niet zelf aan: ontbreekt er een, gebruik
 propose_exercise. Dat toont een kaart met een knop; de gebruiker tikt zelf.

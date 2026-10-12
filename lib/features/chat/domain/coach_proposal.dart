@@ -64,15 +64,18 @@ class ExerciseProposal {
 
   final String? instructions;
 
-  /// What the two pictures should show, in the coach's own words.
+  /// What the two pictures should show, in the coach's own words: two prompts
+  /// the user pastes into Gemini for a photo of the start and of the end.
   ///
   /// It named the exercise, so it knows better than a template what the start
   /// and the end of it look like - and the difference between those two is
-  /// the whole value of the pair.
+  /// the whole value of the pair. Older conversations hold the short English
+  /// sentences it wrote for the drawing services (DECISIONS 201); those are
+  /// shown as they are.
   final String? startImagePrompt;
   final String? endImagePrompt;
 
-  bool get canBeDrawn =>
+  bool get hasFramePrompts =>
       startImagePrompt != null &&
       endImagePrompt != null &&
       startImagePrompt!.isNotEmpty &&

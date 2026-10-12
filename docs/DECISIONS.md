@@ -4138,3 +4138,35 @@ de hele app, met één schakelaar (`kImageGeneration`).
   ongedaan maken dat de gebruiker zelf instelde, en het is alleen weer nodig
   als het tekenen terugkomt.
 
+## 202. De foto's maak je in Gemini, met de woorden van de coach
+
+In de plaats van het tekenen (201) komt een knop die het werk deelt: de coach
+schrijft wat er op de foto's moet, de gebruiker maakt ze met een beeldmodel
+naar keuze. Op een voorstel voor een oefening staat onder *Oefening
+toevoegen* nu *Toevoegen met foto's*. Die voegt de oefening toe en toont de
+twee prompts, elk met *Kopiëren*, en *Open Gemini*.
+
+- **In het Nederlands.** De gebruiker leest de prompts en past ze aan voor
+  hij ze plakt, en Gemini begrijpt Nederlands. De korte Engelse zinnen van
+  vroeger waren geschreven voor een tekenmodel dat lange zinnen slecht
+  verdroeg.
+- **De tweede voor hetzelfde gesprek.** De eerste prompt beschrijft de hele
+  foto; de tweede begint met *Dezelfde persoon, op dezelfde plek en vanuit
+  dezelfde hoek* en zegt alleen wat er aan het eind anders staat. In één
+  gesprek houdt Gemini de persoon en de plek vast - wat het tekenen met een
+  gedeeld toevalsgetal probeerde (142).
+- **Openen, niet praten.** *Open Gemini* geeft het adres aan Android, dat
+  Gemini of de browser opent (kanaal `be.fitlog.app/links`). FitLog maakt
+  daarvoor geen verbinding, en de test die bewaakt dat alleen de coach het
+  internet op kan, blijft waar. De prompt komt er omdat de gebruiker ze
+  plakt; een link die een prompt meegeeft, kent Gemini niet.
+- **Op het kaartje blijven ze.** Na het toevoegen staat er *Prompts voor de
+  foto's*: de tweede foto komt vaak later dan de eerste, en de coach schreef
+  ze daar.
+- **Gekopieerd staat op de knop zelf**, niet in een melding onderaan: die
+  zou achter het blad vallen.
+
+Bij het tekenen gebruikte de app dezelfde twee velden. Komt het tekenen ooit
+terug, dan krijgt het deze Nederlandse prompts te lezen; dat is dan het
+eerste om na te kijken.
+

@@ -6,11 +6,13 @@ import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
+import 'package:fitlog/features/chat/data/links.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -77,6 +79,7 @@ void main() {
     Widget screen, {
     Object? api,
     bool drawing = false,
+    LinkOpener? opener,
   }) async {
     tester.view.physicalSize = const Size(1100, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -91,6 +94,7 @@ void main() {
             api as CoachClientFactory,
           ),
         if (drawing) imageGenerationProvider.overrideWithValue(true),
+        if (opener != null) linkOpenerProvider.overrideWithValue(opener),
       ],
     );
 
@@ -650,6 +654,108 @@ void main() {
       expect(find.text('Oefening toevoegen'), findsNothing);
     });
 
+    testWidgets("Toevoegen met foto's: de oefening, en de twee prompts", (
+      tester,
+    ) async {
+      const start =
+          'Een realistische foto van een persoon in sportkleding, van opzij, '
+          'gehurkt achter een geladen slee.';
+      const end =
+          'Dezelfde persoon, op dezelfde plek en vanuit dezelfde hoek, nu aan '
+          'het eind van de beweging: benen gestrekt, de slee een stap verder.';
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Maak een oefening');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem maken.',
+        proposals: encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(
+              name: 'Sledepush',
+              primaryMuscle: 'benen',
+              startImagePrompt: start,
+              endImagePrompt: end,
+            ),
+          ),
+        ]),
+      );
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final opener = _Opener();
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        opener: opener,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text("Toevoegen met foto's"), findsOneWidget);
+      await tester.tap(find.text("Toevoegen met foto's"));
+      await tester.pumpAndSettle();
+
+      expect(await db.exercisesDao.countExercises(), 1);
+      expect(find.text("Foto's maken met Gemini"), findsOneWidget);
+      expect(find.text(start), findsOneWidget);
+      expect(find.text(end), findsOneWidget);
+
+      await tester.tap(find.text('Kopiëren').first);
+      await tester.pumpAndSettle();
+      expect(copied, start);
+      expect(find.text('Gekopieerd'), findsOneWidget);
+
+      await tester.tap(find.text('Open Gemini'));
+      await tester.pumpAndSettle();
+      expect(opener.opened, [kGeminiUrl]);
+
+      // Dicht, en later terug te vinden op de kaart.
+      Navigator.of(tester.element(find.text(start))).pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Toegevoegd'), findsOneWidget);
+      await tester.tap(find.text("Prompts voor de foto's"));
+      await tester.pumpAndSettle();
+      expect(find.text(end), findsOneWidget);
+    });
+
+    testWidgets("zonder prompts geen knop met foto's", (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Maak een oefening');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik hem maken.',
+        proposals: encodeProposals([
+          CoachProposal.ofExercise(
+            const ExerciseProposal(name: 'Sledepush', primaryMuscle: 'benen'),
+          ),
+        ]),
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Oefening toevoegen'), findsOneWidget);
+      expect(find.text("Toevoegen met foto's"), findsNothing);
+    });
+
     testWidgets('met een token staat er een tweede knop, met wat het kost', (
       tester,
     ) async {
@@ -1040,4 +1146,15 @@ void main() {
       expect(sent.single, isNot(contains('sk-ant')));
     });
   });
+}
+
+/// Android's way to another app, as far as these tests go: it remembers.
+class _Opener implements LinkOpener {
+  final opened = <String>[];
+
+  @override
+  Future<bool> open(String url) async {
+    opened.add(url);
+    return true;
+  }
 }

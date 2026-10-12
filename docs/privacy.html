@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacyverklaring — FitLog</title>
+<meta name="description" content="Wat FitLog met je gegevens doet: alles blijft versleuteld op je toestel. Alleen de AI-coach, als je hem zelf aanzet, stuurt iets naar Google.">
+<meta name="color-scheme" content="dark light">
+<style>
+  :root {
+    --bg: #101216;
+    --surface: #181b21;
+    --line: #262a32;
+    --text: #e8eaee;
+    --muted: #9aa1ad;
+    --accent: #3d7dff;
+    --mark-bar: #7ba9ff;
+    --mark-spark: #f5a623;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 40rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+  header { display: flex; align-items: center; gap: .9rem; margin-bottom: .5rem; }
+  header a { display: flex; }
+  .mark-bar { fill: var(--mark-bar); }
+  .mark-plate { fill: var(--accent); }
+  .mark-spark { fill: var(--mark-spark); }
+  h1 { font-size: 1.9rem; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+  .updated { color: var(--muted); font-size: .875rem; margin: 0 0 2rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; text-wrap: balance; }
+  h3 { font-size: 1rem; margin: 1.75rem 0 .5rem; color: var(--muted); }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  ul { padding-left: 1.25rem; margin: 0 0 1rem; }
+  li { margin-bottom: .4rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: .9rem;
+    padding: 1.25rem 1.25rem .25rem;
+  }
+  .card p:last-child, .card ul:last-child { margin-bottom: 1rem; }
+
+  .table { overflow-x: auto; margin: 0 0 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { text-align: left; vertical-align: top; padding: .55rem .75rem .55rem 0; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; }
+  td:first-child { white-space: nowrap; font-weight: 600; padding-right: 1rem; }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .875rem;
+    text-align: center;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #ffffff; --surface: #f5f6f8; --line: #e2e5ea;
+      --text: #14161a; --muted: #5c6470;
+      --mark-bar: #2a5bd7; --mark-spark: #e8940a;
+    }
+  }
+  @media (max-width: 30rem) {
+    td:first-child { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a href="./" aria-label="FitLog, naar de startpagina">
+      <svg width="44" height="44" viewBox="10 10 80 80" aria-hidden="true">
+        <rect class="mark-bar" x="10" y="47" width="80" height="6" rx="3"/>
+        <rect class="mark-plate" x="30" y="36" width="7" height="28" rx="2.5"/>
+        <rect class="mark-plate" x="39" y="28" width="9" height="44" rx="3"/>
+        <rect class="mark-plate" x="50" y="20" width="12" height="60" rx="3.5"/>
+        <rect class="mark-bar" x="64" y="41" width="5" height="18" rx="1.5"/>
+        <path class="mark-spark" d="M79 18 C80 24 80 24 86 25 C80 26 80 26 79 32 C78 26 78 26 72 25 C78 24 78 24 79 18 Z"/>
+      </svg>
+    </a>
+    <h1>Privacyverklaring</h1>
+  </header>
+  <p class="updated">FitLog voor Android · bijgewerkt op 12 oktober 2026, voor versie 1.58</p>
+
+  <div class="card">
+    <p>
+      <strong>FitLog verzamelt niets.</strong> Er is geen account, geen
+      server, geen analytics en geen reclame. Wat je logt, staat versleuteld
+      op je eigen toestel, en ik, de maker, krijg er niets van te zien.
+    </p>
+    <p>
+      Er vertrekt alleen iets van je toestel als jij dat doet: als je de
+      AI-coach aanzet met je eigen sleutel van Google, als je zelf een e-mail
+      verstuurt, of als je een back-up ergens bewaart. Hieronder staat
+      precies wat, en waarheen.
+    </p>
+  </div>
+
+  <h2>Wie</h2>
+  <p>
+    FitLog is gemaakt door Kobe Vandenberk, België. Vragen over deze
+    verklaring of over je gegevens:
+    <a href="mailto:kobe.vandenberk@gmail.com">kobe.vandenberk@gmail.com</a>.
+  </p>
+
+  <h2>Wat er op je toestel staat</h2>
+  <p>
+    Je trainingen, routines, eigen oefeningen, records, lichaamsmetingen,
+    voortgangsfoto's, nachten, glazen per dag, je profiel (naam,
+    geboortedatum, geslacht en lengte, voor zover je die invult), je
+    instellingen en je gesprekken met de coach. Het staat in één versleutelde
+    database in de privémap van de app, die andere apps niet kunnen lezen; je
+    kan er een pincode of je vingerafdruk voor zetten. Foto's kies je zelf uit
+    je galerij of maak je met de camera, via het venster van Android: FitLog
+    vraagt geen toegang tot je hele galerij.
+  </p>
+
+  <h2>Health Connect</h2>
+  <p>
+    Health Connect is de plek op Android waar apps als Samsung Health, Google
+    Health en je horloge gezondheidsgegevens delen. FitLog leest er alleen iets
+    uit als je dat onder <em>Instellingen → Health Connect</em> aanzet, en
+    alleen wat je in het venster van Health Connect toestaat.
+  </p>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th scope="col">Gegeven</th><th scope="col">Waarvoor</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Slaap, met de fasen</td><td>Je nachten en je slaapscore, zonder ze elke ochtend in te typen; ze tellen mee voor je herstel.</td></tr>
+        <tr><td>HRV en rusthartslag</td><td>Tegenover je eigen gewone waarden: een aanwijzing of je hersteld bent.</td></tr>
+        <tr><td>Hartslag</td><td>Tijdens je trainingen in FitLog: het gemiddelde en het hoogste, bij die training. En tijdens je slaap, alleen als je horloge zelf geen rusthartslag doorgeeft: FitLog berekent die dan uit je nacht.</td></tr>
+        <tr><td>Zuurstofsaturatie</td><td>Tijdens je slaap: het gemiddelde en het laagste, bij je nacht.</td></tr>
+        <tr><td>Stappen</td><td>Per dag, op Gezondheid en je startscherm.</td></tr>
+        <tr><td>Gewicht</td><td>Van een slimme weegschaal, voor je grafiek en je lichaamsgewicht.</td></tr>
+        <tr><td>Loop- en fietssessies</td><td>Ze tellen mee voor het herstel van je benen.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <strong>Schrijven.</strong> Zet je <em>Trainingen ook naar Health
+    Connect</em> aan, dan schrijft FitLog een afgewerkte training als
+    krachttraining naar Health Connect: alleen de naam, het begin en het
+    einde, geen oefeningen, sets of gewichten.
+  </p>
+  <p>
+    <strong>Op de achtergrond.</strong> Zet je het ochtendrapport aan, dan
+    leest FitLog op het uur dat je kiest je nacht, ook als de app niet open
+    is. Zonder die toestemming komt het rapport er ook, met wat er binnen was
+    toen je de app het laatst opende.
+  </p>
+  <p>
+    <strong>Waar het heen gaat.</strong> Wat FitLog uit Health Connect leest,
+    blijft op je toestel. Het wordt niet verkocht, niet voor reclame gebruikt
+    en aan niemand doorgegeven, met één uitzondering die jij zelf aanzet: de
+    AI-coach, als je daar <em>Gezondheidsgegevens delen met de coach</em>
+    aanzet (zie hieronder). Dat staat uit tot jij het aanzet.
+  </p>
+  <p>
+    <strong>Stoppen.</strong> Onder <em>Instellingen → Health Connect</em>
+    kies je <em>Ontkoppelen</em>: FitLog haalt dan niets meer op en geeft zijn
+    toegang terug, en met <em>Ontkoppelen en wissen</em> verdwijnt ook alles
+    wat binnenkwam. Wat je zelf invulde, blijft staan. Je kan de toegang ook
+    intrekken in Health Connect zelf.
+  </p>
+
+  <h2>De AI-coach</h2>
+  <p>
+    De coach staat uit. Hij werkt alleen met een API-sleutel die je zelf
+    aanmaakt bij Google AI Studio en in de app plakt. Zonder sleutel maakt
+    FitLog geen enkele verbinding met het internet.
+  </p>
+  <p>Met een sleutel gaat bij elke vraag dit naar Google (de Gemini API):</p>
+  <ul>
+    <li>je vraag, de vorige berichten van dat gesprek, en de foto's die je
+      zelf meestuurt;</li>
+    <li>wat de coach in je logboek opzoekt om te antwoorden, zoals je laatste
+      trainingen of de geschiedenis van een oefening. Onder elk antwoord staat
+      wat dat was;</li>
+    <li>je naam, en je leeftijd, geslacht, lengte en waar je traint alleen als
+      je <em>Je profiel delen</em> aanzet;</li>
+    <li>gegevens uit Health Connect alleen als je <em>Gezondheidsgegevens
+      delen met de coach</em> aanzet. De app zegt dan eerst waar ze heen gaan.
+      Uit ziet de coach alleen nachten en metingen die je zelf invulde.</li>
+  </ul>
+  <p>
+    Hetzelfde geldt voor het ochtendrapport en het weekoverzicht, als de coach
+    die voor je schrijft. Dat gaat naar Google, niet naar mij: ik heb geen
+    server in dit verhaal. Wat Google ermee doet, staat in de
+    <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">voorwaarden
+    van de Gemini API</a> en het
+    <a href="https://policies.google.com/privacy" rel="noopener">privacybeleid
+    van Google</a>. Met een gratis sleutel mag Google je vragen en de
+    antwoorden gebruiken om zijn producten te verbeteren, en kunnen mensen ze
+    daarvoor lezen. Stuur de coach dus niets wat je liever voor jezelf houdt.
+  </p>
+  <p>
+    Je sleutel staat versleuteld op je toestel en in je back-up. Haal je hem
+    weg onder <em>Instellingen → AI-coach</em>, dan maakt de app opnieuw geen
+    verbinding.
+  </p>
+
+  <h2>Een antwoord melden</h2>
+  <p>
+    Onder elk antwoord van de coach staat <em>Melden</em>. Dat opent je eigen
+    mail-app met een e-mail aan mij, met de reden die je kiest, je
+    toelichting, je vraag en het antwoord, en de versie van de app. Er gaat
+    niets weg tot jij het verstuurt, en je kan er eerst alles in aanpassen. Ik
+    gebruik zo'n melding alleen om de coach te verbeteren.
+  </p>
+
+  <h2>Een routine delen</h2>
+  <p>
+    Een routine deel je als QR-code op je scherm, die iemand anders met FitLog
+    scant. Daar komt geen internet aan te pas: de routine staat in de code
+    zelf. Erin staan de naam, de notitie bij de routine en de oefeningen met
+    hun sets; niets over je trainingen of over jou.
+  </p>
+
+  <h2>Back-ups</h2>
+  <p>
+    Een back-up is een bestand dat jij maakt en zelf bewaart, versleuteld met
+    je herstelzin van twaalf woorden. Zet je de wekelijkse back-up aan, dan
+    komt het in een map die jij kiest. Waar die map staat, bijvoorbeeld in je
+    eigen cloudopslag, bepaal jij; FitLog stuurt het nergens anders heen.
+  </p>
+
+  <h2>Toestemmingen</h2>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th scope="col">Toestemming</th><th scope="col">Waarvoor</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Internet</td><td>Alleen de AI-coach, en alleen met je eigen sleutel.</td></tr>
+        <tr><td>Meldingen</td><td>Het einde van je rust, nieuwe records, het ochtendrapport en het weekoverzicht.</td></tr>
+        <tr><td>Wekkers en herinneringen</td><td>De melding dat je rust voorbij is op de seconde, als je dat toestaat.</td></tr>
+        <tr><td>Trillen</td><td>Bij het einde van je rust en bij het afvinken van een set, als je dat aan hebt staan.</td></tr>
+        <tr><td>Na het opstarten</td><td>Het ochtendrapport en het weekoverzicht opnieuw plannen nadat je gsm herstartte.</td></tr>
+        <tr><td>Wakker houden</td><td>Je gsm even wakker houden terwijl het ochtendrapport of het weekoverzicht gemaakt wordt.</td></tr>
+        <tr><td>Vingerafdruk</td><td>De app ontgrendelen, als je dat wil.</td></tr>
+        <tr><td>Camera</td><td>Een routine scannen die iemand je als QR-code toont. Het herkennen gebeurt op je toestel. Foto's maken loopt via de camera-app van Android.</td></tr>
+        <tr><td>Netwerkstatus</td><td>Komt mee met de QR-scanner en zegt alleen óf er een verbinding is. FitLog doet er niets mee.</td></tr>
+        <tr><td>Health Connect</td><td>Zie hierboven.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Bewaren en wissen</h2>
+  <p>
+    Alles blijft op je toestel tot jij het wist: per onderdeel in de app, met
+    <em>Alle gegevens wissen</em> onder <em>Instellingen → Back-up en
+    export</em>, of door FitLog te verwijderen. Gesprekken met de coach wis je
+    in de chat. Wat al naar Google ging, valt onder het beleid van Google.
+  </p>
+
+  <h2>Je rechten</h2>
+  <p>
+    Omdat ik niets van je bewaar, heb ik niets om in te zien of te wissen,
+    behalve e-mails die je me zelf stuurt. Wil je dat ik die wis, of wil je
+    weten wat ik ervan heb, mail me dan. Ben je het niet eens met hoe ik met
+    je gegevens omga, dan kan je klacht indienen bij de
+    <a href="https://www.gegevensbeschermingsautoriteit.be" rel="noopener">Gegevensbeschermingsautoriteit</a>.
+  </p>
+
+  <h2>Wijzigingen</h2>
+  <p>
+    Verandert wat FitLog met je gegevens doet, dan verandert deze pagina mee,
+    met de datum bovenaan. De broncode van de app is openbaar, dus wat hier
+    staat, kan iedereen nagaan.
+  </p>
+
+  <footer>
+    <p>
+      <a href="./">FitLog</a> ·
+      <a href="handleiding.html">Hoe het werkt</a>
+    </p>
+    <p>
+      Kobe Vandenberk, België ·
+      <a href="mailto:kobe.vandenberk@gmail.com">kobe.vandenberk@gmail.com</a>
+    </p>
+  </footer>
+</main>
+</body>
+</html>

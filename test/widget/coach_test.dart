@@ -339,6 +339,26 @@ void main() {
     });
   });
 
+  testWidgets('de instellingen wijzen ook naar de privacyverklaring', (
+    tester,
+  ) async {
+    await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+    final opener = _Opener();
+    await pump(
+      tester,
+      const CoachSettingsScreen(),
+      opener: opener,
+      size: const Size(360, 2400),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Privacyverklaring'));
+    await tester.pumpAndSettle();
+
+    expect(opener.opened, [kPrivacyUrl]);
+    expect(tester.takeException(), isNull);
+  });
+
   group('gezondheidsgegevens', () {
     final tile = find.widgetWithText(
       SwitchListTile,

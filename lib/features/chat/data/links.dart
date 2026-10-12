@@ -14,6 +14,10 @@ const String kGeminiTermsUrl = 'https://ai.google.dev/gemini-api/terms';
 /// Where a key for the coach is made. New users find one waiting there.
 const String kAiStudioKeyUrl = 'https://aistudio.google.com/apikey';
 
+/// FitLog's privacy policy, on the site. Health Connect opens it too, through
+/// `PrivacyPolicyActivity`, which has the same address.
+const String kPrivacyUrl = 'https://kobevdb06.github.io/FitLog/privacy.html';
+
 /// Opens an address in whatever the phone opens it with.
 abstract interface class LinkOpener {
   /// False when nothing on the phone could open it.

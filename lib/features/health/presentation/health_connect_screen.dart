@@ -7,6 +7,8 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../routing/routes.dart';
+import '../../chat/data/links.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../data/health_importer.dart';
 import '../data/health_source.dart';
 import 'health_providers.dart';
@@ -46,6 +48,18 @@ class HealthConnectScreen extends ConsumerWidget {
                   'Instellingen, AI-coach.',
             ),
           ),
+          if (ref.watch(linkOpenerProvider) case final opener?)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () => opener.openOver(kPrivacyUrl),
+                  icon: const Icon(Icons.privacy_tip_outlined, size: 18),
+                  label: const Text('Privacyverklaring'),
+                ),
+              ),
+            ),
           const SectionHeader('Wat FitLog leest'),
           for (final (icon, title, why) in _whatWeRead)
             ListTile(

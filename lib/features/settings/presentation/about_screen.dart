@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../chat/data/links.dart';
+import '../../chat/presentation/chat_providers.dart';
 
 /// Version, licences, sources, and the promise that nothing leaves the device.
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   /// Kept in step with `version:` in pubspec.yaml.
   static const String appVersion = '1.57.0';
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final opener = ref.watch(linkOpenerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Over FitLog')),
@@ -56,8 +60,8 @@ class AboutScreen extends StatelessWidget {
                 'De QR-scanner werkt op het toestel zelf; het model zit in de '
                 'app en wordt niet opgehaald. Hij brengt wel twee permissies '
                 'mee: CAMERA om te scannen, en ACCESS_NETWORK_STATE, waarmee '
-                'alleen te zien is óf er een verbinding is. Zonder INTERNET '
-                'kan er niets over.',
+                'alleen te zien is óf er een verbinding is. Het scannen zelf '
+                'gebruikt geen internet.',
           ),
           const SectionHeader(
             'Waar je gegevens staan',
@@ -92,6 +96,15 @@ class AboutScreen extends StatelessWidget {
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.xl),
+          // The whole of it, with Health Connect and the coach, on the site.
+          if (opener != null) ...[
+            OutlinedButton.icon(
+              onPressed: () => opener.openOver(kPrivacyUrl),
+              icon: const Icon(Icons.privacy_tip_outlined),
+              label: const Text('Privacyverklaring'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           OutlinedButton.icon(
             onPressed: () => showLicensePage(
               context: context,

@@ -461,17 +461,24 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             ),
             child: InfoBanner(icon: Icons.lock_outline, message: kCoachPrivacy),
           ),
-          // What Google says itself, for whoever wants it in its own words.
+          // What Google says itself, for whoever wants it in its own words,
+          // and FitLog's own policy.
           if (ref.watch(linkOpenerProvider) case final opener?)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: () => opener.open(kGeminiTermsUrl),
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('Voorwaarden van Google'),
-                ),
+              child: Wrap(
+                children: [
+                  TextButton.icon(
+                    onPressed: () => opener.open(kGeminiTermsUrl),
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: const Text('Voorwaarden van Google'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => opener.openOver(kPrivacyUrl),
+                    icon: const Icon(Icons.privacy_tip_outlined, size: 18),
+                    label: const Text('Privacyverklaring'),
+                  ),
+                ],
               ),
             ),
           const SectionHeader('Sleutel'),

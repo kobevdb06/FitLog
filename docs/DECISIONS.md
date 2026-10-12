@@ -4419,3 +4419,35 @@ geen keuze om je hartslag te delen. Dus een eigen schakelaar:
   wat hij mag zien de hele ochtend is - zoals bij wie zijn nachten zelf
   invult. Staat er iets van het horloge in, dan staat het rapport er in de
   woorden van de app, met de reden in `coach_error`.
+
+## 213. Een privacyverklaring op een eigen pagina, en Health Connect opent ze
+
+Google Play wil een adres voor een privacyverklaring, en een app die Health
+Connect leest moet daar zeggen wat ze leest en waarvoor. De downloadpagina
+had een stuk *Privacy*, maar geen verklaring die alles noemt. Nu is er
+`docs/privacy.html`, op de site als `privacy.html`.
+
+- **Wat erin staat:** wie de app maakt en hoe je hem bereikt; wat er op het
+  toestel staat; elk gegeven uit Health Connect met waarvoor (dezelfde lijst
+  als op het scherm Health Connect), het schrijven van trainingen en het
+  lezen op de achtergrond; wat de coach naar Google stuurt en wanneer,
+  met de schakelaars uit 212; het melden van een antwoord (211); back-ups;
+  elke toestemming uit het manifest; wissen; je rechten. In dezelfde stijl
+  als de rest van de site, en net als die zonder iets van buitenaf.
+- **Gelinkt van overal waar het erover gaat:** de downloadpagina (bij
+  *Privacy* en onderaan), de handleiding, en in de app *Over FitLog*, de
+  instellingen van de coach en het scherm Health Connect.
+- **Health Connect opent ze.** Wie in Health Connect op het privacybeleid
+  van FitLog tikte, kwam in de app terecht, achter de pincode, op het
+  startscherm. Een eigen activity zonder Flutter
+  (`PrivacyPolicyActivity`, voor de rationale-intent en de alias van
+  Android 14) opent nu de verklaring in een Custom Tab boven Health Connect
+  en sluit meteen. Health Connect laat een app niets vragen zonder zo'n
+  activity, dus ze blijft er ook voor wie nooit tikt.
+- **Een test bewaakt de lijst**: elke Health Connect-toestemming in het
+  manifest moet in de verklaring staan, en het adres in de app, in Kotlin en
+  het bestand op de site moeten hetzelfde zijn.
+- **De QR-scanner** stond in *Over FitLog* met "zonder INTERNET kan er niets
+  over"; sinds de coach is er INTERNET. Er staat nu wat waar is: het scannen
+  gebruikt geen internet.
+

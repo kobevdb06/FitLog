@@ -72,6 +72,14 @@ class WorkoutNoticeChannel {
 
   Future<void> cancel() => _channel.invokeMethod<void>('cancel');
 
+  /// Whether Android lets the workout be a live notification; null before
+  /// Android 16, which has no such switch.
+  Future<bool?> canPromote() => _channel.invokeMethod<bool>('canPromote');
+
+  /// Android's page for FitLog's live notifications.
+  Future<void> openPromoteSettings() =>
+      _channel.invokeMethod<void>('openPromote');
+
   /// Something the open panel should hear without asking: the coach's
   /// answer, as it is written.
   Future<void> panelEvent(Map<String, Object?> event) =>

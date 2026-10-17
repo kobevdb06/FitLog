@@ -1,14 +1,17 @@
 package be.fitlog.app
 
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.DocumentsContract
+import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
@@ -99,6 +102,25 @@ class FitLogActivity : FlutterFragmentActivity() {
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
+    /**
+     * Android's page for FitLog's live notifications - off on a OnePlus until
+     * you switch it on, and then the workout stays out of its island. A phone
+     * without that page gets FitLog's notification settings.
+     */
+    private fun openPromoteSettings() {
+        for (action in listOf(
+            "android.settings.APP_NOTIFICATION_PROMOTION_SETTINGS",
+            Settings.ACTION_APP_NOTIFICATION_SETTINGS,
+        )) {
+            try {
+                startActivity(Intent(action).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+                return
+            } catch (error: ActivityNotFoundException) {
+                continue
+            }
+        }
+    }
+
     /** The workout notification, laid out by [WorkoutLiveNotice]. */
     private fun onWorkoutCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -117,6 +139,18 @@ class FitLogActivity : FlutterFragmentActivity() {
             }
             "panelEvent" -> {
                 WorkoutPanelActivity.event(call.arguments)
+                result.success(null)
+            }
+            "canPromote" -> result.success(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    getSystemService(NotificationManager::class.java)
+                        ?.canPostPromotedNotifications()
+                } else {
+                    null
+                },
+            )
+            "openPromote" -> {
+                openPromoteSettings()
                 result.success(null)
             }
             else -> result.notImplemented()

@@ -6,6 +6,7 @@ import 'package:fitlog/core/widgets/numeric_keypad.dart';
 import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/settings/presentation/display_settings_screen.dart';
 import 'package:fitlog/features/settings/presentation/exact_timer_tile.dart';
+import 'package:fitlog/features/settings/presentation/live_update_tile.dart';
 import 'package:fitlog/features/settings/presentation/notification_settings_screen.dart';
 import 'package:fitlog/features/settings/presentation/recovery_settings_screen.dart';
 import 'package:fitlog/features/settings/presentation/settings_screen.dart';
@@ -260,6 +261,73 @@ void main() {
       }
     });
 
+    group('workout in het eiland', () {
+      /// The screen with Android answering [answers] in turn.
+      Future<_LiveUpdates> pumpLive(
+        WidgetTester tester,
+        List<bool?> answers,
+      ) async {
+        final live = _LiveUpdates(answers);
+        container.dispose();
+        container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            secretStoreProvider.overrideWithValue(InMemorySecretStore()),
+            exactRestTimerProvider.overrideWith((ref) async => true),
+            liveUpdateSettingsProvider.overrideWithValue(live),
+          ],
+        );
+        await pump(
+          tester,
+          screen: const NotificationSettingsScreen(),
+          textScale: 1.4,
+        );
+        return live;
+      }
+
+      final tile = find.widgetWithText(ListTile, 'Workout in het eiland');
+
+      testWidgets('uit: zegt het, en een tik opent de pagina van Android', (
+        tester,
+      ) async {
+        final live = await pumpLive(tester, [false]);
+
+        expect(tile, findsOneWidget);
+        expect(
+          find.textContaining('Uit. Tik om het aan te zetten'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(tile);
+        await tester.pump();
+
+        expect(live.opened, 1);
+      });
+
+      testWidgets('terug van Android kijkt het opnieuw', (tester) async {
+        await pumpLive(tester, [false, true]);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.textContaining('Aan: je workout staat bovenaan'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('zonder die schakelaar bij Android: geen regel', (
+        tester,
+      ) async {
+        await pumpLive(tester, [null]);
+
+        expect(tile, findsNothing);
+      });
+    });
+
     group('rusttimer op de seconde', () {
       /// The screen with Android answering [answers] in turn, one per ask.
       Future<void> pumpAsking(WidgetTester tester, List<bool> answers) async {
@@ -399,4 +467,20 @@ void main() {
       }
     });
   }
+}
+
+/// Android's switch for live notifications, as far as these tests go.
+class _LiveUpdates implements LiveUpdateSettings {
+  _LiveUpdates(this.answers);
+
+  final List<bool?> answers;
+  var _asked = 0;
+  var opened = 0;
+
+  @override
+  Future<bool?> allowed() async =>
+      answers[_asked < answers.length ? _asked++ : answers.length - 1];
+
+  @override
+  Future<void> open() async => opened++;
 }

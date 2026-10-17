@@ -4506,3 +4506,21 @@ daar zelf als voorbeeld noemt: iets wat je zelf begon en dat nu loopt.
   het niet open, omdat geen van de soorten die Play toelaat bij een
   krachtworkout past.
 
+## 215. Workout in het eiland: de schakelaar zit bij Android, de weg ernaartoe in FitLog
+
+Op een OnePlus met Android 16 kwam de workout niet in het eiland: hij stond
+als gewone melding onder *Stil*. De live-meldingen van FitLog stonden uit. De
+toestemming (`POST_PROMOTED_NOTIFICATIONS`) krijgt een app bij de installatie,
+zonder vraag; of ze ook gebruikt wordt, beslist een schakelaar per app in
+Android, en die staat bij OnePlus standaard uit.
+
+- **Onder Meldingen, bovenaan *Tijdens een training*: Workout in het eiland.**
+  Aan of uit, gelezen met `canPostPromotedNotifications`, en een tik opent de
+  pagina van Android ervoor (`APP_NOTIFICATION_PROMOTION_SETTINGS`), of de
+  meldingsinstellingen van FitLog op een gsm zonder die pagina. Beide kanten:
+  uitzetten gebeurt op dezelfde plek. Het scherm kijkt opnieuw als je
+  terugkomt, zoals bij *Rusttimer op de seconde* (210).
+- **Geen regel vóór Android 16**: daar is er niets om aan te zetten.
+- **Het balkje kreeg een eigen punt.** Zonder tekent een OnePlus er een
+  papieren vliegtuigje op, waar de set staat.
+

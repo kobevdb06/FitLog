@@ -167,7 +167,7 @@ object WorkoutLiveNotice {
             }
         }
 
-        if (set != null) bar(builder, set, confirming)
+        if (set != null) bar(context, builder, set, confirming)
         if (set != null && !confirming) actions(context, builder, set)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
@@ -199,7 +199,7 @@ object WorkoutLiveNotice {
     }
 
     /** One segment per working set: done, skipped, or still to come. */
-    private fun bar(builder: Notification.Builder, set: Map<*, *>, confirming: Boolean) {
+    private fun bar(context: Context, builder: Notification.Builder, set: Map<*, *>, confirming: Boolean) {
         val marks = (set["marks"] as? List<*>).orEmpty().map { it as String }.toMutableList()
         if (marks.isEmpty()) return
         val position = (set["position"] as? Number)?.toInt()
@@ -220,6 +220,8 @@ object WorkoutLiveNotice {
                 )
             }
             style.setProgress(settled)
+            // A dot of FitLog's own: without one a OnePlus draws a paper plane.
+            style.setProgressTrackerIcon(Icon.createWithResource(context, R.drawable.ic_progress_tracker))
             builder.setStyle(style)
         } else {
             builder.setProgress(marks.size, settled, false)

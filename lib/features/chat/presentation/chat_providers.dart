@@ -289,10 +289,15 @@ class CoachController extends _$CoachController {
   ///
   /// The question is stored before it is sent: an answer that never arrives
   /// should not take the question with it.
+  ///
+  /// [situation] is where the user is asking from - in the middle of a set,
+  /// from the panel over another app - told to the coach and not stored with
+  /// the question.
   Future<void> ask({
     required String threadId,
     required String question,
     List<String> imageFiles = const [],
+    String? situation,
   }) async {
     final text = question.trim();
     final photos = imageFiles.take(photosPerQuestion).toList();
@@ -376,6 +381,7 @@ class CoachController extends _$CoachController {
           displayName: profile?.displayName,
           exerciseCount: await db.exercisesDao.countExercises(),
           seesHealth: settings.coachSeesHealth,
+          situation: situation,
           aboutUser: settings.coachSeesProfile && profile != null
               ? describeProfile(
                   now: now,

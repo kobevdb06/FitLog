@@ -226,8 +226,24 @@ object WorkoutLiveNotice {
         }
     }
 
+    /** Coach, for every set: a question needs no values to go with it. */
+    private fun coach(context: Context): Notification.Action =
+        Notification.Action.Builder(
+            Icon.createWithResource(context, R.drawable.ic_stat_fitlog),
+            "Coach",
+            PendingIntent.getActivity(
+                context,
+                4,
+                WorkoutPanelActivity.intent(context, WorkoutPanelActivity.MODE_COACH),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            ),
+        ).build()
+
     private fun actions(context: Context, builder: Notification.Builder, set: Map<*, *>) {
-        if (set["outside"] != true) return
+        if (set["outside"] != true) {
+            builder.addAction(coach(context))
+            return
+        }
         builder.addAction(
             Notification.Action.Builder(
                 Icon.createWithResource(context, R.drawable.ic_stat_fitlog),
@@ -255,6 +271,7 @@ object WorkoutLiveNotice {
                 tick,
             ).build(),
         )
+        builder.addAction(coach(context))
     }
 
     /**

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
@@ -13,6 +14,7 @@ import '../../../core/util/notification_service.dart';
 import '../../../routing/router.dart';
 import '../data/workout_notice_channel.dart';
 import '../domain/workout_notice.dart';
+import 'workout_coach.dart';
 import 'workout_providers.dart';
 
 part 'workout_live_update.g.dart';
@@ -104,6 +106,13 @@ class WorkoutLiveUpdate extends _$WorkoutLiveUpdate {
       onPanelState: panelState,
       onEdit: edit,
       onOpen: (route) => ref.read(routerProvider).go(route),
+      onOther: (method, arguments) async {
+        final answer = await ref
+            .read(workoutCoachProvider)
+            .handle(method, arguments, send: channel.panelEvent);
+        if (answer == null) throw MissingPluginException(method);
+        return answer;
+      },
     );
     ref.onDispose(() {
       _restOver?.cancel();

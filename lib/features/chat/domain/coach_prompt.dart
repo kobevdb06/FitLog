@@ -198,6 +198,7 @@ String buildCoachPrompt({
   int? exerciseCount,
   String? aboutUser,
   bool seesHealth = true,
+  String? situation,
 }) {
   final today = '${now.year}-${_two(now.month)}-${_two(now.day)}';
   final weekday = const [
@@ -214,7 +215,7 @@ String buildCoachPrompt({
 $_coachRules
 $_appFacts
 Vandaag is het $weekday $today.
-De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}
+De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}${situation == null ? '' : '\nNu: $situation'}
 ''';
 }
 

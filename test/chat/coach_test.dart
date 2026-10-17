@@ -496,6 +496,23 @@ void main() {
       expect(prompt(seesHealth: false).length, lessThan(4300));
     });
 
+    test('says where a question comes from, without storing it', () {
+      final prompt = buildCoachPrompt(
+        now: DateTime(2026, 3, 2),
+        weightUnit: 'kg',
+        situation: 'midden in een training (Bench Press · Set 3 van 4)',
+      );
+
+      expect(
+        prompt,
+        contains('Nu: midden in een training (Bench Press · Set 3 van 4)'),
+      );
+      expect(
+        buildCoachPrompt(now: DateTime(2026, 3, 2), weightUnit: 'kg'),
+        isNot(contains('Nu:')),
+      );
+    });
+
     test('and carries no data about the user beyond their name', () {
       final prompt = buildCoachPrompt(
         now: DateTime(2026, 3, 2),

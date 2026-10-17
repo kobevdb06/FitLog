@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/security/biometric_service.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../routing/routes.dart';
+import 'coach_panel.dart';
 import 'edit_panel.dart';
 import 'panel_bridge.dart';
 import 'panel_set.dart';
@@ -14,9 +16,12 @@ import 'panel_set.dart';
 /// A card at the top, under the island it came from, over a dim of the app
 /// below; a tap on the dim closes it as Sluiten does.
 class WorkoutPanelApp extends StatefulWidget {
-  const WorkoutPanelApp({super.key, required this.bridge});
+  const WorkoutPanelApp({super.key, required this.bridge, this.biometrics});
 
   final PanelBridge bridge;
+
+  /// The fingerprint for the coach's lock; null where there is none.
+  final BiometricService? biometrics;
 
   @override
   State<WorkoutPanelApp> createState() => _WorkoutPanelAppState();
@@ -25,13 +30,29 @@ class WorkoutPanelApp extends StatefulWidget {
 class _WorkoutPanelAppState extends State<WorkoutPanelApp> {
   final _edit = GlobalKey<EditPanelState>();
   PanelState? _state;
+  String _mode = 'edit';
+
+  /// Bumped each time Coach is tapped, so the coach panel starts over.
+  int _coachOpened = 0;
   StreamSubscription<String>? _modes;
 
   @override
   void initState() {
     super.initState();
-    _modes = widget.bridge.modes.listen((_) => _load());
-    _load();
+    _modes = widget.bridge.modes.listen((mode) {
+      setState(() {
+        _mode = mode;
+        if (mode == 'coach') _coachOpened++;
+      });
+      if (mode != 'coach') _load();
+    });
+    unawaited(_start());
+  }
+
+  Future<void> _start() async {
+    final mode = await widget.bridge.mode();
+    if (mounted) setState(() => _mode = mode);
+    await _load();
   }
 
   @override
@@ -79,14 +100,24 @@ class _WorkoutPanelAppState extends State<WorkoutPanelApp> {
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 480),
-                    // A tap on the card itself is not a tap on the dim.
+                    // A tap on the card itself is not a tap on the dim. Taller
+                    // than the room left by a keyboard, it scrolls.
                     child: GestureDetector(
                       onTap: () {},
                       child: Card(
                         margin: EdgeInsets.zero,
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: _content(context, state),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight:
+                                MediaQuery.of(context).size.height -
+                                MediaQuery.of(context).viewInsets.bottom -
+                                MediaQuery.of(context).padding.vertical -
+                                AppSpacing.sm * 2,
+                          ),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            child: _content(context, state),
+                          ),
                         ),
                       ),
                     ),
@@ -101,6 +132,13 @@ class _WorkoutPanelAppState extends State<WorkoutPanelApp> {
   }
 
   Widget _content(BuildContext context, PanelState? state) {
+    if (_mode == 'coach') {
+      return CoachPanel(
+        key: ValueKey(_coachOpened),
+        bridge: widget.bridge,
+        biometrics: widget.biometrics,
+      );
+    }
     if (state == null) {
       return const Padding(
         padding: EdgeInsets.all(AppSpacing.lg),

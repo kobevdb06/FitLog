@@ -22,7 +22,7 @@ import 'features/review/data/week_alarm.dart';
 import 'features/review/presentation/review_providers.dart';
 import 'features/routines/domain/quick_start.dart';
 import 'features/routines/presentation/quick_start_providers.dart';
-import 'features/workout/domain/workout_notice.dart';
+import 'features/workout/presentation/workout_live_update.dart';
 import 'features/workout/presentation/workout_providers.dart';
 import 'routing/router.dart';
 import 'routing/routes.dart';
@@ -185,40 +185,6 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     }
   }
 
-  /// What the standing notification last said, so an unchanged workout does
-  /// not repost it on every rebuild.
-  WorkoutNotice? _shown;
-
-  /// Keeps the standing notification in step with the running workout.
-  ///
-  /// One listener at the root rather than a call at every place a set is
-  /// ticked off: the notification then cannot drift out of step with the
-  /// session, and it is right again after the app is killed and reopened.
-  void _syncWorkoutNotification() {
-    final workout = ref.watch(activeWorkoutProvider).value;
-    final rest = ref.watch(restTimerProvider);
-
-    final notice = workoutNoticeFor(
-      workout,
-      restEndsAt: rest.isActive ? rest.endsAt : null,
-    );
-    if (notice == _shown) return;
-    _shown = notice;
-
-    if (notice == null) {
-      unawaited(NotificationService.instance.cancelWorkout());
-      return;
-    }
-    unawaited(
-      NotificationService.instance.showWorkout(
-        title: notice.title,
-        body: notice.body,
-        startedAt: notice.startedAt,
-        restEndsAt: notice.restEndsAt,
-      ),
-    );
-  }
-
   /// True while a shortcut is being acted on, so a rebuild in the middle does
   /// not start the same routine twice.
   bool _startingFromShortcut = false;
@@ -285,7 +251,10 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     // opens - an unhandled exception on every cold start.
     final open = ref.watch(appControllerProvider) is AppReady;
     if (open) {
-      _syncWorkoutNotification();
+      // Listened to, not read: a provider nobody listens to is paused, and
+      // with it the listeners that let it follow the workout while the app
+      // is out of sight.
+      ref.listen(workoutLiveUpdateProvider, (_, _) {});
       _syncQuickStart();
     }
     _handleQuickStart();

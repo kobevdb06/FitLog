@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The FitLog mark in one colour, for the status bar, the chip of a Live
+     Update and the island: Android draws it from the shape alone. The same
+     geometry as FitLogMarkPainter, on its 100 by 100 grid, cropped to the
+     glyph. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    <group android:translateX="-10" android:translateY="-10">
+        <!-- The bar. -->
+        <path android:fillColor="#FFFFFFFF" android:pathData="M13,47 H87 A3,3 0 0 1 87,53 H13 A3,3 0 0 1 13,47 Z" />
+        <!-- Three plates, small to large, and the collar. -->
+        <path android:fillColor="#FFFFFFFF" android:pathData="M30,36 h7 v28 h-7 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M39,28 h9 v44 h-9 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M50,20 h12 v60 h-12 Z" />
+        <path android:fillColor="#FFFFFFFF" android:pathData="M64,41 h5 v18 h-5 Z" />
+        <!-- The spark. -->
+        <path android:fillColor="#FFFFFFFF" android:pathData="M79,18 C80,24 80,24 86,25 C80,26 80,26 79,32 C78,26 78,26 72,25 C78,24 78,24 79,18 Z" />
+    </group>
+</vector>

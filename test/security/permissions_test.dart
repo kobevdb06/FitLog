@@ -16,6 +16,16 @@ void main() {
     expect(read(manifest), contains('android.permission.SCHEDULE_EXACT_ALARM'));
   });
 
+  test('the running workout may be a Live Update, and only FitLog taps it', () {
+    final xml = read(manifest);
+    expect(xml, contains('android.permission.POST_PROMOTED_NOTIFICATIONS'));
+    // Afvinken writes to the logbook: no other app may send it.
+    final receiver = RegExp(
+      r'<receiver\s+android:name="\.WorkoutActionReceiver"[^>]*>',
+    ).firstMatch(xml)!.group(0)!;
+    expect(receiver, contains('android:exported="false"'));
+  });
+
   test('the morning report and the week review do not ask for the second', () {
     // Without the permission an exact alarm is refused; a report a few
     // minutes late is the same report.

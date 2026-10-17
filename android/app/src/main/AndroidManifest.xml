@@ -13,6 +13,10 @@
          (Meldingen, Rusttimer op de seconde). Not the exact alarm Play keeps
          for alarm clocks and calendars, granted at install. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <!-- The running workout as a Live Update: in the status bar, and in the
+         island of a phone that has one. Granted at install; the user can
+         switch it off per app in Android's settings. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
@@ -60,6 +64,10 @@
               android:resource="@style/NormalTheme"
               />
         </activity>
+        <!-- Afvinken in the workout notification, and the end of a rest. -->
+        <receiver
+            android:name=".WorkoutActionReceiver"
+            android:exported="false"/>
         <!-- Health Connect links to this from its permission screen, for the
              privacy policy (Android 13 and older). It opens the policy on the
              site and closes; Health Connect lets the app ask for nothing

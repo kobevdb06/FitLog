@@ -83,6 +83,7 @@ void main() {
       'POST_NOTIFICATIONS': 'Meldingen',
       'VIBRATE': 'Trillen',
       'SCHEDULE_EXACT_ALARM': 'Wekkers en herinneringen',
+      'POST_PROMOTED_NOTIFICATIONS': 'Live-meldingen',
       'WAKE_LOCK': 'Wakker houden',
       'RECEIVE_BOOT_COMPLETED': 'Na het opstarten',
     };

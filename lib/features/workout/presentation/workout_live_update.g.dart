@@ -8,6 +8,58 @@ part of 'workout_live_update.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Where the taps in the notification come in: the phone's channel, or none.
+
+@ProviderFor(workoutNoticeChannel)
+final workoutNoticeChannelProvider = WorkoutNoticeChannelProvider._();
+
+/// Where the taps in the notification come in: the phone's channel, or none.
+
+final class WorkoutNoticeChannelProvider
+    extends
+        $FunctionalProvider<
+          WorkoutNoticeChannel?,
+          WorkoutNoticeChannel?,
+          WorkoutNoticeChannel?
+        >
+    with $Provider<WorkoutNoticeChannel?> {
+  /// Where the taps in the notification come in: the phone's channel, or none.
+  WorkoutNoticeChannelProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'workoutNoticeChannelProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$workoutNoticeChannelHash();
+
+  @$internal
+  @override
+  $ProviderElement<WorkoutNoticeChannel?> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  WorkoutNoticeChannel? create(Ref ref) {
+    return workoutNoticeChannel(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WorkoutNoticeChannel? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WorkoutNoticeChannel?>(value),
+    );
+  }
+}
+
+String _$workoutNoticeChannelHash() =>
+    r'2bc5c135ad319be2c5872121e431bb2cb451047e';
 
 @ProviderFor(workoutNoticePoster)
 final workoutNoticePosterProvider = WorkoutNoticePosterProvider._();
@@ -111,7 +163,7 @@ final class WorkoutLiveUpdateProvider
   }
 }
 
-String _$workoutLiveUpdateHash() => r'd58a7270433a39081e79140710639823863ed01a';
+String _$workoutLiveUpdateHash() => r'1a08088ab8eea58cf9de274b22d2eb1d01f03c95';
 
 /// Keeps the standing notification - the island, on a phone that has one -
 /// in step with the running workout, also while FitLog is out of sight.

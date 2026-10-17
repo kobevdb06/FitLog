@@ -87,6 +87,36 @@ class FitLogActivity : FlutterFragmentActivity() {
             .setMethodCallHandler(::onIconCall)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/links")
             .setMethodCallHandler(::onLinkCall)
+        val workout = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/workout")
+        workout.setMethodCallHandler(::onWorkoutCall)
+        WorkoutLiveNotice.dart = workout
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        // The engine goes with this window; a tap in the notification then has
+        // nothing to write to, and says so.
+        WorkoutLiveNotice.dart = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
+    /** The workout notification, laid out by [WorkoutLiveNotice]. */
+    private fun onWorkoutCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "show" -> {
+                val notice = call.arguments as? Map<*, *>
+                if (notice == null) {
+                    result.error("show", "geen melding", null)
+                    return
+                }
+                WorkoutLiveNotice.show(applicationContext, notice)
+                result.success(null)
+            }
+            "cancel" -> {
+                WorkoutLiveNotice.cancel(applicationContext)
+                result.success(null)
+            }
+            else -> result.notImplemented()
+        }
     }
 
     /**

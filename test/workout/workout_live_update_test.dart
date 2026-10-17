@@ -1,6 +1,8 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/formatting/formatters.dart';
+import 'package:fitlog/features/workout/data/workout_notice_channel.dart';
 import 'package:fitlog/features/workout/domain/workout_notice.dart';
 import 'package:fitlog/features/workout/presentation/workout_live_update.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
@@ -120,6 +122,87 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 1200));
     await settle();
     expect(poster.shown.last.restEndsAt, isNull);
+  });
+
+  group('afvinken vanuit de melding', () {
+    test('vinkt de set af die ze toonde, en de rust begint', () async {
+      follow();
+      final sets = await startBench();
+      await settle();
+
+      final ticked = await container
+          .read(workoutLiveUpdateProvider.notifier)
+          .tick(sets[0]);
+
+      expect(ticked, isTrue);
+      final row = (await db.workoutsDao.getWorkoutDetail(
+        (await db.workoutsDao.getActiveWorkoutRow())!.id,
+      ))!.exercises.single.sets.first;
+      expect(row.isCompleted, isTrue);
+      expect(container.read(restTimerProvider).isActive, isTrue);
+      // Already the next set, before the answer goes back to Android.
+      expect(poster.shown.last.current!.setId, sets[1]);
+      expect(poster.shown.last.restEndsAt, isNotNull);
+    });
+
+    test(
+      'een tweede tik op een oude melding vinkt niet de volgende af',
+      () async {
+        follow();
+        final sets = await startBench();
+        await settle();
+        final notifier = container.read(workoutLiveUpdateProvider.notifier);
+
+        await notifier.tick(sets[0]);
+        final again = await notifier.tick(sets[0]);
+
+        expect(again, isFalse);
+        final rows = (await db.workoutsDao.getWorkoutDetail(
+          (await db.workoutsDao.getActiveWorkoutRow())!.id,
+        ))!.exercises.single.sets;
+        expect(rows.where((s) => s.isCompleted), hasLength(1));
+      },
+    );
+  });
+
+  test(
+    'een set zonder waarden zegt niets, in plaats van een streepje',
+    () async {
+      follow();
+      await startBench();
+      await settle();
+
+      final set =
+          workoutNoticePayload(poster.shown.last, const Formatters())['set']!
+              as Map<String, Object?>;
+
+      expect(set['values'], isNull);
+      expect(set['chip'], 'Set 1');
+    },
+  );
+
+  test('wat naar Android gaat, is al uitgewerkt en verwoord', () async {
+    follow();
+    final sets = await startBench();
+    await controller.updateSetValues(
+      sets[0],
+      weightKg: const Value(80),
+      reps: const Value(8),
+    );
+    await settle();
+
+    final payload = workoutNoticePayload(poster.shown.last, const Formatters());
+    final set = payload['set']! as Map<String, Object?>;
+
+    expect(payload['title'], 'Push A');
+    expect(set['id'], sets[0]);
+    expect(set['exercise'], 'Barbell Bench Press');
+    expect(set['label'], 'Set 1 van 3');
+    expect(set['chip'], '80×8');
+    expect(set['values'], '80 kg × 8');
+    expect(set['marks'], ['open', 'open', 'open']);
+    expect(set['position'], 0);
+    expect(set['outside'], isTrue);
   });
 
   test('afronden haalt ze weg', () async {

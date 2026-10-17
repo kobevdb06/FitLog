@@ -247,7 +247,9 @@ object WorkoutLiveNotice {
         builder.addAction(
             Notification.Action.Builder(
                 Icon.createWithResource(context, R.drawable.ic_stat_fitlog),
-                "Aanpassen",
+                // Short: three buttons share the width of a phone with
+                // large text, and Android cuts what does not fit.
+                "Wijzig",
                 PendingIntent.getActivity(
                     context,
                     3,
@@ -267,7 +269,7 @@ object WorkoutLiveNotice {
         builder.addAction(
             Notification.Action.Builder(
                 Icon.createWithResource(context, R.drawable.ic_stat_fitlog),
-                "Afvinken",
+                "Klaar",
                 tick,
             ).build(),
         )

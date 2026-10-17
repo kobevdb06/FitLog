@@ -49,6 +49,19 @@ void main() {
     expect(bridge.opened, ['/coach/sleutel']);
   });
 
+  testWidgets('met de app weg zegt het dat, en niet dat de coach uit staat', (
+    tester,
+  ) async {
+    final bridge = await pump(tester, _Bridge({'closed': true}));
+
+    expect(find.textContaining('Android sloot FitLog'), findsOneWidget);
+    expect(find.textContaining('De coach staat uit'), findsNothing);
+    await tester.tap(find.text('Open FitLog'));
+    await tester.pump();
+
+    expect(bridge.opened, ['/chat']);
+  });
+
   testWidgets('met een pincode eerst die, dan de vragen', (tester) async {
     final bridge = await pump(tester, _Bridge(coach(locked: true)));
 

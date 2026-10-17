@@ -45,6 +45,9 @@ class _CoachPanelState extends State<CoachPanel> {
   StreamSubscription<Map<Object?, Object?>>? _events;
 
   bool _loaded = false;
+
+  /// Android closed FitLog: there is no coach to reach from here.
+  bool _closed = false;
   bool _available = false;
   bool _locked = false;
   bool _biometric = false;
@@ -80,6 +83,7 @@ class _CoachPanelState extends State<CoachPanel> {
     if (!mounted) return;
     setState(() {
       _loaded = true;
+      _closed = state['closed'] == true;
       _available = state['available'] == true;
       _locked = state['locked'] == true;
       _biometric = state['biometric'] == true;
@@ -253,6 +257,22 @@ class _CoachPanelState extends State<CoachPanel> {
         Padding(
           padding: EdgeInsets.all(AppSpacing.lg),
           child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
+    }
+    if (_closed) {
+      return [
+        Text(
+          'Android sloot FitLog. Open de app om de coach te vragen.',
+          style: theme.textTheme.bodyMedium,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton(
+            onPressed: () => widget.bridge.openApp(Routes.chat),
+            child: const Text('Open FitLog'),
+          ),
         ),
       ];
     }

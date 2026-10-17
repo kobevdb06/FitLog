@@ -145,6 +145,24 @@ void main() {
       expect(poster.shown.last.restEndsAt, isNotNull);
     });
 
+    test('bewaart wat ze toonde: hetzelfde als de set ervoor', () async {
+      follow();
+      final sets = await startBench();
+      await settle();
+      final notifier = container.read(workoutLiveUpdateProvider.notifier);
+      await controller.completeSet(setId: sets[0], weightKg: 70, reps: 10);
+      await settle();
+      expect(poster.shown.last.current!.weightKg, 70);
+
+      await notifier.tick(sets[1]);
+
+      final row = (await db.workoutsDao.getWorkoutDetail(
+        (await db.workoutsDao.getActiveWorkoutRow())!.id,
+      ))!.exercises.single.sets[1];
+      expect(row.weightKg, 70);
+      expect(row.reps, 10);
+    });
+
     test(
       'een tweede tik op een oude melding vinkt niet de volgende af',
       () async {
@@ -163,6 +181,75 @@ void main() {
         expect(rows.where((s) => s.isCompleted), hasLength(1));
       },
     );
+  });
+
+  group('het paneel over een andere app', () {
+    Future<WorkoutSetRow> firstSet() async =>
+        (await db.workoutsDao.getWorkoutDetail(
+          (await db.workoutsDao.getActiveWorkoutRow())!.id,
+        ))!.exercises.single.sets.first;
+
+    test('schrijft wat het aanpaste op de set, zonder af te vinken', () async {
+      follow();
+      final sets = await startBench();
+      await settle();
+
+      final answer = await container
+          .read(workoutLiveUpdateProvider.notifier)
+          .edit(sets[0], (
+            weightKg: 82.5,
+            reps: 6,
+            durationSeconds: null,
+          ), complete: false);
+
+      expect(answer['ok'], isTrue);
+      final row = await firstSet();
+      expect(row.weightKg, 82.5);
+      expect(row.reps, 6);
+      expect(row.isCompleted, isFalse);
+      // The island shows the new values straight away.
+      expect(poster.shown.last.current!.weightKg, 82.5);
+    });
+
+    test('vinkt af met wat het aanpaste, en zegt wat er nu komt', () async {
+      follow();
+      final sets = await startBench();
+      await settle();
+
+      final answer = await container
+          .read(workoutLiveUpdateProvider.notifier)
+          .edit(sets[0], (
+            weightKg: 85,
+            reps: 5,
+            durationSeconds: null,
+          ), complete: true);
+
+      expect(answer['ok'], isTrue);
+      final next = answer['set']! as Map<String, Object?>;
+      expect(next['id'], sets[1]);
+      expect(next['marks'], ['done', 'open', 'open']);
+      final row = await firstSet();
+      expect(row.isCompleted, isTrue);
+      expect(row.weightKg, 85);
+      expect(row.reps, 5);
+    });
+
+    test('een set die al voorbij is, wordt niet meer aangepast', () async {
+      follow();
+      final sets = await startBench();
+      await settle();
+      final notifier = container.read(workoutLiveUpdateProvider.notifier);
+      await notifier.tick(sets[0]);
+
+      final answer = await notifier.edit(sets[0], (
+        weightKg: 100,
+        reps: 1,
+        durationSeconds: null,
+      ), complete: false);
+
+      expect(answer['ok'], isFalse);
+      expect((await firstSet()).weightKg, isNot(100));
+    });
   });
 
   test(

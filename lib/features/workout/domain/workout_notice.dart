@@ -19,8 +19,8 @@ enum SetMark { done, skipped, open }
 /// to lift for it.
 ///
 /// What the island shows closed, what its panel lets you change, and what
-/// ticking it off from there writes: the same values the set row shows,
-/// typed in or greyed in from last time.
+/// ticking it off from there writes: the values the set row shows, typed in
+/// or greyed in from last time - and otherwise those of the set just done.
 class NoticeSet {
   const NoticeSet({
     required this.setId,
@@ -231,6 +231,17 @@ NoticeSet? _nextSet(
       final last = label.workingIndex == null
           ? null
           : _lastTime(previous, exercise, side, label.workingIndex!);
+      // Nothing there and no history: the same again as the set just done.
+      // From the island you cannot type, and starting from nothing every set
+      // would be a lot of plus.
+      WorkoutSetRow? before;
+      for (var j = i - 1; j >= 0; j--) {
+        final done = exercise.sets[j];
+        if (done.isCompleted && SetSide.fromWire(done.side) == side) {
+          before = done;
+          break;
+        }
+      }
       final category = exercise.category;
       final named = switch (label.type) {
         SetType.warmup => 'Warming-up',
@@ -254,10 +265,13 @@ NoticeSet? _nextSet(
         weightStepKg:
             previous.weightSteps[exercise.exercise.id] ??
             defaultWeightStep(category, platesKg: platesKg),
-        weightKg: row.weightKg ?? last?.weightKg,
-        reps: row.reps ?? last?.reps,
-        durationSeconds: row.durationSeconds ?? last?.durationSeconds,
-        distanceM: row.distanceM ?? last?.distanceM,
+        weightKg: row.weightKg ?? last?.weightKg ?? before?.weightKg,
+        reps: row.reps ?? last?.reps ?? before?.reps,
+        durationSeconds:
+            row.durationSeconds ??
+            last?.durationSeconds ??
+            before?.durationSeconds,
+        distanceM: row.distanceM ?? last?.distanceM ?? before?.distanceM,
         isPrAttempt:
             exercise.workoutExercise.isPrAttempt &&
             label.type != SetType.warmup,

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -9,6 +10,7 @@ import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/util/notification_service.dart';
+import '../../../routing/router.dart';
 import '../data/workout_notice_channel.dart';
 import '../domain/workout_notice.dart';
 import 'workout_providers.dart';
@@ -97,7 +99,12 @@ class WorkoutLiveUpdate extends _$WorkoutLiveUpdate {
     ref.listen(restTimerProvider, (_, _) => unawaited(sync()));
     ref.listen(settingsProvider, (_, _) => unawaited(sync()));
     final channel = ref.read(workoutNoticeChannelProvider);
-    channel?.listen(onTick: tick);
+    channel?.listen(
+      onTick: tick,
+      onPanelState: panelState,
+      onEdit: edit,
+      onOpen: (route) => ref.read(routerProvider).go(route),
+    );
     ref.onDispose(() {
       _restOver?.cancel();
       channel?.stop();
@@ -106,20 +113,77 @@ class WorkoutLiveUpdate extends _$WorkoutLiveUpdate {
     return null;
   }
 
+  /// What the panel over another app shows: the set up next, in the unit
+  /// and the theme the app is set to.
+  Map<String, Object?> panelState() {
+    final notice = state;
+    final set = notice?.current;
+    return {
+      'title': notice?.title,
+      'unit': ref.read(formattersProvider).weightUnit.wire,
+      'theme': ref.read(settingsProvider).value?.themeMode ?? 'dark',
+      'set': set == null ? null : panelSetPayload(set),
+    };
+  }
+
+  /// The panel's steppers, written to the set it showed - and with
+  /// [complete], ticked off as well. Answers with what the panel shows next.
+  Future<Map<String, Object?>> edit(
+    String setId,
+    PanelValues values, {
+    required bool complete,
+  }) async {
+    if (state?.current?.setId != setId) {
+      await sync();
+      return {'ok': false, ...panelState()};
+    }
+    if (complete) {
+      final ok = await tick(setId, values: values);
+      return {'ok': ok, ...panelState()};
+    }
+    await ref
+        .read(workoutControllerProvider)
+        .updateSetValues(
+          setId,
+          weightKg: values.weightKg == null
+              ? const Value.absent()
+              : Value(values.weightKg),
+          reps: values.reps == null ? const Value.absent() : Value(values.reps),
+          durationSeconds: values.durationSeconds == null
+              ? const Value.absent()
+              : Value(values.durationSeconds),
+        );
+    await sync();
+    return {'ok': true, ...panelState()};
+  }
+
   /// Afvinken in the notification: the set it showed, with the values it
-  /// showed, and the rest that follows - as the tick on the set row does.
+  /// showed - passed in, so what is stored is what was on screen - and the
+  /// rest that follows, as the tick on the set row does.
   ///
   /// Only that set: a second tap on a notification that was not redrawn yet
   /// must not tick off the set after it. True when it was ticked off.
-  Future<bool> tick(String setId) async {
+  /// [values] are the panel's, when it ticks the set off; otherwise the
+  /// notice's own.
+  Future<bool> tick(String setId, {PanelValues? values}) async {
     if (state?.current?.setId != setId) {
       await sync();
       return false;
     }
 
+    final shown = state!.current!;
     final result = await ref
         .read(workoutControllerProvider)
-        .completeSet(setId: setId);
+        .completeSet(
+          setId: setId,
+          weightKg:
+              values?.weightKg ?? (shown.hasWeight ? shown.weightKg : null),
+          reps: values?.reps ?? (shown.hasReps ? shown.reps : null),
+          durationSeconds:
+              values?.durationSeconds ??
+              (shown.hasDuration ? shown.durationSeconds : null),
+          distanceM: shown.distanceM,
+        );
     if (result != null && result.restSeconds > 0) {
       final settings = ref.read(settingsProvider).value;
       await ref

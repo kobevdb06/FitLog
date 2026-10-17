@@ -64,6 +64,20 @@
               android:resource="@style/NormalTheme"
               />
         </activity>
+        <!-- Aanpassen and Coach in the workout notification: a small FitLog
+             window over the app that is open, in a task of its own so FitLog
+             does not come to the front, and gone once you leave it. -->
+        <activity
+            android:name=".WorkoutPanelActivity"
+            android:exported="false"
+            android:theme="@style/PanelTheme"
+            android:taskAffinity="be.fitlog.app.panel"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize"/>
         <!-- Afvinken in the workout notification, and the end of a rest. -->
         <receiver
             android:name=".WorkoutActionReceiver"

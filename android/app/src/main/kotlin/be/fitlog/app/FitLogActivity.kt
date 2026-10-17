@@ -115,6 +115,10 @@ class FitLogActivity : FlutterFragmentActivity() {
                 WorkoutLiveNotice.cancel(applicationContext)
                 result.success(null)
             }
+            "panelEvent" -> {
+                WorkoutPanelActivity.event(call.arguments)
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }

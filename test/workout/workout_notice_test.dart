@@ -224,6 +224,18 @@ void main() {
       },
     );
 
+    test('zonder waarden en zonder geschiedenis: wat je net deed', () async {
+      final id = await startWith(['ex-bench'], sets: 3);
+      final sets = (await detail(id)).exercises.single.sets;
+      await controller.completeSet(setId: sets[0].id, weightKg: 60, reps: 12);
+
+      final next = workoutNoticeFor(await detail(id))!.current!;
+
+      expect(next.setId, sets[1].id);
+      expect(next.weightKg, 60);
+      expect(next.reps, 12);
+    });
+
     test('een warming-up staat niet op de balk', () async {
       final id = await startWith(['ex-squat']);
       final sets = (await detail(id)).exercises.single.sets;

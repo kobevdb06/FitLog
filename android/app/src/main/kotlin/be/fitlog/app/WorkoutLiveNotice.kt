@@ -228,6 +228,18 @@ object WorkoutLiveNotice {
 
     private fun actions(context: Context, builder: Notification.Builder, set: Map<*, *>) {
         if (set["outside"] != true) return
+        builder.addAction(
+            Notification.Action.Builder(
+                Icon.createWithResource(context, R.drawable.ic_stat_fitlog),
+                "Aanpassen",
+                PendingIntent.getActivity(
+                    context,
+                    3,
+                    WorkoutPanelActivity.intent(context, WorkoutPanelActivity.MODE_EDIT),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
+            ).build(),
+        )
         val tick = PendingIntent.getBroadcast(
             context,
             1,

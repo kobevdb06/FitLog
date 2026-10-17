@@ -4451,3 +4451,58 @@ had een stuk *Privacy*, maar geen verklaring die alles noemt. Nu is er
   over"; sinds de coach is er INTERNET. Er staat nu wat waar is: het scannen
   gebruikt geen internet.
 
+## 214. De lopende workout in het eiland, met afvinken, aanpassen en de coach
+
+Op Android 16 kan een app een lopende melding laten "promoveren" tot Live
+Update: een chip in de statusbalk, en bij OnePlus (Live Alerts), Samsung (Now
+Bar) en Xiaomi (HyperIsland) het eiland bovenaan. Een workout is wat Google
+daar zelf als voorbeeld noemt: iets wat je zelf begon en dat nu loopt.
+
+- **Een eigen melding** (`WorkoutLiveNotice`, Kotlin). De meldingenplugin kan
+  niet om promotie vragen, geen tekst voor de chip zetten en geen balk per set
+  tekenen. Dart werkt alles uit en verwoordt het
+  (`workoutNoticePayload`); Kotlin legt het alleen op. Op iOS blijft de
+  plugin. Nieuwe toestemming: `POST_PROMOTED_NOTIFICATIONS`, zonder vraag bij
+  de installatie, per app uit te zetten in Android.
+- **Wat erin staat.** Dicht: wat je moet tillen (`80×8`, `×12`, `0:45`),
+  tijdens de rust de aftelling. Open: de oefening, *Set 3 van 4*, een
+  `ProgressStyle`-segment per werkset, en Wijzig, Klaar en Coach - kort,
+  want drie knoppen delen de breedte van een gsm met grote tekst en Android
+  knipt af wat niet past (*Aanp…*, *Afvin…* op de emulator op 360dp).
+  Waarden zijn die van de setrij: ingetypt, of grijs van de vorige keer, en
+  anders die van de set die je net deed - in het eiland typ je niet.
+- **Bijwerken zonder beeld.** De melding werd vanuit de `build` van de app
+  bijgewerkt, en een build loopt alleen met een frame; op de achtergrond zijn
+  er geen. `WorkoutLiveUpdate` volgt de sessie, de rust en de instellingen nu
+  met luisteraars, en de app luistert ernaar in plaats van het te lezen:
+  Riverpod pauzeert een provider waar niemand naar luistert.
+- **Klaar** (afvinken) gaat naar een receiver, die meteen het vinkje toont (*Set 3 van
+  4 afgevinkt*, het segment gevuld) en de draaiende app de set laat afvinken
+  met wat er stond, de rust erbij, zoals op de setrij. FitLog vergrendelt niet
+  tijdens een workout, dus het logboek is open. De receiver houdt het proces
+  wakker tot de volgende set erop staat, of geeft het na acht seconden op. Een
+  tweede tik op een oude melding vinkt niet de set erna af.
+- **Het einde van de rust** zet een wekker die de chip terug op het gewicht
+  zet, ook als Android de app bevroor.
+- **De panelen** voor Wijzig en Coach zijn een eigen Flutter-engine
+  (`panelMain`) in een eigen taak, doorzichtig, zodat ze boven Spotify staan
+  en FitLog niet naar voren komt. Ze bewaren niets: elke vraag gaat via de
+  activity naar de draaiende app (`relay`), zodat het logboek op één plek open
+  blijft. Het paneel toont een echte animatie: een vinkje dat opspringt, het
+  segment dat volloopt, dan de volgende set. Wat je aanpaste en niet afvinkte,
+  blijft op de set staan.
+- **De coach in het paneel** vraagt de pincode als die er is, ook al is de app
+  open: je gesprekken zijn van jou en het paneel opent boven wat er voor staat.
+  Zoals het slotscherm, met dezelfde wachttijd na fouten, of de vingerafdruk;
+  vijf minuten geldig. Er gaat niets weg voor het slot eraf is. Elke workout
+  krijgt een eigen gesprek, en de set gaat als situatie naar de coach
+  (`situation`), niet in je vraag.
+- **Wat het niet doet.** Een PR-poging vraagt na afloop hoe het ging en een
+  loop heeft een afstand: daarvoor staat er alleen Coach, en open je de app.
+  Wat het eiland van een fabrikant precies toont en of de knoppen er staan,
+  beslist die fabrikant. Sluit Android FitLog op de achtergrond - op de
+  emulator deed de geheugenbewaker dat zodra YouTube openging - dan zeggen de
+  melding en de panelen dat en openen ze de app; een foreground service houdt
+  het niet open, omdat geen van de soorten die Play toelaat bij een
+  krachtworkout past.
+

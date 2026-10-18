@@ -30,9 +30,15 @@ extension DeloadWeekDays on DeloadWeekRow {
   bool isOnAt(DateTime at) => !at.isBefore(from) && at.isBefore(until);
   bool isAheadAt(DateTime at) => stoppedAt == null && at.isBefore(from);
 
-  /// Which day of it [at] is, from 1.
+  /// Which day of it [at] is, from 1 - on the calendar, in UTC, where every
+  /// day has 24 hours: locally the one the clocks go forward has 23.
   int dayAt(DateTime at) =>
-      DateTime(at.year, at.month, at.day).difference(from).inDays + 1;
+      DateTime.utc(
+        at.year,
+        at.month,
+        at.day,
+      ).difference(DateTime.utc(from.year, from.month, from.day)).inDays +
+      1;
 
   DeloadPlan get plan => DeloadPlan(
     setsPercent: setsPercent,

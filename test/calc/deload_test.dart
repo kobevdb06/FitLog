@@ -179,6 +179,28 @@ void main() {
       expect(await db.deloadDao.onAt(DateTime(2026, 10, 23, 0, 1)), isNull);
     });
 
+    test(
+      'de dagen tellen op de kalender, ook als de klok verspringt',
+      () async {
+        // In Belgium the clocks go forward on 28 March 2027: that Sunday has
+        // 23 hours, and two days on is then 47 hours. Where the local zone
+        // has no summer time this passes either way.
+        final from = DateTime(2027, 3, 27);
+        await db.deloadDao.start(
+          from: from,
+          days: 7,
+          plan: const DeloadPlan(),
+          source: 'user',
+          now: from,
+        );
+
+        final row = (await db.deloadDao.currentAt(from))!;
+        expect(row.dayAt(DateTime(2027, 3, 28, 10)), 2);
+        expect(row.dayAt(DateTime(2027, 3, 29, 10)), 3);
+        expect(row.dayAt(DateTime(2027, 4, 2, 23)), 7);
+      },
+    );
+
     test('een geplande telt nog niet, maar is wel de huidige', () async {
       await db.deloadDao.start(
         from: DateTime(2026, 10, 19),

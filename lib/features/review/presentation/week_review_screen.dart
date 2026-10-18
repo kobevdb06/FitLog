@@ -161,6 +161,18 @@ class _Week extends ConsumerWidget {
                   ],
                 ),
               ),
+            if (week.deloadDays case final days?)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: _Line(
+                  icon: Icons.battery_charging_full,
+                  colour: AppColors.accent,
+                  label: days >= 7
+                      ? 'Deloadweek: minder was de bedoeling'
+                      : 'Deload: minder was de bedoeling',
+                  value: '$days ${days == 1 ? 'dag' : 'dagen'}',
+                ),
+              ),
             _CoachCard(start: start, now: now),
             if (week.muscles.isNotEmpty) ...[
               const SectionHeader(

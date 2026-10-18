@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' show Value;
+import 'package:fitlog/core/calc/deload.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/review/data/week_facts_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -160,6 +161,57 @@ void main() {
     // De meeste sets eerst.
     expect(week.muscles.first.muscle, 'borst');
     expect(week.sets, 18);
+  });
+
+  group('een deload', () {
+    test('in de week zelf: geen spier achterop, en hoeveel dagen', () async {
+      for (var w = 1; w <= 4; w++) {
+        await session(day(-7 * w + 2), exercise: 'ex-row', sets: 10);
+      }
+      await session(day(3), exercise: 'ex-row', sets: 5);
+      await db.deloadDao.start(
+        from: monday,
+        days: 7,
+        plan: const DeloadPlan(),
+        source: 'user',
+        now: monday,
+      );
+
+      final week = await buildWeekFacts(db, monday, now: sundayEvening);
+      final rug = week.muscles.single;
+
+      expect(week.deloadDays, 7);
+      expect(rug.sets, 5);
+      expect(rug.lagging, isFalse);
+      expect(week.forCoach()['lagging_muscles'], isEmpty);
+      expect(week.forCoach()['deload_days'], 7);
+    });
+
+    test('in de weken ervoor: telt niet mee voor wat gewoon is', () async {
+      for (final w in [1, 3, 4]) {
+        await session(day(-7 * w + 2), exercise: 'ex-row', sets: 10);
+      }
+      // Two weeks ago was a deload: three sets, and the week itself out.
+      await session(day(-14 + 3), exercise: 'ex-row', sets: 3);
+      await (db.update(db.workoutsTable)..where(
+            (t) => t.startedAt.equals(day(-14 + 3).millisecondsSinceEpoch),
+          ))
+          .write(const WorkoutsTableCompanion(isDeload: Value(true)));
+      await db.deloadDao.start(
+        from: day(-14),
+        days: 7,
+        plan: const DeloadPlan(),
+        source: 'user',
+        now: day(-14),
+      );
+      await session(day(3), exercise: 'ex-row', sets: 10);
+
+      final week = await buildWeekFacts(db, monday, now: sundayEvening);
+
+      expect(week.deloadDays, isNull);
+      // Three ordinary weeks of ten: the deload week is not one of them.
+      expect(week.muscles.single.usual, closeTo(10, 0.01));
+    });
   });
 
   test('per oefening het record dat het meest zegt', () async {

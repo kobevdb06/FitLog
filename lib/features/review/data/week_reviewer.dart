@@ -20,6 +20,8 @@ de je-vorm, hoogstens vier korte zinnen en geen opsomming:
 - wat goed ging: records, oefeningen die weer vooruitgaan, trainingen gehaald;
 - wat achterbleef, alleen als het in de feiten staat: een spiergroep in
   lagging_muscles, gemiste trainingen, korter slapen dan gewoonlijk;
+- staat er deload_days, dan was het (deels) een deloadweek: minder volume was
+  de bedoeling, zeg dat het goed is dat je lichter trainde;
 - eindig met één concreet voorstel voor volgende week, in een zin die begint
   met "Volgende week:".
 Gebruik alleen wat in de feiten staat: verzin geen cijfers, oefeningen of

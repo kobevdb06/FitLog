@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Variable;
 
+import '../../../core/calc/deload.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/calc/schedule.dart';
 import '../../../core/calc/sleep_score.dart';
@@ -104,6 +105,32 @@ Future<WeekFacts> buildWeekFacts(
 
   // --- Sets, per muscle against the weeks before ---------------------------
 
+  // A deload is lighter on purpose. In the week itself its sets count -
+  // they were done - but no muscle lags behind; in the weeks before, its
+  // sessions and its weeks are left out of what is usual.
+  final deloads = await db.deloadDao.all();
+  bool restedIn(DateTime weekStart) {
+    final weekEnd = DateTime(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day + 7,
+    );
+    return deloads.any(
+      (d) => d.from.isBefore(weekEnd) && d.until.isAfter(weekStart),
+    );
+  }
+
+  var deloadDays = 0;
+  for (var d = 0; d < 7; d++) {
+    final day = DateTime(start.year, start.month, start.day + d);
+    final noon = DateTime(day.year, day.month, day.day, 12);
+    if (deloads.any((row) => row.isOnAt(noon))) deloadDays++;
+  }
+  final usualWeeks = [
+    for (var w = 1; w <= kReviewUsualWeeks; w++)
+      weekOf(DateTime(start.year, start.month, start.day - 7 * w)),
+  ].where((week) => !restedIn(week)).length;
+
   final perMuscle = await db
       .customSelect(
         'SELECT e.primary_muscle AS muscle, '
@@ -116,11 +143,14 @@ Future<WeekFacts> buildWeekFacts(
         "WHERE ws.is_completed = 1 AND ws.set_type != 'warmup' "
         'AND w.ended_at IS NOT NULL AND w.started_at >= ? '
         'AND w.started_at < ? '
+        // The weeks before: only ordinary sessions.
+        'AND (w.started_at >= ? OR w.is_deload = 0) '
         'GROUP BY e.primary_muscle, this_week',
         variables: [
           Variable.withInt(ms(start)),
           Variable.withInt(ms(before)),
           Variable.withInt(ms(end)),
+          Variable.withInt(ms(start)),
         ],
       )
       .get();
@@ -136,7 +166,8 @@ Future<WeekFacts> buildWeekFacts(
           MuscleWeek(
             muscle: muscle,
             sets: thisWeek[muscle] ?? 0,
-            usual: (earlier[muscle] ?? 0) / kReviewUsualWeeks,
+            usual: usualWeeks == 0 ? 0 : (earlier[muscle] ?? 0) / usualWeeks,
+            deload: deloadDays > 0,
           ),
       ]..sort((a, b) {
         final bySets = b.sets.compareTo(a.sets);
@@ -320,5 +351,6 @@ Future<WeekFacts> buildWeekFacts(
       median([for (final v in usualVitals) ?v.restingHr]),
     ),
     steps: steps?.read<double?>('steps')?.round(),
+    deloadDays: deloadDays == 0 ? null : deloadDays,
   );
 }

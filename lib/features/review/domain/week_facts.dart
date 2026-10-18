@@ -73,29 +73,36 @@ class MuscleWeek {
     required this.muscle,
     required this.sets,
     required this.usual,
+    this.deload = false,
   });
 
   final String muscle;
   final int sets;
 
-  /// The average per week over the four weeks before.
+  /// The average per week over the four weeks before, deload weeks left
+  /// out.
   final double usual;
+
+  /// The week had a deload in it: fewer sets were the point.
+  final bool deload;
 
   /// Clearly less than usual: under seven tenths of it, and only where the
   /// usual is enough to fall short of - a muscle you trained once a month is
-  /// not lagging the week you skip it.
-  bool get lagging => laggingBehind(sets.toDouble(), usual);
+  /// not lagging the week you skip it, nor one in a deload week.
+  bool get lagging => !deload && laggingBehind(sets.toDouble(), usual);
 
   Map<String, Object?> toJson() => {
     'muscle': muscle,
     'sets': sets,
     'usual_per_week': (usual * 10).round() / 10,
+    if (deload) 'deload': true,
   };
 
   static MuscleWeek fromJson(Map<String, Object?> json) => MuscleWeek(
     muscle: '${json['muscle']}',
     sets: (json['sets'] as num).toInt(),
     usual: (json['usual_per_week'] as num).toDouble(),
+    deload: json['deload'] == true,
   );
 }
 
@@ -135,6 +142,7 @@ class WeekFacts {
     this.restingHr,
     this.usualRestingHr,
     this.steps,
+    this.deloadDays,
   });
 
   /// Monday at midnight.
@@ -185,6 +193,9 @@ class WeekFacts {
   /// Steps per day, over the days that have a count.
   final int? steps;
 
+  /// How many of the week's days were in a deload; null for none.
+  final int? deloadDays;
+
   /// Workouts beyond the planned ones.
   int get extra => workouts - plannedDone;
 
@@ -208,6 +219,7 @@ class WeekFacts {
     'resting_hr': restingHr,
     'usual_resting_hr': usualRestingHr,
     'steps_per_day': steps,
+    'deload_days': deloadDays,
   };
 
   static WeekFacts fromJson(Map<String, Object?> json) {
@@ -238,6 +250,7 @@ class WeekFacts {
       restingHr: real('resting_hr'),
       usualRestingHr: real('usual_resting_hr'),
       steps: whole('steps_per_day'),
+      deloadDays: whole('deload_days'),
     );
   }
 

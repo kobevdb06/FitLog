@@ -27,8 +27,8 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.fitness_center,
             title: 'Training',
             subtitle:
-                'Rusttijd, opwarmen, RPE, hints, PR-pogingen, stang en '
-                'schijven',
+                'Rusttijd, opwarmen, RPE, hints, deload, PR-pogingen, stang '
+                'en schijven',
             route: Routes.settingsTraining,
           ),
           _Entry(

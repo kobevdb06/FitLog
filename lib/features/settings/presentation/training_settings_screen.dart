@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/plates.dart';
@@ -12,6 +13,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
+import '../../../routing/routes.dart';
 import 'settings_tiles.dart';
 
 /// How a session goes: rest, warm-ups, what is logged and hinted, PR
@@ -97,6 +99,15 @@ class TrainingSettingsScreen extends ConsumerWidget {
             onChanged: (value) => update(
               AppSettingsTableCompanion(progressionHints: Value(value)),
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.battery_charging_full),
+            title: const Text('Deload'),
+            subtitle: const Text(
+              'Hoeveel lichter, hoe lang, en wanneer FitLog er een voorstelt',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.settingsDeload),
           ),
           const SectionHeader('PR-pogingen'),
           ChoiceRow<int>(

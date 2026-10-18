@@ -258,6 +258,10 @@ class Formatters {
   /// `zondag 13 september` - a day written out, for a heading over a group.
   static String weekdayDayMonth(DateTime at) => _weekdayDayMonth.format(at);
 
+  /// `zo 18 okt.` - the same, short enough for a chip on a narrow phone.
+  static String weekdayDayMonthShort(DateTime at) =>
+      '${weekdayShort(at.weekday)} ${_dayMonth.format(at)}';
+
   static String time(DateTime at) => _time.format(at);
 
   static String weekdayName(int weekday) {

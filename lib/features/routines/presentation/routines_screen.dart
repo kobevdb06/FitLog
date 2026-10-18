@@ -20,6 +20,8 @@ import '../../dashboard/presentation/today_providers.dart';
 import '../../share/presentation/import_routine_screen.dart';
 import '../../share/presentation/scan_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
+import '../../deload/presentation/deload_banner.dart';
+import '../../deload/presentation/deload_start_sheet.dart';
 import 'coach_folder.dart';
 import 'favourite_star.dart';
 import 'routine_providers.dart';
@@ -86,6 +88,7 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
             onSelected: (item) => switch (item) {
               _Menu.folder => _newFolder(),
               _Menu.scan => scanAndImportRoutine(context, ref),
+              _Menu.deload => showDeloadStartSheet(context, source: 'user'),
             },
             itemBuilder: (context) => const [
               PopupMenuItem(
@@ -101,6 +104,14 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
                 child: ListTile(
                   leading: Icon(Icons.qr_code_scanner),
                   title: Text('Routine scannen'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: _Menu.deload,
+                child: ListTile(
+                  leading: Icon(Icons.battery_charging_full),
+                  title: Text('Deload'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -217,7 +228,7 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
   }
 }
 
-enum _Menu { folder, scan }
+enum _Menu { folder, scan, deload }
 
 /// The top of the tab: what is going on or planned, and the two ways in that
 /// are not a routine.
@@ -257,6 +268,7 @@ class _StartActions extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const DeloadBanner(margin: EdgeInsets.only(bottom: AppSpacing.sm)),
           // A session that is running comes before any plan: there can only
           // be one, and it is the one you were in the middle of.
           if (active != null)

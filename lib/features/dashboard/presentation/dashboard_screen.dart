@@ -29,6 +29,7 @@ import 'today_providers.dart';
 import '../../health/presentation/steps_week_screen.dart';
 import '../../health/presentation/health_providers.dart';
 import '../../../core/widgets/week_navigator.dart';
+import '../../deload/presentation/deload_banner.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
 ///
@@ -91,7 +92,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     )
                   : _Greeting(name: profile?.displayName, streak: streak),
             ),
-            if (!_editing) const _BackupReminderBanner(),
+            if (!_editing) ...[
+              const _BackupReminderBanner(),
+              const DeloadBanner(),
+              const DeloadSuggestionCard(),
+            ],
             const SizedBox(height: AppSpacing.lg),
             // Holding anything on the grid starts arranging, which is the
             // gesture people already know from their launcher. The blocks
@@ -693,9 +698,7 @@ class _VolumeBlock extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                buckets.isEmpty
-                    ? ''
-                    : Formatters.dayMonth(buckets.first.start),
+                buckets.isEmpty ? '' : Formatters.dayMonth(buckets.first.start),
                 style: muted,
               ),
               Text('nu', style: muted),

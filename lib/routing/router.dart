@@ -50,6 +50,7 @@ import '../features/workout/presentation/active_workout_screen.dart';
 import '../features/workout/presentation/rest_timer_screen.dart';
 import '../features/workout/presentation/workout_summary_screen.dart';
 import '../features/review/presentation/week_review_screen.dart';
+import '../features/deload/presentation/deload_settings_screen.dart';
 import 'app_shell.dart';
 import 'pages.dart';
 import 'tab_pager.dart';
@@ -408,6 +409,13 @@ GoRouter router(Ref ref) {
                         path: 'training',
                         pageBuilder: (context, state) =>
                             appPage(state, const TrainingSettingsScreen()),
+                        routes: [
+                          GoRoute(
+                            path: 'deload',
+                            pageBuilder: (context, state) =>
+                                appPage(state, const DeloadSettingsScreen()),
+                          ),
+                        ],
                       ),
                       GoRoute(
                         path: 'meldingen',

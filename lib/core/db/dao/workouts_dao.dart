@@ -1504,6 +1504,71 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  /// The start of every finished session that was not a deload, oldest
+  /// first: what "weeks of training without a break" is counted from.
+  Future<List<DateTime>> ordinarySessionStarts() async {
+    final rows = await customSelect(
+      'SELECT started_at FROM workouts '
+      'WHERE ended_at IS NOT NULL AND is_deload = 0 ORDER BY started_at',
+      readsFrom: {workoutsTable},
+    ).get();
+    return [
+      for (final row in rows)
+        DateTime.fromMillisecondsSinceEpoch(row.read<int>('started_at')),
+    ];
+  }
+
+  /// An exercise of the last ordinary session that had weight on it, for the
+  /// deload sheet to show what a deload does to it: its name, how many
+  /// working sets, and the first one's weight and reps. Null with none.
+  Future<
+    ({
+      String name,
+      ExerciseCategory category,
+      String exerciseId,
+      int sets,
+      double weightKg,
+      int reps,
+    })?
+  >
+  lastOrdinaryExample() async {
+    final found = await customSelect(
+      'SELECT e.id AS id, e.name AS name, e.category AS category, '
+      'we.id AS we_id FROM workouts w '
+      'JOIN workout_exercises we ON we.workout_id = w.id '
+      'JOIN exercises e ON e.id = we.exercise_id '
+      'WHERE w.ended_at IS NOT NULL AND w.is_deload = 0 AND EXISTS ('
+      '  SELECT 1 FROM workout_sets ws WHERE ws.workout_exercise_id = we.id '
+      '  AND ws.is_completed = 1 AND ws.weight_kg > 0 AND ws.reps > 0 '
+      '  AND ws.set_type != ?) '
+      'ORDER BY w.started_at DESC, we.sort_order LIMIT 1',
+      variables: [Variable.withString(SetType.warmup.wire)],
+    ).getSingleOrNull();
+    if (found == null) return null;
+    final sets = await customSelect(
+      'SELECT weight_kg, reps FROM workout_sets '
+      'WHERE workout_exercise_id = ? AND is_completed = 1 AND set_type != ? '
+      'ORDER BY sort_order',
+      variables: [
+        Variable.withString(found.read<String>('we_id')),
+        Variable.withString(SetType.warmup.wire),
+      ],
+    ).get();
+    final first = sets.firstWhere(
+      (row) =>
+          (row.readNullable<double>('weight_kg') ?? 0) > 0 &&
+          (row.readNullable<int>('reps') ?? 0) > 0,
+    );
+    return (
+      name: found.read<String>('name'),
+      category: ExerciseCategory.fromWire(found.read<String>('category')),
+      exerciseId: found.read<String>('id'),
+      sets: sets.length,
+      weightKg: first.read<double>('weight_kg'),
+      reps: first.read<int>('reps'),
+    );
+  }
+
   /// The start timestamps of every finished workout, oldest first. The streak
   /// calculation works on this list.
   Future<List<DateTime>> finishedWorkoutDates() async {

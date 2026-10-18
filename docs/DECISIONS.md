@@ -4524,3 +4524,48 @@ Android, en die staat bij OnePlus standaard uit.
 - **Het balkje kreeg een eigen punt.** Zonder tekent een OnePlus er een
   papieren vliegtuigje op, waar de set staat.
 
+## 216. Een deload: FitLog maakt de sessies lichter, en kijkt er daarna overheen
+
+Een deload is een week - of wat de gebruiker kiest - bewust lichter trainen.
+Gevraagd: alles instelbaar, ook de start en de duur ("een trainweek is niet
+altijd 7 dagen"); FitLog stelt er zelf een voor, met *Starten*, *Later* en
+*Melding dempen*, waarbij dempen uit blijft tot je het zelf weer aanzet; en
+de coach weet er alles van.
+
+- **Een periode, geen vlag op routines.** `deload_weeks` bewaart begin, duur,
+  hoe licht en wie hem startte (`user`, `suggestion`, `coach`); er is er
+  altijd hoogstens één die loopt of gepland staat, en een nieuwe vervangt
+  hem. Stoppen zet `stopped_at`; een geplande die nog niet begon verdwijnt.
+  De dagen tellen op de kalender, in UTC: een dag met een klokwissel heeft
+  er lokaal 23 of 25 uur.
+- **De sessie, niet de routine, wordt lichter.** Bij het starten in een
+  deload (`makeDeload`) blijven de warming-ups; van de werksets blijft een
+  deel, naar boven afgerond en minstens één, zodat elke oefening er nog
+  staat; het gewicht gaat op de geleerde stap van die oefening en wordt
+  nooit zwaarder; dropsets en sets tot falen vallen weg. De routine zelf
+  blijft wat ze was. De sessie krijgt `is_deload`, voor altijd: een deload
+  die later stopt, maakt een sessie erin niet gewoon.
+- **Daarna erover heen kijken.** Wat lichter was, mag niet tellen als wat je
+  kan: *VORIGE*, de hint en de geleerde stap komen uit de laatste gewone
+  sessie; stilstand, hoofdliften en spiersets slaan deloadsets en -weken
+  over; het weekoverzicht meldt in een deloadweek geen achterstand en laat
+  zo'n week buiten wat gewoon is. Records blijven wél tellen: wat je in een
+  deload toch haalde, heb je gehaald.
+- **Het voorstel** komt na zoveel weken op rij met een gewone sessie (een
+  week zonder, of een deloadweek, breekt de reeks) of met zoveel oefeningen
+  die stilstaan, allebei instelbaar en standaard 6 en 2. *Later* legt het
+  een instelbaar aantal dagen weg; dempen zet *Deload voorstellen* uit.
+  Een kaart op Start, geen melding van het systeem: het is geen nieuws dat
+  op het moment zelf moet komen.
+- **De coach** krijgt een opzoeking `deload` met alles - instellingen, de
+  lopende of geplande, de vorige, de weken zonder pauze, de stilstand en waar
+  het voorstel staat - en ziet in de sessies, de geschiedenis per oefening,
+  de weekcijfers en de training van nu welke een deload waren. Loopt er een,
+  dan zegt één regel in de prompt dat, buiten het vaste budget: het geldt
+  alleen dan. `propose_deload` start niets: het is een kaart met *Starten*
+  en *Aanpassen* (het startblad, met de cijfers van de coach), zoals een
+  oefening, omdat een deload elke volgende sessie verandert. De percentages
+  komen op de stappen van de schuifjes; wat de coach niet noemt, komt uit de
+  instellingen. Een kaart die pas later aangetikt wordt, start vandaag, en
+  houdt na het starten wat er echt gestart werd.
+

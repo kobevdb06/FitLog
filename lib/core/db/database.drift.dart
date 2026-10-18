@@ -828,6 +828,153 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _deloadSetsPercentMeta = const VerificationMeta(
+    'deloadSetsPercent',
+  );
+  @override
+  late final GeneratedColumn<int> deloadSetsPercent = GeneratedColumn<int>(
+    'deload_sets_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(50),
+  );
+  static const VerificationMeta _deloadWeightPercentMeta =
+      const VerificationMeta('deloadWeightPercent');
+  @override
+  late final GeneratedColumn<int> deloadWeightPercent = GeneratedColumn<int>(
+    'deload_weight_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(10),
+  );
+  static const VerificationMeta _deloadRepsPercentMeta = const VerificationMeta(
+    'deloadRepsPercent',
+  );
+  @override
+  late final GeneratedColumn<int> deloadRepsPercent = GeneratedColumn<int>(
+    'deload_reps_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deloadDropHardSetsMeta =
+      const VerificationMeta('deloadDropHardSets');
+  @override
+  late final GeneratedColumn<bool> deloadDropHardSets = GeneratedColumn<bool>(
+    'deload_drop_hard_sets',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deload_drop_hard_sets" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _deloadPrAttemptsMeta = const VerificationMeta(
+    'deloadPrAttempts',
+  );
+  @override
+  late final GeneratedColumn<bool> deloadPrAttempts = GeneratedColumn<bool>(
+    'deload_pr_attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deload_pr_attempts" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _deloadDaysMeta = const VerificationMeta(
+    'deloadDays',
+  );
+  @override
+  late final GeneratedColumn<int> deloadDays = GeneratedColumn<int>(
+    'deload_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(7),
+  );
+  static const VerificationMeta _deloadStartMeta = const VerificationMeta(
+    'deloadStart',
+  );
+  @override
+  late final GeneratedColumn<String> deloadStart = GeneratedColumn<String>(
+    'deload_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('today'),
+  );
+  static const VerificationMeta _deloadSuggestMeta = const VerificationMeta(
+    'deloadSuggest',
+  );
+  @override
+  late final GeneratedColumn<bool> deloadSuggest = GeneratedColumn<bool>(
+    'deload_suggest',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deload_suggest" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _deloadSuggestWeeksMeta =
+      const VerificationMeta('deloadSuggestWeeks');
+  @override
+  late final GeneratedColumn<int> deloadSuggestWeeks = GeneratedColumn<int>(
+    'deload_suggest_weeks',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(6),
+  );
+  static const VerificationMeta _deloadSuggestStalledMeta =
+      const VerificationMeta('deloadSuggestStalled');
+  @override
+  late final GeneratedColumn<int> deloadSuggestStalled = GeneratedColumn<int>(
+    'deload_suggest_stalled',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(2),
+  );
+  static const VerificationMeta _deloadLaterDaysMeta = const VerificationMeta(
+    'deloadLaterDays',
+  );
+  @override
+  late final GeneratedColumn<int> deloadLaterDays = GeneratedColumn<int>(
+    'deload_later_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(3),
+  );
+  static const VerificationMeta _deloadSnoozedUntilMeta =
+      const VerificationMeta('deloadSnoozedUntil');
+  @override
+  late final GeneratedColumn<int> deloadSnoozedUntil = GeneratedColumn<int>(
+    'deload_snoozed_until',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _progressionHintsMeta = const VerificationMeta(
     'progressionHints',
   );
@@ -1082,6 +1229,18 @@ class $AppSettingsTableTable extends AppSettingsTable
     healthConnectWriteWorkouts,
     coachSeesProfile,
     coachSeesHealth,
+    deloadSetsPercent,
+    deloadWeightPercent,
+    deloadRepsPercent,
+    deloadDropHardSets,
+    deloadPrAttempts,
+    deloadDays,
+    deloadStart,
+    deloadSuggest,
+    deloadSuggestWeeks,
+    deloadSuggestStalled,
+    deloadLaterDays,
+    deloadSnoozedUntil,
     progressionHints,
     coachGym,
     morningReportEnabled,
@@ -1335,6 +1494,111 @@ class $AppSettingsTableTable extends AppSettingsTable
         coachSeesHealth.isAcceptableOrUnknown(
           data['coach_sees_health']!,
           _coachSeesHealthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_sets_percent')) {
+      context.handle(
+        _deloadSetsPercentMeta,
+        deloadSetsPercent.isAcceptableOrUnknown(
+          data['deload_sets_percent']!,
+          _deloadSetsPercentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_weight_percent')) {
+      context.handle(
+        _deloadWeightPercentMeta,
+        deloadWeightPercent.isAcceptableOrUnknown(
+          data['deload_weight_percent']!,
+          _deloadWeightPercentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_reps_percent')) {
+      context.handle(
+        _deloadRepsPercentMeta,
+        deloadRepsPercent.isAcceptableOrUnknown(
+          data['deload_reps_percent']!,
+          _deloadRepsPercentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_drop_hard_sets')) {
+      context.handle(
+        _deloadDropHardSetsMeta,
+        deloadDropHardSets.isAcceptableOrUnknown(
+          data['deload_drop_hard_sets']!,
+          _deloadDropHardSetsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_pr_attempts')) {
+      context.handle(
+        _deloadPrAttemptsMeta,
+        deloadPrAttempts.isAcceptableOrUnknown(
+          data['deload_pr_attempts']!,
+          _deloadPrAttemptsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_days')) {
+      context.handle(
+        _deloadDaysMeta,
+        deloadDays.isAcceptableOrUnknown(data['deload_days']!, _deloadDaysMeta),
+      );
+    }
+    if (data.containsKey('deload_start')) {
+      context.handle(
+        _deloadStartMeta,
+        deloadStart.isAcceptableOrUnknown(
+          data['deload_start']!,
+          _deloadStartMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_suggest')) {
+      context.handle(
+        _deloadSuggestMeta,
+        deloadSuggest.isAcceptableOrUnknown(
+          data['deload_suggest']!,
+          _deloadSuggestMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_suggest_weeks')) {
+      context.handle(
+        _deloadSuggestWeeksMeta,
+        deloadSuggestWeeks.isAcceptableOrUnknown(
+          data['deload_suggest_weeks']!,
+          _deloadSuggestWeeksMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_suggest_stalled')) {
+      context.handle(
+        _deloadSuggestStalledMeta,
+        deloadSuggestStalled.isAcceptableOrUnknown(
+          data['deload_suggest_stalled']!,
+          _deloadSuggestStalledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_later_days')) {
+      context.handle(
+        _deloadLaterDaysMeta,
+        deloadLaterDays.isAcceptableOrUnknown(
+          data['deload_later_days']!,
+          _deloadLaterDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deload_snoozed_until')) {
+      context.handle(
+        _deloadSnoozedUntilMeta,
+        deloadSnoozedUntil.isAcceptableOrUnknown(
+          data['deload_snoozed_until']!,
+          _deloadSnoozedUntilMeta,
         ),
       );
     }
@@ -1616,6 +1880,54 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}coach_sees_health'],
       )!,
+      deloadSetsPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_sets_percent'],
+      )!,
+      deloadWeightPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_weight_percent'],
+      )!,
+      deloadRepsPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_reps_percent'],
+      )!,
+      deloadDropHardSets: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deload_drop_hard_sets'],
+      )!,
+      deloadPrAttempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deload_pr_attempts'],
+      )!,
+      deloadDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_days'],
+      )!,
+      deloadStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deload_start'],
+      )!,
+      deloadSuggest: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deload_suggest'],
+      )!,
+      deloadSuggestWeeks: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_suggest_weeks'],
+      )!,
+      deloadSuggestStalled: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_suggest_stalled'],
+      )!,
+      deloadLaterDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_later_days'],
+      )!,
+      deloadSnoozedUntil: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deload_snoozed_until'],
+      ),
       progressionHints: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}progression_hints'],
@@ -1805,6 +2117,38 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// in yourself it sees either way.
   final bool coachSeesHealth;
 
+  /// How much lighter a deload makes a routine, as the start sheet proposes
+  /// it: fewer working sets, less weight, fewer reps (and seconds), each in
+  /// percent. Half the sets and a tenth of the weight, until you choose.
+  final int deloadSetsPercent;
+  final int deloadWeightPercent;
+  final int deloadRepsPercent;
+
+  /// Drop sets and sets to failure left out of a deload: it is not the week
+  /// to go to the limit.
+  final bool deloadDropHardSets;
+
+  /// Whether a PR attempt may be started in a deload.
+  final bool deloadPrAttempts;
+
+  /// How many days a deload lasts, and whether it starts `today` or next
+  /// `monday` - what the start sheet has chosen when it opens.
+  final int deloadDays;
+  final String deloadStart;
+
+  /// Whether Start proposes a deload when it is time, and when that is:
+  /// after this many weeks of training without a break, or this many
+  /// exercises standing still. Off with "Melding dempen", and only back on
+  /// here.
+  final bool deloadSuggest;
+  final int deloadSuggestWeeks;
+  final int deloadSuggestStalled;
+
+  /// How many days Later puts the proposal away for, and until when it is
+  /// away now.
+  final int deloadLaterDays;
+  final int? deloadSnoozedUntil;
+
   /// Whether every exercise in a running session says what to try today,
   /// from what you did last time. On until you switch it off.
   final bool progressionHints;
@@ -1928,6 +2272,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.healthConnectWriteWorkouts,
     required this.coachSeesProfile,
     required this.coachSeesHealth,
+    required this.deloadSetsPercent,
+    required this.deloadWeightPercent,
+    required this.deloadRepsPercent,
+    required this.deloadDropHardSets,
+    required this.deloadPrAttempts,
+    required this.deloadDays,
+    required this.deloadStart,
+    required this.deloadSuggest,
+    required this.deloadSuggestWeeks,
+    required this.deloadSuggestStalled,
+    required this.deloadLaterDays,
+    this.deloadSnoozedUntil,
     required this.progressionHints,
     this.coachGym,
     required this.morningReportEnabled,
@@ -1990,6 +2346,20 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     );
     map['coach_sees_profile'] = Variable<bool>(coachSeesProfile);
     map['coach_sees_health'] = Variable<bool>(coachSeesHealth);
+    map['deload_sets_percent'] = Variable<int>(deloadSetsPercent);
+    map['deload_weight_percent'] = Variable<int>(deloadWeightPercent);
+    map['deload_reps_percent'] = Variable<int>(deloadRepsPercent);
+    map['deload_drop_hard_sets'] = Variable<bool>(deloadDropHardSets);
+    map['deload_pr_attempts'] = Variable<bool>(deloadPrAttempts);
+    map['deload_days'] = Variable<int>(deloadDays);
+    map['deload_start'] = Variable<String>(deloadStart);
+    map['deload_suggest'] = Variable<bool>(deloadSuggest);
+    map['deload_suggest_weeks'] = Variable<int>(deloadSuggestWeeks);
+    map['deload_suggest_stalled'] = Variable<int>(deloadSuggestStalled);
+    map['deload_later_days'] = Variable<int>(deloadLaterDays);
+    if (!nullToAbsent || deloadSnoozedUntil != null) {
+      map['deload_snoozed_until'] = Variable<int>(deloadSnoozedUntil);
+    }
     map['progression_hints'] = Variable<bool>(progressionHints);
     if (!nullToAbsent || coachGym != null) {
       map['coach_gym'] = Variable<String>(coachGym);
@@ -2071,6 +2441,20 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       healthConnectWriteWorkouts: Value(healthConnectWriteWorkouts),
       coachSeesProfile: Value(coachSeesProfile),
       coachSeesHealth: Value(coachSeesHealth),
+      deloadSetsPercent: Value(deloadSetsPercent),
+      deloadWeightPercent: Value(deloadWeightPercent),
+      deloadRepsPercent: Value(deloadRepsPercent),
+      deloadDropHardSets: Value(deloadDropHardSets),
+      deloadPrAttempts: Value(deloadPrAttempts),
+      deloadDays: Value(deloadDays),
+      deloadStart: Value(deloadStart),
+      deloadSuggest: Value(deloadSuggest),
+      deloadSuggestWeeks: Value(deloadSuggestWeeks),
+      deloadSuggestStalled: Value(deloadSuggestStalled),
+      deloadLaterDays: Value(deloadLaterDays),
+      deloadSnoozedUntil: deloadSnoozedUntil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deloadSnoozedUntil),
       progressionHints: Value(progressionHints),
       coachGym: coachGym == null && nullToAbsent
           ? const Value.absent()
@@ -2154,6 +2538,22 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       ),
       coachSeesProfile: serializer.fromJson<bool>(json['coachSeesProfile']),
       coachSeesHealth: serializer.fromJson<bool>(json['coachSeesHealth']),
+      deloadSetsPercent: serializer.fromJson<int>(json['deloadSetsPercent']),
+      deloadWeightPercent: serializer.fromJson<int>(
+        json['deloadWeightPercent'],
+      ),
+      deloadRepsPercent: serializer.fromJson<int>(json['deloadRepsPercent']),
+      deloadDropHardSets: serializer.fromJson<bool>(json['deloadDropHardSets']),
+      deloadPrAttempts: serializer.fromJson<bool>(json['deloadPrAttempts']),
+      deloadDays: serializer.fromJson<int>(json['deloadDays']),
+      deloadStart: serializer.fromJson<String>(json['deloadStart']),
+      deloadSuggest: serializer.fromJson<bool>(json['deloadSuggest']),
+      deloadSuggestWeeks: serializer.fromJson<int>(json['deloadSuggestWeeks']),
+      deloadSuggestStalled: serializer.fromJson<int>(
+        json['deloadSuggestStalled'],
+      ),
+      deloadLaterDays: serializer.fromJson<int>(json['deloadLaterDays']),
+      deloadSnoozedUntil: serializer.fromJson<int?>(json['deloadSnoozedUntil']),
       progressionHints: serializer.fromJson<bool>(json['progressionHints']),
       coachGym: serializer.fromJson<String?>(json['coachGym']),
       morningReportEnabled: serializer.fromJson<bool>(
@@ -2216,6 +2616,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       ),
       'coachSeesProfile': serializer.toJson<bool>(coachSeesProfile),
       'coachSeesHealth': serializer.toJson<bool>(coachSeesHealth),
+      'deloadSetsPercent': serializer.toJson<int>(deloadSetsPercent),
+      'deloadWeightPercent': serializer.toJson<int>(deloadWeightPercent),
+      'deloadRepsPercent': serializer.toJson<int>(deloadRepsPercent),
+      'deloadDropHardSets': serializer.toJson<bool>(deloadDropHardSets),
+      'deloadPrAttempts': serializer.toJson<bool>(deloadPrAttempts),
+      'deloadDays': serializer.toJson<int>(deloadDays),
+      'deloadStart': serializer.toJson<String>(deloadStart),
+      'deloadSuggest': serializer.toJson<bool>(deloadSuggest),
+      'deloadSuggestWeeks': serializer.toJson<int>(deloadSuggestWeeks),
+      'deloadSuggestStalled': serializer.toJson<int>(deloadSuggestStalled),
+      'deloadLaterDays': serializer.toJson<int>(deloadLaterDays),
+      'deloadSnoozedUntil': serializer.toJson<int?>(deloadSnoozedUntil),
       'progressionHints': serializer.toJson<bool>(progressionHints),
       'coachGym': serializer.toJson<String?>(coachGym),
       'morningReportEnabled': serializer.toJson<bool>(morningReportEnabled),
@@ -2266,6 +2678,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? healthConnectWriteWorkouts,
     bool? coachSeesProfile,
     bool? coachSeesHealth,
+    int? deloadSetsPercent,
+    int? deloadWeightPercent,
+    int? deloadRepsPercent,
+    bool? deloadDropHardSets,
+    bool? deloadPrAttempts,
+    int? deloadDays,
+    String? deloadStart,
+    bool? deloadSuggest,
+    int? deloadSuggestWeeks,
+    int? deloadSuggestStalled,
+    int? deloadLaterDays,
+    Value<int?> deloadSnoozedUntil = const Value.absent(),
     bool? progressionHints,
     Value<String?> coachGym = const Value.absent(),
     bool? morningReportEnabled,
@@ -2322,6 +2746,20 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
     coachSeesProfile: coachSeesProfile ?? this.coachSeesProfile,
     coachSeesHealth: coachSeesHealth ?? this.coachSeesHealth,
+    deloadSetsPercent: deloadSetsPercent ?? this.deloadSetsPercent,
+    deloadWeightPercent: deloadWeightPercent ?? this.deloadWeightPercent,
+    deloadRepsPercent: deloadRepsPercent ?? this.deloadRepsPercent,
+    deloadDropHardSets: deloadDropHardSets ?? this.deloadDropHardSets,
+    deloadPrAttempts: deloadPrAttempts ?? this.deloadPrAttempts,
+    deloadDays: deloadDays ?? this.deloadDays,
+    deloadStart: deloadStart ?? this.deloadStart,
+    deloadSuggest: deloadSuggest ?? this.deloadSuggest,
+    deloadSuggestWeeks: deloadSuggestWeeks ?? this.deloadSuggestWeeks,
+    deloadSuggestStalled: deloadSuggestStalled ?? this.deloadSuggestStalled,
+    deloadLaterDays: deloadLaterDays ?? this.deloadLaterDays,
+    deloadSnoozedUntil: deloadSnoozedUntil.present
+        ? deloadSnoozedUntil.value
+        : this.deloadSnoozedUntil,
     progressionHints: progressionHints ?? this.progressionHints,
     coachGym: coachGym.present ? coachGym.value : this.coachGym,
     morningReportEnabled: morningReportEnabled ?? this.morningReportEnabled,
@@ -2428,6 +2866,42 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       coachSeesHealth: data.coachSeesHealth.present
           ? data.coachSeesHealth.value
           : this.coachSeesHealth,
+      deloadSetsPercent: data.deloadSetsPercent.present
+          ? data.deloadSetsPercent.value
+          : this.deloadSetsPercent,
+      deloadWeightPercent: data.deloadWeightPercent.present
+          ? data.deloadWeightPercent.value
+          : this.deloadWeightPercent,
+      deloadRepsPercent: data.deloadRepsPercent.present
+          ? data.deloadRepsPercent.value
+          : this.deloadRepsPercent,
+      deloadDropHardSets: data.deloadDropHardSets.present
+          ? data.deloadDropHardSets.value
+          : this.deloadDropHardSets,
+      deloadPrAttempts: data.deloadPrAttempts.present
+          ? data.deloadPrAttempts.value
+          : this.deloadPrAttempts,
+      deloadDays: data.deloadDays.present
+          ? data.deloadDays.value
+          : this.deloadDays,
+      deloadStart: data.deloadStart.present
+          ? data.deloadStart.value
+          : this.deloadStart,
+      deloadSuggest: data.deloadSuggest.present
+          ? data.deloadSuggest.value
+          : this.deloadSuggest,
+      deloadSuggestWeeks: data.deloadSuggestWeeks.present
+          ? data.deloadSuggestWeeks.value
+          : this.deloadSuggestWeeks,
+      deloadSuggestStalled: data.deloadSuggestStalled.present
+          ? data.deloadSuggestStalled.value
+          : this.deloadSuggestStalled,
+      deloadLaterDays: data.deloadLaterDays.present
+          ? data.deloadLaterDays.value
+          : this.deloadLaterDays,
+      deloadSnoozedUntil: data.deloadSnoozedUntil.present
+          ? data.deloadSnoozedUntil.value
+          : this.deloadSnoozedUntil,
       progressionHints: data.progressionHints.present
           ? data.progressionHints.value
           : this.progressionHints,
@@ -2512,6 +2986,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('coachSeesProfile: $coachSeesProfile, ')
           ..write('coachSeesHealth: $coachSeesHealth, ')
+          ..write('deloadSetsPercent: $deloadSetsPercent, ')
+          ..write('deloadWeightPercent: $deloadWeightPercent, ')
+          ..write('deloadRepsPercent: $deloadRepsPercent, ')
+          ..write('deloadDropHardSets: $deloadDropHardSets, ')
+          ..write('deloadPrAttempts: $deloadPrAttempts, ')
+          ..write('deloadDays: $deloadDays, ')
+          ..write('deloadStart: $deloadStart, ')
+          ..write('deloadSuggest: $deloadSuggest, ')
+          ..write('deloadSuggestWeeks: $deloadSuggestWeeks, ')
+          ..write('deloadSuggestStalled: $deloadSuggestStalled, ')
+          ..write('deloadLaterDays: $deloadLaterDays, ')
+          ..write('deloadSnoozedUntil: $deloadSnoozedUntil, ')
           ..write('progressionHints: $progressionHints, ')
           ..write('coachGym: $coachGym, ')
           ..write('morningReportEnabled: $morningReportEnabled, ')
@@ -2564,6 +3050,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     healthConnectWriteWorkouts,
     coachSeesProfile,
     coachSeesHealth,
+    deloadSetsPercent,
+    deloadWeightPercent,
+    deloadRepsPercent,
+    deloadDropHardSets,
+    deloadPrAttempts,
+    deloadDays,
+    deloadStart,
+    deloadSuggest,
+    deloadSuggestWeeks,
+    deloadSuggestStalled,
+    deloadLaterDays,
+    deloadSnoozedUntil,
     progressionHints,
     coachGym,
     morningReportEnabled,
@@ -2615,6 +3113,18 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.healthConnectWriteWorkouts == this.healthConnectWriteWorkouts &&
           other.coachSeesProfile == this.coachSeesProfile &&
           other.coachSeesHealth == this.coachSeesHealth &&
+          other.deloadSetsPercent == this.deloadSetsPercent &&
+          other.deloadWeightPercent == this.deloadWeightPercent &&
+          other.deloadRepsPercent == this.deloadRepsPercent &&
+          other.deloadDropHardSets == this.deloadDropHardSets &&
+          other.deloadPrAttempts == this.deloadPrAttempts &&
+          other.deloadDays == this.deloadDays &&
+          other.deloadStart == this.deloadStart &&
+          other.deloadSuggest == this.deloadSuggest &&
+          other.deloadSuggestWeeks == this.deloadSuggestWeeks &&
+          other.deloadSuggestStalled == this.deloadSuggestStalled &&
+          other.deloadLaterDays == this.deloadLaterDays &&
+          other.deloadSnoozedUntil == this.deloadSnoozedUntil &&
           other.progressionHints == this.progressionHints &&
           other.coachGym == this.coachGym &&
           other.morningReportEnabled == this.morningReportEnabled &&
@@ -2664,6 +3174,18 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> healthConnectWriteWorkouts;
   final Value<bool> coachSeesProfile;
   final Value<bool> coachSeesHealth;
+  final Value<int> deloadSetsPercent;
+  final Value<int> deloadWeightPercent;
+  final Value<int> deloadRepsPercent;
+  final Value<bool> deloadDropHardSets;
+  final Value<bool> deloadPrAttempts;
+  final Value<int> deloadDays;
+  final Value<String> deloadStart;
+  final Value<bool> deloadSuggest;
+  final Value<int> deloadSuggestWeeks;
+  final Value<int> deloadSuggestStalled;
+  final Value<int> deloadLaterDays;
+  final Value<int?> deloadSnoozedUntil;
   final Value<bool> progressionHints;
   final Value<String?> coachGym;
   final Value<bool> morningReportEnabled;
@@ -2712,6 +3234,18 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.healthConnectWriteWorkouts = const Value.absent(),
     this.coachSeesProfile = const Value.absent(),
     this.coachSeesHealth = const Value.absent(),
+    this.deloadSetsPercent = const Value.absent(),
+    this.deloadWeightPercent = const Value.absent(),
+    this.deloadRepsPercent = const Value.absent(),
+    this.deloadDropHardSets = const Value.absent(),
+    this.deloadPrAttempts = const Value.absent(),
+    this.deloadDays = const Value.absent(),
+    this.deloadStart = const Value.absent(),
+    this.deloadSuggest = const Value.absent(),
+    this.deloadSuggestWeeks = const Value.absent(),
+    this.deloadSuggestStalled = const Value.absent(),
+    this.deloadLaterDays = const Value.absent(),
+    this.deloadSnoozedUntil = const Value.absent(),
     this.progressionHints = const Value.absent(),
     this.coachGym = const Value.absent(),
     this.morningReportEnabled = const Value.absent(),
@@ -2761,6 +3295,18 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.healthConnectWriteWorkouts = const Value.absent(),
     this.coachSeesProfile = const Value.absent(),
     this.coachSeesHealth = const Value.absent(),
+    this.deloadSetsPercent = const Value.absent(),
+    this.deloadWeightPercent = const Value.absent(),
+    this.deloadRepsPercent = const Value.absent(),
+    this.deloadDropHardSets = const Value.absent(),
+    this.deloadPrAttempts = const Value.absent(),
+    this.deloadDays = const Value.absent(),
+    this.deloadStart = const Value.absent(),
+    this.deloadSuggest = const Value.absent(),
+    this.deloadSuggestWeeks = const Value.absent(),
+    this.deloadSuggestStalled = const Value.absent(),
+    this.deloadLaterDays = const Value.absent(),
+    this.deloadSnoozedUntil = const Value.absent(),
     this.progressionHints = const Value.absent(),
     this.coachGym = const Value.absent(),
     this.morningReportEnabled = const Value.absent(),
@@ -2811,6 +3357,18 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? healthConnectWriteWorkouts,
     Expression<bool>? coachSeesProfile,
     Expression<bool>? coachSeesHealth,
+    Expression<int>? deloadSetsPercent,
+    Expression<int>? deloadWeightPercent,
+    Expression<int>? deloadRepsPercent,
+    Expression<bool>? deloadDropHardSets,
+    Expression<bool>? deloadPrAttempts,
+    Expression<int>? deloadDays,
+    Expression<String>? deloadStart,
+    Expression<bool>? deloadSuggest,
+    Expression<int>? deloadSuggestWeeks,
+    Expression<int>? deloadSuggestStalled,
+    Expression<int>? deloadLaterDays,
+    Expression<int>? deloadSnoozedUntil,
     Expression<bool>? progressionHints,
     Expression<String>? coachGym,
     Expression<bool>? morningReportEnabled,
@@ -2865,6 +3423,23 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         'health_connect_write_workouts': healthConnectWriteWorkouts,
       if (coachSeesProfile != null) 'coach_sees_profile': coachSeesProfile,
       if (coachSeesHealth != null) 'coach_sees_health': coachSeesHealth,
+      if (deloadSetsPercent != null) 'deload_sets_percent': deloadSetsPercent,
+      if (deloadWeightPercent != null)
+        'deload_weight_percent': deloadWeightPercent,
+      if (deloadRepsPercent != null) 'deload_reps_percent': deloadRepsPercent,
+      if (deloadDropHardSets != null)
+        'deload_drop_hard_sets': deloadDropHardSets,
+      if (deloadPrAttempts != null) 'deload_pr_attempts': deloadPrAttempts,
+      if (deloadDays != null) 'deload_days': deloadDays,
+      if (deloadStart != null) 'deload_start': deloadStart,
+      if (deloadSuggest != null) 'deload_suggest': deloadSuggest,
+      if (deloadSuggestWeeks != null)
+        'deload_suggest_weeks': deloadSuggestWeeks,
+      if (deloadSuggestStalled != null)
+        'deload_suggest_stalled': deloadSuggestStalled,
+      if (deloadLaterDays != null) 'deload_later_days': deloadLaterDays,
+      if (deloadSnoozedUntil != null)
+        'deload_snoozed_until': deloadSnoozedUntil,
       if (progressionHints != null) 'progression_hints': progressionHints,
       if (coachGym != null) 'coach_gym': coachGym,
       if (morningReportEnabled != null)
@@ -2920,6 +3495,18 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? healthConnectWriteWorkouts,
     Value<bool>? coachSeesProfile,
     Value<bool>? coachSeesHealth,
+    Value<int>? deloadSetsPercent,
+    Value<int>? deloadWeightPercent,
+    Value<int>? deloadRepsPercent,
+    Value<bool>? deloadDropHardSets,
+    Value<bool>? deloadPrAttempts,
+    Value<int>? deloadDays,
+    Value<String>? deloadStart,
+    Value<bool>? deloadSuggest,
+    Value<int>? deloadSuggestWeeks,
+    Value<int>? deloadSuggestStalled,
+    Value<int>? deloadLaterDays,
+    Value<int?>? deloadSnoozedUntil,
     Value<bool>? progressionHints,
     Value<String?>? coachGym,
     Value<bool>? morningReportEnabled,
@@ -2971,6 +3558,18 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
       coachSeesProfile: coachSeesProfile ?? this.coachSeesProfile,
       coachSeesHealth: coachSeesHealth ?? this.coachSeesHealth,
+      deloadSetsPercent: deloadSetsPercent ?? this.deloadSetsPercent,
+      deloadWeightPercent: deloadWeightPercent ?? this.deloadWeightPercent,
+      deloadRepsPercent: deloadRepsPercent ?? this.deloadRepsPercent,
+      deloadDropHardSets: deloadDropHardSets ?? this.deloadDropHardSets,
+      deloadPrAttempts: deloadPrAttempts ?? this.deloadPrAttempts,
+      deloadDays: deloadDays ?? this.deloadDays,
+      deloadStart: deloadStart ?? this.deloadStart,
+      deloadSuggest: deloadSuggest ?? this.deloadSuggest,
+      deloadSuggestWeeks: deloadSuggestWeeks ?? this.deloadSuggestWeeks,
+      deloadSuggestStalled: deloadSuggestStalled ?? this.deloadSuggestStalled,
+      deloadLaterDays: deloadLaterDays ?? this.deloadLaterDays,
+      deloadSnoozedUntil: deloadSnoozedUntil ?? this.deloadSnoozedUntil,
       progressionHints: progressionHints ?? this.progressionHints,
       coachGym: coachGym ?? this.coachGym,
       morningReportEnabled: morningReportEnabled ?? this.morningReportEnabled,
@@ -3087,6 +3686,42 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (coachSeesHealth.present) {
       map['coach_sees_health'] = Variable<bool>(coachSeesHealth.value);
     }
+    if (deloadSetsPercent.present) {
+      map['deload_sets_percent'] = Variable<int>(deloadSetsPercent.value);
+    }
+    if (deloadWeightPercent.present) {
+      map['deload_weight_percent'] = Variable<int>(deloadWeightPercent.value);
+    }
+    if (deloadRepsPercent.present) {
+      map['deload_reps_percent'] = Variable<int>(deloadRepsPercent.value);
+    }
+    if (deloadDropHardSets.present) {
+      map['deload_drop_hard_sets'] = Variable<bool>(deloadDropHardSets.value);
+    }
+    if (deloadPrAttempts.present) {
+      map['deload_pr_attempts'] = Variable<bool>(deloadPrAttempts.value);
+    }
+    if (deloadDays.present) {
+      map['deload_days'] = Variable<int>(deloadDays.value);
+    }
+    if (deloadStart.present) {
+      map['deload_start'] = Variable<String>(deloadStart.value);
+    }
+    if (deloadSuggest.present) {
+      map['deload_suggest'] = Variable<bool>(deloadSuggest.value);
+    }
+    if (deloadSuggestWeeks.present) {
+      map['deload_suggest_weeks'] = Variable<int>(deloadSuggestWeeks.value);
+    }
+    if (deloadSuggestStalled.present) {
+      map['deload_suggest_stalled'] = Variable<int>(deloadSuggestStalled.value);
+    }
+    if (deloadLaterDays.present) {
+      map['deload_later_days'] = Variable<int>(deloadLaterDays.value);
+    }
+    if (deloadSnoozedUntil.present) {
+      map['deload_snoozed_until'] = Variable<int>(deloadSnoozedUntil.value);
+    }
     if (progressionHints.present) {
       map['progression_hints'] = Variable<bool>(progressionHints.value);
     }
@@ -3184,6 +3819,18 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('coachSeesProfile: $coachSeesProfile, ')
           ..write('coachSeesHealth: $coachSeesHealth, ')
+          ..write('deloadSetsPercent: $deloadSetsPercent, ')
+          ..write('deloadWeightPercent: $deloadWeightPercent, ')
+          ..write('deloadRepsPercent: $deloadRepsPercent, ')
+          ..write('deloadDropHardSets: $deloadDropHardSets, ')
+          ..write('deloadPrAttempts: $deloadPrAttempts, ')
+          ..write('deloadDays: $deloadDays, ')
+          ..write('deloadStart: $deloadStart, ')
+          ..write('deloadSuggest: $deloadSuggest, ')
+          ..write('deloadSuggestWeeks: $deloadSuggestWeeks, ')
+          ..write('deloadSuggestStalled: $deloadSuggestStalled, ')
+          ..write('deloadLaterDays: $deloadLaterDays, ')
+          ..write('deloadSnoozedUntil: $deloadSnoozedUntil, ')
           ..write('progressionHints: $progressionHints, ')
           ..write('coachGym: $coachGym, ')
           ..write('morningReportEnabled: $morningReportEnabled, ')
@@ -8636,6 +9283,21 @@ class $WorkoutsTableTable extends WorkoutsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isDeloadMeta = const VerificationMeta(
+    'isDeload',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeload = GeneratedColumn<bool>(
+    'is_deload',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deload" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -8652,6 +9314,7 @@ class $WorkoutsTableTable extends WorkoutsTable
     healthConnectId,
     avgHeartRate,
     maxHeartRate,
+    isDeload,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8770,6 +9433,12 @@ class $WorkoutsTableTable extends WorkoutsTable
         ),
       );
     }
+    if (data.containsKey('is_deload')) {
+      context.handle(
+        _isDeloadMeta,
+        isDeload.isAcceptableOrUnknown(data['is_deload']!, _isDeloadMeta),
+      );
+    }
     return context;
   }
 
@@ -8835,6 +9504,10 @@ class $WorkoutsTableTable extends WorkoutsTable
         DriftSqlType.int,
         data['${effectivePrefix}max_heart_rate'],
       ),
+      isDeload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deload'],
+      )!,
     );
   }
 
@@ -8875,6 +9548,11 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
   /// without a watch, or before it handed its readings over.
   final int? avgHeartRate;
   final int? maxHeartRate;
+
+  /// Started during a deload. Set once, at the start, and kept: a deload
+  /// that is stopped or forgotten later does not change what this session
+  /// was. Progress, plateaus and what is usual look past it.
+  final bool isDeload;
   const WorkoutRow({
     required this.id,
     this.routineId,
@@ -8890,6 +9568,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     this.healthConnectId,
     this.avgHeartRate,
     this.maxHeartRate,
+    required this.isDeload,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -8924,6 +9603,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     if (!nullToAbsent || maxHeartRate != null) {
       map['max_heart_rate'] = Variable<int>(maxHeartRate);
     }
+    map['is_deload'] = Variable<bool>(isDeload);
     return map;
   }
 
@@ -8959,6 +9639,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       maxHeartRate: maxHeartRate == null && nullToAbsent
           ? const Value.absent()
           : Value(maxHeartRate),
+      isDeload: Value(isDeload),
     );
   }
 
@@ -8982,6 +9663,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       healthConnectId: serializer.fromJson<String?>(json['healthConnectId']),
       avgHeartRate: serializer.fromJson<int?>(json['avgHeartRate']),
       maxHeartRate: serializer.fromJson<int?>(json['maxHeartRate']),
+      isDeload: serializer.fromJson<bool>(json['isDeload']),
     );
   }
   @override
@@ -9002,6 +9684,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       'healthConnectId': serializer.toJson<String?>(healthConnectId),
       'avgHeartRate': serializer.toJson<int?>(avgHeartRate),
       'maxHeartRate': serializer.toJson<int?>(maxHeartRate),
+      'isDeload': serializer.toJson<bool>(isDeload),
     };
   }
 
@@ -9020,6 +9703,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     Value<String?> healthConnectId = const Value.absent(),
     Value<int?> avgHeartRate = const Value.absent(),
     Value<int?> maxHeartRate = const Value.absent(),
+    bool? isDeload,
   }) => WorkoutRow(
     id: id ?? this.id,
     routineId: routineId.present ? routineId.value : this.routineId,
@@ -9039,6 +9723,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
         : this.healthConnectId,
     avgHeartRate: avgHeartRate.present ? avgHeartRate.value : this.avgHeartRate,
     maxHeartRate: maxHeartRate.present ? maxHeartRate.value : this.maxHeartRate,
+    isDeload: isDeload ?? this.isDeload,
   );
   WorkoutRow copyWithCompanion(WorkoutsTableCompanion data) {
     return WorkoutRow(
@@ -9070,6 +9755,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       maxHeartRate: data.maxHeartRate.present
           ? data.maxHeartRate.value
           : this.maxHeartRate,
+      isDeload: data.isDeload.present ? data.isDeload.value : this.isDeload,
     );
   }
 
@@ -9089,7 +9775,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ..write('durationSeconds: $durationSeconds, ')
           ..write('healthConnectId: $healthConnectId, ')
           ..write('avgHeartRate: $avgHeartRate, ')
-          ..write('maxHeartRate: $maxHeartRate')
+          ..write('maxHeartRate: $maxHeartRate, ')
+          ..write('isDeload: $isDeload')
           ..write(')'))
         .toString();
   }
@@ -9110,6 +9797,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     healthConnectId,
     avgHeartRate,
     maxHeartRate,
+    isDeload,
   );
   @override
   bool operator ==(Object other) =>
@@ -9128,7 +9816,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           other.durationSeconds == this.durationSeconds &&
           other.healthConnectId == this.healthConnectId &&
           other.avgHeartRate == this.avgHeartRate &&
-          other.maxHeartRate == this.maxHeartRate);
+          other.maxHeartRate == this.maxHeartRate &&
+          other.isDeload == this.isDeload);
 }
 
 class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
@@ -9146,6 +9835,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
   final Value<String?> healthConnectId;
   final Value<int?> avgHeartRate;
   final Value<int?> maxHeartRate;
+  final Value<bool> isDeload;
   final Value<int> rowid;
   const WorkoutsTableCompanion({
     this.id = const Value.absent(),
@@ -9162,6 +9852,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.healthConnectId = const Value.absent(),
     this.avgHeartRate = const Value.absent(),
     this.maxHeartRate = const Value.absent(),
+    this.isDeload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkoutsTableCompanion.insert({
@@ -9179,6 +9870,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.healthConnectId = const Value.absent(),
     this.avgHeartRate = const Value.absent(),
     this.maxHeartRate = const Value.absent(),
+    this.isDeload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -9198,6 +9890,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Expression<String>? healthConnectId,
     Expression<int>? avgHeartRate,
     Expression<int>? maxHeartRate,
+    Expression<bool>? isDeload,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -9215,6 +9908,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       if (healthConnectId != null) 'health_connect_id': healthConnectId,
       if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
       if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
+      if (isDeload != null) 'is_deload': isDeload,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -9234,6 +9928,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Value<String?>? healthConnectId,
     Value<int?>? avgHeartRate,
     Value<int?>? maxHeartRate,
+    Value<bool>? isDeload,
     Value<int>? rowid,
   }) {
     return WorkoutsTableCompanion(
@@ -9251,6 +9946,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       healthConnectId: healthConnectId ?? this.healthConnectId,
       avgHeartRate: avgHeartRate ?? this.avgHeartRate,
       maxHeartRate: maxHeartRate ?? this.maxHeartRate,
+      isDeload: isDeload ?? this.isDeload,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -9300,6 +9996,9 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     if (maxHeartRate.present) {
       map['max_heart_rate'] = Variable<int>(maxHeartRate.value);
     }
+    if (isDeload.present) {
+      map['is_deload'] = Variable<bool>(isDeload.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -9323,6 +10022,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
           ..write('healthConnectId: $healthConnectId, ')
           ..write('avgHeartRate: $avgHeartRate, ')
           ..write('maxHeartRate: $maxHeartRate, ')
+          ..write('isDeload: $isDeload, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15231,6 +15931,695 @@ class WeekReviewsTableCompanion extends UpdateCompanion<WeekReviewRow> {
   }
 }
 
+class $DeloadWeeksTableTable extends DeloadWeeksTable
+    with TableInfo<$DeloadWeeksTableTable, DeloadWeekRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DeloadWeeksTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startDayMeta = const VerificationMeta(
+    'startDay',
+  );
+  @override
+  late final GeneratedColumn<int> startDay = GeneratedColumn<int>(
+    'start_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _daysMeta = const VerificationMeta('days');
+  @override
+  late final GeneratedColumn<int> days = GeneratedColumn<int>(
+    'days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _setsPercentMeta = const VerificationMeta(
+    'setsPercent',
+  );
+  @override
+  late final GeneratedColumn<int> setsPercent = GeneratedColumn<int>(
+    'sets_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weightPercentMeta = const VerificationMeta(
+    'weightPercent',
+  );
+  @override
+  late final GeneratedColumn<int> weightPercent = GeneratedColumn<int>(
+    'weight_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _repsPercentMeta = const VerificationMeta(
+    'repsPercent',
+  );
+  @override
+  late final GeneratedColumn<int> repsPercent = GeneratedColumn<int>(
+    'reps_percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dropHardSetsMeta = const VerificationMeta(
+    'dropHardSets',
+  );
+  @override
+  late final GeneratedColumn<bool> dropHardSets = GeneratedColumn<bool>(
+    'drop_hard_sets',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("drop_hard_sets" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _prAttemptsMeta = const VerificationMeta(
+    'prAttempts',
+  );
+  @override
+  late final GeneratedColumn<bool> prAttempts = GeneratedColumn<bool>(
+    'pr_attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pr_attempts" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stoppedAtMeta = const VerificationMeta(
+    'stoppedAt',
+  );
+  @override
+  late final GeneratedColumn<int> stoppedAt = GeneratedColumn<int>(
+    'stopped_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    startDay,
+    days,
+    setsPercent,
+    weightPercent,
+    repsPercent,
+    dropHardSets,
+    prAttempts,
+    source,
+    stoppedAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'deload_weeks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DeloadWeekRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('start_day')) {
+      context.handle(
+        _startDayMeta,
+        startDay.isAcceptableOrUnknown(data['start_day']!, _startDayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startDayMeta);
+    }
+    if (data.containsKey('days')) {
+      context.handle(
+        _daysMeta,
+        days.isAcceptableOrUnknown(data['days']!, _daysMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_daysMeta);
+    }
+    if (data.containsKey('sets_percent')) {
+      context.handle(
+        _setsPercentMeta,
+        setsPercent.isAcceptableOrUnknown(
+          data['sets_percent']!,
+          _setsPercentMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_setsPercentMeta);
+    }
+    if (data.containsKey('weight_percent')) {
+      context.handle(
+        _weightPercentMeta,
+        weightPercent.isAcceptableOrUnknown(
+          data['weight_percent']!,
+          _weightPercentMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_weightPercentMeta);
+    }
+    if (data.containsKey('reps_percent')) {
+      context.handle(
+        _repsPercentMeta,
+        repsPercent.isAcceptableOrUnknown(
+          data['reps_percent']!,
+          _repsPercentMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_repsPercentMeta);
+    }
+    if (data.containsKey('drop_hard_sets')) {
+      context.handle(
+        _dropHardSetsMeta,
+        dropHardSets.isAcceptableOrUnknown(
+          data['drop_hard_sets']!,
+          _dropHardSetsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dropHardSetsMeta);
+    }
+    if (data.containsKey('pr_attempts')) {
+      context.handle(
+        _prAttemptsMeta,
+        prAttempts.isAcceptableOrUnknown(data['pr_attempts']!, _prAttemptsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_prAttemptsMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('stopped_at')) {
+      context.handle(
+        _stoppedAtMeta,
+        stoppedAt.isAcceptableOrUnknown(data['stopped_at']!, _stoppedAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DeloadWeekRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DeloadWeekRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      startDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_day'],
+      )!,
+      days: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}days'],
+      )!,
+      setsPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sets_percent'],
+      )!,
+      weightPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weight_percent'],
+      )!,
+      repsPercent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reps_percent'],
+      )!,
+      dropHardSets: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}drop_hard_sets'],
+      )!,
+      prAttempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pr_attempts'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      stoppedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stopped_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DeloadWeeksTableTable createAlias(String alias) {
+    return $DeloadWeeksTableTable(attachedDatabase, alias);
+  }
+}
+
+class DeloadWeekRow extends DataClass implements Insertable<DeloadWeekRow> {
+  final String id;
+
+  /// Midnight at the start of the first day.
+  final int startDay;
+
+  /// How many days, from [startDay]: a training week is not always seven.
+  final int days;
+  final int setsPercent;
+  final int weightPercent;
+  final int repsPercent;
+  final bool dropHardSets;
+  final bool prAttempts;
+
+  /// Who started it: `user`, `suggestion` (the card on Start) or `coach`.
+  final String source;
+
+  /// Stopped before its last day: the moment Stoppen was tapped.
+  final int? stoppedAt;
+  final int createdAt;
+  const DeloadWeekRow({
+    required this.id,
+    required this.startDay,
+    required this.days,
+    required this.setsPercent,
+    required this.weightPercent,
+    required this.repsPercent,
+    required this.dropHardSets,
+    required this.prAttempts,
+    required this.source,
+    this.stoppedAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['start_day'] = Variable<int>(startDay);
+    map['days'] = Variable<int>(days);
+    map['sets_percent'] = Variable<int>(setsPercent);
+    map['weight_percent'] = Variable<int>(weightPercent);
+    map['reps_percent'] = Variable<int>(repsPercent);
+    map['drop_hard_sets'] = Variable<bool>(dropHardSets);
+    map['pr_attempts'] = Variable<bool>(prAttempts);
+    map['source'] = Variable<String>(source);
+    if (!nullToAbsent || stoppedAt != null) {
+      map['stopped_at'] = Variable<int>(stoppedAt);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  DeloadWeeksTableCompanion toCompanion(bool nullToAbsent) {
+    return DeloadWeeksTableCompanion(
+      id: Value(id),
+      startDay: Value(startDay),
+      days: Value(days),
+      setsPercent: Value(setsPercent),
+      weightPercent: Value(weightPercent),
+      repsPercent: Value(repsPercent),
+      dropHardSets: Value(dropHardSets),
+      prAttempts: Value(prAttempts),
+      source: Value(source),
+      stoppedAt: stoppedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stoppedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DeloadWeekRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DeloadWeekRow(
+      id: serializer.fromJson<String>(json['id']),
+      startDay: serializer.fromJson<int>(json['startDay']),
+      days: serializer.fromJson<int>(json['days']),
+      setsPercent: serializer.fromJson<int>(json['setsPercent']),
+      weightPercent: serializer.fromJson<int>(json['weightPercent']),
+      repsPercent: serializer.fromJson<int>(json['repsPercent']),
+      dropHardSets: serializer.fromJson<bool>(json['dropHardSets']),
+      prAttempts: serializer.fromJson<bool>(json['prAttempts']),
+      source: serializer.fromJson<String>(json['source']),
+      stoppedAt: serializer.fromJson<int?>(json['stoppedAt']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'startDay': serializer.toJson<int>(startDay),
+      'days': serializer.toJson<int>(days),
+      'setsPercent': serializer.toJson<int>(setsPercent),
+      'weightPercent': serializer.toJson<int>(weightPercent),
+      'repsPercent': serializer.toJson<int>(repsPercent),
+      'dropHardSets': serializer.toJson<bool>(dropHardSets),
+      'prAttempts': serializer.toJson<bool>(prAttempts),
+      'source': serializer.toJson<String>(source),
+      'stoppedAt': serializer.toJson<int?>(stoppedAt),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  DeloadWeekRow copyWith({
+    String? id,
+    int? startDay,
+    int? days,
+    int? setsPercent,
+    int? weightPercent,
+    int? repsPercent,
+    bool? dropHardSets,
+    bool? prAttempts,
+    String? source,
+    Value<int?> stoppedAt = const Value.absent(),
+    int? createdAt,
+  }) => DeloadWeekRow(
+    id: id ?? this.id,
+    startDay: startDay ?? this.startDay,
+    days: days ?? this.days,
+    setsPercent: setsPercent ?? this.setsPercent,
+    weightPercent: weightPercent ?? this.weightPercent,
+    repsPercent: repsPercent ?? this.repsPercent,
+    dropHardSets: dropHardSets ?? this.dropHardSets,
+    prAttempts: prAttempts ?? this.prAttempts,
+    source: source ?? this.source,
+    stoppedAt: stoppedAt.present ? stoppedAt.value : this.stoppedAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  DeloadWeekRow copyWithCompanion(DeloadWeeksTableCompanion data) {
+    return DeloadWeekRow(
+      id: data.id.present ? data.id.value : this.id,
+      startDay: data.startDay.present ? data.startDay.value : this.startDay,
+      days: data.days.present ? data.days.value : this.days,
+      setsPercent: data.setsPercent.present
+          ? data.setsPercent.value
+          : this.setsPercent,
+      weightPercent: data.weightPercent.present
+          ? data.weightPercent.value
+          : this.weightPercent,
+      repsPercent: data.repsPercent.present
+          ? data.repsPercent.value
+          : this.repsPercent,
+      dropHardSets: data.dropHardSets.present
+          ? data.dropHardSets.value
+          : this.dropHardSets,
+      prAttempts: data.prAttempts.present
+          ? data.prAttempts.value
+          : this.prAttempts,
+      source: data.source.present ? data.source.value : this.source,
+      stoppedAt: data.stoppedAt.present ? data.stoppedAt.value : this.stoppedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DeloadWeekRow(')
+          ..write('id: $id, ')
+          ..write('startDay: $startDay, ')
+          ..write('days: $days, ')
+          ..write('setsPercent: $setsPercent, ')
+          ..write('weightPercent: $weightPercent, ')
+          ..write('repsPercent: $repsPercent, ')
+          ..write('dropHardSets: $dropHardSets, ')
+          ..write('prAttempts: $prAttempts, ')
+          ..write('source: $source, ')
+          ..write('stoppedAt: $stoppedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    startDay,
+    days,
+    setsPercent,
+    weightPercent,
+    repsPercent,
+    dropHardSets,
+    prAttempts,
+    source,
+    stoppedAt,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DeloadWeekRow &&
+          other.id == this.id &&
+          other.startDay == this.startDay &&
+          other.days == this.days &&
+          other.setsPercent == this.setsPercent &&
+          other.weightPercent == this.weightPercent &&
+          other.repsPercent == this.repsPercent &&
+          other.dropHardSets == this.dropHardSets &&
+          other.prAttempts == this.prAttempts &&
+          other.source == this.source &&
+          other.stoppedAt == this.stoppedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class DeloadWeeksTableCompanion extends UpdateCompanion<DeloadWeekRow> {
+  final Value<String> id;
+  final Value<int> startDay;
+  final Value<int> days;
+  final Value<int> setsPercent;
+  final Value<int> weightPercent;
+  final Value<int> repsPercent;
+  final Value<bool> dropHardSets;
+  final Value<bool> prAttempts;
+  final Value<String> source;
+  final Value<int?> stoppedAt;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const DeloadWeeksTableCompanion({
+    this.id = const Value.absent(),
+    this.startDay = const Value.absent(),
+    this.days = const Value.absent(),
+    this.setsPercent = const Value.absent(),
+    this.weightPercent = const Value.absent(),
+    this.repsPercent = const Value.absent(),
+    this.dropHardSets = const Value.absent(),
+    this.prAttempts = const Value.absent(),
+    this.source = const Value.absent(),
+    this.stoppedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DeloadWeeksTableCompanion.insert({
+    required String id,
+    required int startDay,
+    required int days,
+    required int setsPercent,
+    required int weightPercent,
+    required int repsPercent,
+    required bool dropHardSets,
+    required bool prAttempts,
+    required String source,
+    this.stoppedAt = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       startDay = Value(startDay),
+       days = Value(days),
+       setsPercent = Value(setsPercent),
+       weightPercent = Value(weightPercent),
+       repsPercent = Value(repsPercent),
+       dropHardSets = Value(dropHardSets),
+       prAttempts = Value(prAttempts),
+       source = Value(source),
+       createdAt = Value(createdAt);
+  static Insertable<DeloadWeekRow> custom({
+    Expression<String>? id,
+    Expression<int>? startDay,
+    Expression<int>? days,
+    Expression<int>? setsPercent,
+    Expression<int>? weightPercent,
+    Expression<int>? repsPercent,
+    Expression<bool>? dropHardSets,
+    Expression<bool>? prAttempts,
+    Expression<String>? source,
+    Expression<int>? stoppedAt,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startDay != null) 'start_day': startDay,
+      if (days != null) 'days': days,
+      if (setsPercent != null) 'sets_percent': setsPercent,
+      if (weightPercent != null) 'weight_percent': weightPercent,
+      if (repsPercent != null) 'reps_percent': repsPercent,
+      if (dropHardSets != null) 'drop_hard_sets': dropHardSets,
+      if (prAttempts != null) 'pr_attempts': prAttempts,
+      if (source != null) 'source': source,
+      if (stoppedAt != null) 'stopped_at': stoppedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DeloadWeeksTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? startDay,
+    Value<int>? days,
+    Value<int>? setsPercent,
+    Value<int>? weightPercent,
+    Value<int>? repsPercent,
+    Value<bool>? dropHardSets,
+    Value<bool>? prAttempts,
+    Value<String>? source,
+    Value<int?>? stoppedAt,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return DeloadWeeksTableCompanion(
+      id: id ?? this.id,
+      startDay: startDay ?? this.startDay,
+      days: days ?? this.days,
+      setsPercent: setsPercent ?? this.setsPercent,
+      weightPercent: weightPercent ?? this.weightPercent,
+      repsPercent: repsPercent ?? this.repsPercent,
+      dropHardSets: dropHardSets ?? this.dropHardSets,
+      prAttempts: prAttempts ?? this.prAttempts,
+      source: source ?? this.source,
+      stoppedAt: stoppedAt ?? this.stoppedAt,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (startDay.present) {
+      map['start_day'] = Variable<int>(startDay.value);
+    }
+    if (days.present) {
+      map['days'] = Variable<int>(days.value);
+    }
+    if (setsPercent.present) {
+      map['sets_percent'] = Variable<int>(setsPercent.value);
+    }
+    if (weightPercent.present) {
+      map['weight_percent'] = Variable<int>(weightPercent.value);
+    }
+    if (repsPercent.present) {
+      map['reps_percent'] = Variable<int>(repsPercent.value);
+    }
+    if (dropHardSets.present) {
+      map['drop_hard_sets'] = Variable<bool>(dropHardSets.value);
+    }
+    if (prAttempts.present) {
+      map['pr_attempts'] = Variable<bool>(prAttempts.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (stoppedAt.present) {
+      map['stopped_at'] = Variable<int>(stoppedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DeloadWeeksTableCompanion(')
+          ..write('id: $id, ')
+          ..write('startDay: $startDay, ')
+          ..write('days: $days, ')
+          ..write('setsPercent: $setsPercent, ')
+          ..write('weightPercent: $weightPercent, ')
+          ..write('repsPercent: $repsPercent, ')
+          ..write('dropHardSets: $dropHardSets, ')
+          ..write('prAttempts: $prAttempts, ')
+          ..write('source: $source, ')
+          ..write('stoppedAt: $stoppedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -15287,6 +16676,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MorningReportsTableTable morningReportsTable =
       $MorningReportsTableTable(this);
   late final $WeekReviewsTableTable weekReviewsTable = $WeekReviewsTableTable(
+    this,
+  );
+  late final $DeloadWeeksTableTable deloadWeeksTable = $DeloadWeeksTableTable(
     this,
   );
   late final Index idxRoutineExercisesRoutine = Index(
@@ -15350,6 +16742,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final RecoveryDao recoveryDao = RecoveryDao(this as AppDatabase);
   late final HealthDao healthDao = HealthDao(this as AppDatabase);
   late final ReportsDao reportsDao = ReportsDao(this as AppDatabase);
+  late final DeloadDao deloadDao = DeloadDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -15381,6 +16774,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cardioSessionsTable,
     morningReportsTable,
     weekReviewsTable,
+    deloadWeeksTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -15752,6 +17146,18 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> healthConnectWriteWorkouts,
       Value<bool> coachSeesProfile,
       Value<bool> coachSeesHealth,
+      Value<int> deloadSetsPercent,
+      Value<int> deloadWeightPercent,
+      Value<int> deloadRepsPercent,
+      Value<bool> deloadDropHardSets,
+      Value<bool> deloadPrAttempts,
+      Value<int> deloadDays,
+      Value<String> deloadStart,
+      Value<bool> deloadSuggest,
+      Value<int> deloadSuggestWeeks,
+      Value<int> deloadSuggestStalled,
+      Value<int> deloadLaterDays,
+      Value<int?> deloadSnoozedUntil,
       Value<bool> progressionHints,
       Value<String?> coachGym,
       Value<bool> morningReportEnabled,
@@ -15802,6 +17208,18 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> healthConnectWriteWorkouts,
       Value<bool> coachSeesProfile,
       Value<bool> coachSeesHealth,
+      Value<int> deloadSetsPercent,
+      Value<int> deloadWeightPercent,
+      Value<int> deloadRepsPercent,
+      Value<bool> deloadDropHardSets,
+      Value<bool> deloadPrAttempts,
+      Value<int> deloadDays,
+      Value<String> deloadStart,
+      Value<bool> deloadSuggest,
+      Value<int> deloadSuggestWeeks,
+      Value<int> deloadSuggestStalled,
+      Value<int> deloadLaterDays,
+      Value<int?> deloadSnoozedUntil,
       Value<bool> progressionHints,
       Value<String?> coachGym,
       Value<bool> morningReportEnabled,
@@ -15965,6 +17383,66 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get coachSeesHealth => $composableBuilder(
     column: $table.coachSeesHealth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadSetsPercent => $composableBuilder(
+    column: $table.deloadSetsPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadWeightPercent => $composableBuilder(
+    column: $table.deloadWeightPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadRepsPercent => $composableBuilder(
+    column: $table.deloadRepsPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deloadDropHardSets => $composableBuilder(
+    column: $table.deloadDropHardSets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deloadPrAttempts => $composableBuilder(
+    column: $table.deloadPrAttempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadDays => $composableBuilder(
+    column: $table.deloadDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deloadStart => $composableBuilder(
+    column: $table.deloadStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deloadSuggest => $composableBuilder(
+    column: $table.deloadSuggest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadSuggestWeeks => $composableBuilder(
+    column: $table.deloadSuggestWeeks,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadSuggestStalled => $composableBuilder(
+    column: $table.deloadSuggestStalled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadLaterDays => $composableBuilder(
+    column: $table.deloadLaterDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deloadSnoozedUntil => $composableBuilder(
+    column: $table.deloadSnoozedUntil,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16208,6 +17686,66 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get deloadSetsPercent => $composableBuilder(
+    column: $table.deloadSetsPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deloadWeightPercent => $composableBuilder(
+    column: $table.deloadWeightPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deloadRepsPercent => $composableBuilder(
+    column: $table.deloadRepsPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deloadDropHardSets => $composableBuilder(
+    column: $table.deloadDropHardSets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deloadPrAttempts => $composableBuilder(
+    column: $table.deloadPrAttempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deloadDays => $composableBuilder(
+    column: $table.deloadDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deloadStart => $composableBuilder(
+    column: $table.deloadStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deloadSuggest => $composableBuilder(
+    column: $table.deloadSuggest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deloadSuggestWeeks => $composableBuilder(
+    column: $table.deloadSuggestWeeks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deloadSuggestStalled => $composableBuilder(
+    column: $table.deloadSuggestStalled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deloadLaterDays => $composableBuilder(
+    column: $table.deloadLaterDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deloadSnoozedUntil => $composableBuilder(
+    column: $table.deloadSnoozedUntil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get progressionHints => $composableBuilder(
     column: $table.progressionHints,
     builder: (column) => ColumnOrderings(column),
@@ -16440,6 +17978,66 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get deloadSetsPercent => $composableBuilder(
+    column: $table.deloadSetsPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deloadWeightPercent => $composableBuilder(
+    column: $table.deloadWeightPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deloadRepsPercent => $composableBuilder(
+    column: $table.deloadRepsPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get deloadDropHardSets => $composableBuilder(
+    column: $table.deloadDropHardSets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get deloadPrAttempts => $composableBuilder(
+    column: $table.deloadPrAttempts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deloadDays => $composableBuilder(
+    column: $table.deloadDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deloadStart => $composableBuilder(
+    column: $table.deloadStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get deloadSuggest => $composableBuilder(
+    column: $table.deloadSuggest,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deloadSuggestWeeks => $composableBuilder(
+    column: $table.deloadSuggestWeeks,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deloadSuggestStalled => $composableBuilder(
+    column: $table.deloadSuggestStalled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deloadLaterDays => $composableBuilder(
+    column: $table.deloadLaterDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deloadSnoozedUntil => $composableBuilder(
+    column: $table.deloadSnoozedUntil,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get progressionHints => $composableBuilder(
     column: $table.progressionHints,
     builder: (column) => column,
@@ -16594,6 +18192,18 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<bool> coachSeesProfile = const Value.absent(),
                 Value<bool> coachSeesHealth = const Value.absent(),
+                Value<int> deloadSetsPercent = const Value.absent(),
+                Value<int> deloadWeightPercent = const Value.absent(),
+                Value<int> deloadRepsPercent = const Value.absent(),
+                Value<bool> deloadDropHardSets = const Value.absent(),
+                Value<bool> deloadPrAttempts = const Value.absent(),
+                Value<int> deloadDays = const Value.absent(),
+                Value<String> deloadStart = const Value.absent(),
+                Value<bool> deloadSuggest = const Value.absent(),
+                Value<int> deloadSuggestWeeks = const Value.absent(),
+                Value<int> deloadSuggestStalled = const Value.absent(),
+                Value<int> deloadLaterDays = const Value.absent(),
+                Value<int?> deloadSnoozedUntil = const Value.absent(),
                 Value<bool> progressionHints = const Value.absent(),
                 Value<String?> coachGym = const Value.absent(),
                 Value<bool> morningReportEnabled = const Value.absent(),
@@ -16642,6 +18252,18 @@ class $$AppSettingsTableTableTableManager
                 healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 coachSeesProfile: coachSeesProfile,
                 coachSeesHealth: coachSeesHealth,
+                deloadSetsPercent: deloadSetsPercent,
+                deloadWeightPercent: deloadWeightPercent,
+                deloadRepsPercent: deloadRepsPercent,
+                deloadDropHardSets: deloadDropHardSets,
+                deloadPrAttempts: deloadPrAttempts,
+                deloadDays: deloadDays,
+                deloadStart: deloadStart,
+                deloadSuggest: deloadSuggest,
+                deloadSuggestWeeks: deloadSuggestWeeks,
+                deloadSuggestStalled: deloadSuggestStalled,
+                deloadLaterDays: deloadLaterDays,
+                deloadSnoozedUntil: deloadSnoozedUntil,
                 progressionHints: progressionHints,
                 coachGym: coachGym,
                 morningReportEnabled: morningReportEnabled,
@@ -16692,6 +18314,18 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<bool> coachSeesProfile = const Value.absent(),
                 Value<bool> coachSeesHealth = const Value.absent(),
+                Value<int> deloadSetsPercent = const Value.absent(),
+                Value<int> deloadWeightPercent = const Value.absent(),
+                Value<int> deloadRepsPercent = const Value.absent(),
+                Value<bool> deloadDropHardSets = const Value.absent(),
+                Value<bool> deloadPrAttempts = const Value.absent(),
+                Value<int> deloadDays = const Value.absent(),
+                Value<String> deloadStart = const Value.absent(),
+                Value<bool> deloadSuggest = const Value.absent(),
+                Value<int> deloadSuggestWeeks = const Value.absent(),
+                Value<int> deloadSuggestStalled = const Value.absent(),
+                Value<int> deloadLaterDays = const Value.absent(),
+                Value<int?> deloadSnoozedUntil = const Value.absent(),
                 Value<bool> progressionHints = const Value.absent(),
                 Value<String?> coachGym = const Value.absent(),
                 Value<bool> morningReportEnabled = const Value.absent(),
@@ -16740,6 +18374,18 @@ class $$AppSettingsTableTableTableManager
                 healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 coachSeesProfile: coachSeesProfile,
                 coachSeesHealth: coachSeesHealth,
+                deloadSetsPercent: deloadSetsPercent,
+                deloadWeightPercent: deloadWeightPercent,
+                deloadRepsPercent: deloadRepsPercent,
+                deloadDropHardSets: deloadDropHardSets,
+                deloadPrAttempts: deloadPrAttempts,
+                deloadDays: deloadDays,
+                deloadStart: deloadStart,
+                deloadSuggest: deloadSuggest,
+                deloadSuggestWeeks: deloadSuggestWeeks,
+                deloadSuggestStalled: deloadSuggestStalled,
+                deloadLaterDays: deloadLaterDays,
+                deloadSnoozedUntil: deloadSnoozedUntil,
                 progressionHints: progressionHints,
                 coachGym: coachGym,
                 morningReportEnabled: morningReportEnabled,
@@ -21210,6 +22856,7 @@ typedef $$WorkoutsTableTableCreateCompanionBuilder =
       Value<String?> healthConnectId,
       Value<int?> avgHeartRate,
       Value<int?> maxHeartRate,
+      Value<bool> isDeload,
       Value<int> rowid,
     });
 typedef $$WorkoutsTableTableUpdateCompanionBuilder =
@@ -21228,6 +22875,7 @@ typedef $$WorkoutsTableTableUpdateCompanionBuilder =
       Value<String?> healthConnectId,
       Value<int?> avgHeartRate,
       Value<int?> maxHeartRate,
+      Value<bool> isDeload,
       Value<int> rowid,
     });
 
@@ -21374,6 +23022,11 @@ class $$WorkoutsTableTableFilterComposer
 
   ColumnFilters<int> get maxHeartRate => $composableBuilder(
     column: $table.maxHeartRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeload => $composableBuilder(
+    column: $table.isDeload,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21526,6 +23179,11 @@ class $$WorkoutsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isDeload => $composableBuilder(
+    column: $table.isDeload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutinesTableTableOrderingComposer get routineId {
     final $$RoutinesTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -21611,6 +23269,9 @@ class $$WorkoutsTableTableAnnotationComposer
     column: $table.maxHeartRate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get isDeload =>
+      $composableBuilder(column: $table.isDeload, builder: (column) => column);
 
   $$RoutinesTableTableAnnotationComposer get routineId {
     final $$RoutinesTableTableAnnotationComposer composer = $composerBuilder(
@@ -21734,6 +23395,7 @@ class $$WorkoutsTableTableTableManager
                 Value<String?> healthConnectId = const Value.absent(),
                 Value<int?> avgHeartRate = const Value.absent(),
                 Value<int?> maxHeartRate = const Value.absent(),
+                Value<bool> isDeload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion(
                 id: id,
@@ -21750,6 +23412,7 @@ class $$WorkoutsTableTableTableManager
                 healthConnectId: healthConnectId,
                 avgHeartRate: avgHeartRate,
                 maxHeartRate: maxHeartRate,
+                isDeload: isDeload,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21768,6 +23431,7 @@ class $$WorkoutsTableTableTableManager
                 Value<String?> healthConnectId = const Value.absent(),
                 Value<int?> avgHeartRate = const Value.absent(),
                 Value<int?> maxHeartRate = const Value.absent(),
+                Value<bool> isDeload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion.insert(
                 id: id,
@@ -21784,6 +23448,7 @@ class $$WorkoutsTableTableTableManager
                 healthConnectId: healthConnectId,
                 avgHeartRate: avgHeartRate,
                 maxHeartRate: maxHeartRate,
+                isDeload: isDeload,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -25873,6 +27538,336 @@ typedef $$WeekReviewsTableTableProcessedTableManager =
       WeekReviewRow,
       PrefetchHooks Function()
     >;
+typedef $$DeloadWeeksTableTableCreateCompanionBuilder =
+    DeloadWeeksTableCompanion Function({
+      required String id,
+      required int startDay,
+      required int days,
+      required int setsPercent,
+      required int weightPercent,
+      required int repsPercent,
+      required bool dropHardSets,
+      required bool prAttempts,
+      required String source,
+      Value<int?> stoppedAt,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$DeloadWeeksTableTableUpdateCompanionBuilder =
+    DeloadWeeksTableCompanion Function({
+      Value<String> id,
+      Value<int> startDay,
+      Value<int> days,
+      Value<int> setsPercent,
+      Value<int> weightPercent,
+      Value<int> repsPercent,
+      Value<bool> dropHardSets,
+      Value<bool> prAttempts,
+      Value<String> source,
+      Value<int?> stoppedAt,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$DeloadWeeksTableTableFilterComposer
+    extends Composer<_$AppDatabase, $DeloadWeeksTableTable> {
+  $$DeloadWeeksTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startDay => $composableBuilder(
+    column: $table.startDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get setsPercent => $composableBuilder(
+    column: $table.setsPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weightPercent => $composableBuilder(
+    column: $table.weightPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get repsPercent => $composableBuilder(
+    column: $table.repsPercent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dropHardSets => $composableBuilder(
+    column: $table.dropHardSets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get prAttempts => $composableBuilder(
+    column: $table.prAttempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stoppedAt => $composableBuilder(
+    column: $table.stoppedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DeloadWeeksTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $DeloadWeeksTableTable> {
+  $$DeloadWeeksTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startDay => $composableBuilder(
+    column: $table.startDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get setsPercent => $composableBuilder(
+    column: $table.setsPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weightPercent => $composableBuilder(
+    column: $table.weightPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get repsPercent => $composableBuilder(
+    column: $table.repsPercent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dropHardSets => $composableBuilder(
+    column: $table.dropHardSets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get prAttempts => $composableBuilder(
+    column: $table.prAttempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stoppedAt => $composableBuilder(
+    column: $table.stoppedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DeloadWeeksTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DeloadWeeksTableTable> {
+  $$DeloadWeeksTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get startDay =>
+      $composableBuilder(column: $table.startDay, builder: (column) => column);
+
+  GeneratedColumn<int> get days =>
+      $composableBuilder(column: $table.days, builder: (column) => column);
+
+  GeneratedColumn<int> get setsPercent => $composableBuilder(
+    column: $table.setsPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get weightPercent => $composableBuilder(
+    column: $table.weightPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get repsPercent => $composableBuilder(
+    column: $table.repsPercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get dropHardSets => $composableBuilder(
+    column: $table.dropHardSets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get prAttempts => $composableBuilder(
+    column: $table.prAttempts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<int> get stoppedAt =>
+      $composableBuilder(column: $table.stoppedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$DeloadWeeksTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DeloadWeeksTableTable,
+          DeloadWeekRow,
+          $$DeloadWeeksTableTableFilterComposer,
+          $$DeloadWeeksTableTableOrderingComposer,
+          $$DeloadWeeksTableTableAnnotationComposer,
+          $$DeloadWeeksTableTableCreateCompanionBuilder,
+          $$DeloadWeeksTableTableUpdateCompanionBuilder,
+          (
+            DeloadWeekRow,
+            BaseReferences<
+              _$AppDatabase,
+              $DeloadWeeksTableTable,
+              DeloadWeekRow
+            >,
+          ),
+          DeloadWeekRow,
+          PrefetchHooks Function()
+        > {
+  $$DeloadWeeksTableTableTableManager(
+    _$AppDatabase db,
+    $DeloadWeeksTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DeloadWeeksTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DeloadWeeksTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DeloadWeeksTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> startDay = const Value.absent(),
+                Value<int> days = const Value.absent(),
+                Value<int> setsPercent = const Value.absent(),
+                Value<int> weightPercent = const Value.absent(),
+                Value<int> repsPercent = const Value.absent(),
+                Value<bool> dropHardSets = const Value.absent(),
+                Value<bool> prAttempts = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<int?> stoppedAt = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DeloadWeeksTableCompanion(
+                id: id,
+                startDay: startDay,
+                days: days,
+                setsPercent: setsPercent,
+                weightPercent: weightPercent,
+                repsPercent: repsPercent,
+                dropHardSets: dropHardSets,
+                prAttempts: prAttempts,
+                source: source,
+                stoppedAt: stoppedAt,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int startDay,
+                required int days,
+                required int setsPercent,
+                required int weightPercent,
+                required int repsPercent,
+                required bool dropHardSets,
+                required bool prAttempts,
+                required String source,
+                Value<int?> stoppedAt = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DeloadWeeksTableCompanion.insert(
+                id: id,
+                startDay: startDay,
+                days: days,
+                setsPercent: setsPercent,
+                weightPercent: weightPercent,
+                repsPercent: repsPercent,
+                dropHardSets: dropHardSets,
+                prAttempts: prAttempts,
+                source: source,
+                stoppedAt: stoppedAt,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DeloadWeeksTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DeloadWeeksTableTable,
+      DeloadWeekRow,
+      $$DeloadWeeksTableTableFilterComposer,
+      $$DeloadWeeksTableTableOrderingComposer,
+      $$DeloadWeeksTableTableAnnotationComposer,
+      $$DeloadWeeksTableTableCreateCompanionBuilder,
+      $$DeloadWeeksTableTableUpdateCompanionBuilder,
+      (
+        DeloadWeekRow,
+        BaseReferences<_$AppDatabase, $DeloadWeeksTableTable, DeloadWeekRow>,
+      ),
+      DeloadWeekRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -25929,4 +27924,6 @@ class $AppDatabaseManager {
       $$MorningReportsTableTableTableManager(_db, _db.morningReportsTable);
   $$WeekReviewsTableTableTableManager get weekReviewsTable =>
       $$WeekReviewsTableTableTableManager(_db, _db.weekReviewsTable);
+  $$DeloadWeeksTableTableTableManager get deloadWeeksTable =>
+      $$DeloadWeeksTableTableTableManager(_db, _db.deloadWeeksTable);
 }

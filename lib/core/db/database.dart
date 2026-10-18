@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'dao/chat_dao.dart';
+import 'dao/deload_dao.dart';
 import 'dao/exercises_dao.dart';
 import 'dao/health_dao.dart';
 import 'dao/records_dao.dart';
@@ -12,6 +13,7 @@ import 'dao/workouts_dao.dart';
 import 'tables.dart';
 
 export 'dao/chat_dao.dart' show ChatMessagePhotos, decodeImageFiles;
+export 'dao/deload_dao.dart' show DeloadWeekDays;
 export 'dao/exercises_dao.dart' show ExerciseFilter;
 export 'dao/routines_dao.dart'
     show RoutineDraft, RoutineExerciseDraft, RoutineSetDraft;
@@ -51,6 +53,7 @@ part 'database.drift.dart';
     CardioSessionsTable,
     MorningReportsTable,
     WeekReviewsTable,
+    DeloadWeeksTable,
   ],
   daos: [
     SettingsDao,
@@ -62,13 +65,14 @@ part 'database.drift.dart';
     RecoveryDao,
     HealthDao,
     ReportsDao,
+    DeloadDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 50;
+  int get schemaVersion => 51;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -467,6 +471,28 @@ class AppDatabase extends _$AppDatabase {
           // coach could read it until now. Sharing it is something you
           // choose, not something an update chose for you.
           await m.addColumn(appSettingsTable, appSettingsTable.coachSeesHealth);
+        }
+        if (from < 51) {
+          // Deloads: none yet, no session was one, and the settings as a new
+          // install has them - proposals on.
+          await m.createTable(deloadWeeksTable);
+          await m.addColumn(workoutsTable, workoutsTable.isDeload);
+          for (final column in [
+            appSettingsTable.deloadSetsPercent,
+            appSettingsTable.deloadWeightPercent,
+            appSettingsTable.deloadRepsPercent,
+            appSettingsTable.deloadDropHardSets,
+            appSettingsTable.deloadPrAttempts,
+            appSettingsTable.deloadDays,
+            appSettingsTable.deloadStart,
+            appSettingsTable.deloadSuggest,
+            appSettingsTable.deloadSuggestWeeks,
+            appSettingsTable.deloadSuggestStalled,
+            appSettingsTable.deloadLaterDays,
+            appSettingsTable.deloadSnoozedUntil,
+          ]) {
+            await m.addColumn(appSettingsTable, column);
+          }
         }
       });
 

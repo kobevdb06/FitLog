@@ -122,6 +122,20 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+      ..execute('DROP TABLE deload_weeks')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -155,6 +169,20 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+      ..execute('DROP TABLE deload_weeks')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -186,6 +214,20 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+      ..execute('DROP TABLE deload_weeks')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -214,6 +256,20 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+      ..execute('DROP TABLE deload_weeks')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('PRAGMA user_version = 46');
     raw.close();
 
@@ -240,6 +296,20 @@ void main() {
         ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
         ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+        ..execute('DROP TABLE deload_weeks')
+        ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
         ..execute('PRAGMA user_version = 47');
       raw.close();
 
@@ -275,6 +345,20 @@ void main() {
       final raw = sqlite3.open(path)
         ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+        ..execute('DROP TABLE deload_weeks')
+        ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+        ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
         ..execute(
           "UPDATE chat_messages SET image_file = 'toestel.jpg' "
           "WHERE id = 'met'",
@@ -318,6 +402,20 @@ void main() {
 
     final raw = sqlite3.open(path)
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+      ..execute('DROP TABLE deload_weeks')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('PRAGMA user_version = 49');
     raw.close();
 
@@ -327,6 +425,42 @@ void main() {
     // What was chosen before stays chosen.
     expect(settings.anthropicApiKey, 'AQ.Ab8RNiZhX2Mkg');
     expect(settings.coachSeesProfile, isTrue);
+    await db.close();
+  });
+
+  test('a database from v50 gets deloads, and no session was one', () async {
+    final path = '${dir.path}/v50.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    final id = await fresh.workoutsDao.startWorkout(defaultRestSeconds: 90);
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('DROP TABLE deload_weeks')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('PRAGMA user_version = 50');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final workout = (await db.workoutsDao.getWorkoutDetail(id))!.workout;
+    expect(workout.isDeload, isFalse);
+    final settings = await db.settingsDao.getSettings();
+    expect(settings.deloadSuggest, isTrue);
+    expect(settings.deloadLaterDays, 3);
+    expect(settings.deloadSnoozedUntil, isNull);
+    expect(await db.deloadDao.currentAt(DateTime.now()), isNull);
     await db.close();
   });
 
@@ -350,6 +484,20 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN auto_backup_folder')
       ..execute('ALTER TABLE chat_messages DROP COLUMN image_files')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_sees_health')
+      ..execute('DROP TABLE deload_weeks')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_deload')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_sets_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_weight_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_reps_percent')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_drop_hard_sets')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_pr_attempts')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_start')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_weeks')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
+      ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -420,7 +568,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 50);
+    expect(raw.select('PRAGMA user_version').first.values.first, 51);
     raw.close();
   });
 
@@ -580,6 +728,12 @@ void main() {
     expect(settings.coachDailyLimit, isNull);
     // v50: Health Connect data for the coach, off.
     expect(settings.coachSeesHealth, isFalse);
+    // v51: deloads, with proposals on and the plan a new install has.
+    expect(settings.deloadSuggest, isTrue);
+    expect(settings.deloadSetsPercent, 50);
+    expect(settings.deloadWeightPercent, 10);
+    expect(settings.deloadDays, 7);
+    expect(await db.deloadDao.all(), isEmpty);
     // v25: wat de coach aanbiedt toe te voegen, tot je erop tikt.
     expect(
       chatColumns.map((row) => row.read<String>('name')),
@@ -630,7 +784,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 50);
+    expect(db.schemaVersion, 51);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **50**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **51**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -78,6 +78,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 48 | `app_settings.auto_backup_folder`: de map voor de wekelijkse automatische back-up; leeg, tot je er een kiest. |
 | 49 | `chat_messages.image_files`: tot vier foto's bij een vraag, als JSON-lijst; `[]` voor elk bestaand bericht. De ene foto van een oudere vraag blijft in `image_file`. |
 | 50 | `app_settings.coach_sees_health`: wat uit Health Connect komt, delen met de coach. Uit, ook voor wie de coach al gebruikte. |
+| 51 | `deload_weeks`, `workouts.is_deload` en de `app_settings.deload_*`-instellingen: deloads, met voorstellen aan. Geen enkele bestaande training was er een. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -151,6 +152,19 @@ Geboortedatum, geslacht en lengte gaan alleen naar de coach met
 | `morning_report_enabled` | BOOL | false |
 | `morning_report_minutes` | INT | 420 (minuten na middernacht: 7:00) |
 | `week_review_notify` | BOOL | true: het weekoverzicht op zondag om 20:00, met een melding |
+| **Deload** | | |
+| `deload_sets_percent` | INT | 50: zoveel procent minder werksets |
+| `deload_weight_percent` | INT | 10: zoveel procent lichter |
+| `deload_reps_percent` | INT | 0: zoveel procent minder herhalingen (en seconden) |
+| `deload_drop_hard_sets` | BOOL | true: dropsets en sets tot falen vallen weg |
+| `deload_pr_attempts` | BOOL | false: een recordpoging mag in een deload |
+| `deload_days` | INT | 7: hoe lang een deload standaard duurt |
+| `deload_start` | TEXT | `today` \| `monday`: wanneer het startblad standaard begint |
+| `deload_suggest` | BOOL | true: Start stelt een deload voor als het tijd is; *Melding dempen* zet het uit |
+| `deload_suggest_weeks` | INT | 6: na zoveel weken training zonder pauze |
+| `deload_suggest_stalled` | INT | 2: of met zoveel oefeningen die stilstaan |
+| `deload_later_days` | INT | 3: zolang verdwijnt het voorstel na *Later* |
+| `deload_snoozed_until` | INT? | tot wanneer het nu weg is |
 | **De coach** | | |
 | `anthropic_api_key` | TEXT? | de sleutel van de coach, van welke dienst ook - de naam stamt van toen Anthropic de enige was |
 | `chat_provider` | TEXT? | leeg = afleiden uit de sleutel |
@@ -289,6 +303,7 @@ routine, de oudste gaan eerst.
 | `color_index` | INT? | kopie van de kleur van de routine |
 | `health_connect_id` | TEXT? | het id in Health Connect, als FitLog ze daar schreef |
 | `avg_heart_rate`, `max_heart_rate` | INT? | van een horloge, via Health Connect |
+| `is_deload` | BOOL | gestart tijdens een deload; bij de start gezet en zo gebleven |
 
 Een routine verwijderen laat de gelogde workouts staan; alleen de verwijzing
 verdwijnt.
@@ -425,6 +440,23 @@ mee in de herstelschatting.
 | `coach_error` | TEXT? | waarom er geen tekst is terwijl de coach aan staat |
 | `import_error` | TEXT? | waarom Health Connect net ervoor niet gelezen kon worden |
 | `requests`, `input_tokens`, `output_tokens` | INT? | wat de vraag aan de coach kostte |
+
+#### `deload_weeks`
+
+| Kolom | Type | Opmerking |
+|---|---|---|
+| `id` | TEXT PK | |
+| `start_day` | INT | middernacht van de eerste dag |
+| `days` | INT | hoeveel dagen, vanaf `start_day` |
+| `sets_percent`, `weight_percent`, `reps_percent` | INT | het plan, zoals het gekozen werd |
+| `drop_hard_sets`, `pr_attempts` | BOOL | idem |
+| `source` | TEXT | `user` \| `suggestion` \| `coach`: wie hem startte |
+| `stopped_at` | INT? | vroeger gestopt: het moment van *Stoppen* |
+| `created_at` | INT | |
+
+Er is er hoogstens één bezig of gepland. Het plan staat bij de deload zelf: de
+instellingen kunnen later veranderen, een deload die gepland of gedaan is niet.
+Een geplande die je stopt voor ze begon, verdwijnt.
 
 #### `week_reviews`
 

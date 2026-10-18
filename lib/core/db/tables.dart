@@ -164,6 +164,54 @@ class AppSettingsTable extends Table {
   BoolColumn get coachSeesHealth =>
       boolean().named('coach_sees_health').withDefault(const Constant(false))();
 
+  /// How much lighter a deload makes a routine, as the start sheet proposes
+  /// it: fewer working sets, less weight, fewer reps (and seconds), each in
+  /// percent. Half the sets and a tenth of the weight, until you choose.
+  IntColumn get deloadSetsPercent =>
+      integer().named('deload_sets_percent').withDefault(const Constant(50))();
+  IntColumn get deloadWeightPercent => integer()
+      .named('deload_weight_percent')
+      .withDefault(const Constant(10))();
+  IntColumn get deloadRepsPercent =>
+      integer().named('deload_reps_percent').withDefault(const Constant(0))();
+
+  /// Drop sets and sets to failure left out of a deload: it is not the week
+  /// to go to the limit.
+  BoolColumn get deloadDropHardSets => boolean()
+      .named('deload_drop_hard_sets')
+      .withDefault(const Constant(true))();
+
+  /// Whether a PR attempt may be started in a deload.
+  BoolColumn get deloadPrAttempts => boolean()
+      .named('deload_pr_attempts')
+      .withDefault(const Constant(false))();
+
+  /// How many days a deload lasts, and whether it starts `today` or next
+  /// `monday` - what the start sheet has chosen when it opens.
+  IntColumn get deloadDays =>
+      integer().named('deload_days').withDefault(const Constant(7))();
+  TextColumn get deloadStart =>
+      text().named('deload_start').withDefault(const Constant('today'))();
+
+  /// Whether Start proposes a deload when it is time, and when that is:
+  /// after this many weeks of training without a break, or this many
+  /// exercises standing still. Off with "Melding dempen", and only back on
+  /// here.
+  BoolColumn get deloadSuggest =>
+      boolean().named('deload_suggest').withDefault(const Constant(true))();
+  IntColumn get deloadSuggestWeeks =>
+      integer().named('deload_suggest_weeks').withDefault(const Constant(6))();
+  IntColumn get deloadSuggestStalled => integer()
+      .named('deload_suggest_stalled')
+      .withDefault(const Constant(2))();
+
+  /// How many days Later puts the proposal away for, and until when it is
+  /// away now.
+  IntColumn get deloadLaterDays =>
+      integer().named('deload_later_days').withDefault(const Constant(3))();
+  IntColumn get deloadSnoozedUntil =>
+      integer().named('deload_snoozed_until').nullable()();
+
   /// Whether every exercise in a running session says what to try today,
   /// from what you did last time. On until you switch it off.
   BoolColumn get progressionHints =>
@@ -670,6 +718,12 @@ class WorkoutsTable extends Table {
   IntColumn get avgHeartRate => integer().named('avg_heart_rate').nullable()();
   IntColumn get maxHeartRate => integer().named('max_heart_rate').nullable()();
 
+  /// Started during a deload. Set once, at the start, and kept: a deload
+  /// that is stopped or forgotten later does not change what this session
+  /// was. Progress, plateaus and what is usual look past it.
+  BoolColumn get isDeload =>
+      boolean().named('is_deload').withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -1050,6 +1104,41 @@ class MorningReportsTable extends Table {
   IntColumn get requests => integer().nullable()();
   IntColumn get inputTokens => integer().named('input_tokens').nullable()();
   IntColumn get outputTokens => integer().named('output_tokens').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A deload: a stretch of days in which every routine you start is a
+/// lighter version of itself.
+///
+/// The plan is kept with it as it was chosen. The settings may change
+/// afterwards; a deload that was planned or done does not.
+@DataClassName('DeloadWeekRow')
+class DeloadWeeksTable extends Table {
+  @override
+  String get tableName => 'deload_weeks';
+
+  TextColumn get id => text()();
+
+  /// Midnight at the start of the first day.
+  IntColumn get startDay => integer().named('start_day')();
+
+  /// How many days, from [startDay]: a training week is not always seven.
+  IntColumn get days => integer()();
+
+  IntColumn get setsPercent => integer().named('sets_percent')();
+  IntColumn get weightPercent => integer().named('weight_percent')();
+  IntColumn get repsPercent => integer().named('reps_percent')();
+  BoolColumn get dropHardSets => boolean().named('drop_hard_sets')();
+  BoolColumn get prAttempts => boolean().named('pr_attempts')();
+
+  /// Who started it: `user`, `suggestion` (the card on Start) or `coach`.
+  TextColumn get source => text()();
+
+  /// Stopped before its last day: the moment Stoppen was tapped.
+  IntColumn get stoppedAt => integer().named('stopped_at').nullable()();
+  IntColumn get createdAt => integer().named('created_at')();
 
   @override
   Set<Column> get primaryKey => {id};

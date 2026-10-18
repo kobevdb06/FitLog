@@ -62,6 +62,7 @@ void main() {
         totalVolumeKg: 0,
         totalSets: 0,
         durationSeconds: 0,
+        isDeload: false,
       ),
       workoutExercise: WorkoutExerciseRow(
         id: 'we',

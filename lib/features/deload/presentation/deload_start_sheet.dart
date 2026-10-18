@@ -7,24 +7,22 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../data/deload_standing.dart';
 import 'deload_providers.dart';
-
-/// The days a deload can last: from one to three weeks.
-const int kDeloadMinDays = 1;
-const int kDeloadMaxDays = 21;
 
 /// Plans a deload: when it begins, how many days, and how much lighter -
 /// from the settings, changed here for this one time. [plan], [days] and
 /// [from] come from the coach's proposal when it opens this.
 ///
-/// [source] is who started it: `user`, `suggestion` or `coach`.
-Future<void> showDeloadStartSheet(
+/// [source] is who started it: `user`, `suggestion` or `coach`. Comes back
+/// with the deload's id, or null when it was not started.
+Future<String?> showDeloadStartSheet(
   BuildContext context, {
   required String source,
   DeloadPlan? plan,
   int? days,
   DateTime? from,
-}) => showAppSheet<void>(
+}) => showAppSheet<String>(
   context: context,
   title: 'Deload starten',
   builder: (context) =>
@@ -36,7 +34,7 @@ Future<void> showDeloadStartSheet(
 List<(String, DateTime)> deloadStartChoices(DateTime today) {
   final day = DateTime(today.year, today.month, today.day);
   final tomorrow = DateTime(day.year, day.month, day.day + 1);
-  final monday = DateTime(day.year, day.month, day.day + (8 - day.weekday));
+  final monday = nextMonday(day);
   return [
     ('Vandaag', day),
     ('Morgen', tomorrow),
@@ -80,11 +78,13 @@ class _DeloadStartSheetState extends ConsumerState<_DeloadStartSheet> {
         (settings == null ? const DeloadPlan() : deloadPlanOf(settings));
     final today = DateTime.now();
     final choices = deloadStartChoices(today);
+    final first = choices.first.$2;
     _from =
         widget.from ??
-        (settings?.deloadStart == 'monday'
-            ? choices.last.$2
-            : choices.first.$2);
+        (settings?.deloadStart == 'monday' ? choices.last.$2 : first);
+    // A proposal from a while ago: not in the past, where the calendar
+    // cannot go either.
+    if (_from.isBefore(first)) _from = first;
     _days = (widget.days ?? settings?.deloadDays ?? 7).clamp(
       kDeloadMinDays,
       kDeloadMaxDays,
@@ -118,20 +118,13 @@ class _DeloadStartSheetState extends ConsumerState<_DeloadStartSheet> {
 
   Future<void> _start() async {
     setState(() => _starting = true);
-    await ref
+    final id = await ref
         .read(databaseProvider)
         .deloadDao
         .start(from: _from, days: _days, plan: _plan, source: widget.source);
     if (!mounted) return;
-    final today = DateTime.now();
-    final now = DateTime(today.year, today.month, today.day) == _from;
-    Navigator.of(context).pop();
-    showSnack(
-      context,
-      now
-          ? 'Deload gestart, $_days ${_days == 1 ? 'dag' : 'dagen'}.'
-          : 'Deload gepland vanaf ${Formatters.weekdayDayMonthShort(_from)}.',
-    );
+    Navigator.of(context).pop(id);
+    showSnack(context, deloadStartedText(_from, _days, DateTime.now()));
   }
 
   @override
@@ -207,22 +200,19 @@ class _DeloadStartSheetState extends ConsumerState<_DeloadStartSheet> {
               DeloadPercentSlider(
                 label: 'Minder werksets',
                 value: _sets,
-                max: 80,
-                divisions: 8,
+                range: kDeloadSets,
                 onChanged: (v) => setState(() => _sets = v),
               ),
               DeloadPercentSlider(
                 label: 'Lichter gewicht',
                 value: _weight,
-                max: 40,
-                divisions: 8,
+                range: kDeloadWeight,
                 onChanged: (v) => setState(() => _weight = v),
               ),
               DeloadPercentSlider(
                 label: 'Minder herhalingen',
                 value: _reps,
-                max: 50,
-                divisions: 5,
+                range: kDeloadReps,
                 onChanged: (v) => setState(() => _reps = v),
               ),
               SwitchListTile(
@@ -268,6 +258,13 @@ class _DeloadStartSheetState extends ConsumerState<_DeloadStartSheet> {
     );
   }
 }
+
+/// What is said once a deload is started on [from]: begun, when that is
+/// today, or planned.
+String deloadStartedText(DateTime from, int days, DateTime now) =>
+    DateTime(now.year, now.month, now.day) == from
+    ? 'Deload gestart, $days ${days == 1 ? 'dag' : 'dagen'}.'
+    : 'Deload gepland vanaf ${Formatters.weekdayDayMonthShort(from)}.';
 
 /// `Werksets −50% · gewicht −10% · herhalingen gelijk`.
 String deloadPlanSummary(DeloadPlan plan) => [
@@ -336,21 +333,20 @@ class DeloadStepper extends StatelessWidget {
   }
 }
 
-/// A percentage from nothing to [max], with its label and what it is.
+/// A percentage from nothing to the most of its [range], with its label and
+/// what it is.
 class DeloadPercentSlider extends StatelessWidget {
   const DeloadPercentSlider({
     super.key,
     required this.label,
     required this.value,
-    required this.max,
-    required this.divisions,
+    required this.range,
     required this.onChanged,
   });
 
   final String label;
   final int value;
-  final int max;
-  final int divisions;
+  final DeloadRange range;
   final ValueChanged<int> onChanged;
 
   @override
@@ -369,9 +365,9 @@ class DeloadPercentSlider extends StatelessWidget {
           ],
         ),
         Slider(
-          value: value.toDouble(),
-          max: max.toDouble(),
-          divisions: divisions,
+          value: range.snap(value).toDouble(),
+          max: range.max.toDouble(),
+          divisions: range.divisions,
           label: '$value%',
           onChanged: (v) => onChanged(v.round()),
         ),

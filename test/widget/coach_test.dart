@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
+import 'package:fitlog/core/calc/deload.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
@@ -204,6 +205,100 @@ void main() {
       expect(find.text('Oefening toevoegen'), findsOneWidget);
       expect(find.text('Toevoegen mét tekeningen'), findsNothing);
       expect(find.textContaining('Hugging Face'), findsNothing);
+    });
+  });
+
+  group('een deload van de coach', () {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    /// The coach's card, on a 360dp phone with large text.
+    Future<void> withCard(WidgetTester tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Deload?');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Neem een paar lichtere dagen.',
+        proposals: encodeProposals([
+          CoachProposal.ofDeload(
+            DeloadProposal(
+              from: today,
+              days: 5,
+              plan: const DeloadPlan(setsPercent: 40),
+              reason: 'Zeven weken zonder pauze.',
+            ),
+          ),
+        ]),
+      );
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        size: const Size(360, 2400),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<DeloadWeekRow?> current(WidgetTester tester) => tester
+        .runAsync<DeloadWeekRow?>(() => db.deloadDao.currentAt(DateTime.now()));
+
+    testWidgets('een kaart met Starten en Aanpassen, even hoog naast elkaar', (
+      tester,
+    ) async {
+      await withCard(tester);
+
+      expect(find.text('Voorstel: deload'), findsOneWidget);
+      expect(find.text('Deload van 5 dagen'), findsOneWidget);
+      expect(find.text('Zeven weken zonder pauze.'), findsOneWidget);
+      expect(find.textContaining('Werksets −40%'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      final start = find.widgetWithText(FilledButton, 'Starten');
+      final adjust = find.widgetWithText(OutlinedButton, 'Aanpassen');
+      expect(tester.getSize(start).height, tester.getSize(adjust).height);
+      expect(tester.getCenter(start).dy, tester.getCenter(adjust).dy);
+    });
+
+    testWidgets('Starten start ze, en de kaart zegt het', (tester) async {
+      await withCard(tester);
+
+      await tester.tap(find.text('Starten'));
+      await tester.pumpAndSettle();
+
+      final deload = (await current(tester))!;
+      expect(deload.source, 'coach');
+      expect(deload.days, 5);
+      expect(deload.plan.setsPercent, 40);
+      expect(find.text('Ingepland'), findsOneWidget);
+      expect(find.text('Starten'), findsNothing);
+      expect(find.text('Bekijken'), findsNothing);
+    });
+
+    testWidgets('Aanpassen opent het startblad met de cijfers van de coach', (
+      tester,
+    ) async {
+      await withCard(tester);
+
+      await tester.tap(find.text('Aanpassen'));
+      await tester.pumpAndSettle();
+      expect(find.text('5 dagen'), findsOneWidget);
+      await tester.tap(find.byTooltip('Een dag langer'));
+      await tester.pumpAndSettle();
+      final start = find.text('Deload starten').last;
+      await tester.ensureVisible(start);
+      await tester.tap(start);
+      await tester.pumpAndSettle();
+
+      final deload = (await current(tester))!;
+      expect(deload.days, 6);
+      expect(deload.source, 'coach');
+      expect(deload.plan.setsPercent, 40);
+      expect(find.text('Ingepland'), findsOneWidget);
+      expect(find.text('Deload van 6 dagen'), findsOneWidget);
     });
   });
 

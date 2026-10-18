@@ -198,6 +198,7 @@ String buildCoachPrompt({
   int? exerciseCount,
   String? aboutUser,
   bool seesHealth = true,
+  String? deload,
   String? situation,
 }) {
   final today = '${now.year}-${_two(now.month)}-${_two(now.day)}';
@@ -215,8 +216,25 @@ String buildCoachPrompt({
 $_coachRules
 $_appFacts
 Vandaag is het $weekday $today.
-De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}${situation == null ? '' : '\nNu: $situation'}
+De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}${deload == null ? '' : '\n$deload'}${situation == null ? '' : '\nNu: $situation'}
 ''';
+}
+
+/// One line while a deload is going - on its [day] of [days] - or planned,
+/// when [day] is null: so a lighter session is not read as a step back. The
+/// rest is behind the lookup deload.
+String describeDeload({
+  required int? day,
+  required int days,
+  required DateTime from,
+  required DateTime lastDay,
+}) {
+  String date(DateTime at) => '${at.year}-${_two(at.month)}-${_two(at.day)}';
+  return day == null
+      ? 'Er staat een deload gepland: $days ${days == 1 ? 'dag' : 'dagen'} '
+            'vanaf ${date(from)}.'
+      : 'Er loopt een deload, dag $day van $days, tot en met '
+            '${date(lastDay)}: lichter is nu de bedoeling.';
 }
 
 /// Why there is no watch in what the coach finds, so it says so rather than

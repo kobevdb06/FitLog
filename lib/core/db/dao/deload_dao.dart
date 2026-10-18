@@ -72,6 +72,10 @@ class DeloadDao extends DatabaseAccessor<AppDatabase> with _$DeloadDaoMixin {
     deloadWeeksTable,
   )..orderBy([(t) => OrderingTerm.desc(t.startDay)])).watch();
 
+  Future<DeloadWeekRow?> byId(String id) => (select(
+    deloadWeeksTable,
+  )..where((t) => t.id.equals(id))).getSingleOrNull();
+
   /// Every deload, the newest first.
   Future<List<DeloadWeekRow>> all() => (select(
     deloadWeeksTable,
@@ -122,9 +126,7 @@ class DeloadDao extends DatabaseAccessor<AppDatabase> with _$DeloadDaoMixin {
   /// Ends it at [at]. One that has not begun yet is taken away: it never was.
   Future<void> stop(String id, {DateTime? at}) async {
     final now = at ?? DateTime.now();
-    final row = await (select(
-      deloadWeeksTable,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final row = await byId(id);
     if (row == null) return;
     if (row.isAheadAt(now)) {
       await (delete(deloadWeeksTable)..where((t) => t.id.equals(id))).go();

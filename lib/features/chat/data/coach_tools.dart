@@ -17,11 +17,13 @@ import 'dart:convert';
 import 'package:drift/drift.dart'
     show BooleanExpressionOperators, Constant, OrderingTerm, QueryRow, Variable;
 
+import '../../../core/calc/deload.dart';
 import '../../../core/calc/plateau.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/calc/sleep_score.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
+import '../../deload/data/deload_standing.dart';
 import '../../exercises/presentation/exercise_providers.dart';
 import '../../progress/data/plateau_loader.dart';
 import '../../progress/data/recovery_loader.dart';
@@ -112,7 +114,8 @@ class CoachTools {
           'volume, aantal sets, hoe zwaar het voelde, welke oefeningen erin '
           'zaten, de notities van de gebruiker bij de sessie en bij elke '
           'oefening, en de gemiddelde en hoogste hartslag als een horloge die '
-          'via Health Connect doorgaf.',
+          'via Health Connect doorgaf. Een sessie met deload: true was bewust '
+          'lichter.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -129,8 +132,9 @@ class CoachTools {
           'Bij een open set staat wat er nu ingevuld is: het doel uit de '
           'routine of wat de gebruiker al intypte, dat is niet te '
           'onderscheiden. Met de notities, de rusttijd, supersets en of een '
-          'oefening per kant of als PR-poging gedaan wordt. Gebruik dit '
-          'als de gebruiker midden in een training iets vraagt.',
+          'oefening per kant of als PR-poging gedaan wordt, en deload: true '
+          'in een deloadsessie. Gebruik dit als de gebruiker midden in een '
+          'training iets vraagt.',
       'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
     },
     {
@@ -141,7 +145,8 @@ class CoachTools {
           'voelde) als die is ingevuld, en de kant (left/right) als de '
           'oefening per kant gedaan werd. Per keer ook de notitie van de '
           'gebruiker bij de oefening en of het een PR-poging was, met het '
-          'doel en de uitkomst.',
+          'doel en de uitkomst. Een keer met deload: true was in een deload: '
+          'bewust lichter, geen achteruitgang.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -178,7 +183,8 @@ class CoachTools {
       'description':
           'Volume, aantal sessies en aantal sets per week, en per spiergroep '
           'over dezelfde periode. Gebruik dit voor vragen over vooruitgang of '
-          'of iemand genoeg doet voor een spiergroep.',
+          'of iemand genoeg doet voor een spiergroep. Een week met deload: '
+          'true had een deloadsessie: minder was de bedoeling.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -292,6 +298,62 @@ class CoachTools {
           },
         },
         'required': ['exercise'],
+      },
+    },
+    {
+      'name': 'deload',
+      'description':
+          'Alles over deloads, periodes met bewust lichtere trainingen die '
+          'FitLog zelf aanpast: wat de gebruiker instelde (hoeveel minder '
+          'sets, gewicht en herhalingen, de standaardduur, of en wanneer '
+          'FitLog er zelf een voorstelt), de deload die loopt of gepland '
+          'staat, de vorige, hoeveel weken er zonder pauze getraind is, welke '
+          'oefeningen stilstaan, en of het voorstel op Start nu te zien is. '
+          'Zelf starten kan via Trainen, Meer, Deload; instellen bij '
+          'Instellingen, Training, Deload.',
+      'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
+    },
+    {
+      'name': 'propose_deload',
+      'description':
+          'Stel een deload voor: een kaart met Starten en Aanpassen. Start '
+          'zelf niets. Kijk eerst met deload wat de gebruiker instelde; laat '
+          'weg wat daar niet van afwijkt. Een deload die loopt of gepland '
+          'staat, wordt erdoor vervangen.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'start': {
+            'type': 'string',
+            'description':
+                'Eerste dag, JJJJ-MM-DD. Zonder: zoals de gebruiker instelde.',
+          },
+          'days': {'type': 'integer', 'description': 'Hoeveel dagen, 1-21.'},
+          'sets_percent_less': {
+            'type': 'integer',
+            'description': 'Procent minder werksets, 0-80 per 10.',
+          },
+          'weight_percent_less': {
+            'type': 'integer',
+            'description': 'Procent minder gewicht, 0-40 per 5.',
+          },
+          'reps_percent_less': {
+            'type': 'integer',
+            'description': 'Procent minder herhalingen, 0-50 per 10.',
+          },
+          'drop_hard_sets': {
+            'type': 'boolean',
+            'description': 'Dropsets en sets tot falen weglaten.',
+          },
+          'pr_attempts': {
+            'type': 'boolean',
+            'description': 'Recordpogingen toestaan.',
+          },
+          'reason': {
+            'type': 'string',
+            'description': 'Waarom nu, in één korte zin.',
+          },
+        },
       },
     },
     {
@@ -498,6 +560,8 @@ class CoachTools {
   static const Set<String> names = {
     'propose_exercise',
     'propose_exercise_change',
+    'propose_deload',
+    'deload',
     'coach_routines',
     'save_coach_routine',
     'search_exercises',
@@ -536,6 +600,8 @@ class CoachTools {
     return switch (name) {
       'propose_exercise' => _proposeExercise(input),
       'propose_exercise_change' => _proposeExerciseChange(input),
+      'propose_deload' => _proposeDeload(input),
+      'deload' => _deload(),
       'coach_routines' => _coachRoutines(),
       'save_coach_routine' => _saveCoachRoutine(input),
       'search_exercises' => _searchExercises(input),
@@ -1077,7 +1143,7 @@ class CoachTools {
         .customSelect(
           'SELECT w.id, w.name, w.started_at, w.duration_seconds, '
           'w.total_volume_kg, w.total_sets, w.perceived_effort, '
-          'w.avg_heart_rate, w.max_heart_rate, w.notes '
+          'w.avg_heart_rate, w.max_heart_rate, w.notes, w.is_deload '
           'FROM workouts w WHERE w.ended_at IS NOT NULL '
           'ORDER BY w.started_at DESC LIMIT ?',
           variables: [Variable.withInt(limit)],
@@ -1106,6 +1172,7 @@ class CoachTools {
         'volume_kg': row.read<double?>('total_volume_kg')?.round(),
         'sets': row.read<int?>('total_sets'),
         'felt': row.read<String?>('perceived_effort'),
+        if (row.read<bool>('is_deload')) 'deload': true,
         'notes': ?_text(row.read<String?>('notes')),
         if (row.read<int?>('avg_heart_rate') case final average? when health)
           'heart_rate': {
@@ -1157,6 +1224,7 @@ class CoachTools {
         'started': _day(workout.startedAt),
         'minutes_so_far': DateTime.now().difference(started).inMinutes,
         'from_routine': ?routine?.name,
+        if (workout.isDeload) 'deload': true,
         'notes': ?_text(workout.notes),
         'exercises': [
           for (final item in detail.exercises)
@@ -1227,7 +1295,7 @@ class CoachTools {
           'we.pr_target_weight_kg AS pr_target, we.pr_result AS pr_result, '
           'ws.set_type AS type, ws.weight_kg AS weight, ws.reps AS reps, '
           'ws.duration_seconds AS seconds, ws.distance_m AS distance, '
-          'ws.rpe AS rpe, ws.side AS side '
+          'ws.rpe AS rpe, ws.side AS side, w.is_deload AS deload '
           'FROM workout_sets ws '
           'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
           'JOIN workouts w ON w.id = we.workout_id '
@@ -1248,6 +1316,7 @@ class CoachTools {
         id,
         () => {
           'date': _day(row.read<int>('at')),
+          if (row.read<bool>('deload')) 'deload': true,
           'notes': ?_text(row.read<String?>('notes')),
           if (row.read<bool>('pr_attempt'))
             'pr_attempt': {
@@ -1361,7 +1430,8 @@ class CoachTools {
         .customSelect(
           "SELECT strftime('%Y-%W', w.started_at / 1000, 'unixepoch') AS week, "
           'COUNT(DISTINCT w.id) AS sessions, '
-          'SUM(w.total_sets) AS sets, SUM(w.total_volume_kg) AS volume '
+          'SUM(w.total_sets) AS sets, SUM(w.total_volume_kg) AS volume, '
+          'MAX(w.is_deload) AS deload '
           'FROM workouts w '
           'WHERE w.ended_at IS NOT NULL AND w.started_at >= ? '
           'GROUP BY week ORDER BY week DESC',
@@ -1392,6 +1462,7 @@ class CoachTools {
               'sessions': row.read<int>('sessions'),
               'sets': row.read<int?>('sets'),
               'volume_kg': row.read<double?>('volume')?.round(),
+              if (row.read<bool>('deload')) 'deload': true,
             },
         ],
         'sets_per_muscle': {
@@ -1764,6 +1835,197 @@ class CoachTools {
         ],
       }),
       summary: 'welke oefeningen stilstaan',
+    );
+  }
+
+  Map<String, Object?> _plan(DeloadPlan plan) => {
+    'sets_percent_less': plan.setsPercent,
+    'weight_percent_less': plan.weightPercent,
+    'reps_percent_less': plan.repsPercent,
+    'drop_hard_sets': plan.dropHardSets,
+    'pr_attempts': plan.prAttempts,
+  };
+
+  /// One deload as the coach reads it, with the sessions done in it.
+  Future<Map<String, Object?>> _deloadEntry(DeloadWeekRow row) async {
+    final planned = DateTime(
+      row.from.year,
+      row.from.month,
+      row.from.day + row.days,
+    );
+    final sessions = await db
+        .customSelect(
+          'SELECT COUNT(*) AS n FROM workouts WHERE is_deload = 1 '
+          'AND ended_at IS NOT NULL AND started_at >= ? AND started_at < ?',
+          variables: [
+            Variable.withInt(row.startDay),
+            Variable.withInt(row.until.millisecondsSinceEpoch),
+          ],
+        )
+        .getSingle();
+    return {
+      'start': _day(row.startDay),
+      'last_day': _day(row.lastDay.millisecondsSinceEpoch),
+      'days': row.days,
+      if (row.until.isBefore(planned)) 'stopped_early': true,
+      ..._plan(row.plan),
+      // user, suggestion (the proposal on Start) or coach.
+      'started_by': row.source,
+      'sessions': sessions.read<int>('n'),
+    };
+  }
+
+  /// Everything about deloads: what the user set, the one going or planned,
+  /// the ones before, and where the proposal on Start stands.
+  Future<CoachLookup> _deload() async {
+    final now = DateTime.now();
+    final settings = await db.settingsDao.getSettings();
+    final current = await db.deloadDao.currentAt(now);
+    final standing = await deloadStanding(db, now: now);
+    final due = deloadDue(
+      weeks: standing.weeks,
+      stalled: standing.stalled,
+      weeksLimit: settings.deloadSuggestWeeks,
+      stalledLimit: settings.deloadSuggestStalled,
+    );
+    final later = switch (settings.deloadSnoozedUntil) {
+      final until? when until > now.millisecondsSinceEpoch => until,
+      _ => null,
+    };
+
+    return CoachLookup(
+      json: jsonEncode({
+        'settings': {
+          ..._plan(deloadPlanOf(settings)),
+          'default_days': settings.deloadDays,
+          // today or monday: where the start sheet begins.
+          'default_start': settings.deloadStart,
+          'propose': settings.deloadSuggest,
+          'propose_after_weeks': settings.deloadSuggestWeeks,
+          'propose_after_stalled_exercises': settings.deloadSuggestStalled,
+          'later_days': settings.deloadLaterDays,
+        },
+        'current': current == null
+            ? null
+            : {
+                'state': current.isOnAt(now) ? 'going' : 'planned',
+                if (current.isOnAt(now)) 'day': current.dayAt(now),
+                ...await _deloadEntry(current),
+              },
+        'earlier': [
+          for (final row
+              in (await db.deloadDao.all())
+                  .where((row) => row.id != current?.id)
+                  .take(kCoachRowCap))
+            await _deloadEntry(row),
+        ],
+        'weeks_without_break': standing.weeks,
+        'stalled_exercises': standing.stalled.take(kCoachRowCap).toList(),
+        'proposal_on_start': !settings.deloadSuggest
+            ? {
+                'state': 'off',
+                'note':
+                    'de gebruiker zette het uit; weer aan bij Instellingen, '
+                    'Training, Deload',
+              }
+            : current != null
+            ? {'state': 'not_during_a_deload'}
+            : later != null
+            ? {'state': 'later', 'until': _day(later)}
+            : due != null
+            ? {'state': 'shown'}
+            : {'state': 'not_due'},
+      }),
+      summary: 'je deloads en hoe je ze instelde',
+    );
+  }
+
+  /// A deload the coach would start. Nothing is started here.
+  Future<CoachLookup> _proposeDeload(Map<String, Object?> input) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final settings = await db.settingsDao.getSettings();
+    CoachLookup wrong(String error) => CoachLookup(
+      json: jsonEncode({'ok': false, 'error': error}),
+      summary: 'een voorstel voor een deload',
+    );
+
+    var from = settings.deloadStart == 'monday' ? nextMonday(today) : today;
+    if (_text(input['start']) case final asked?) {
+      final day = DateTime.tryParse(asked);
+      if (day == null) return wrong('start is geen datum; schrijf JJJJ-MM-DD');
+      from = DateTime(day.year, day.month, day.day);
+      if (from.isBefore(today)) {
+        return wrong(
+          'start ligt voor vandaag (${_day(now.millisecondsSinceEpoch)})',
+        );
+      }
+      if (from.isAfter(DateTime(today.year, today.month, today.day + 90))) {
+        return wrong('start ligt meer dan 90 dagen ver');
+      }
+    }
+    final days = switch (input['days']) {
+      null => settings.deloadDays,
+      final value => _number(value)?.round(),
+    };
+    if (days == null || days < kDeloadMinDays || days > kDeloadMaxDays) {
+      return wrong('days moet van $kDeloadMinDays tot $kDeloadMaxDays gaan');
+    }
+
+    // What the user set, where the coach says nothing else; and on the
+    // steps the sliders have, so Aanpassen opens on the same numbers.
+    final usual = deloadPlanOf(settings);
+    int percent(String key, int fallback, DeloadRange range) =>
+        switch (_number(input[key])) {
+          final asked? => range.snap(asked.round()),
+          null => fallback,
+        };
+    bool flag(String key, bool fallback) => switch (input[key]) {
+      final bool asked => asked,
+      _ => fallback,
+    };
+    final plan = DeloadPlan(
+      setsPercent: percent('sets_percent_less', usual.setsPercent, kDeloadSets),
+      weightPercent: percent(
+        'weight_percent_less',
+        usual.weightPercent,
+        kDeloadWeight,
+      ),
+      repsPercent: percent('reps_percent_less', usual.repsPercent, kDeloadReps),
+      dropHardSets: flag('drop_hard_sets', usual.dropHardSets),
+      prAttempts: flag('pr_attempts', usual.prAttempts),
+    );
+    final current = await db.deloadDao.currentAt(now);
+    final last = DateTime(from.year, from.month, from.day + days - 1);
+
+    return CoachLookup(
+      json: jsonEncode({
+        'ok': true,
+        'shown_to_user': true,
+        'proposed': {
+          'start': _day(from.millisecondsSinceEpoch),
+          'last_day': _day(last.millisecondsSinceEpoch),
+          'days': days,
+          ..._plan(plan),
+        },
+        if (current != null)
+          'replaces': {
+            'start': _day(current.startDay),
+            'state': current.isOnAt(now) ? 'going' : 'planned',
+          },
+        'note':
+            'De deload staat als kaart in het gesprek. Zeg kort waarom; de '
+            'gebruiker tikt zelf op Starten, of past hem eerst aan.',
+      }),
+      summary: 'een voorstel voor een deload',
+      proposal: CoachProposal.ofDeload(
+        DeloadProposal(
+          from: from,
+          days: days,
+          plan: plan,
+          reason: _text(input['reason']),
+        ),
+      ),
     );
   }
 

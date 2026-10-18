@@ -371,6 +371,7 @@ class CoachController extends _$CoachController {
       final settings = await db.settingsDao.getSettings();
       final profile = await db.settingsDao.getProfile();
       final now = DateTime.now();
+      final deload = await db.deloadDao.currentAt(now);
       final coach = Coach(
         client: client,
         tools: CoachTools(db, photos: inPlay, health: settings.coachSeesHealth),
@@ -381,6 +382,14 @@ class CoachController extends _$CoachController {
           displayName: profile?.displayName,
           exerciseCount: await db.exercisesDao.countExercises(),
           seesHealth: settings.coachSeesHealth,
+          deload: deload == null
+              ? null
+              : describeDeload(
+                  day: deload.isOnAt(now) ? deload.dayAt(now) : null,
+                  days: deload.days,
+                  from: deload.from,
+                  lastDay: deload.lastDay,
+                ),
           situation: situation,
           aboutUser: settings.coachSeesProfile && profile != null
               ? describeProfile(
@@ -498,11 +507,48 @@ class CoachController extends _$CoachController {
         return proposal.appliedId;
       case ProposalKind.exerciseChange:
         id = await _applyChange(db, proposal.exerciseChange!);
+      case ProposalKind.deload:
+        final deload = proposal.deload!;
+        final started = await db.deloadDao.start(
+          from: deload.startAt(DateTime.now()),
+          days: deload.days,
+          plan: deload.plan,
+          source: 'coach',
+        );
+        await noteDeloadStarted(message: message, index: index, id: started);
+        return started;
     }
 
     proposals[index] = proposal.applied(id);
     await db.chatDao.setProposals(message.id, encodeProposals(proposals));
     return id;
+  }
+
+  /// Marks a proposed deload as started - with Starten, or from the sheet
+  /// behind Aanpassen - and keeps on the card what was started: the day it
+  /// began and how light, which need not be what was proposed.
+  Future<void> noteDeloadStarted({
+    required ChatMessageRow message,
+    required int index,
+    required String id,
+  }) async {
+    final db = ref.read(databaseProvider);
+    final proposals = parseProposals(message.proposals);
+    if (index >= proposals.length) return;
+    final proposed = proposals[index].deload;
+    final row = await db.deloadDao.byId(id);
+    if (proposed == null || row == null) return;
+
+    proposals[index] = CoachProposal.ofDeload(
+      DeloadProposal(
+        from: row.from,
+        days: row.days,
+        plan: row.plan,
+        reason: proposed.reason,
+      ),
+      appliedId: id,
+    );
+    await db.chatDao.setProposals(message.id, encodeProposals(proposals));
   }
 
   Future<String> _createExercise(

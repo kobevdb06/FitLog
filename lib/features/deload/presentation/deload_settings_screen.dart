@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/deload.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -68,8 +69,7 @@ class DeloadSettingsScreen extends ConsumerWidget {
                       DeloadPercentSlider(
                         label: 'Minder werksets',
                         value: settings.deloadSetsPercent,
-                        max: 80,
-                        divisions: 8,
+                        range: kDeloadSets,
                         onChanged: (v) => update(
                           AppSettingsTableCompanion(
                             deloadSetsPercent: Value(v),
@@ -79,8 +79,7 @@ class DeloadSettingsScreen extends ConsumerWidget {
                       DeloadPercentSlider(
                         label: 'Lichter gewicht',
                         value: settings.deloadWeightPercent,
-                        max: 40,
-                        divisions: 8,
+                        range: kDeloadWeight,
                         onChanged: (v) => update(
                           AppSettingsTableCompanion(
                             deloadWeightPercent: Value(v),
@@ -90,8 +89,7 @@ class DeloadSettingsScreen extends ConsumerWidget {
                       DeloadPercentSlider(
                         label: 'Minder herhalingen',
                         value: settings.deloadRepsPercent,
-                        max: 50,
-                        divisions: 5,
+                        range: kDeloadReps,
                         onChanged: (v) => update(
                           AppSettingsTableCompanion(
                             deloadRepsPercent: Value(v),

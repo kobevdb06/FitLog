@@ -21,6 +21,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../deload/presentation/deload_providers.dart';
+import '../../deload/presentation/deload_start_sheet.dart';
 import '../../photos/data/photo_store.dart';
 import '../data/ai_client.dart';
 import '../domain/coach_proposal.dart';
@@ -559,7 +561,8 @@ class _Bubble extends StatelessWidget {
 ///
 /// The coach cannot write in your logbook. It describes, you decide: until
 /// this button is tapped nothing exists, and afterwards the card says what was
-/// made and takes you to it.
+/// made and takes you to it. A deload has a second button beside it, for the
+/// start sheet with the coach's numbers in it.
 class _ProposalCard extends ConsumerStatefulWidget {
   const _ProposalCard({
     required this.message,
@@ -651,6 +654,11 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
         ProposalKind.exerciseChange => 'Oefening aangepast.',
         ProposalKind.routine ||
         ProposalKind.coachRoutine => 'Routine toegevoegd.',
+        ProposalKind.deload => deloadStartedText(
+          widget.proposal.deload!.startAt(DateTime.now()),
+          widget.proposal.deload!.days,
+          DateTime.now(),
+        ),
       });
     } on CoachException catch (error) {
       // The exercise itself may well have been made; only the drawing failed.
@@ -670,11 +678,35 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
     );
   }
 
-  void _open(String id) => switch (widget.proposal.kind) {
+  /// Aanpassen: the start sheet, opened on what the coach proposed. What
+  /// is started there is what the card keeps.
+  Future<void> _adjust() async {
+    final deload = widget.proposal.deload!;
+    final id = await showDeloadStartSheet(
+      context,
+      source: 'coach',
+      plan: deload.plan,
+      days: deload.days,
+      from: deload.startAt(DateTime.now()),
+    );
+    if (id == null || !mounted) return;
+    await ref
+        .read(coachControllerProvider.notifier)
+        .noteDeloadStarted(
+          message: widget.message,
+          index: widget.index,
+          id: id,
+        );
+  }
+
+  /// Where Bekijken goes: to what was made. A deload has no page of its
+  /// own; the banner on Start and Trainen shows it.
+  String? _place(String id) => switch (widget.proposal.kind) {
     ProposalKind.exercise ||
-    ProposalKind.exerciseChange => context.push(Routes.exerciseDetail(id)),
+    ProposalKind.exerciseChange => Routes.exerciseDetail(id),
     ProposalKind.routine ||
-    ProposalKind.coachRoutine => context.push(Routes.routineDetail(id)),
+    ProposalKind.coachRoutine => Routes.routineDetail(id),
+    ProposalKind.deload => null,
   };
 
   @override
@@ -684,6 +716,13 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
     final exercise = proposal.exercise;
     final routine = proposal.routine;
     final change = proposal.exerciseChange;
+    final deload = proposal.deload;
+    final action = switch (proposal.kind) {
+      ProposalKind.exercise => 'Oefening toevoegen',
+      ProposalKind.exerciseChange => 'Toepassen',
+      ProposalKind.routine || ProposalKind.coachRoutine => 'Routine toevoegen',
+      ProposalKind.deload => 'Starten',
+    };
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -700,6 +739,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                     ProposalKind.routine => Icons.list_alt,
                     ProposalKind.coachRoutine => Icons.smart_toy_outlined,
                     ProposalKind.exerciseChange => Icons.edit_outlined,
+                    ProposalKind.deload => Icons.battery_charging_full,
                   },
                   size: 18,
                   color: theme.colorScheme.primary,
@@ -716,6 +756,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                             : 'Aangepast door de coach',
                       ProposalKind.exerciseChange =>
                         'Voorstel: oefening aanpassen',
+                      ProposalKind.deload => 'Voorstel: deload',
                     },
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -728,11 +769,14 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             const SizedBox(height: AppSpacing.xs),
             Text(proposal.title, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
-            if (proposal.change ?? change?.reason case final why?) ...[
+            if (proposal.change ?? change?.reason ?? deload?.reason
+                case final why?) ...[
               Text(why, style: theme.textTheme.bodySmall),
               const SizedBox(height: AppSpacing.xs),
             ],
             if (change != null) _ChangeLines(change: change),
+            if (deload != null)
+              _DeloadLines(deload: deload, started: proposal.isApplied),
             if (exercise != null && exercise.hasPhotos)
               _ProposalPhotos(
                 start: exercise.startPhoto,
@@ -785,12 +829,14 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                       ProposalKind.exerciseChange => 'Toegepast',
                       ProposalKind.exercise ||
                       ProposalKind.routine => 'Toegevoegd',
+                      ProposalKind.deload => 'Ingepland',
                     }, style: theme.textTheme.bodySmall),
                   ),
-                  TextButton(
-                    onPressed: () => _open(id),
-                    child: const Text('Bekijken'),
-                  ),
+                  if (_place(id) case final place?)
+                    TextButton(
+                      onPressed: () => context.push(place),
+                      child: const Text('Bekijken'),
+                    ),
                 ],
               ),
               // The prompts stay where the coach wrote them, for whoever
@@ -806,6 +852,44 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                     label: const Text("Prompts voor de foto's"),
                   ),
                 ),
+            ] else if (deload != null) ...[
+              // Two halves, as high as each other, also with large text on
+              // a narrow phone.
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                        ),
+                      ),
+                      onPressed: _busy ? null : () => _accept(),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(action),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                        ),
+                      ),
+                      onPressed: _busy ? null : _adjust,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Aanpassen'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ] else ...[
               SizedBox(
                 width: double.infinity,
@@ -818,12 +902,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Icon(change != null ? Icons.check : Icons.add),
-                  label: Text(switch (proposal.kind) {
-                    ProposalKind.exercise => 'Oefening toevoegen',
-                    ProposalKind.exerciseChange => 'Toepassen',
-                    ProposalKind.routine ||
-                    ProposalKind.coachRoutine => 'Routine toevoegen',
-                  }),
+                  label: Text(action),
                 ),
               ),
               // The photos are made in Gemini, from the coach's two prompts;
@@ -877,6 +956,52 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// When a proposed deload runs and how light it is - once started, as it
+/// was started - and until then the deload it would take the place of.
+class _DeloadLines extends ConsumerWidget {
+  const _DeloadLines({required this.deload, required this.started});
+
+  final DeloadProposal deload;
+  final bool started;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final from = started ? deload.from : deload.startAt(DateTime.now());
+    final last = DateTime(from.year, from.month, from.day + deload.days - 1);
+    final replaced = started ? null : ref.watch(currentDeloadProvider).value;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${Formatters.weekdayDayMonthShort(from)} tot en met '
+            '${Formatters.weekdayDayMonthShort(last)}',
+            style: theme.textTheme.bodySmall,
+          ),
+          Text(
+            [
+              deloadPlanSummary(deload.plan),
+              if (deload.plan.prAttempts) 'recordpogingen mogen',
+            ].join(' · '),
+            style: theme.textTheme.bodySmall,
+          ),
+          if (replaced != null)
+            Text(
+              'In de plaats van je deload vanaf '
+              '${Formatters.weekdayDayMonthShort(replaced.from)}.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+        ],
       ),
     );
   }

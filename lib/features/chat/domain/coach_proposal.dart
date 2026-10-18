@@ -15,9 +15,14 @@
 /// changes itself, because you asked for one or put one there knowing it
 /// could. The card then says what it did, after the fact, and every earlier
 /// version is kept (see `RoutinesDao.keepVersion`).
+///
+/// A deload is proposed like an exercise: the card has Starten, and
+/// Aanpassen for the start sheet with the coach's numbers in it.
 library;
 
 import 'dart:convert';
+
+import '../../../core/calc/deload.dart';
 
 /// What is being offered.
 enum ProposalKind {
@@ -31,7 +36,10 @@ enum ProposalKind {
   coachRoutine('coach_routine'),
 
   /// A change to one of the user's own exercises, offered with a button.
-  exerciseChange('exercise_change');
+  exerciseChange('exercise_change'),
+
+  /// A deload, offered with a button.
+  deload('deload');
 
   const ProposalKind(this.wire);
 
@@ -267,6 +275,65 @@ class RoutineProposal {
   );
 }
 
+/// A deload the coach would start: from when, how long, how light, and why.
+class DeloadProposal {
+  const DeloadProposal({
+    required this.from,
+    required this.days,
+    required this.plan,
+    this.reason,
+  });
+
+  /// The first day, at midnight.
+  final DateTime from;
+  final int days;
+  final DeloadPlan plan;
+
+  /// Why now, in one sentence of the coach's.
+  final String? reason;
+
+  /// The first day when it is started at [now]: the proposed one, or today
+  /// once that has gone by - a card tapped a week later starts then, not in
+  /// the past.
+  DateTime startAt(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    return from.isBefore(today) ? today : from;
+  }
+
+  Map<String, Object?> toJson() => {
+    'from':
+        '${from.year}-${from.month.toString().padLeft(2, '0')}-'
+        '${from.day.toString().padLeft(2, '0')}',
+    'days': days,
+    'sets_percent': plan.setsPercent,
+    'weight_percent': plan.weightPercent,
+    'reps_percent': plan.repsPercent,
+    'drop_hard_sets': plan.dropHardSets,
+    'pr_attempts': plan.prAttempts,
+    'reason': ?reason,
+  };
+
+  static DeloadProposal? fromJson(Map<String, Object?> json) {
+    final from = DateTime.tryParse('${json['from']}');
+    if (from == null) return null;
+    const usual = DeloadPlan();
+    int whole(String key, int fallback) =>
+        (json[key] as num?)?.toInt() ?? fallback;
+    return DeloadProposal(
+      from: DateTime(from.year, from.month, from.day),
+      days: whole('days', 7),
+      plan: DeloadPlan(
+        setsPercent: whole('sets_percent', usual.setsPercent),
+        weightPercent: whole('weight_percent', usual.weightPercent),
+        repsPercent: whole('reps_percent', usual.repsPercent),
+        dropHardSets: json['drop_hard_sets'] != false,
+        prAttempts: json['pr_attempts'] == true,
+      ),
+      reason: json['reason'] as String?,
+    );
+  }
+}
+
 /// A proposal as it is stored with the message, with whether it was taken up.
 class CoachProposal {
   const CoachProposal({
@@ -277,6 +344,7 @@ class CoachProposal {
     this.made = false,
     this.change,
     this.exerciseChange,
+    this.deload,
   });
 
   CoachProposal.ofExercise(ExerciseProposal this.exercise, {this.appliedId})
@@ -284,14 +352,16 @@ class CoachProposal {
       routine = null,
       made = false,
       change = null,
-      exerciseChange = null;
+      exerciseChange = null,
+      deload = null;
 
   CoachProposal.ofRoutine(RoutineProposal this.routine, {this.appliedId})
     : kind = ProposalKind.routine,
       exercise = null,
       made = false,
       change = null,
-      exerciseChange = null;
+      exerciseChange = null,
+      deload = null;
 
   CoachProposal.ofExerciseChange(
     ExerciseChangeProposal this.exerciseChange, {
@@ -300,7 +370,17 @@ class CoachProposal {
        exercise = null,
        routine = null,
        made = false,
-       change = null;
+       change = null,
+       deload = null;
+
+  /// A deload; [appliedId] is the deload's id once it was started.
+  CoachProposal.ofDeload(DeloadProposal this.deload, {this.appliedId})
+    : kind = ProposalKind.deload,
+      exercise = null,
+      routine = null,
+      made = false,
+      change = null,
+      exerciseChange = null;
 
   /// A routine the coach [made] - or changed, when false - in its own
   /// folder: already there, so [appliedId] is its id from the start.
@@ -311,7 +391,8 @@ class CoachProposal {
     this.change,
   }) : kind = ProposalKind.coachRoutine,
        exercise = null,
-       exerciseChange = null;
+       exerciseChange = null,
+       deload = null;
 
   final ProposalKind kind;
   final ExerciseProposal? exercise;
@@ -328,6 +409,7 @@ class CoachProposal {
   final String? change;
 
   final ExerciseChangeProposal? exerciseChange;
+  final DeloadProposal? deload;
 
   bool get isApplied => appliedId != null;
 
@@ -335,6 +417,10 @@ class CoachProposal {
     ProposalKind.exercise => exercise!.name,
     ProposalKind.routine || ProposalKind.coachRoutine => routine!.name,
     ProposalKind.exerciseChange => exerciseChange!.exerciseName,
+    ProposalKind.deload =>
+      deload!.days == 7
+          ? 'Deloadweek'
+          : 'Deload van ${deload!.days} ${deload!.days == 1 ? 'dag' : 'dagen'}',
   };
 
   CoachProposal applied(String id) => CoachProposal(
@@ -345,6 +431,7 @@ class CoachProposal {
     made: made,
     change: change,
     exerciseChange: exerciseChange,
+    deload: deload,
   );
 
   Map<String, Object?> toJson() => {
@@ -353,6 +440,7 @@ class CoachProposal {
     if (exercise != null) 'exercise': exercise!.toJson(),
     if (routine != null) 'routine': routine!.toJson(),
     if (exerciseChange != null) 'exercise_change': exerciseChange!.toJson(),
+    if (deload != null) 'deload': deload!.toJson(),
     if (kind == ProposalKind.coachRoutine) ...{'made': made, 'change': change},
   };
 
@@ -386,6 +474,11 @@ class CoachProposal {
           ExerciseChangeProposal.fromJson(body('exercise_change')),
           appliedId: applied,
         ),
+      ProposalKind.deload when json['deload'] is Map =>
+        switch (DeloadProposal.fromJson(body('deload'))) {
+          final deload? => CoachProposal.ofDeload(deload, appliedId: applied),
+          null => null,
+        },
       _ => null,
     };
   }

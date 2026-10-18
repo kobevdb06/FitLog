@@ -218,3 +218,29 @@ DeloadReason? deloadDue({
   if (!byWeeks && !byStalled) return null;
   return DeloadReason(weeks: weeks, stalled: stalled);
 }
+
+/// The days a deload can last: from one to three weeks.
+const int kDeloadMinDays = 1;
+const int kDeloadMaxDays = 21;
+
+/// How much less a deload can make something, at most, and in which steps:
+/// what the sliders offer, and what the coach may propose.
+class DeloadRange {
+  const DeloadRange({required this.max, required this.step});
+
+  final int max;
+  final int step;
+
+  int get divisions => max ~/ step;
+
+  /// [percent] on the nearest step, within the range.
+  int snap(int percent) => (percent.clamp(0, max) / step).round() * step;
+}
+
+const DeloadRange kDeloadSets = DeloadRange(max: 80, step: 10);
+const DeloadRange kDeloadWeight = DeloadRange(max: 40, step: 5);
+const DeloadRange kDeloadReps = DeloadRange(max: 50, step: 10);
+
+/// The Monday after [day]: a week on, when [day] is one.
+DateTime nextMonday(DateTime day) =>
+    DateTime(day.year, day.month, day.day + (8 - day.weekday));

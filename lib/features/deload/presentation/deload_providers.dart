@@ -7,7 +7,7 @@ import '../../../core/calc/progression.dart';
 import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../history/presentation/history_providers.dart';
-import '../../progress/data/plateau_loader.dart';
+import '../data/deload_standing.dart';
 
 part 'deload_providers.g.dart';
 
@@ -21,15 +21,6 @@ Stream<DeloadWeekRow?> currentDeload(Ref ref) =>
       }
       return null;
     });
-
-/// The plan the settings give: what the start sheet opens with.
-DeloadPlan deloadPlanOf(AppSettingsRow settings) => DeloadPlan(
-  setsPercent: settings.deloadSetsPercent,
-  weightPercent: settings.deloadWeightPercent,
-  repsPercent: settings.deloadRepsPercent,
-  dropHardSets: settings.deloadDropHardSets,
-  prAttempts: settings.deloadPrAttempts,
-);
 
 /// Why Start proposes a deload now, or null: switched off, put away with
 /// Later, one going or planned, or simply not time.
@@ -47,23 +38,10 @@ Future<DeloadReason?> deloadSuggestion(Ref ref) async {
   if (snoozed != null && now.millisecondsSinceEpoch < snoozed) return null;
   if (await db.deloadDao.currentAt(now) != null) return null;
 
-  final sessions = await db.workoutsDao.ordinarySessionStarts();
-  if (sessions.isEmpty) return null;
-  final weeks = weeksWithoutBreak(
-    now: now,
-    sessions: sessions,
-    deloads: [
-      for (final row in await db.deloadDao.all())
-        (from: row.from, until: row.until),
-    ],
-  );
-  final stalled = [
-    for (final plateau in await loadPlateaus(db, now: now))
-      plateau.exercise.name,
-  ];
+  final standing = await deloadStanding(db, now: now);
   return deloadDue(
-    weeks: weeks,
-    stalled: stalled,
+    weeks: standing.weeks,
+    stalled: standing.stalled,
     weeksLimit: settings.deloadSuggestWeeks,
     stalledLimit: settings.deloadSuggestStalled,
   );

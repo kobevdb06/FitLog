@@ -166,6 +166,7 @@ class WorkoutController {
       routineId: routineId,
       defaultRestSeconds: await _defaultRest,
     );
+    await _deloadIfOn(id);
     await _askAboutNotifications();
     return id;
   }
@@ -175,8 +176,23 @@ class WorkoutController {
       name: name ?? 'Losse workout',
       defaultRestSeconds: await _defaultRest,
     );
+    await _deloadIfOn(id);
     await _askAboutNotifications();
     return id;
+  }
+
+  /// During a deload, every session started is one: lighter as the deload's
+  /// own plan says, and marked so - an empty one only marked, there is
+  /// nothing in it to make lighter yet.
+  Future<void> _deloadIfOn(String workoutId) async {
+    final deload = await _db.deloadDao.onAt(DateTime.now());
+    if (deload == null) return;
+    final settings = await _db.settingsDao.getSettings();
+    await _db.workoutsDao.makeDeload(
+      workoutId,
+      deload.plan,
+      platesKg: decodePlates(settings.availablePlatesKg),
+    );
   }
 
   /// A workout puts a notification up and schedules another when you rest, so
@@ -193,6 +209,7 @@ class WorkoutController {
       workoutId,
       defaultRestSeconds: await _defaultRest,
     );
+    await _deloadIfOn(id);
     await _askAboutNotifications();
     return id;
   }

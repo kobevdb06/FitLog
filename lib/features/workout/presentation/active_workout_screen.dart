@@ -23,6 +23,8 @@ import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../core/widgets/reorderable_cards.dart';
 import '../../../routing/routes.dart';
+import '../../deload/presentation/deload_providers.dart';
+import '../../deload/presentation/deload_widgets.dart';
 import '../../exercises/presentation/exercise_library_screen.dart';
 import '../../exercises/presentation/exercise_preview_sheet.dart';
 import '../domain/set_columns.dart';
@@ -535,7 +537,16 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    _ElapsedLabel(startedAt: workout.workout.startedAt),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (workout.workout.isDeload) ...[
+                          const DeloadTag(),
+                          const SizedBox(width: AppSpacing.xs),
+                        ],
+                        _ElapsedLabel(startedAt: workout.workout.startedAt),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -895,6 +906,7 @@ class _ExerciseCard extends ConsumerWidget {
           handle: handle,
           groupColor: groupColor,
           group: group,
+          prAttempts: _prAttemptsAllowed(ref),
           onMenu: (value) => _onMenu(context, ref, value),
         ),
         _NoteField(
@@ -904,7 +916,9 @@ class _ExerciseCard extends ConsumerWidget {
               .read(workoutControllerProvider)
               .setExerciseNote(detail.workoutExercise.id, note),
         ),
-        if (_hint(previousBySide) case final hint?)
+        if (workout.workout.isDeload)
+          ?_deloadLine(previousBySide)
+        else if (_hint(previousBySide) case final hint?)
           _HintLine(
             hint: hint,
             formatters: formatters,
@@ -1004,6 +1018,52 @@ class _ExerciseCard extends ConsumerWidget {
     return () => ref
         .read(workoutControllerProvider)
         .copyPreviousInto(row.id, previous, columns);
+  }
+
+  /// Whether a PR attempt may start here: always, except in a deload whose
+  /// plan says not.
+  bool _prAttemptsAllowed(WidgetRef ref) {
+    if (!workout.workout.isDeload) return true;
+    final deload = ref.watch(currentDeloadProvider).value;
+    if (deload == null || !deload.isOnAt(DateTime.now())) return true;
+    return deload.plan.prAttempts;
+  }
+
+  /// In a deload, not what to try but what this is: the set made lighter,
+  /// and what the last ordinary time was. Nothing to fill in - the sets
+  /// already hold it.
+  Widget? _deloadLine(Map<SetSide?, List<WorkoutSetRow>?> previousBySide) {
+    WorkoutSetRow? open;
+    for (final s in detail.sets) {
+      if (!s.isCompleted &&
+          !s.isSkipped &&
+          SetType.fromWire(s.setType) != SetType.warmup) {
+        open = s;
+        break;
+      }
+    }
+    if (open == null) return null;
+    final before = [
+      for (final s in previousBySide.values.expand((sets) => sets ?? const []))
+        if (SetType.fromWire(s.setType) != SetType.warmup && !s.isSkipped) s,
+    ];
+    final now = formatters.setSummary(
+      weightKg: open.weightKg,
+      reps: open.reps,
+      durationSeconds: open.durationSeconds,
+      distanceM: open.distanceM,
+    );
+    return DeloadLine(
+      now: now == '-' ? null : now,
+      before: before.isEmpty
+          ? null
+          : formatters.setSummary(
+              weightKg: before.first.weightKg,
+              reps: before.first.reps,
+              durationSeconds: before.first.durationSeconds,
+              distanceM: before.first.distanceM,
+            ),
+    );
   }
 
   /// What to try today, or null: switched off, a PR attempt (which has its
@@ -1268,6 +1328,7 @@ class _CardHeader extends ConsumerWidget {
     required this.handle,
     required this.groupColor,
     required this.group,
+    this.prAttempts = true,
     required this.onMenu,
   });
 
@@ -1275,6 +1336,9 @@ class _CardHeader extends ConsumerWidget {
   final Widget handle;
   final Color? groupColor;
   final int? group;
+
+  /// False in a deload that leaves records alone.
+  final bool prAttempts;
   final ValueChanged<String> onMenu;
 
   bool get isPrAttempt => detail.workoutExercise.isPrAttempt;
@@ -1413,7 +1477,7 @@ class _CardHeader extends ConsumerWidget {
                   icon: Icons.undo,
                   label: 'Terug naar gewone oefening',
                 ),
-              ] else
+              ] else if (prAttempts)
                 menuItem(
                   value: 'pr_start',
                   icon: Icons.emoji_events_outlined,

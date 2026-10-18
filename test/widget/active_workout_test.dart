@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
+import 'package:fitlog/core/calc/deload.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/db/models.dart';
 import 'package:fitlog/core/security/secret_store.dart';
@@ -739,5 +740,52 @@ void main() {
     expect(find.byType(NumericKeypad), findsOneWidget);
     expect(find.text('+2,5'), findsOneWidget);
     expect(find.byType(EditableText), findsOneWidget);
+  });
+
+  group('in een deload', () {
+    Future<void> deload({bool prAttempts = false}) async {
+      await db.deloadDao.start(
+        from: DateTime.now(),
+        days: 7,
+        plan: DeloadPlan(prAttempts: prAttempts),
+        source: 'user',
+      );
+      await (db.update(db.workoutsTable)..where((t) => t.id.equals(workoutId)))
+          .write(const WorkoutsTableCompanion(isDeload: Value(true)));
+    }
+
+    testWidgets('zegt het, en geen hint om zwaarder te gaan', (tester) async {
+      await tester.runAsync(deload);
+      await pumpScreen(tester);
+      await settle(tester);
+
+      expect(find.text('Deload'), findsOneWidget);
+      expect(
+        find.text('Deload: 100 kg × 5, het mag licht voelen.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Probeer'), findsNothing);
+    });
+
+    testWidgets('geen recordpoging, tenzij de deload ze toelaat', (
+      tester,
+    ) async {
+      await tester.runAsync(deload);
+      await pumpScreen(tester);
+      await settle(tester);
+
+      // The exercise's menu, not the workout's in the app bar.
+      final cardMenu = find
+          .byTooltip('Menu tonen')
+          .evaluate()
+          .firstWhere(
+            (element) =>
+                element.findAncestorWidgetOfExactType<AppBar>() == null,
+          );
+      await tester.tap(find.byElementPredicate((e) => e == cardMenu));
+      await tester.pumpAndSettle();
+      expect(find.text('Omzetten naar PR-poging'), findsNothing);
+      expect(find.text('Rusttimer instellen'), findsOneWidget);
+    });
   });
 }

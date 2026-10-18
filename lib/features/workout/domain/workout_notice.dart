@@ -194,7 +194,9 @@ WorkoutNotice? workoutNoticeFor(
   if (detail.workout.endedAt != null) return null;
 
   return WorkoutNotice(
-    title: detail.workout.name,
+    title: detail.workout.isDeload
+        ? '${detail.workout.name} · deload'
+        : detail.workout.name,
     body: _whereYouAre(detail),
     startedAt: DateTime.fromMillisecondsSinceEpoch(detail.workout.startedAt),
     restEndsAt: restEndsAt,

@@ -12,6 +12,7 @@ import '../../../core/widgets/colour_picker.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../deload/presentation/deload_widgets.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'history_providers.dart';
 
@@ -321,6 +322,10 @@ class _WorkoutTile extends ConsumerWidget {
       title: Row(
         children: [
           Expanded(child: Text(workout.name)),
+          if (workout.isDeload) ...[
+            const DeloadTag(),
+            const SizedBox(width: 6),
+          ],
           if (summary.prCount > 0)
             PrBadge(label: '${summary.prCount}', compact: true),
         ],

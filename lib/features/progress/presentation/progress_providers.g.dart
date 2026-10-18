@@ -325,7 +325,7 @@ final class MainLiftsProvider
   }
 }
 
-String _$mainLiftsHash() => r'525198c848a70a5dd13a3074514d90717fcae105';
+String _$mainLiftsHash() => r'80dac12a6b59166830d8f2b191dff5d4dda34169';
 
 /// The exercises you did most in [period], at most [kMainLifts].
 ///

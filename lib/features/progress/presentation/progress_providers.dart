@@ -116,7 +116,11 @@ Stream<List<MainLift>> mainLifts(Ref ref, ProgressPeriod period) {
   return db.workoutsDao
       .watchProgressSets(since: period.start(DateTime.now()))
       .asyncMap((sets) async {
-        final trends = liftTrends(sets);
+        // A deload's lighter sets are not a dip in the line.
+        final trends = liftTrends([
+          for (final set in sets)
+            if (!set.isDeload) set,
+        ]);
         if (trends.isEmpty) return const <MainLift>[];
         final exercises = {
           for (final row in await db.exercisesDao.getByIds([

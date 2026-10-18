@@ -1,9 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../calc/deload.dart';
 import '../../calc/plateau.dart';
 import '../../calc/progression.dart';
 import '../../calc/recovery.dart';
+import '../../calc/set_numbering.dart';
 import '../../calc/volume.dart';
 import '../database.dart';
 import '../models.dart';
@@ -609,6 +611,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   Selectable<QueryRow> _progressSetsQuery(DateTime since) {
     return customSelect(
       'SELECT w.id AS workout_id, w.started_at AS started_at, '
+      'w.is_deload AS is_deload, '
       'we.exercise_id AS exercise_id, e.primary_muscle AS primary_muscle, '
       'e.category AS category, ws.weight_kg AS weight_kg, ws.reps AS reps, '
       'ws.duration_seconds AS duration_seconds, ws.side AS side '
@@ -647,6 +650,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
           reps: row.readNullable<int>('reps'),
           durationSeconds: row.readNullable<int>('duration_seconds'),
           side: row.readNullable<String>('side'),
+          isDeload: row.read<bool>('is_deload'),
         ),
     ];
   }
@@ -820,6 +824,9 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
       'SELECT we.id AS we_id FROM workout_exercises we '
       'JOIN workouts w ON w.id = we.workout_id '
       'WHERE we.exercise_id = ? AND w.ended_at IS NOT NULL '
+      // A deload is not what you can do: the column and the hint look past
+      // it, to the last ordinary time.
+      'AND w.is_deload = 0 '
       'AND (? IS NULL OR w.id != ?) '
       'AND we.is_unilateral = ? '
       'ORDER BY w.started_at DESC LIMIT 1',
@@ -903,30 +910,10 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     };
 
     // The weights used on each exercise over the last year, for the step.
-    final steps = <String, double>{};
-    final since = DateTime.now()
-        .subtract(const Duration(days: 365))
-        .millisecondsSinceEpoch;
-    for (final exerciseId in {for (final e in exercises) e.exerciseId}) {
-      final weights = await customSelect(
-        'SELECT DISTINCT ws.weight_kg AS kg FROM workout_sets ws '
-        'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
-        'JOIN workouts w ON w.id = we.workout_id '
-        'WHERE we.exercise_id = ? AND ws.is_completed = 1 '
-        'AND ws.set_type != ? AND ws.weight_kg > 0 '
-        'AND w.ended_at IS NOT NULL AND w.started_at >= ? '
-        'ORDER BY ws.weight_kg LIMIT 60',
-        variables: [
-          Variable.withString(exerciseId),
-          Variable.withString(SetType.warmup.wire),
-          Variable.withInt(since),
-        ],
-      ).get();
-      final step = learnedWeightStep([
-        for (final row in weights) row.read<double>('kg'),
-      ]);
-      if (step != null) steps[exerciseId] = step;
-    }
+    final steps = <String, double>{
+      for (final exerciseId in {for (final e in exercises) e.exerciseId})
+        exerciseId: ?await learnedStepFor(exerciseId),
+    };
 
     return PreviousSession(
       sets: sets,
@@ -934,6 +921,111 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
       targetReps: targets,
       weightSteps: steps,
     );
+  }
+
+  /// The step you take on [exerciseId], read off the weights of the last year
+  /// (see `learnedWeightStep`), or null where the history shows none. A
+  /// deload's lighter weights are not a step you took.
+  Future<double?> learnedStepFor(String exerciseId) async {
+    final since = DateTime.now()
+        .subtract(const Duration(days: 365))
+        .millisecondsSinceEpoch;
+    final weights = await customSelect(
+      'SELECT DISTINCT ws.weight_kg AS kg FROM workout_sets ws '
+      'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+      'JOIN workouts w ON w.id = we.workout_id '
+      'WHERE we.exercise_id = ? AND ws.is_completed = 1 '
+      'AND ws.set_type != ? AND ws.weight_kg > 0 '
+      'AND w.ended_at IS NOT NULL AND w.started_at >= ? AND w.is_deload = 0 '
+      'ORDER BY ws.weight_kg LIMIT 60',
+      variables: [
+        Variable.withString(exerciseId),
+        Variable.withString(SetType.warmup.wire),
+        Variable.withInt(since),
+      ],
+    ).get();
+    return learnedWeightStep([
+      for (final row in weights) row.read<double>('kg'),
+    ]);
+  }
+
+  /// Makes [workoutId] a deload session: marked as one, and every exercise
+  /// lighter as [plan] says.
+  ///
+  /// A set with no value of its own takes last ordinary time's in its place
+  /// before it is made lighter: a routine without targets would otherwise
+  /// show - and store - the full weight greyed in from history. Weights land
+  /// on the exercise's step, or on the smallest pair of [platesKg].
+  Future<void> makeDeload(
+    String workoutId,
+    DeloadPlan plan, {
+    List<double> platesKg = const [],
+  }) async {
+    await (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
+      const WorkoutsTableCompanion(isDeload: Value(true)),
+    );
+    final workout = await getWorkoutDetail(workoutId);
+    if (workout == null) return;
+
+    for (final exercise in workout.exercises) {
+      final labels = labelSetsWithSides([
+        for (final s in exercise.sets)
+          (SetType.fromWire(s.setType), SetSide.fromWire(s.side)),
+      ]);
+      final previous = <SetSide?, List<WorkoutSetRow>>{};
+      for (final side in {for (final l in labels) l.side}) {
+        previous[side] = await previousSetsFor(
+          exercise.exercise.id,
+          excludingWorkoutId: workoutId,
+          side: side,
+        );
+      }
+      final step =
+          await learnedStepFor(exercise.exercise.id) ??
+          defaultWeightStep(exercise.category, platesKg: platesKg);
+
+      final inputs = <DeloadInput>[];
+      for (var i = 0; i < exercise.sets.length; i++) {
+        final row = exercise.sets[i];
+        final index = labels[i].workingIndex;
+        final before = previous[labels[i].side] ?? const <WorkoutSetRow>[];
+        final last = index != null && index < before.length
+            ? before[index]
+            : null;
+        inputs.add(
+          DeloadInput(
+            type: SetType.fromWire(row.setType),
+            side: labels[i].side,
+            weightKg: row.weightKg ?? last?.weightKg,
+            reps: row.reps ?? last?.reps,
+            durationSeconds: row.durationSeconds ?? last?.durationSeconds,
+            distanceM: row.distanceM ?? last?.distanceM,
+          ),
+        );
+      }
+
+      final outputs = deloadExercise(inputs, plan: plan, stepKg: step);
+      for (var i = 0; i < exercise.sets.length; i++) {
+        final row = exercise.sets[i];
+        final out = outputs[i];
+        if (!out.kept) {
+          await (delete(
+            workoutSetsTable,
+          )..where((t) => t.id.equals(row.id))).go();
+          continue;
+        }
+        await (update(
+          workoutSetsTable,
+        )..where((t) => t.id.equals(row.id))).write(
+          WorkoutSetsTableCompanion(
+            weightKg: Value(out.weightKg),
+            reps: Value(out.reps),
+            durationSeconds: Value(out.durationSeconds),
+            distanceM: Value(out.distanceM),
+          ),
+        );
+      }
+    }
   }
 
   /// Marks every set of an exercise that is still open as skipped, or clears

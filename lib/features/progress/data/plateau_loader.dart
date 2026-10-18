@@ -33,6 +33,8 @@ Future<List<ExercisePlateau>> findPlateaus(
   final byExercise = <String, List<ProgressSet>>{};
   for (final set in sets) {
     if (set.startedAt.isAfter(now)) continue;
+    // Lighter on purpose: a deload is not a session without progress.
+    if (set.isDeload) continue;
     byExercise.putIfAbsent(set.exerciseId, () => []).add(set);
   }
 

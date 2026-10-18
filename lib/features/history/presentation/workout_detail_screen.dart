@@ -16,6 +16,7 @@ import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
+import '../../deload/presentation/deload_widgets.dart';
 import '../../workout/domain/set_columns.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'history_providers.dart';
@@ -37,7 +38,20 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(detail.value?.workout.name ?? 'Workout'),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                detail.value?.workout.name ?? 'Workout',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (detail.value?.workout.isDeload ?? false) ...[
+              const SizedBox(width: 8),
+              const DeloadTag(),
+            ],
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) => _onMenu(context, ref, value),

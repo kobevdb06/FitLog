@@ -53,6 +53,7 @@ class ProgressSet {
     this.reps,
     this.durationSeconds,
     this.side,
+    this.isDeload = false,
   });
 
   final String workoutId;
@@ -66,6 +67,10 @@ class ProgressSet {
 
   /// Set while the exercise was done one side at a time.
   final String? side;
+
+  /// Done in a deload: lighter on purpose. Not progress lost, nor a week
+  /// short of sets - progress, plateaus and what is usual look past it.
+  final bool isDeload;
 }
 
 /// What progress on an exercise is measured in.

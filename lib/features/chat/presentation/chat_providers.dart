@@ -418,10 +418,14 @@ class CoachController extends _$CoachController {
       );
 
       // The photos are part of what left the device, so they belong on the
-      // same line as the lookups.
+      // same line as the lookups - and so does the deload the prompt named.
       final reported = [
         if (images.length == 1) 'de foto die je meestuurde',
         if (images.length > 1) "de ${images.length} foto's die je meestuurde",
+        if (deload != null)
+          deload.isOnAt(now)
+              ? 'dat je in een deload zit'
+              : 'dat er een deload gepland staat',
         ...answer.lookups,
       ];
       await db.chatDao.addMessage(

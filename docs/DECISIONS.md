@@ -4562,7 +4562,8 @@ de coach weet er alles van.
   het voorstel staat - en ziet in de sessies, de geschiedenis per oefening,
   de weekcijfers en de training van nu welke een deload waren. Loopt er een,
   dan zegt één regel in de prompt dat, buiten het vaste budget: het geldt
-  alleen dan. `propose_deload` start niets: het is een kaart met *Starten*
+  alleen dan. Onder het antwoord staat dat die meeging, zoals een opzoeking:
+  de privacyverklaring belooft dat daar staat wat er uit je logboek ging. `propose_deload` start niets: het is een kaart met *Starten*
   en *Aanpassen* (het startblad, met de cijfers van de coach), zoals een
   oefening, omdat een deload elke volgende sessie verandert. De percentages
   komen op de stappen van de schuifjes; wat de coach niet noemt, komt uit de

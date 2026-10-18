@@ -511,6 +511,101 @@ void main() {
     });
   });
 
+  group('wat meegaat met een vraag', () {
+    late Directory home;
+    ProviderContainer? container;
+    late List<String> sent;
+
+    setUp(() async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      home = await Directory.systemTemp.createTemp('fitlog_deload_ask');
+      sent = [];
+      container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          appPathsProvider.overrideWith((ref) => AppPaths(home)),
+          coachClientFactoryProvider.overrideWithValue(
+            (apiKey, provider) => AiClient(
+              apiKey: apiKey,
+              provider: provider,
+              client: MockClient((request) async {
+                sent.add(request.body);
+                return http.Response(
+                  jsonEncode({
+                    'candidates': [
+                      {
+                        'content': {
+                          'parts': [
+                            {'text': 'Rustig aan deze week.'},
+                          ],
+                        },
+                      },
+                    ],
+                    'usageMetadata': {
+                      'promptTokenCount': 1200,
+                      'candidatesTokenCount': 10,
+                    },
+                  }),
+                  200,
+                  headers: {'content-type': 'application/json'},
+                );
+              }),
+            ),
+          ),
+        ],
+      );
+    });
+
+    tearDown(() async {
+      container?.dispose();
+      if (await home.exists()) await home.delete(recursive: true);
+    });
+
+    Future<ChatMessageRow> ask() async {
+      final coach = container!.read(coachControllerProvider.notifier);
+      final thread = await coach.startThread('Hoe zwaar?');
+      await coach.ask(threadId: thread, question: 'Hoe zwaar vandaag?');
+      return (await db.chatDao.messages(thread)).last;
+    }
+
+    test('een lopende deload, en het antwoord zegt dat die meeging', () async {
+      await db.deloadDao.start(
+        from: daysAgo(1),
+        days: 7,
+        plan: const DeloadPlan(),
+        source: 'user',
+        now: daysAgo(1),
+      );
+
+      final answer = await ask();
+
+      expect(sent.single, contains('Er loopt een deload, dag 2 van 7'));
+      expect(answer.lookups, contains('dat je in een deload zit'));
+    });
+
+    test('een geplande zegt dat ook', () async {
+      await db.deloadDao.start(
+        from: DateTime(today.year, today.month, today.day + 2),
+        days: 5,
+        plan: const DeloadPlan(),
+        source: 'user',
+      );
+
+      final answer = await ask();
+
+      expect(sent.single, contains('Er staat een deload gepland'));
+      expect(answer.lookups, contains('dat er een deload gepland staat'));
+    });
+
+    test('zonder deload gaat er niets over mee', () async {
+      final answer = await ask();
+
+      expect(sent.single, isNot(contains('Er loopt een deload')));
+      expect(sent.single, isNot(contains('deload gepland')));
+      expect(answer.lookups, isNull);
+    });
+  });
+
   group('de prompt', () {
     test('zegt in één regel dat er een deload loopt of gepland staat', () {
       expect(

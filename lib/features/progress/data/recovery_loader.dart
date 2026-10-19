@@ -63,28 +63,27 @@ Future<List<RecoveryEstimate>> loadRecoveryEstimates(
   return estimateRecovery(
     muscleSessions(sets, bodyWeightKg: weight?.value),
     checks: [
-      for (final row in await db.recoveryDao.watchSorenessSince(since).first)
+      for (final row in await db.recoveryDao.sorenessSince(since))
         ?sorenessCheckOf(row),
     ],
     nights: [
-      for (final row in await db.recoveryDao.watchSleepSince(since).first)
+      for (final row in await db.recoveryDao.sleepSince(since))
         if (healthConnect || row.source == null) sleepNightOf(row),
     ],
     drinks: [
-      for (final row in await db.recoveryDao.watchDrinksSince(since).first)
+      for (final row in await db.recoveryDao.drinksSince(since))
         drinkDayOf(row),
     ],
     vitals: [
       if (healthConnect)
-        for (final row
-            in await db.healthDao
-                .watchVitalsSince(since.subtract(kVitalsBaselineWindow))
-                .first)
+        for (final row in await db.healthDao.vitalsSince(
+          since.subtract(kVitalsBaselineWindow),
+        ))
           vitalsDayOf(row),
     ],
     cardio: [
       if (healthConnect)
-        for (final row in await db.healthDao.watchCardioSince(since).first)
+        for (final row in await db.healthDao.cardioSince(since))
           ?cardioSessionOf(row),
     ],
     bodyWeightKg: weight?.value,

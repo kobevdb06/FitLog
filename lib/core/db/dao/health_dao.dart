@@ -232,14 +232,18 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
     ..orderBy([(t) => OrderingTerm.asc(t.day)]);
 
   Stream<List<CardioSessionRow>> watchCardioSince(DateTime since) =>
-      (select(cardioSessionsTable)
-            ..where(
-              (t) => t.startedAt.isBiggerOrEqualValue(
-                since.millisecondsSinceEpoch,
-              ),
-            )
-            ..orderBy([(t) => OrderingTerm.asc(t.startedAt)]))
-          .watch();
+      _cardioSince(since).watch();
+
+  /// The same, read once.
+  Future<List<CardioSessionRow>> cardioSince(DateTime since) =>
+      _cardioSince(since).get();
+
+  SimpleSelectStatement<$CardioSessionsTableTable, CardioSessionRow>
+  _cardioSince(DateTime since) => select(cardioSessionsTable)
+    ..where(
+      (t) => t.startedAt.isBiggerOrEqualValue(since.millisecondsSinceEpoch),
+    )
+    ..orderBy([(t) => OrderingTerm.asc(t.startedAt)]);
 
   /// Finished sessions since [since] that were never written to Health
   /// Connect, oldest first.

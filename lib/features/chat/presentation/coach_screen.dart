@@ -359,16 +359,22 @@ class _WorkoutStripState extends State<_WorkoutStrip> {
             color: theme.colorScheme.primary,
           ),
           const SizedBox(width: AppSpacing.sm),
+          // Two lines rather than one: on a narrow phone with large text
+          // the second half cut the first off at "lo…".
           Expanded(
-            child: Text(
-              '${widget.workout.name} · loopt $minutes min',
-              style: theme.textTheme.bodySmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${widget.workout.name} · loopt $minutes min',
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text('Hetzelfde gesprek als in het eiland', style: muted),
+              ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Text('ook in het eiland', style: muted),
         ],
       ),
     );
@@ -436,10 +442,10 @@ class _OpeningState extends ConsumerState<_Opening> {
         const SizedBox(height: AppSpacing.md),
         Text('Vraag je coach', style: theme.textTheme.headlineSmall),
         const SizedBox(height: AppSpacing.sm),
+        // Short, so the questions below are in sight on a small phone.
         Text(
-          'Over trainen, oefeningen, herstel en over deze app. De coach kent '
-          'de oefeningencatalogus en mag je logboek raadplegen; onder elk '
-          'antwoord staat wat het heeft opgezocht.',
+          'Over trainen, herstel en de app. Onder elk antwoord staat wat hij '
+          'in je logboek opzocht.',
           style: theme.textTheme.bodyMedium?.copyWith(color: muted),
         ),
         const SizedBox(height: AppSpacing.lg),

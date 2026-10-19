@@ -270,7 +270,7 @@ void main() {
 
       expect(find.text('Ja, set 3 op 80 kg kan.'), findsOneWidget);
       expect(find.textContaining('Push A · loopt'), findsOneWidget);
-      expect(find.text('ook in het eiland'), findsOneWidget);
+      expect(find.text('Hetzelfde gesprek als in het eiland'), findsOneWidget);
     });
   });
 

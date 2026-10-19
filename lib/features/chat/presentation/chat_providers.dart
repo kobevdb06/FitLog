@@ -62,6 +62,11 @@ String? coachApiKey(Ref ref) {
 @riverpod
 bool coachEnabled(Ref ref) => ref.watch(coachApiKeyProvider) != null;
 
+/// What the coach remembers about you, the oldest first.
+@riverpod
+Stream<List<CoachNoteRow>> coachNotes(Ref ref) =>
+    ref.watch(databaseProvider).coachNotesDao.watchNotes();
+
 /// Who makes the questions an empty conversation offers. The phone, for now
 /// (DECISIONS 217): override this to let the coach write them.
 @Riverpod(keepAlive: true)
@@ -403,9 +408,18 @@ class CoachController extends _$CoachController {
       final profile = await db.settingsDao.getProfile();
       final now = DateTime.now();
       final deload = await db.deloadDao.currentAt(now);
+      final memory = settings.coachMemory;
+      final notes = memory
+          ? await db.coachNotesDao.notes()
+          : const <CoachNoteRow>[];
       final coach = Coach(
         client: client,
-        tools: CoachTools(db, photos: inPlay, health: settings.coachSeesHealth),
+        tools: CoachTools(
+          db,
+          photos: inPlay,
+          health: settings.coachSeesHealth,
+          memory: memory,
+        ),
         model: ref.read(coachModelProvider),
         system: buildCoachPrompt(
           now: now,
@@ -413,6 +427,10 @@ class CoachController extends _$CoachController {
           displayName: profile?.displayName,
           exerciseCount: await db.exercisesDao.countExercises(),
           seesHealth: settings.coachSeesHealth,
+          notes: describeNotes([
+            for (final note in notes)
+              (id: note.id, kind: note.kind, text: note.note),
+          ]),
           deload: deload == null
               ? null
               : describeDeload(
@@ -538,7 +556,7 @@ class CoachController extends _$CoachController {
       case ProposalKind.routine:
         id = await _createRoutine(db, proposal.routine!);
       // Made by the coach itself, so already there; isApplied caught it.
-      case ProposalKind.coachRoutine:
+      case ProposalKind.coachRoutine || ProposalKind.note:
         return proposal.appliedId;
       case ProposalKind.exerciseChange:
         id = await _applyChange(db, proposal.exerciseChange!);

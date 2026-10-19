@@ -164,6 +164,12 @@ class AppSettingsTable extends Table {
   BoolColumn get coachSeesHealth =>
       boolean().named('coach_sees_health').withDefault(const Constant(false))();
 
+  /// Whether the coach keeps notes about you between conversations - a
+  /// goal, an injury, when you train - and gets them with every question.
+  /// On: every note can be seen, changed and wiped, and this switched off.
+  BoolColumn get coachMemory =>
+      boolean().named('coach_memory').withDefault(const Constant(true))();
+
   /// How much lighter a deload makes a routine, as the start sheet proposes
   /// it: fewer working sets, less weight, fewer reps (and seconds), each in
   /// percent. Half the sets and a tenth of the weight, until you choose.
@@ -1119,6 +1125,27 @@ class MorningReportsTable extends Table {
 ///
 /// The plan is kept with it as it was chosen. The settings may change
 /// afterwards; a deload that was planned or done does not.
+/// What the coach remembers about you between conversations: short notes on
+/// what the logbook does not hold - a goal, an injury, when and where you
+/// train, how you like your answers. The coach writes them; you see, change
+/// and wipe every one (Instellingen → AI-coach → Geheugen).
+///
+/// A number for an id rather than a uuid: the coach names a note by it, and
+/// [3] is one token where a uuid is a dozen.
+@DataClassName('CoachNoteRow')
+class CoachNotesTable extends Table {
+  @override
+  String get tableName => 'coach_notes';
+
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get note => text()();
+
+  /// goal, limit, schedule, kit, style or other: what it is about.
+  TextColumn get kind => text().withDefault(const Constant('other'))();
+  IntColumn get createdAt => integer().named('created_at')();
+  IntColumn get updatedAt => integer().named('updated_at')();
+}
+
 @DataClassName('DeloadWeekRow')
 class DeloadWeeksTable extends Table {
   @override

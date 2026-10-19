@@ -557,6 +557,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
             const SectionHeader('Wat de coach over je weet'),
             const _ProfileSwitch(),
             const _HealthSwitch(),
+            const _MemoryTile(),
             // Drawing is switched off for the app, and then none of this is
             // shown - not even to someone who still has a token stored.
             if (ref.watch(imageGenerationProvider)) ...[
@@ -686,6 +687,26 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Where the coach's memory is: on or off, and how many notes.
+class _MemoryTile extends ConsumerWidget {
+  const _MemoryTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final on = ref.watch(settingsProvider).value?.coachMemory ?? true;
+    final count = ref.watch(coachNotesProvider).value?.length ?? 0;
+    return ListTile(
+      leading: const Icon(Icons.sticky_note_2_outlined),
+      title: const Text('Geheugen'),
+      subtitle: Text(
+        on ? 'Aan · ${count == 1 ? '1 notitie' : '$count notities'}' : 'Uit',
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(Routes.coachMemory),
     );
   }
 }

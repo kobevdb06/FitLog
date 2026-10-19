@@ -14,6 +14,7 @@ import 'package:fitlog/features/chat/domain/answer_report.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/domain/coach_suggestions.dart';
 import 'package:fitlog/features/chat/presentation/coach_drawer.dart';
+import 'package:fitlog/features/chat/presentation/coach_memory_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_session.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
@@ -270,6 +271,151 @@ void main() {
       expect(find.text('Ja, set 3 op 80 kg kan.'), findsOneWidget);
       expect(find.textContaining('Push A · loopt'), findsOneWidget);
       expect(find.text('ook in het eiland'), findsOneWidget);
+    });
+  });
+
+  group('het geheugen', () {
+    /// An answer with the card of a note the coach just wrote.
+    Future<void> remembered(WidgetTester tester, {bool first = true}) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      final id = await db.coachNotesDao.add(
+        'Linkerknie doet pijn bij diepe squats: tot parallel.',
+        kind: CoachNoteKind.limit,
+      );
+      await db.chatDao.createThread('t-1', 'Mijn knie');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Genoteerd.',
+        proposals: encodeProposals([
+          CoachProposal.ofNote(
+            NoteProposal(
+              id: id,
+              text: 'Linkerknie doet pijn bij diepe squats: tot parallel.',
+              kind: 'limit',
+              action: NoteAction.made,
+              first: first,
+            ),
+          ),
+        ]),
+      );
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('een notitie staat als kaartje, en de eerste zegt wat het '
+        'geheugen is', (tester) async {
+      await remembered(tester);
+
+      expect(find.text('Onthouden'), findsOneWidget);
+      expect(
+        find.text('Linkerknie doet pijn bij diepe squats: tot parallel.'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Instellingen → AI-coach → Geheugen'),
+        findsOneWidget,
+      );
+      expect(find.text('Aanpassen'), findsOneWidget);
+      expect(find.text('Vergeten'), findsOneWidget);
+    });
+
+    testWidgets('Vergeten wist ze, en het kaartje zegt dat', (tester) async {
+      await remembered(tester, first: false);
+
+      await tester.tap(find.text('Vergeten'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(await tester.runAsync(() => db.coachNotesDao.notes()), isEmpty);
+      expect(find.text('Niet meer in het geheugen.'), findsOneWidget);
+      expect(find.text('Aanpassen'), findsNothing);
+    });
+
+    testWidgets('Aanpassen verandert ze, ook op het kaartje', (tester) async {
+      await remembered(tester, first: false);
+
+      await tester.tap(find.text('Aanpassen'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).last,
+        'Linkerknie: geen diepe squats.',
+      );
+      await tester.tap(find.text('Opslaan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(
+        (await tester.runAsync(() => db.coachNotesDao.notes()))!.single.note,
+        'Linkerknie: geen diepe squats.',
+      );
+      expect(find.text('Linkerknie: geen diepe squats.'), findsOneWidget);
+    });
+
+    testWidgets('het scherm Geheugen: de notities, aanpassen, vergeten en '
+        'uitzetten', (tester) async {
+      await db.coachNotesDao.add(
+        'Doel: 100 kg bankdrukken',
+        kind: CoachNoteKind.goal,
+      );
+      await db.coachNotesDao.add('Wil korte antwoorden');
+      await pump(tester, const CoachMemoryScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 VAN $kCoachNoteMax NOTITIES'), findsOneWidget);
+      expect(find.text('Doel: 100 kg bankdrukken'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Vergeten').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Wil korte antwoorden'), findsNothing);
+      expect(find.text('1 VAN $kCoachNoteMax NOTITIES'), findsOneWidget);
+
+      await tester.tap(find.text('De coach onthoudt dingen'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        (await tester.runAsync(db.settingsDao.getSettings))!.coachMemory,
+        isFalse,
+      );
+      expect(
+        find.textContaining('Uit. De notities blijven bewaard'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('en er een toevoegen', (tester) async {
+      await pump(tester, const CoachMemoryScreen());
+      await tester.pumpAndSettle();
+      expect(find.text('NOG GEEN NOTITIES'), findsOneWidget);
+
+      await tester.tap(find.text('Notitie toevoegen'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Traint op zaterdag');
+      await tester.tap(find.text('Opslaan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('Traint op zaterdag'), findsOneWidget);
+    });
+
+    testWidgets('de instellingen zeggen of het aan staat, en hoeveel', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.coachNotesDao.add('Een');
+      await db.coachNotesDao.add('Twee');
+      await pump(tester, const CoachSettingsScreen());
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Geheugen'), 200);
+      expect(find.text('Aan · 2 notities'), findsOneWidget);
     });
   });
 

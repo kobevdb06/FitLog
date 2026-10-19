@@ -197,6 +197,7 @@ String buildCoachPrompt({
   String? displayName,
   int? exerciseCount,
   String? aboutUser,
+  String? notes,
   bool seesHealth = true,
   String? deload,
   String? situation,
@@ -216,8 +217,20 @@ String buildCoachPrompt({
 $_coachRules
 $_appFacts
 Vandaag is het $weekday $today.
-De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}${deload == null ? '' : '\n$deload'}${situation == null ? '' : '\nNu: $situation'}
+De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${notes == null ? '' : '\n$notes'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}${deload == null ? '' : '\n$deload'}${situation == null ? '' : '\nNu: $situation'}
 ''';
+}
+
+/// What the coach remembers about the user, as it goes along with every
+/// question: each note with its number, which remember and forget use. Null
+/// without notes - and then there is nothing to send.
+String? describeNotes(Iterable<({int id, String kind, String text})> notes) {
+  if (notes.isEmpty) return null;
+  return [
+    'Wat je over de gebruiker onthoudt (aanpassen met remember, wissen met '
+        'forget):',
+    for (final note in notes) '[${note.id}] ${note.kind}: ${note.text}',
+  ].join('\n');
 }
 
 /// One line while a deload is going - on its [day] of [days] - or planned,

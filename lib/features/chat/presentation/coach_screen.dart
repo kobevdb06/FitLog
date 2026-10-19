@@ -32,6 +32,7 @@ import '../domain/coach_suggestions.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
 import 'coach_drawer.dart';
+import 'coach_memory_screen.dart';
 import 'coach_session.dart';
 import 'photo_prompts_sheet.dart';
 import 'report_answer_sheet.dart';
@@ -564,7 +565,14 @@ class _Bubble extends StatelessWidget {
             for (final (index, proposal) in parseProposals(
               message.proposals,
             ).indexed)
-              _ProposalCard(message: message, index: index, proposal: proposal),
+              if (proposal.note case final note?)
+                _NoteCard(note: note)
+              else
+                _ProposalCard(
+                  message: message,
+                  index: index,
+                  proposal: proposal,
+                ),
             if (lookups.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -620,7 +628,8 @@ class _Bubble extends StatelessWidget {
 /// The coach cannot write in your logbook. It describes, you decide: until
 /// this button is tapped nothing exists, and afterwards the card says what was
 /// made and takes you to it. A deload has a second button beside it, for the
-/// start sheet with the coach's numbers in it.
+/// start sheet with the coach's numbers in it. A note in the coach's memory
+/// has a card of its own, [_NoteCard].
 class _ProposalCard extends ConsumerStatefulWidget {
   const _ProposalCard({
     required this.message,
@@ -712,6 +721,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
         ProposalKind.exerciseChange => 'Oefening aangepast.',
         ProposalKind.routine ||
         ProposalKind.coachRoutine => 'Routine toegevoegd.',
+        ProposalKind.note => 'Onthouden.',
         ProposalKind.deload => deloadStartedText(
           widget.proposal.deload!.startAt(DateTime.now()),
           widget.proposal.deload!.days,
@@ -764,7 +774,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
     ProposalKind.exerciseChange => Routes.exerciseDetail(id),
     ProposalKind.routine ||
     ProposalKind.coachRoutine => Routes.routineDetail(id),
-    ProposalKind.deload => null,
+    ProposalKind.deload || ProposalKind.note => null,
   };
 
   @override
@@ -780,6 +790,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
       ProposalKind.exerciseChange => 'Toepassen',
       ProposalKind.routine || ProposalKind.coachRoutine => 'Routine toevoegen',
       ProposalKind.deload => 'Starten',
+      ProposalKind.note => 'Onthouden',
     };
 
     return Padding(
@@ -798,6 +809,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                     ProposalKind.coachRoutine => Icons.smart_toy_outlined,
                     ProposalKind.exerciseChange => Icons.edit_outlined,
                     ProposalKind.deload => Icons.battery_charging_full,
+                    ProposalKind.note => Icons.sticky_note_2_outlined,
                   },
                   size: 18,
                   color: theme.colorScheme.primary,
@@ -815,6 +827,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                       ProposalKind.exerciseChange =>
                         'Voorstel: oefening aanpassen',
                       ProposalKind.deload => 'Voorstel: deload',
+                      ProposalKind.note => 'Onthouden',
                     },
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -888,6 +901,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                       ProposalKind.exercise ||
                       ProposalKind.routine => 'Toegevoegd',
                       ProposalKind.deload => 'Ingepland',
+                      ProposalKind.note => 'Onthouden',
                     }, style: theme.textTheme.bodySmall),
                   ),
                   if (_place(id) case final place?)
@@ -1011,6 +1025,106 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                   ),
                 ),
               ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A note the coach wrote in its memory, changed or wiped - as it is in the
+/// notebook now: Aanpassen and Vergeten while it is there, struck through
+/// once it is not. The first one says what the memory is.
+class _NoteCard extends ConsumerWidget {
+  const _NoteCard({required this.note});
+
+  final NoteProposal note;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final notes = ref.watch(coachNotesProvider).value;
+    final kept = notes?.where((n) => n.id == note.id).firstOrNull;
+    final gone =
+        note.action == NoteAction.forgotten || (notes != null && kept == null);
+    final dao = ref.read(databaseProvider).coachNotesDao;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  coachNoteIcon(kept?.kind ?? note.kind),
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    switch (note.action) {
+                      NoteAction.made => 'Onthouden',
+                      NoteAction.changed => 'Aangepast in het geheugen',
+                      NoteAction.forgotten => 'Vergeten',
+                    },
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: muted,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              kept?.note ?? note.text,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                decoration: gone ? TextDecoration.lineThrough : null,
+                color: gone ? muted : null,
+              ),
+            ),
+            if (note.first) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'De coach onthoudt korte notities over je en stuurt ze mee '
+                'met elke vraag. Je ziet en beheert ze bij Instellingen → '
+                'AI-coach → Geheugen.',
+                style: theme.textTheme.bodySmall?.copyWith(color: muted),
+              ),
+            ],
+            if (!gone && kept != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  OutlinedButton(
+                    onPressed: () async {
+                      final text = await askForNote(context, note: kept.note);
+                      if (text == null || text.trim().isEmpty) return;
+                      await dao.change(kept.id, text);
+                    },
+                    child: const Text('Aanpassen'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => dao.forget(kept.id),
+                    child: const Text('Vergeten'),
+                  ),
+                ],
+              ),
+            ] else if (note.action != NoteAction.forgotten &&
+                notes != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Niet meer in het geheugen.',
+                style: theme.textTheme.bodySmall?.copyWith(color: muted),
+              ),
             ],
           ],
         ),

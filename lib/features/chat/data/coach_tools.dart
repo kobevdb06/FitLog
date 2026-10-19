@@ -7,9 +7,10 @@
 /// answer and what is kept with the message, so "wat heeft het over mij
 /// gezien" stays answerable a month later.
 ///
-/// Nothing here can delete or reach outside the database, and one thing
-/// writes: a routine in the coach's folder, which only holds routines the
-/// coach made or the user put there knowing it could change them.
+/// Nothing here can reach outside the database, and two things write: a
+/// routine in the coach's folder, which only holds routines the coach made
+/// or the user put there knowing it could change them, and the coach's own
+/// notebook - its memory, which the user sees and can wipe.
 library;
 
 import 'dart:convert';
@@ -53,7 +54,12 @@ class CoachLookup {
 const int kCoachRowCap = 40;
 
 class CoachTools {
-  CoachTools(this.db, {this.photos = const [], this.health = false});
+  CoachTools(
+    this.db, {
+    this.photos = const [],
+    this.health = false,
+    this.memory = false,
+  });
 
   final AppDatabase db;
 
@@ -70,8 +76,15 @@ class CoachTools {
     'cardio_sessions',
   };
 
+  /// Whether the coach keeps notes about the user between conversations.
+  final bool memory;
+
+  /// What writes in the notebook: offered while the memory is on.
+  static const Set<String> memoryOnly = {'remember', 'forget'};
+
   /// The lookups this coach may use, as the API wants them.
-  List<Map<String, Object?>> get offered => definitions(health: health);
+  List<Map<String, Object?>> get offered =>
+      definitions(health: health, memory: memory);
 
   /// The photos the coach may put on an exercise, as file names in the photo
   /// directory: those of the newest message in the conversation that had
@@ -80,9 +93,14 @@ class CoachTools {
 
   /// The tool definitions, as the API wants them; without [health], the
   /// ones in [healthOnly] left out.
-  static List<Map<String, Object?>> definitions({bool health = true}) => [
+  static List<Map<String, Object?>> definitions({
+    bool health = true,
+    bool memory = true,
+  }) => [
     for (final tool in _definitions)
-      if (health || !healthOnly.contains(tool['name'])) tool,
+      if ((health || !healthOnly.contains(tool['name'])) &&
+          (memory || !memoryOnly.contains(tool['name'])))
+        tool,
   ];
 
   static final List<Map<String, Object?>> _definitions = [
@@ -357,6 +375,53 @@ class CoachTools {
       },
     },
     {
+      'name': 'remember',
+      'description':
+          'Onthoud iets over de gebruiker voor latere gesprekken, of pas een '
+          'notitie aan met replaces. Alleen wat de gebruiker zelf zei en dat '
+          'blijft gelden: doelen, blessures en beperkingen, wanneer en waar '
+          'hij traint, materiaal thuis, hoe hij antwoorden wil. Niets wat in '
+          'het logboek staat (gewichten, sessies, records): dat zoek je op. '
+          'Niets uit Health Connect. Eén feit per notitie, kort. Zegt de '
+          'gebruiker "onthoud", doe het. Verandert iets, pas dan de oude '
+          'notitie aan in plaats van er een bij te maken. De gebruiker ziet '
+          'een kaartje en kan het aanpassen of laten vergeten.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'note': {
+            'type': 'string',
+            'description': 'Hoogstens 150 tekens, als feit.',
+          },
+          'kind': {
+            'type': 'string',
+            'enum': ['goal', 'limit', 'schedule', 'kit', 'style', 'other'],
+          },
+          'replaces': {
+            'type': 'integer',
+            'description': 'Het nummer van de notitie die dit vervangt.',
+          },
+        },
+        'required': ['note', 'kind'],
+      },
+    },
+    {
+      'name': 'forget',
+      'description':
+          'Wis een notitie die niet meer klopt, of die de gebruiker kwijt '
+          'wil.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'id': {
+            'type': 'integer',
+            'description': 'Het nummer van de notitie.',
+          },
+        },
+        'required': ['id'],
+      },
+    },
+    {
       'name': 'coach_routines',
       'description':
           'De routines in de map Coach, de enige die je mag aanpassen: per '
@@ -558,6 +623,8 @@ class CoachTools {
   ];
 
   static const Set<String> names = {
+    'remember',
+    'forget',
     'propose_exercise',
     'propose_exercise_change',
     'propose_deload',
@@ -597,7 +664,19 @@ class CoachTools {
         summary: 'gegevens uit Health Connect: niet gedeeld, niets bekeken',
       );
     }
+    if (!memory && memoryOnly.contains(name)) {
+      return CoachLookup(
+        json: jsonEncode({
+          'error':
+              'Het geheugen staat uit: je onthoudt niets. Aanzetten kan bij '
+              'Instellingen, AI-coach, Geheugen.',
+        }),
+        summary: 'je geheugen: staat uit, niets onthouden',
+      );
+    }
     return switch (name) {
+      'remember' => _remember(input),
+      'forget' => _forget(input),
       'propose_exercise' => _proposeExercise(input),
       'propose_exercise_change' => _proposeExerciseChange(input),
       'propose_deload' => _proposeDeload(input),
@@ -647,6 +726,90 @@ class CoachTools {
   String? _text(Object? value) {
     final text = value is String ? value.trim() : null;
     return text == null || text.isEmpty ? null : text;
+  }
+
+  /// A note in the notebook, new or rewritten.
+  Future<CoachLookup> _remember(Map<String, Object?> input) async {
+    CoachLookup wrong(String error) => CoachLookup(
+      json: jsonEncode({'ok': false, 'error': error}),
+      summary: 'iets onthouden over je',
+    );
+    final text = _text(input['note']);
+    if (text == null) return wrong('geef de notitie mee in note');
+    if (text.length > kCoachNoteLength) {
+      return wrong('te lang: hoogstens $kCoachNoteLength tekens');
+    }
+    final kind = CoachNoteKind.of(_text(input['kind']));
+    final notes = db.coachNotesDao;
+
+    if (_number(input['replaces'])?.round() case final id?) {
+      if (!await notes.change(id, text, kind: kind)) {
+        return wrong('er is geen notitie $id');
+      }
+      return CoachLookup(
+        json: jsonEncode({'ok': true, 'id': id, 'shown_to_user': true}),
+        summary: 'een notitie over je aangepast',
+        proposal: CoachProposal.ofNote(
+          NoteProposal(
+            id: id,
+            text: CoachNotesDao.clean(text),
+            kind: kind.wire,
+            action: NoteAction.changed,
+          ),
+        ),
+      );
+    }
+
+    final count = await notes.count();
+    if (count >= kCoachNoteMax) {
+      return wrong(
+        'het geheugen is vol ($kCoachNoteMax notities): voeg er twee samen '
+        'met replaces, of wis er een met forget',
+      );
+    }
+    final id = await notes.add(text, kind: kind);
+    return CoachLookup(
+      json: jsonEncode({
+        'ok': true,
+        'id': id,
+        'shown_to_user': true,
+        'note': 'Zeg kort dat je het onthoudt; de gebruiker ziet een kaartje.',
+      }),
+      summary: 'iets onthouden over je',
+      proposal: CoachProposal.ofNote(
+        NoteProposal(
+          id: id,
+          text: CoachNotesDao.clean(text),
+          kind: kind.wire,
+          action: NoteAction.made,
+          first: count == 0,
+        ),
+      ),
+    );
+  }
+
+  Future<CoachLookup> _forget(Map<String, Object?> input) async {
+    final id = _number(input['id'])?.round();
+    final old = id == null ? null : await db.coachNotesDao.note(id);
+    if (id == null || old == null) {
+      return CoachLookup(
+        json: jsonEncode({'ok': false, 'error': 'er is geen notitie $id'}),
+        summary: 'een notitie vergeten',
+      );
+    }
+    await db.coachNotesDao.forget(id);
+    return CoachLookup(
+      json: jsonEncode({'ok': true, 'shown_to_user': true}),
+      summary: 'een notitie over je vergeten',
+      proposal: CoachProposal.ofNote(
+        NoteProposal(
+          id: id,
+          text: old.note,
+          kind: old.kind,
+          action: NoteAction.forgotten,
+        ),
+      ),
+    );
   }
 
   /// An exercise the coach would make. Nothing is written here.

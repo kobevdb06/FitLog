@@ -137,6 +137,8 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -185,6 +187,8 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -231,6 +235,8 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -274,6 +280,8 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 46');
     raw.close();
 
@@ -315,6 +323,8 @@ void main() {
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
         ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+        ..execute('DROP TABLE coach_notes')
+        ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute('PRAGMA user_version = 47');
       raw.close();
 
@@ -365,6 +375,8 @@ void main() {
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
         ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+        ..execute('DROP TABLE coach_notes')
+        ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute(
           "UPDATE chat_messages SET image_file = 'toestel.jpg' "
           "WHERE id = 'met'",
@@ -423,6 +435,8 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 49');
     raw.close();
 
@@ -458,6 +472,8 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 50');
     raw.close();
 
@@ -472,6 +488,25 @@ void main() {
     await db.close();
   });
 
+  test('a database from v52 gets an empty memory, switched on', () async {
+    final path = '${dir.path}/v52.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
+      ..execute('PRAGMA user_version = 52');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    expect((await db.settingsDao.getSettings()).coachMemory, isTrue);
+    expect(await db.coachNotesDao.notes(), isEmpty);
+    expect(await db.coachNotesDao.add('Doel: 100 kg bankdrukken'), 1);
+    await db.close();
+  });
+
   test(
     'a database from v51 keeps its conversations, none of a workout',
     () async {
@@ -483,6 +518,8 @@ void main() {
 
       final raw = sqlite3.open(path)
         ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+        ..execute('DROP TABLE coach_notes')
+        ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute('PRAGMA user_version = 51');
       raw.close();
 
@@ -529,6 +566,8 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+      ..execute('DROP TABLE coach_notes')
+      ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -599,7 +638,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 52);
+    expect(raw.select('PRAGMA user_version').first.values.first, 53);
     raw.close();
   });
 
@@ -815,7 +854,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 52);
+    expect(db.schemaVersion, 53);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

@@ -828,6 +828,21 @@ class $AppSettingsTableTable extends AppSettingsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _coachMemoryMeta = const VerificationMeta(
+    'coachMemory',
+  );
+  @override
+  late final GeneratedColumn<bool> coachMemory = GeneratedColumn<bool>(
+    'coach_memory',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("coach_memory" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _deloadSetsPercentMeta = const VerificationMeta(
     'deloadSetsPercent',
   );
@@ -1229,6 +1244,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     healthConnectWriteWorkouts,
     coachSeesProfile,
     coachSeesHealth,
+    coachMemory,
     deloadSetsPercent,
     deloadWeightPercent,
     deloadRepsPercent,
@@ -1494,6 +1510,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         coachSeesHealth.isAcceptableOrUnknown(
           data['coach_sees_health']!,
           _coachSeesHealthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('coach_memory')) {
+      context.handle(
+        _coachMemoryMeta,
+        coachMemory.isAcceptableOrUnknown(
+          data['coach_memory']!,
+          _coachMemoryMeta,
         ),
       );
     }
@@ -1880,6 +1905,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.bool,
         data['${effectivePrefix}coach_sees_health'],
       )!,
+      coachMemory: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}coach_memory'],
+      )!,
       deloadSetsPercent: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}deload_sets_percent'],
@@ -2117,6 +2146,11 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// in yourself it sees either way.
   final bool coachSeesHealth;
 
+  /// Whether the coach keeps notes about you between conversations - a
+  /// goal, an injury, when you train - and gets them with every question.
+  /// On: every note can be seen, changed and wiped, and this switched off.
+  final bool coachMemory;
+
   /// How much lighter a deload makes a routine, as the start sheet proposes
   /// it: fewer working sets, less weight, fewer reps (and seconds), each in
   /// percent. Half the sets and a tenth of the weight, until you choose.
@@ -2272,6 +2306,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     required this.healthConnectWriteWorkouts,
     required this.coachSeesProfile,
     required this.coachSeesHealth,
+    required this.coachMemory,
     required this.deloadSetsPercent,
     required this.deloadWeightPercent,
     required this.deloadRepsPercent,
@@ -2346,6 +2381,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     );
     map['coach_sees_profile'] = Variable<bool>(coachSeesProfile);
     map['coach_sees_health'] = Variable<bool>(coachSeesHealth);
+    map['coach_memory'] = Variable<bool>(coachMemory);
     map['deload_sets_percent'] = Variable<int>(deloadSetsPercent);
     map['deload_weight_percent'] = Variable<int>(deloadWeightPercent);
     map['deload_reps_percent'] = Variable<int>(deloadRepsPercent);
@@ -2441,6 +2477,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       healthConnectWriteWorkouts: Value(healthConnectWriteWorkouts),
       coachSeesProfile: Value(coachSeesProfile),
       coachSeesHealth: Value(coachSeesHealth),
+      coachMemory: Value(coachMemory),
       deloadSetsPercent: Value(deloadSetsPercent),
       deloadWeightPercent: Value(deloadWeightPercent),
       deloadRepsPercent: Value(deloadRepsPercent),
@@ -2538,6 +2575,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       ),
       coachSeesProfile: serializer.fromJson<bool>(json['coachSeesProfile']),
       coachSeesHealth: serializer.fromJson<bool>(json['coachSeesHealth']),
+      coachMemory: serializer.fromJson<bool>(json['coachMemory']),
       deloadSetsPercent: serializer.fromJson<int>(json['deloadSetsPercent']),
       deloadWeightPercent: serializer.fromJson<int>(
         json['deloadWeightPercent'],
@@ -2616,6 +2654,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       ),
       'coachSeesProfile': serializer.toJson<bool>(coachSeesProfile),
       'coachSeesHealth': serializer.toJson<bool>(coachSeesHealth),
+      'coachMemory': serializer.toJson<bool>(coachMemory),
       'deloadSetsPercent': serializer.toJson<int>(deloadSetsPercent),
       'deloadWeightPercent': serializer.toJson<int>(deloadWeightPercent),
       'deloadRepsPercent': serializer.toJson<int>(deloadRepsPercent),
@@ -2678,6 +2717,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     bool? healthConnectWriteWorkouts,
     bool? coachSeesProfile,
     bool? coachSeesHealth,
+    bool? coachMemory,
     int? deloadSetsPercent,
     int? deloadWeightPercent,
     int? deloadRepsPercent,
@@ -2746,6 +2786,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
     coachSeesProfile: coachSeesProfile ?? this.coachSeesProfile,
     coachSeesHealth: coachSeesHealth ?? this.coachSeesHealth,
+    coachMemory: coachMemory ?? this.coachMemory,
     deloadSetsPercent: deloadSetsPercent ?? this.deloadSetsPercent,
     deloadWeightPercent: deloadWeightPercent ?? this.deloadWeightPercent,
     deloadRepsPercent: deloadRepsPercent ?? this.deloadRepsPercent,
@@ -2866,6 +2907,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       coachSeesHealth: data.coachSeesHealth.present
           ? data.coachSeesHealth.value
           : this.coachSeesHealth,
+      coachMemory: data.coachMemory.present
+          ? data.coachMemory.value
+          : this.coachMemory,
       deloadSetsPercent: data.deloadSetsPercent.present
           ? data.deloadSetsPercent.value
           : this.deloadSetsPercent,
@@ -2986,6 +3030,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('coachSeesProfile: $coachSeesProfile, ')
           ..write('coachSeesHealth: $coachSeesHealth, ')
+          ..write('coachMemory: $coachMemory, ')
           ..write('deloadSetsPercent: $deloadSetsPercent, ')
           ..write('deloadWeightPercent: $deloadWeightPercent, ')
           ..write('deloadRepsPercent: $deloadRepsPercent, ')
@@ -3050,6 +3095,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     healthConnectWriteWorkouts,
     coachSeesProfile,
     coachSeesHealth,
+    coachMemory,
     deloadSetsPercent,
     deloadWeightPercent,
     deloadRepsPercent,
@@ -3113,6 +3159,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.healthConnectWriteWorkouts == this.healthConnectWriteWorkouts &&
           other.coachSeesProfile == this.coachSeesProfile &&
           other.coachSeesHealth == this.coachSeesHealth &&
+          other.coachMemory == this.coachMemory &&
           other.deloadSetsPercent == this.deloadSetsPercent &&
           other.deloadWeightPercent == this.deloadWeightPercent &&
           other.deloadRepsPercent == this.deloadRepsPercent &&
@@ -3174,6 +3221,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<bool> healthConnectWriteWorkouts;
   final Value<bool> coachSeesProfile;
   final Value<bool> coachSeesHealth;
+  final Value<bool> coachMemory;
   final Value<int> deloadSetsPercent;
   final Value<int> deloadWeightPercent;
   final Value<int> deloadRepsPercent;
@@ -3234,6 +3282,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.healthConnectWriteWorkouts = const Value.absent(),
     this.coachSeesProfile = const Value.absent(),
     this.coachSeesHealth = const Value.absent(),
+    this.coachMemory = const Value.absent(),
     this.deloadSetsPercent = const Value.absent(),
     this.deloadWeightPercent = const Value.absent(),
     this.deloadRepsPercent = const Value.absent(),
@@ -3295,6 +3344,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.healthConnectWriteWorkouts = const Value.absent(),
     this.coachSeesProfile = const Value.absent(),
     this.coachSeesHealth = const Value.absent(),
+    this.coachMemory = const Value.absent(),
     this.deloadSetsPercent = const Value.absent(),
     this.deloadWeightPercent = const Value.absent(),
     this.deloadRepsPercent = const Value.absent(),
@@ -3357,6 +3407,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<bool>? healthConnectWriteWorkouts,
     Expression<bool>? coachSeesProfile,
     Expression<bool>? coachSeesHealth,
+    Expression<bool>? coachMemory,
     Expression<int>? deloadSetsPercent,
     Expression<int>? deloadWeightPercent,
     Expression<int>? deloadRepsPercent,
@@ -3423,6 +3474,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
         'health_connect_write_workouts': healthConnectWriteWorkouts,
       if (coachSeesProfile != null) 'coach_sees_profile': coachSeesProfile,
       if (coachSeesHealth != null) 'coach_sees_health': coachSeesHealth,
+      if (coachMemory != null) 'coach_memory': coachMemory,
       if (deloadSetsPercent != null) 'deload_sets_percent': deloadSetsPercent,
       if (deloadWeightPercent != null)
         'deload_weight_percent': deloadWeightPercent,
@@ -3495,6 +3547,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<bool>? healthConnectWriteWorkouts,
     Value<bool>? coachSeesProfile,
     Value<bool>? coachSeesHealth,
+    Value<bool>? coachMemory,
     Value<int>? deloadSetsPercent,
     Value<int>? deloadWeightPercent,
     Value<int>? deloadRepsPercent,
@@ -3558,6 +3611,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           healthConnectWriteWorkouts ?? this.healthConnectWriteWorkouts,
       coachSeesProfile: coachSeesProfile ?? this.coachSeesProfile,
       coachSeesHealth: coachSeesHealth ?? this.coachSeesHealth,
+      coachMemory: coachMemory ?? this.coachMemory,
       deloadSetsPercent: deloadSetsPercent ?? this.deloadSetsPercent,
       deloadWeightPercent: deloadWeightPercent ?? this.deloadWeightPercent,
       deloadRepsPercent: deloadRepsPercent ?? this.deloadRepsPercent,
@@ -3685,6 +3739,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     }
     if (coachSeesHealth.present) {
       map['coach_sees_health'] = Variable<bool>(coachSeesHealth.value);
+    }
+    if (coachMemory.present) {
+      map['coach_memory'] = Variable<bool>(coachMemory.value);
     }
     if (deloadSetsPercent.present) {
       map['deload_sets_percent'] = Variable<int>(deloadSetsPercent.value);
@@ -3819,6 +3876,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('healthConnectWriteWorkouts: $healthConnectWriteWorkouts, ')
           ..write('coachSeesProfile: $coachSeesProfile, ')
           ..write('coachSeesHealth: $coachSeesHealth, ')
+          ..write('coachMemory: $coachMemory, ')
           ..write('deloadSetsPercent: $deloadSetsPercent, ')
           ..write('deloadWeightPercent: $deloadWeightPercent, ')
           ..write('deloadRepsPercent: $deloadRepsPercent, ')
@@ -16677,6 +16735,348 @@ class DeloadWeeksTableCompanion extends UpdateCompanion<DeloadWeekRow> {
   }
 }
 
+class $CoachNotesTableTable extends CoachNotesTable
+    with TableInfo<$CoachNotesTableTable, CoachNoteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CoachNotesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('other'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, note, kind, createdAt, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'coach_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CoachNoteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_noteMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CoachNoteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CoachNoteRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CoachNotesTableTable createAlias(String alias) {
+    return $CoachNotesTableTable(attachedDatabase, alias);
+  }
+}
+
+class CoachNoteRow extends DataClass implements Insertable<CoachNoteRow> {
+  final int id;
+  final String note;
+
+  /// goal, limit, schedule, kit, style or other: what it is about.
+  final String kind;
+  final int createdAt;
+  final int updatedAt;
+  const CoachNoteRow({
+    required this.id,
+    required this.note,
+    required this.kind,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['note'] = Variable<String>(note);
+    map['kind'] = Variable<String>(kind);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  CoachNotesTableCompanion toCompanion(bool nullToAbsent) {
+    return CoachNotesTableCompanion(
+      id: Value(id),
+      note: Value(note),
+      kind: Value(kind),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CoachNoteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CoachNoteRow(
+      id: serializer.fromJson<int>(json['id']),
+      note: serializer.fromJson<String>(json['note']),
+      kind: serializer.fromJson<String>(json['kind']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'note': serializer.toJson<String>(note),
+      'kind': serializer.toJson<String>(kind),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  CoachNoteRow copyWith({
+    int? id,
+    String? note,
+    String? kind,
+    int? createdAt,
+    int? updatedAt,
+  }) => CoachNoteRow(
+    id: id ?? this.id,
+    note: note ?? this.note,
+    kind: kind ?? this.kind,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CoachNoteRow copyWithCompanion(CoachNotesTableCompanion data) {
+    return CoachNoteRow(
+      id: data.id.present ? data.id.value : this.id,
+      note: data.note.present ? data.note.value : this.note,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoachNoteRow(')
+          ..write('id: $id, ')
+          ..write('note: $note, ')
+          ..write('kind: $kind, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, note, kind, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CoachNoteRow &&
+          other.id == this.id &&
+          other.note == this.note &&
+          other.kind == this.kind &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CoachNotesTableCompanion extends UpdateCompanion<CoachNoteRow> {
+  final Value<int> id;
+  final Value<String> note;
+  final Value<String> kind;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  const CoachNotesTableCompanion({
+    this.id = const Value.absent(),
+    this.note = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  CoachNotesTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String note,
+    this.kind = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+  }) : note = Value(note),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<CoachNoteRow> custom({
+    Expression<int>? id,
+    Expression<String>? note,
+    Expression<String>? kind,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (note != null) 'note': note,
+      if (kind != null) 'kind': kind,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  CoachNotesTableCompanion copyWith({
+    Value<int>? id,
+    Value<String>? note,
+    Value<String>? kind,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+  }) {
+    return CoachNotesTableCompanion(
+      id: id ?? this.id,
+      note: note ?? this.note,
+      kind: kind ?? this.kind,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoachNotesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('note: $note, ')
+          ..write('kind: $kind, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -16736,6 +17136,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $DeloadWeeksTableTable deloadWeeksTable = $DeloadWeeksTableTable(
+    this,
+  );
+  late final $CoachNotesTableTable coachNotesTable = $CoachNotesTableTable(
     this,
   );
   late final Index idxRoutineExercisesRoutine = Index(
@@ -16800,6 +17203,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final HealthDao healthDao = HealthDao(this as AppDatabase);
   late final ReportsDao reportsDao = ReportsDao(this as AppDatabase);
   late final DeloadDao deloadDao = DeloadDao(this as AppDatabase);
+  late final CoachNotesDao coachNotesDao = CoachNotesDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -16832,6 +17236,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     morningReportsTable,
     weekReviewsTable,
     deloadWeeksTable,
+    coachNotesTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -17203,6 +17608,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<bool> healthConnectWriteWorkouts,
       Value<bool> coachSeesProfile,
       Value<bool> coachSeesHealth,
+      Value<bool> coachMemory,
       Value<int> deloadSetsPercent,
       Value<int> deloadWeightPercent,
       Value<int> deloadRepsPercent,
@@ -17265,6 +17671,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<bool> healthConnectWriteWorkouts,
       Value<bool> coachSeesProfile,
       Value<bool> coachSeesHealth,
+      Value<bool> coachMemory,
       Value<int> deloadSetsPercent,
       Value<int> deloadWeightPercent,
       Value<int> deloadRepsPercent,
@@ -17440,6 +17847,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<bool> get coachSeesHealth => $composableBuilder(
     column: $table.coachSeesHealth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get coachMemory => $composableBuilder(
+    column: $table.coachMemory,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17743,6 +18155,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get coachMemory => $composableBuilder(
+    column: $table.coachMemory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get deloadSetsPercent => $composableBuilder(
     column: $table.deloadSetsPercent,
     builder: (column) => ColumnOrderings(column),
@@ -18035,6 +18452,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get coachMemory => $composableBuilder(
+    column: $table.coachMemory,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get deloadSetsPercent => $composableBuilder(
     column: $table.deloadSetsPercent,
     builder: (column) => column,
@@ -18249,6 +18671,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<bool> coachSeesProfile = const Value.absent(),
                 Value<bool> coachSeesHealth = const Value.absent(),
+                Value<bool> coachMemory = const Value.absent(),
                 Value<int> deloadSetsPercent = const Value.absent(),
                 Value<int> deloadWeightPercent = const Value.absent(),
                 Value<int> deloadRepsPercent = const Value.absent(),
@@ -18309,6 +18732,7 @@ class $$AppSettingsTableTableTableManager
                 healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 coachSeesProfile: coachSeesProfile,
                 coachSeesHealth: coachSeesHealth,
+                coachMemory: coachMemory,
                 deloadSetsPercent: deloadSetsPercent,
                 deloadWeightPercent: deloadWeightPercent,
                 deloadRepsPercent: deloadRepsPercent,
@@ -18371,6 +18795,7 @@ class $$AppSettingsTableTableTableManager
                 Value<bool> healthConnectWriteWorkouts = const Value.absent(),
                 Value<bool> coachSeesProfile = const Value.absent(),
                 Value<bool> coachSeesHealth = const Value.absent(),
+                Value<bool> coachMemory = const Value.absent(),
                 Value<int> deloadSetsPercent = const Value.absent(),
                 Value<int> deloadWeightPercent = const Value.absent(),
                 Value<int> deloadRepsPercent = const Value.absent(),
@@ -18431,6 +18856,7 @@ class $$AppSettingsTableTableTableManager
                 healthConnectWriteWorkouts: healthConnectWriteWorkouts,
                 coachSeesProfile: coachSeesProfile,
                 coachSeesHealth: coachSeesHealth,
+                coachMemory: coachMemory,
                 deloadSetsPercent: deloadSetsPercent,
                 deloadWeightPercent: deloadWeightPercent,
                 deloadRepsPercent: deloadRepsPercent,
@@ -27944,6 +28370,202 @@ typedef $$DeloadWeeksTableTableProcessedTableManager =
       DeloadWeekRow,
       PrefetchHooks Function()
     >;
+typedef $$CoachNotesTableTableCreateCompanionBuilder =
+    CoachNotesTableCompanion Function({
+      Value<int> id,
+      required String note,
+      Value<String> kind,
+      required int createdAt,
+      required int updatedAt,
+    });
+typedef $$CoachNotesTableTableUpdateCompanionBuilder =
+    CoachNotesTableCompanion Function({
+      Value<int> id,
+      Value<String> note,
+      Value<String> kind,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+    });
+
+class $$CoachNotesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CoachNotesTableTable> {
+  $$CoachNotesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CoachNotesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CoachNotesTableTable> {
+  $$CoachNotesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CoachNotesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CoachNotesTableTable> {
+  $$CoachNotesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$CoachNotesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CoachNotesTableTable,
+          CoachNoteRow,
+          $$CoachNotesTableTableFilterComposer,
+          $$CoachNotesTableTableOrderingComposer,
+          $$CoachNotesTableTableAnnotationComposer,
+          $$CoachNotesTableTableCreateCompanionBuilder,
+          $$CoachNotesTableTableUpdateCompanionBuilder,
+          (
+            CoachNoteRow,
+            BaseReferences<_$AppDatabase, $CoachNotesTableTable, CoachNoteRow>,
+          ),
+          CoachNoteRow,
+          PrefetchHooks Function()
+        > {
+  $$CoachNotesTableTableTableManager(
+    _$AppDatabase db,
+    $CoachNotesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CoachNotesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CoachNotesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CoachNotesTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+              }) => CoachNotesTableCompanion(
+                id: id,
+                note: note,
+                kind: kind,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String note,
+                Value<String> kind = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+              }) => CoachNotesTableCompanion.insert(
+                id: id,
+                note: note,
+                kind: kind,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CoachNotesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CoachNotesTableTable,
+      CoachNoteRow,
+      $$CoachNotesTableTableFilterComposer,
+      $$CoachNotesTableTableOrderingComposer,
+      $$CoachNotesTableTableAnnotationComposer,
+      $$CoachNotesTableTableCreateCompanionBuilder,
+      $$CoachNotesTableTableUpdateCompanionBuilder,
+      (
+        CoachNoteRow,
+        BaseReferences<_$AppDatabase, $CoachNotesTableTable, CoachNoteRow>,
+      ),
+      CoachNoteRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -28002,4 +28624,6 @@ class $AppDatabaseManager {
       $$WeekReviewsTableTableTableManager(_db, _db.weekReviewsTable);
   $$DeloadWeeksTableTableTableManager get deloadWeeksTable =>
       $$DeloadWeeksTableTableTableManager(_db, _db.deloadWeeksTable);
+  $$CoachNotesTableTableTableManager get coachNotesTable =>
+      $$CoachNotesTableTableTableManager(_db, _db.coachNotesTable);
 }

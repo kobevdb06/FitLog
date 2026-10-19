@@ -192,6 +192,20 @@ void main() {
       expect(find.text('SLEUTEL'), findsOneWidget);
     });
 
+    testWidgets('en het geheugen ook, vanuit het paneel', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pumpApp(tester);
+
+      await tester.tap(find.text('Chat'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Gesprekken'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Wat de coach onthoudt'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('De coach onthoudt dingen'), findsOneWidget);
+    });
+
     testWidgets('en ze is ook vanuit Instellingen te bereiken', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
       await pumpApp(tester);

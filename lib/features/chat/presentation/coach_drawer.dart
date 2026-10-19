@@ -114,10 +114,10 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
     Navigator.of(context).pop();
   }
 
-  void _settings() {
+  void _go(String route) {
     final router = GoRouter.of(context);
     Navigator.of(context).pop();
-    router.push(Routes.settingsCoach);
+    router.push(route);
   }
 
   /// Hernoemen and Verwijderen, from ⋮ or a long press.
@@ -363,10 +363,27 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
                           contentPadding: const EdgeInsets.only(
                             left: AppSpacing.sm,
                           ),
+                          leading: const Icon(
+                            Icons.sticky_note_2_outlined,
+                            size: 20,
+                          ),
+                          minLeadingWidth: 20,
+                          title: const Text('Wat de coach onthoudt'),
+                          trailing: Text(
+                            '${ref.watch(coachNotesProvider).value?.length ?? 0}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          onTap: () => _go(Routes.coachMemory),
+                        ),
+                        ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.only(
+                            left: AppSpacing.sm,
+                          ),
                           leading: const Icon(Icons.tune, size: 20),
                           minLeadingWidth: 20,
                           title: const Text('Instellingen'),
-                          onTap: _settings,
+                          onTap: () => _go(Routes.settingsCoach),
                         ),
                       ],
                     ),

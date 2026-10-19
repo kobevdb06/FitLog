@@ -590,7 +590,9 @@ void main() {
 
       expect(
         tools.offered.map((d) => d['name']).toSet(),
-        CoachTools.names.difference(CoachTools.healthOnly),
+        CoachTools.names
+            .difference(CoachTools.healthOnly)
+            .difference(CoachTools.memoryOnly),
       );
       for (final name in CoachTools.healthOnly) {
         final lookup = await tools.run(name, const {});

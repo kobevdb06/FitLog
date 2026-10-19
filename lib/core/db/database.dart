@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'dao/chat_dao.dart';
+import 'dao/coach_notes_dao.dart';
 import 'dao/deload_dao.dart';
 import 'dao/exercises_dao.dart';
 import 'dao/health_dao.dart';
@@ -13,6 +14,8 @@ import 'dao/workouts_dao.dart';
 import 'tables.dart';
 
 export 'dao/chat_dao.dart' show ChatMessagePhotos, decodeImageFiles;
+export 'dao/coach_notes_dao.dart'
+    show CoachNoteKind, CoachNotesDao, kCoachNoteLength, kCoachNoteMax;
 export 'dao/deload_dao.dart' show DeloadWeekDays;
 export 'dao/exercises_dao.dart' show ExerciseFilter;
 export 'dao/routines_dao.dart'
@@ -54,6 +57,7 @@ part 'database.drift.dart';
     MorningReportsTable,
     WeekReviewsTable,
     DeloadWeeksTable,
+    CoachNotesTable,
   ],
   daos: [
     SettingsDao,
@@ -66,13 +70,14 @@ part 'database.drift.dart';
     HealthDao,
     ReportsDao,
     DeloadDao,
+    CoachNotesDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 52;
+  int get schemaVersion => 53;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -498,6 +503,11 @@ class AppDatabase extends _$AppDatabase {
           // A conversation can belong to a workout. None did yet. Before v21
           // there were no conversations, and the table is made whole above.
           await m.addColumn(chatThreadsTable, chatThreadsTable.workoutId);
+        }
+        if (from < 53) {
+          // The coach's notebook: empty, and on - as for a new install.
+          await m.createTable(coachNotesTable);
+          await m.addColumn(appSettingsTable, appSettingsTable.coachMemory);
         }
       });
 

@@ -143,6 +143,52 @@ final class CoachEnabledProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$coachEnabledHash() => r'2f1cf687f29e9e40a02bbbaf0c50fec54559931a';
 
+/// What the coach remembers about you, the oldest first.
+
+@ProviderFor(coachNotes)
+final coachNotesProvider = CoachNotesProvider._();
+
+/// What the coach remembers about you, the oldest first.
+
+final class CoachNotesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CoachNoteRow>>,
+          List<CoachNoteRow>,
+          Stream<List<CoachNoteRow>>
+        >
+    with
+        $FutureModifier<List<CoachNoteRow>>,
+        $StreamProvider<List<CoachNoteRow>> {
+  /// What the coach remembers about you, the oldest first.
+  CoachNotesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachNotesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachNotesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CoachNoteRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CoachNoteRow>> create(Ref ref) {
+    return coachNotes(ref);
+  }
+}
+
+String _$coachNotesHash() => r'4536c5c7e39f58af6a547689806545d6627fd793';
+
 /// Who makes the questions an empty conversation offers. The phone, for now
 /// (DECISIONS 217): override this to let the coach write them.
 
@@ -1108,7 +1154,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'25d760dafc9d472ce7b865d16eb443d342c133d0';
+String _$coachControllerHash() => r'61512f848104c7c71af7afdda4437e3a0cc02815';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

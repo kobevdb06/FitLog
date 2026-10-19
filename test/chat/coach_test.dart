@@ -164,7 +164,9 @@ void main() {
       // Health Connect is not shared until the user says so, and the
       // lookups with nothing else in them are not offered.
       final tools = sent.single['tools']! as List<Object?>;
-      final offered = CoachTools.names.difference(CoachTools.healthOnly);
+      final offered = CoachTools.names
+          .difference(CoachTools.healthOnly)
+          .difference(CoachTools.memoryOnly);
       expect(tools, hasLength(offered.length));
       expect(
         tools.map((t) => (t! as Map<String, Object?>)['name']).toSet(),
@@ -185,7 +187,7 @@ void main() {
       final tools = sent.single['tools']! as List<Object?>;
       expect(
         tools.map((t) => (t! as Map<String, Object?>)['name']).toSet(),
-        CoachTools.names,
+        CoachTools.names.difference(CoachTools.memoryOnly),
       );
     });
   });
@@ -424,7 +426,9 @@ void main() {
               as List;
       expect(
         declarations.map((d) => (d! as Map<String, Object?>)['name']).toSet(),
-        CoachTools.names.difference(CoachTools.healthOnly),
+        CoachTools.names
+            .difference(CoachTools.healthOnly)
+            .difference(CoachTools.memoryOnly),
       );
     });
   });

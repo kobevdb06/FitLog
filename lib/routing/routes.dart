@@ -94,6 +94,10 @@ abstract final class Routes {
   /// page, which is exactly what happened.
   static const settingsCoach = '/coach/instellingen';
 
+  /// What the coach remembers. At the root for the same reason: the panel
+  /// in the chat has a way to it.
+  static const coachMemory = '/coach/geheugen';
+
   /// Switching the coach on: what it is, fetching a key, pasting it. At the
   /// root for the same reason as the coach's settings; the chat sends a
   /// refused key here too, straight to the paste step.

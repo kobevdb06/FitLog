@@ -169,6 +169,39 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     );
   }
 
+  /// A name you chose. Kept as typed, only trimmed; nothing empty.
+  Future<void> renameThread(String id, String title) async {
+    final clean = title.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.isEmpty) return;
+    await (update(chatThreadsTable)..where((t) => t.id.equals(id))).write(
+      ChatThreadsTableCompanion(
+        title: Value(
+          clean.length > titleLength ? clean.substring(0, titleLength) : clean,
+        ),
+      ),
+    );
+  }
+
+  /// The conversations whose name or messages hold [query], the newest
+  /// first.
+  Future<List<ChatThreadRow>> searchThreads(String query) async {
+    final words = query.trim();
+    if (words.isEmpty) return const [];
+    // What is typed is looked for as it is: % and _ are no wildcards here.
+    final pattern =
+        '%${words.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+    final rows = await customSelect(
+      'SELECT t.* FROM chat_threads t '
+      r"WHERE t.title LIKE ?1 ESCAPE '\' "
+      'OR EXISTS (SELECT 1 FROM chat_messages m WHERE m.thread_id = t.id '
+      r"AND m.content LIKE ?1 ESCAPE '\') "
+      'ORDER BY t.updated_at DESC LIMIT 40',
+      variables: [Variable.withString(pattern)],
+      readsFrom: {chatThreadsTable, chatMessagesTable},
+    ).get();
+    return [for (final row in rows) chatThreadsTable.map(row.data)];
+  }
+
   Future<void> deleteThread(String id) async {
     await (delete(chatThreadsTable)..where((t) => t.id.equals(id))).go();
   }

@@ -30,6 +30,7 @@ import '../data/ai_client.dart';
 import '../domain/coach_proposal.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
+import 'coach_drawer.dart';
 import 'coach_session.dart';
 import 'photo_prompts_sheet.dart';
 import 'report_answer_sheet.dart';
@@ -201,74 +202,11 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     });
   }
 
-  /// [threads] comes from build, which is where the list is watched.
-  ///
-  /// Reading it here instead was the bug: nothing was subscribed to that
-  /// stream, so the read answered "still loading" - an empty list - and the
-  /// sheet offered a new conversation and nothing else.
-  Future<void> _pickThread(List<ChatThreadRow> threads) async {
-    final picked = await showAppSheet<String>(
-      context: context,
-      title: 'Gesprekken',
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.add),
-            title: const Text('Nieuw gesprek'),
-            onTap: () => Navigator.of(context).pop('nieuw'),
-          ),
-          const Divider(height: 1),
-          if (threads.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Text('Nog geen eerdere gesprekken.'),
-            ),
-          for (final thread in threads)
-            ListTile(
-              leading: const Icon(Icons.chat_bubble_outline),
-              title: Text(thread.title, maxLines: 2),
-              subtitle: Text(
-                Formatters.relativeDay(
-                  DateTime.fromMillisecondsSinceEpoch(thread.updatedAt),
-                ),
-              ),
-              selected:
-                  thread.id ==
-                  ref.read(coachSessionControllerProvider).threadId,
-              onTap: () => Navigator.of(context).pop(thread.id),
-            ),
-        ],
-      ),
-    );
-
-    if (picked == null || !mounted) return;
-    picked == 'nieuw' ? _session.startNew() : _session.show(picked);
-  }
-
-  Future<void> _deleteThread() async {
-    final thread = ref.read(coachSessionControllerProvider).threadId;
-    if (thread == null) return;
-
-    final ok = await confirm(
-      context,
-      title: 'Gesprek verwijderen?',
-      message: 'De vragen en antwoorden in dit gesprek verdwijnen.',
-      confirmLabel: 'Verwijderen',
-      destructive: true,
-    );
-    if (!ok || !mounted) return;
-
-    await ref.read(databaseProvider).chatDao.deleteThread(thread);
-    _session.startNew();
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(coachControllerProvider);
     final session = ref.watch(coachSessionControllerProvider);
     final threadId = session.threadId;
-    final threads = ref.watch(chatThreadsProvider).value ?? const [];
     final messages = threadId == null
         ? const <ChatMessageRow>[]
         : ref.watch(chatMessagesProvider(threadId)).value ?? const [];
@@ -294,23 +232,17 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Gesprekken',
+          icon: const Icon(Icons.menu),
+          onPressed: () => showCoachDrawer(context),
+        ),
         title: const Text('Coach'),
         actions: [
           IconButton(
-            tooltip: 'Gesprekken',
-            icon: const Icon(Icons.history),
-            onPressed: () => _pickThread(threads),
-          ),
-          if (threadId != null)
-            IconButton(
-              tooltip: 'Dit gesprek verwijderen',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _deleteThread,
-            ),
-          IconButton(
-            tooltip: 'Instellingen',
-            icon: const Icon(Icons.tune),
-            onPressed: () => context.push(Routes.settingsCoach),
+            tooltip: 'Nieuw gesprek',
+            icon: const Icon(Icons.add_comment_outlined),
+            onPressed: _session.startNew,
           ),
         ],
       ),

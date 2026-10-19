@@ -12,6 +12,7 @@ import 'package:fitlog/features/chat/data/links.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/domain/answer_report.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
+import 'package:fitlog/features/chat/presentation/coach_drawer.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_session.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
@@ -1337,66 +1338,251 @@ void main() {
   });
 
   group('eerdere gesprekken', () {
-    testWidgets('staan in de lijst achter het klokje', (tester) async {
-      // Ze stonden er niet: het scherm las een stream waar niemand op
-      // geabonneerd was, en kreeg "nog aan het laden" - dus een lege lijst -
-      // terwijl de instellingen wel "1 gesprek" toonden.
-      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
-      await db.chatDao.createThread('t-1', 'Hoeveel sets voor borst?');
-      await db.chatDao.addMessage(
-        id: 'm-1',
-        threadId: 't-1',
-        role: 'user',
-        content: 'Hoeveel sets voor borst?',
+    /// A conversation last added to [daysAgo] days ago.
+    Future<void> thread(
+      String id,
+      String title, {
+      int daysAgo = 0,
+      String? workoutId,
+      String? answer,
+    }) async {
+      await db.chatDao.createThread(id, title, workoutId: workoutId);
+      if (answer != null) {
+        await db.chatDao.addMessage(
+          id: 'm-$id',
+          threadId: id,
+          role: 'assistant',
+          content: answer,
+        );
+      }
+      final at = DateTime.now().subtract(Duration(days: daysAgo));
+      await db.customStatement(
+        'UPDATE chat_threads SET updated_at = ? WHERE id = ?',
+        [at.millisecondsSinceEpoch, id],
       );
+    }
+
+    Future<void> openPanel(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('Gesprekken'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('staan in het paneel, per dag', (tester) async {
+      // Ze stonden er ooit niet: het scherm las een stream waar niemand op
+      // geabonneerd was, en kreeg "nog aan het laden" - een lege lijst.
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Wat train ik vandaag?');
+      await thread('t-2', 'Deloadweek plannen', daysAgo: 1);
+      await thread('t-3', 'Routine voor thuis', daysAgo: 3);
+      await thread('t-4', 'Hoe log ik een dropset?', daysAgo: 20);
 
       await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
       await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.history));
-      await tester.pumpAndSettle();
+      await openPanel(tester);
 
       expect(find.text('Nieuw gesprek'), findsOneWidget);
-      expect(
-        find.widgetWithText(ListTile, 'Hoeveel sets voor borst?'),
-        findsOneWidget,
-      );
+      for (final (heading, title) in [
+        ('Vandaag', 'Wat train ik vandaag?'),
+        ('Gisteren', 'Deloadweek plannen'),
+        ('Afgelopen week', 'Routine voor thuis'),
+        ('Eerder', 'Hoe log ik een dropset?'),
+      ]) {
+        expect(find.text(heading), findsOneWidget, reason: heading);
+        expect(
+          tester.getTopLeft(find.text(heading)).dy,
+          lessThan(tester.getTopLeft(find.text(title)).dy),
+          reason: '$title onder $heading',
+        );
+      }
     });
 
-    testWidgets('en zonder eerdere gesprekken zegt de lijst dat', (
+    testWidgets('en zonder eerdere gesprekken zegt het paneel dat', (
       tester,
     ) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
       await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await openPanel(tester);
 
-      await tester.tap(find.byIcon(Icons.history));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Nog geen eerdere gesprekken.'), findsOneWidget);
+      expect(
+        find.text('Nog geen gesprekken. Wat je vraagt, komt hier.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('en er een openen toont wat je toen vroeg', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
-      await db.chatDao.createThread('t-1', 'Hoeveel sets voor borst?');
-      await db.chatDao.addMessage(
-        id: 'm-1',
-        threadId: 't-1',
-        role: 'assistant',
-        content: 'Tussen 10 en 20 per week.',
+      await thread(
+        't-1',
+        'Hoeveel sets voor borst?',
+        answer: 'Tussen 10 en 20 per week.',
       );
-      await db.chatDao.createThread('t-2', 'En voor rug?');
+      await thread('t-2', 'En voor rug?');
 
       await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
       await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.history));
-      await tester.pumpAndSettle();
+      await openPanel(tester);
       await tester.tap(
         find.widgetWithText(ListTile, 'Hoeveel sets voor borst?'),
       );
       await tester.pumpAndSettle();
 
       expect(find.text('Tussen 10 en 20 per week.'), findsOneWidget);
+      expect(find.text('Nieuw gesprek'), findsNothing);
+    });
+
+    testWidgets('zoeken vindt ook wat er in een gesprek staat', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread(
+        't-1',
+        'Hoeveel sets voor borst?',
+        answer: 'Tussen 10 en 20 per week.',
+      );
+      await thread('t-2', 'En voor rug?');
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Zoek in gesprekken'),
+        'per week',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(ListTile, 'Hoeveel sets voor borst?'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(ListTile, 'En voor rug?'), findsNothing);
+    });
+
+    testWidgets('hernoemen en verwijderen, met de knop Meer', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Hoeveel sets voor borst?', answer: 'Tien.');
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+
+      await tester.tap(find.byTooltip('Meer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hernoemen'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Borst');
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(ListTile, 'Borst'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Meer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Verwijderen'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Verwijderen').last);
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ListTile, 'Borst'), findsNothing);
+      // The one on screen is gone: the tab is on a new one.
+      await tester.tapAt(const Offset(1000, 400));
+      // The panel's 250 ms on its way out.
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Vraag je coach'), findsOneWidget);
+      expect(
+        await tester.runAsync(() => db.chatDao.threadExists('t-1')),
+        isFalse,
+      );
+    });
+
+    testWidgets('het gesprek van de lopende workout staat bovenaan, onder Nu', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      final workout = await db.workoutsDao.startWorkout(
+        name: 'Push A',
+        defaultRestSeconds: 90,
+      );
+      await thread('t-1', 'Wat train ik vandaag?');
+      await thread('t-w', 'Push A · vandaag', workoutId: workout);
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+
+      expect(find.text('Nu'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Push A · vandaag')).dy,
+        lessThan(tester.getTopLeft(find.text('Vandaag')).dy),
+      );
+    });
+
+    testWidgets('Nieuw gesprek in de balk maakt het scherm leeg', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Hoeveel sets?', answer: 'Tien.');
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Tien.'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Nieuw gesprek'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tien.'), findsNothing);
+      expect(find.text('Vraag je coach'), findsOneWidget);
+    });
+
+    testWidgets('het paneel past op een smalle gsm met grote letters', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Een vraag met een lange naam die niet past');
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        size: const Size(360, 800),
+      );
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getBottomRight(find.text('Nieuw gesprek')).dx,
+        lessThan(360),
+      );
+    });
+
+    test('een dag telt op de kalender, ook als de klok verspringt', () {
+      // 28 March 2027: the clocks go forward in Belgium.
+      final monday = DateTime(2027, 3, 29, 8);
+      expect(
+        ThreadGroup.of(DateTime(2027, 3, 28, 23), monday),
+        ThreadGroup.yesterday,
+      );
+      expect(
+        ThreadGroup.of(DateTime(2027, 3, 27, 9), monday),
+        ThreadGroup.week,
+      );
+      expect(
+        ThreadGroup.of(DateTime(2027, 3, 22, 9), monday),
+        ThreadGroup.earlier,
+      );
+      expect(
+        ThreadGroup.of(DateTime(2027, 3, 29, 0, 5), monday),
+        ThreadGroup.today,
+      );
     });
   });
 

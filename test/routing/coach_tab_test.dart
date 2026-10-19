@@ -183,7 +183,9 @@ void main() {
       await tester.tap(find.text('Chat'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.tune));
+      await tester.tap(find.byTooltip('Gesprekken'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Instellingen'));
       await tester.pumpAndSettle();
 
       expect(find.text('AI-coach'), findsOneWidget);

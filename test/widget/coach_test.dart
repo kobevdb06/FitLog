@@ -1754,6 +1754,28 @@ void main() {
       expect(find.text('Om te beginnen'), findsWidgets);
     });
 
+    testWidgets('een workout die start, krijgt vragen over de workout', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+      expect(find.text('Om te beginnen'), findsWidgets);
+
+      await tester.runAsync(
+        () => db.workoutsDao.startWorkout(
+          name: 'Losse workout',
+          defaultRestSeconds: 90,
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.textContaining('Losse workout · loopt'), findsOneWidget);
+      expect(find.text('Nu bezig: Losse workout'), findsWidgets);
+    });
+
     testWidgets('Andere vragen toont de volgende, en een tik stelt de vraag', (
       tester,
     ) async {

@@ -239,13 +239,15 @@ final class CoachSuggesterProvider
 String _$coachSuggesterHash() => r'36755cf72b3f82055cf0c1c26455c3115a558ea2';
 
 /// The questions for the conversation that is empty now - made again each
-/// time one is, so they are about today.
+/// time one is, so they are about today, and when a workout starts or ends:
+/// the empty conversation on screen is then that workout's, or no longer.
 
 @ProviderFor(coachSuggestions)
 final coachSuggestionsProvider = CoachSuggestionsProvider._();
 
 /// The questions for the conversation that is empty now - made again each
-/// time one is, so they are about today.
+/// time one is, so they are about today, and when a workout starts or ends:
+/// the empty conversation on screen is then that workout's, or no longer.
 
 final class CoachSuggestionsProvider
     extends
@@ -258,7 +260,8 @@ final class CoachSuggestionsProvider
         $FutureModifier<List<CoachSuggestion>>,
         $FutureProvider<List<CoachSuggestion>> {
   /// The questions for the conversation that is empty now - made again each
-  /// time one is, so they are about today.
+  /// time one is, so they are about today, and when a workout starts or ends:
+  /// the empty conversation on screen is then that workout's, or no longer.
   CoachSuggestionsProvider._()
     : super(
         from: null,
@@ -285,7 +288,56 @@ final class CoachSuggestionsProvider
   }
 }
 
-String _$coachSuggestionsHash() => r'25fcf33d347ec5dbb4a0f6fda6fa2ffd017411bf';
+String _$coachSuggestionsHash() => r'd7572109fb537e9f456b67b3f62658d75c9614bf';
+
+/// The id of the workout running, or null: what changes when one starts or
+/// ends, and not with every set of it.
+
+@ProviderFor(runningWorkoutId)
+final runningWorkoutIdProvider = RunningWorkoutIdProvider._();
+
+/// The id of the workout running, or null: what changes when one starts or
+/// ends, and not with every set of it.
+
+final class RunningWorkoutIdProvider
+    extends $FunctionalProvider<String?, String?, String?>
+    with $Provider<String?> {
+  /// The id of the workout running, or null: what changes when one starts or
+  /// ends, and not with every set of it.
+  RunningWorkoutIdProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'runningWorkoutIdProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$runningWorkoutIdHash();
+
+  @$internal
+  @override
+  $ProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String? create(Ref ref) {
+    return runningWorkoutId(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$runningWorkoutIdHash() => r'c940a7b0ede8a890b69f894d08027db1ba575345';
 
 /// Which service the coach talks to.
 ///

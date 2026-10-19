@@ -146,6 +146,12 @@ List<CoachSuggestion> suggestQuestions(SuggestionFacts facts) {
         now,
         SuggestionReason.workout,
       );
+    } else {
+      add(
+        'Welke oefeningen doe ik in deze workout?',
+        now,
+        SuggestionReason.workout,
+      );
     }
     add(
       'Hoeveel rust neem ik tussen mijn sets?',

@@ -408,6 +408,11 @@ class _OpeningState extends ConsumerState<_Opening> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
+    // Nieuw gesprek on an empty one: questions as of now, from the first.
+    ref.listen(coachSessionControllerProvider, (_, _) {
+      ref.invalidate(coachSuggestionsProvider);
+      setState(() => _page = 0);
+    });
     // Something to start with, also when reading the logbook failed.
     final all = ref
         .watch(coachSuggestionsProvider)

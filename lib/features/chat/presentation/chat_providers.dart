@@ -19,6 +19,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/util/paths.dart';
 import '../../exercises/presentation/exercise_providers.dart';
 import '../../photos/data/photo_store.dart';
+import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
@@ -74,10 +75,19 @@ CoachSuggester coachSuggester(Ref ref) =>
     LocalCoachSuggester(ref.watch(databaseProvider));
 
 /// The questions for the conversation that is empty now - made again each
-/// time one is, so they are about today.
+/// time one is, so they are about today, and when a workout starts or ends:
+/// the empty conversation on screen is then that workout's, or no longer.
 @riverpod
-Future<List<CoachSuggestion>> coachSuggestions(Ref ref) =>
-    ref.watch(coachSuggesterProvider).suggest();
+Future<List<CoachSuggestion>> coachSuggestions(Ref ref) {
+  ref.watch(runningWorkoutIdProvider);
+  return ref.watch(coachSuggesterProvider).suggest();
+}
+
+/// The id of the workout running, or null: what changes when one starts or
+/// ends, and not with every set of it.
+@riverpod
+String? runningWorkoutId(Ref ref) =>
+    ref.watch(activeWorkoutProvider).value?.workout.id;
 
 /// Which service the coach talks to.
 ///

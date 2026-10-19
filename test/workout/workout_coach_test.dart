@@ -9,6 +9,7 @@ import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
+import 'package:fitlog/features/chat/presentation/coach_session.dart';
 import 'package:fitlog/features/workout/presentation/workout_coach.dart';
 import 'package:fitlog/features/workout/presentation/workout_live_update.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
@@ -190,6 +191,32 @@ void main() {
     await coach().ask('En daarna?', send: events.add);
     expect(await db.chatDao.watchThreads().first, hasLength(1));
     expect((await coach().state())['thread'], hasLength(4));
+  });
+
+  test('het gesprek hoort bij de workout: na een herstart gaat het verder, '
+      'en de Chat-tab schrijft erin', () async {
+    await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+    await startBench();
+    await coach().ask('Mag ik zwaarder?', send: events.add);
+
+    // Android closed FitLog: the panel starts with a coach of its own,
+    // which knows nothing it was told before.
+    container.invalidate(workoutCoachProvider);
+    expect((await coach().state())['thread'], hasLength(2));
+
+    // The Chat tab is on the same conversation, and a question there shows
+    // in the panel.
+    final session = container.read(coachSessionControllerProvider.notifier);
+    container.listen(coachSessionControllerProvider, (_, _) {});
+    await settle();
+    final thread = await session.threadFor('Hoeveel rust?');
+    final threads = await db.chatDao.watchThreads().first;
+    expect(threads.single.id, thread);
+    await container
+        .read(coachControllerProvider.notifier)
+        .ask(threadId: thread, question: 'Hoeveel rust?');
+    expect((await coach().state())['thread'], hasLength(4));
+    expect(threads.single.title, startsWith('Push A · '));
   });
 }
 

@@ -263,6 +263,23 @@ class CoachController extends _$CoachController {
     return id;
   }
 
+  /// The conversation of a workout: the one the Chat tab and the coach in
+  /// the island share. Made on its first question, named after the workout
+  /// rather than after that question - "Push A · 19 okt." says which one it
+  /// was where the question would not.
+  Future<String> workoutThread(String workoutId) async {
+    final db = ref.read(databaseProvider);
+    final workout = (await db.workoutsDao.getWorkoutDetail(workoutId))?.workout;
+    final title = workout == null
+        ? 'Workout'
+        : '${workout.name} · ${Formatters.dayMonth(DateTime.fromMillisecondsSinceEpoch(workout.startedAt))}';
+    return db.chatDao.workoutThread(
+      workoutId: workoutId,
+      id: _uuid.v4(),
+      title: title,
+    );
+  }
+
   /// The long edge a photo is scaled to before it is sent.
   ///
   /// Smaller than a progress photo on purpose: this one is paid for by the

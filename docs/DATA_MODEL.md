@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **51**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **52**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -79,6 +79,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 49 | `chat_messages.image_files`: tot vier foto's bij een vraag, als JSON-lijst; `[]` voor elk bestaand bericht. De ene foto van een oudere vraag blijft in `image_file`. |
 | 50 | `app_settings.coach_sees_health`: wat uit Health Connect komt, delen met de coach. Uit, ook voor wie de coach al gebruikte. |
 | 51 | `deload_weeks`, `workouts.is_deload` en de `app_settings.deload_*`-instellingen: deloads, met voorstellen aan. Geen enkele bestaande training was er een. |
+| 52 | `chat_threads.workout_id`: het gesprek van een workout, dat de Chat-tab en de coach in het eiland delen. Geen enkel bestaand gesprek hoorde bij een workout. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -478,7 +479,7 @@ telkens opnieuw berekend; alleen de tekst van de coach komt hier vandaan.
 
 #### `chat_threads`
 
-`id`, `title` (je eerste vraag, ingekort), `created_at`, `updated_at`.
+`id`, `title` (je eerste vraag, ingekort; bij het gesprek van een workout de naam en de dag van die workout), `created_at`, `updated_at`, `workout_id` (TEXT?, de workout waar het gesprek bij hoort; geen verwijzing, zodat een weggegooide workout het gesprek laat staan).
 
 #### `chat_messages`
 

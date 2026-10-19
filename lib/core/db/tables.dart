@@ -399,6 +399,11 @@ class ChatThreadsTable extends Table {
   IntColumn get createdAt => integer().named('created_at')();
   IntColumn get updatedAt => integer().named('updated_at')();
 
+  /// The workout this is the conversation of: the one the Chat tab and the
+  /// coach in the island share while it runs. No reference on purpose - a
+  /// workout thrown away leaves the conversation as an ordinary one.
+  TextColumn get workoutId => text().named('workout_id').nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

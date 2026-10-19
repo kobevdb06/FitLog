@@ -72,7 +72,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 51;
+  int get schemaVersion => 52;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -493,6 +493,11 @@ class AppDatabase extends _$AppDatabase {
           ]) {
             await m.addColumn(appSettingsTable, column);
           }
+        }
+        if (from >= 21 && from < 52) {
+          // A conversation can belong to a workout. None did yet. Before v21
+          // there were no conversations, and the table is made whole above.
+          await m.addColumn(chatThreadsTable, chatThreadsTable.workoutId);
         }
       });
 

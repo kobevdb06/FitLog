@@ -13,6 +13,7 @@ import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/domain/answer_report.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
+import 'package:fitlog/features/chat/presentation/coach_session.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -77,9 +78,12 @@ void main() {
     'usageMetadata': {'promptTokenCount': 900, 'candidatesTokenCount': 30},
   };
 
+  /// [thread] is the conversation the Chat tab shows, as a pick from the
+  /// list would; without it the tab opens on a new one.
   Future<void> pump(
     WidgetTester tester,
     Widget screen, {
+    String? thread,
     Object? api,
     bool drawing = false,
     LinkOpener? opener,
@@ -102,6 +106,9 @@ void main() {
       ],
     );
 
+    if (thread != null) {
+      container!.read(coachSessionControllerProvider.notifier).show(thread);
+    }
     await tester.pumpWidget(wrapWithContainer(container!, screen));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
@@ -199,12 +206,65 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Oefening toevoegen'), findsOneWidget);
       expect(find.text('Toevoegen mét tekeningen'), findsNothing);
       expect(find.textContaining('Hugging Face'), findsNothing);
+    });
+  });
+
+  group('welk gesprek de tab opent', () {
+    testWidgets('zonder workout een nieuw, ook met eerdere gesprekken', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Hoeveel sets voor borst?');
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Tien tot twintig per week.',
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vraag je coach'), findsOneWidget);
+      expect(find.text('Tien tot twintig per week.'), findsNothing);
+    });
+
+    testWidgets('tijdens een workout dat van de workout, met wat het eiland '
+        'vroeg', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      final workout = await db.workoutsDao.startWorkout(
+        name: 'Push A',
+        defaultRestSeconds: 90,
+      );
+      await db.chatDao.createThread(
+        't-w',
+        'Push A · vandaag',
+        workoutId: workout,
+      );
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-w',
+        role: 'assistant',
+        content: 'Ja, set 3 op 80 kg kan.',
+      );
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ja, set 3 op 80 kg kan.'), findsOneWidget);
+      expect(find.textContaining('Push A · loopt'), findsOneWidget);
+      expect(find.text('ook in het eiland'), findsOneWidget);
     });
   });
 
@@ -237,6 +297,7 @@ void main() {
       await pump(
         tester,
         const CoachScreen(),
+        thread: 't-1',
         api: apiSaying(says('ok')),
         size: const Size(360, 2400),
       );
@@ -831,7 +892,12 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Voorstel: oefening'), findsOneWidget);
@@ -896,6 +962,7 @@ void main() {
       await pump(
         tester,
         const CoachScreen(),
+        thread: 't-1',
         api: apiSaying(says('ok')),
         opener: opener,
       );
@@ -963,7 +1030,12 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Voorstel: oefening aanpassen'), findsOneWidget);
@@ -1044,6 +1116,7 @@ void main() {
       await pump(
         tester,
         const CoachScreen(),
+        thread: 't-1',
         api: apiSaying(says('ok')),
         opener: _Opener(),
         size: const Size(360, 2600),
@@ -1073,7 +1146,12 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Oefening toevoegen'), findsOneWidget);
@@ -1108,6 +1186,7 @@ void main() {
       await pump(
         tester,
         const CoachScreen(),
+        thread: 't-1',
         api: apiSaying(says('ok')),
         drawing: true,
       );
@@ -1138,7 +1217,12 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Oefening toevoegen'), findsOneWidget);
@@ -1181,7 +1265,12 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Voorstel: routine'), findsOneWidget);
@@ -1227,7 +1316,12 @@ void main() {
         ]),
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Aangepast door de coach'), findsOneWidget);
@@ -1574,6 +1668,7 @@ void main() {
       await pump(
         tester,
         const CoachScreen(),
+        thread: 't-1',
         api: apiSaying(says('ok')),
         opener: opener,
         size: const Size(360, 800),

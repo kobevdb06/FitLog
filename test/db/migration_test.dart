@@ -136,6 +136,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -183,6 +184,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -228,6 +230,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -270,6 +273,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('PRAGMA user_version = 46');
     raw.close();
 
@@ -310,6 +314,7 @@ void main() {
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+        ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
         ..execute('PRAGMA user_version = 47');
       raw.close();
 
@@ -359,6 +364,7 @@ void main() {
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+        ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
         ..execute(
           "UPDATE chat_messages SET image_file = 'toestel.jpg' "
           "WHERE id = 'met'",
@@ -416,6 +422,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('PRAGMA user_version = 49');
     raw.close();
 
@@ -450,6 +457,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('PRAGMA user_version = 50');
     raw.close();
 
@@ -463,6 +471,28 @@ void main() {
     expect(await db.deloadDao.currentAt(DateTime.now()), isNull);
     await db.close();
   });
+
+  test(
+    'a database from v51 keeps its conversations, none of a workout',
+    () async {
+      final path = '${dir.path}/v51.db';
+      final fresh = AppDatabase(NativeDatabase(File(path)));
+      await fresh.settingsDao.ensureInitialized();
+      await fresh.chatDao.createThread('t-1', 'Hoeveel sets voor borst?');
+      await fresh.close();
+
+      final raw = sqlite3.open(path)
+        ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
+        ..execute('PRAGMA user_version = 51');
+      raw.close();
+
+      final db = AppDatabase(NativeDatabase(File(path)));
+      final thread = (await db.chatDao.newestThread())!;
+      expect(thread.title, 'Hoeveel sets voor borst?');
+      expect(thread.workoutId, isNull);
+      await db.close();
+    },
+  );
 
   test('a database that migrated past the tables of v29, v30 and v33 gets '
       'their indexes after all', () async {
@@ -498,6 +528,7 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_suggest_stalled')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_later_days')
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -568,7 +599,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 51);
+    expect(raw.select('PRAGMA user_version').first.values.first, 52);
     raw.close();
   });
 
@@ -784,7 +815,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 51);
+    expect(db.schemaVersion, 52);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

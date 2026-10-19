@@ -5641,8 +5641,25 @@ class $ChatThreadsTableTable extends ChatThreadsTable
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _workoutIdMeta = const VerificationMeta(
+    'workoutId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, title, createdAt, updatedAt];
+  late final GeneratedColumn<String> workoutId = GeneratedColumn<String>(
+    'workout_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    createdAt,
+    updatedAt,
+    workoutId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5684,6 +5701,12 @@ class $ChatThreadsTableTable extends ChatThreadsTable
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('workout_id')) {
+      context.handle(
+        _workoutIdMeta,
+        workoutId.isAcceptableOrUnknown(data['workout_id']!, _workoutIdMeta),
+      );
+    }
     return context;
   }
 
@@ -5709,6 +5732,10 @@ class $ChatThreadsTableTable extends ChatThreadsTable
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
       )!,
+      workoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workout_id'],
+      ),
     );
   }
 
@@ -5725,11 +5752,17 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
   final String title;
   final int createdAt;
   final int updatedAt;
+
+  /// The workout this is the conversation of: the one the Chat tab and the
+  /// coach in the island share while it runs. No reference on purpose - a
+  /// workout thrown away leaves the conversation as an ordinary one.
+  final String? workoutId;
   const ChatThreadRow({
     required this.id,
     required this.title,
     required this.createdAt,
     required this.updatedAt,
+    this.workoutId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5738,6 +5771,9 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     map['title'] = Variable<String>(title);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || workoutId != null) {
+      map['workout_id'] = Variable<String>(workoutId);
+    }
     return map;
   }
 
@@ -5747,6 +5783,9 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       title: Value(title),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      workoutId: workoutId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workoutId),
     );
   }
 
@@ -5760,6 +5799,7 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       title: serializer.fromJson<String>(json['title']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      workoutId: serializer.fromJson<String?>(json['workoutId']),
     );
   }
   @override
@@ -5770,6 +5810,7 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       'title': serializer.toJson<String>(title),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
+      'workoutId': serializer.toJson<String?>(workoutId),
     };
   }
 
@@ -5778,11 +5819,13 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     String? title,
     int? createdAt,
     int? updatedAt,
+    Value<String?> workoutId = const Value.absent(),
   }) => ChatThreadRow(
     id: id ?? this.id,
     title: title ?? this.title,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    workoutId: workoutId.present ? workoutId.value : this.workoutId,
   );
   ChatThreadRow copyWithCompanion(ChatThreadsTableCompanion data) {
     return ChatThreadRow(
@@ -5790,6 +5833,7 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       title: data.title.present ? data.title.value : this.title,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
     );
   }
 
@@ -5799,13 +5843,14 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workoutId: $workoutId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, title, createdAt, updatedAt);
+  int get hashCode => Object.hash(id, title, createdAt, updatedAt, workoutId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5813,7 +5858,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
           other.id == this.id &&
           other.title == this.title &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.workoutId == this.workoutId);
 }
 
 class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
@@ -5821,12 +5867,14 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
   final Value<String> title;
   final Value<int> createdAt;
   final Value<int> updatedAt;
+  final Value<String?> workoutId;
   final Value<int> rowid;
   const ChatThreadsTableCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.workoutId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatThreadsTableCompanion.insert({
@@ -5834,6 +5882,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     required String title,
     required int createdAt,
     required int updatedAt,
+    this.workoutId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -5844,6 +5893,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     Expression<String>? title,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
+    Expression<String>? workoutId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5851,6 +5901,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
       if (title != null) 'title': title,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (workoutId != null) 'workout_id': workoutId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5860,6 +5911,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     Value<String>? title,
     Value<int>? createdAt,
     Value<int>? updatedAt,
+    Value<String?>? workoutId,
     Value<int>? rowid,
   }) {
     return ChatThreadsTableCompanion(
@@ -5867,6 +5919,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
       title: title ?? this.title,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      workoutId: workoutId ?? this.workoutId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5886,6 +5939,9 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
     }
+    if (workoutId.present) {
+      map['workout_id'] = Variable<String>(workoutId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5899,6 +5955,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
           ..write('title: $title, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('workoutId: $workoutId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -19714,6 +19771,7 @@ typedef $$ChatThreadsTableTableCreateCompanionBuilder =
       required String title,
       required int createdAt,
       required int updatedAt,
+      Value<String?> workoutId,
       Value<int> rowid,
     });
 typedef $$ChatThreadsTableTableUpdateCompanionBuilder =
@@ -19722,6 +19780,7 @@ typedef $$ChatThreadsTableTableUpdateCompanionBuilder =
       Value<String> title,
       Value<int> createdAt,
       Value<int> updatedAt,
+      Value<String?> workoutId,
       Value<int> rowid,
     });
 
@@ -19785,6 +19844,11 @@ class $$ChatThreadsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get workoutId => $composableBuilder(
+    column: $table.workoutId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> chatMessagesTableRefs(
     Expression<bool> Function($$ChatMessagesTableTableFilterComposer f) f,
   ) {
@@ -19839,6 +19903,11 @@ class $$ChatThreadsTableTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get workoutId => $composableBuilder(
+    column: $table.workoutId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChatThreadsTableTableAnnotationComposer
@@ -19861,6 +19930,9 @@ class $$ChatThreadsTableTableAnnotationComposer
 
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get workoutId =>
+      $composableBuilder(column: $table.workoutId, builder: (column) => column);
 
   Expression<T> chatMessagesTableRefs<T extends Object>(
     Expression<T> Function($$ChatMessagesTableTableAnnotationComposer a) f,
@@ -19923,12 +19995,14 @@ class $$ChatThreadsTableTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
+                Value<String?> workoutId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatThreadsTableCompanion(
                 id: id,
                 title: title,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                workoutId: workoutId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19937,12 +20011,14 @@ class $$ChatThreadsTableTableTableManager
                 required String title,
                 required int createdAt,
                 required int updatedAt,
+                Value<String?> workoutId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatThreadsTableCompanion.insert(
                 id: id,
                 title: title,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                workoutId: workoutId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

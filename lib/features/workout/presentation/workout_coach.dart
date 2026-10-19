@@ -33,8 +33,6 @@ class WorkoutCoach {
   static const unlockedFor = Duration(minutes: 5);
 
   DateTime? _unlockedAt;
-  String? _workoutId;
-  String? _threadId;
 
   bool get _unlocked {
     final at = _unlockedAt;
@@ -113,12 +111,12 @@ class WorkoutCoach {
     if (text.isEmpty) return {'ok': false};
 
     final coach = _ref.read(coachControllerProvider.notifier);
+    // The workout's own conversation, which the Chat tab shows too - and
+    // which is still there after the app was closed in between.
     final workoutId = _ref.read(activeWorkoutProvider).value?.workout.id;
-    if (workoutId != _workoutId) {
-      _workoutId = workoutId;
-      _threadId = null;
-    }
-    final threadId = _threadId ??= await coach.startThread(text);
+    final threadId = workoutId == null
+        ? await coach.startThread(text)
+        : await coach.workoutThread(workoutId);
 
     final writing = _ref.listen(coachControllerProvider, (_, next) {
       if (next.sending) {
@@ -170,14 +168,16 @@ class WorkoutCoach {
         '($about). Hou het kort.';
   }
 
-  /// This workout's conversation so far.
+  /// This workout's conversation so far, also what was asked in the Chat
+  /// tab.
   Future<List<Map<String, Object?>>> _thread() async {
-    final threadId = _threadId;
     final workoutId = _ref.read(activeWorkoutProvider).value?.workout.id;
-    if (threadId == null || workoutId != _workoutId) return const [];
+    if (workoutId == null) return const [];
+    final db = _ref.read(databaseProvider);
+    final thread = await db.chatDao.threadForWorkout(workoutId);
+    if (thread == null) return const [];
     return [
-      for (final m
-          in await _ref.read(databaseProvider).chatDao.messages(threadId))
+      for (final m in await db.chatDao.messages(thread.id))
         {'role': m.role, 'text': m.content},
     ];
   }

@@ -6,6 +6,7 @@
 /// money.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -24,10 +25,12 @@ import '../../../core/widgets/dialogs.dart';
 import '../../deload/presentation/deload_providers.dart';
 import '../../deload/presentation/deload_start_sheet.dart';
 import '../../photos/data/photo_store.dart';
+import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
 import '../domain/coach_proposal.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
+import 'coach_session.dart';
 import 'photo_prompts_sheet.dart';
 import 'report_answer_sheet.dart';
 
@@ -50,17 +53,12 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
 
-  /// The conversation being shown, or null until the first question makes one.
-  String? _threadId;
-  var _loaded = false;
+  CoachSessionController get _session =>
+      ref.read(coachSessionControllerProvider.notifier);
 
   /// Photos picked but not sent yet, as file names in the photo directory,
   /// in the order they were picked.
   final List<String> _photos = [];
-
-  /// A question another screen put ready came in, so this is a new
-  /// conversation and not the newest one.
-  var _drafted = false;
 
   /// The answer as it was written, kept on screen until the stored one is in
   /// the list: between the two, it would blink away for a frame.
@@ -88,12 +86,8 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     final draft = ref.read(coachDraftProvider);
     if (draft == null) return;
     ref.read(coachDraftProvider.notifier).clear();
-    setState(() {
-      _loaded = true;
-      _drafted = true;
-      _threadId = null;
-      _photos.clear();
-    });
+    _session.startNew();
+    setState(_photos.clear);
     _controller.value = TextEditingValue(
       text: draft,
       selection: TextSelection.collapsed(offset: draft.length),
@@ -107,28 +101,13 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     super.dispose();
   }
 
-  /// Opens the conversation you were last in, so the tab picks up where you
-  /// left it rather than starting blank every time.
-  Future<void> _openNewest() async {
-    if (_loaded) return;
-    _loaded = true;
-    final newest = await ref.read(databaseProvider).chatDao.newestThread();
-    if (mounted && newest != null && !_drafted) {
-      setState(() => _threadId = newest.id);
-    }
-  }
-
   Future<void> _send(String text) async {
     final question = text.trim();
     if (question.isEmpty) return;
 
     final controller = ref.read(coachControllerProvider.notifier);
-    var thread = _threadId;
-    if (thread == null) {
-      thread = await controller.startThread(question);
-      if (!mounted) return;
-      setState(() => _threadId = thread);
-    }
+    final thread = await _session.threadFor(question);
+    if (!mounted) return;
 
     final photos = List.of(_photos);
     _controller.clear();
@@ -254,7 +233,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                   DateTime.fromMillisecondsSinceEpoch(thread.updatedAt),
                 ),
               ),
-              selected: thread.id == _threadId,
+              selected:
+                  thread.id ==
+                  ref.read(coachSessionControllerProvider).threadId,
               onTap: () => Navigator.of(context).pop(thread.id),
             ),
         ],
@@ -262,11 +243,11 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     );
 
     if (picked == null || !mounted) return;
-    setState(() => _threadId = picked == 'nieuw' ? null : picked);
+    picked == 'nieuw' ? _session.startNew() : _session.show(picked);
   }
 
   Future<void> _deleteThread() async {
-    final thread = _threadId;
+    final thread = ref.read(coachSessionControllerProvider).threadId;
     if (thread == null) return;
 
     final ok = await confirm(
@@ -279,18 +260,20 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     if (!ok || !mounted) return;
 
     await ref.read(databaseProvider).chatDao.deleteThread(thread);
-    if (mounted) setState(() => _threadId = null);
+    _session.startNew();
   }
 
   @override
   Widget build(BuildContext context) {
-    unawaitedOpen();
-
     final state = ref.watch(coachControllerProvider);
+    final session = ref.watch(coachSessionControllerProvider);
+    final threadId = session.threadId;
     final threads = ref.watch(chatThreadsProvider).value ?? const [];
-    final messages = _threadId == null
+    final messages = threadId == null
         ? const <ChatMessageRow>[]
-        : ref.watch(chatMessagesProvider(_threadId!)).value ?? const [];
+        : ref.watch(chatMessagesProvider(threadId)).value ?? const [];
+    final running = ref.watch(activeWorkoutProvider).value?.workout;
+    final ofWorkout = running != null && running.id == session.workoutId;
     ref.listen<CoachState>(coachControllerProvider, (previous, next) {
       if (previous == null) return;
       if (previous.sending &&
@@ -318,7 +301,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
             icon: const Icon(Icons.history),
             onPressed: () => _pickThread(threads),
           ),
-          if (_threadId != null)
+          if (threadId != null)
             IconButton(
               tooltip: 'Dit gesprek verwijderen',
               icon: const Icon(Icons.delete_outline),
@@ -334,6 +317,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            if (ofWorkout) _WorkoutStrip(workout: running),
             Expanded(
               child: messages.isEmpty && !writing
                   ? _Opening(onPick: _send)
@@ -390,11 +374,78 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     }
     return null;
   }
+}
 
-  /// Kicked off from build, once: the newest thread is a database read and
-  /// the screen should already be on screen while it happens.
-  void unawaitedOpen() {
-    if (!_loaded) _openNewest();
+/// Above the conversation of the running workout: which one, how long it has
+/// been going, and that the island writes in it too.
+class _WorkoutStrip extends StatefulWidget {
+  const _WorkoutStrip({required this.workout});
+
+  final WorkoutRow workout;
+
+  @override
+  State<_WorkoutStrip> createState() => _WorkoutStripState();
+}
+
+class _WorkoutStripState extends State<_WorkoutStrip> {
+  late final Timer _minute = Timer.periodic(
+    const Duration(seconds: 20),
+    (_) => setState(() {}),
+  );
+
+  @override
+  void dispose() {
+    _minute.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final minutes = DateTime.now()
+        .difference(
+          DateTime.fromMillisecondsSinceEpoch(widget.workout.startedAt),
+        )
+        .inMinutes;
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        0,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.fitness_center,
+            size: 18,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              '${widget.workout.name} · loopt $minutes min',
+              style: theme.textTheme.bodySmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text('ook in het eiland', style: muted),
+        ],
+      ),
+    );
   }
 }
 

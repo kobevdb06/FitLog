@@ -35,7 +35,12 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
             ..limit(1))
           .getSingleOrNull();
 
-  Future<void> createThread(String id, String title) async {
+  /// [workoutId] makes it the conversation of that workout.
+  Future<void> createThread(
+    String id,
+    String title, {
+    String? workoutId,
+  }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await into(chatThreadsTable).insert(
       ChatThreadsTableCompanion.insert(
@@ -43,9 +48,38 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
         title: _shorten(title),
         createdAt: now,
         updatedAt: now,
+        workoutId: Value(workoutId),
       ),
     );
   }
+
+  Future<bool> threadExists(String id) async =>
+      await (select(
+        chatThreadsTable,
+      )..where((t) => t.id.equals(id))).getSingleOrNull() !=
+      null;
+
+  /// The conversation of a workout - the newest, should there be two.
+  Future<ChatThreadRow?> threadForWorkout(String workoutId) =>
+      (select(chatThreadsTable)
+            ..where((t) => t.workoutId.equals(workoutId))
+            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// The conversation of a workout, made as [id] with [title] when it has
+  /// none yet - in one go, so the island and the Chat tab asking at once
+  /// still end up in one conversation.
+  Future<String> workoutThread({
+    required String workoutId,
+    required String id,
+    required String title,
+  }) => transaction(() async {
+    final existing = await threadForWorkout(workoutId);
+    if (existing != null) return existing.id;
+    await createThread(id, title, workoutId: workoutId);
+    return id;
+  });
 
   /// The name of a thread is the question that started it, cut at a word.
   static String _shorten(String title) {

@@ -15,6 +15,7 @@ import 'core/util/notification_service.dart';
 import 'core/widgets/field_focus.dart';
 import 'features/backup/data/auto_backup.dart';
 import 'features/backup/presentation/backup_providers.dart';
+import 'features/chat/presentation/coach_session.dart';
 import 'features/health/presentation/health_providers.dart';
 import 'features/morning/data/morning_alarm.dart';
 import 'features/morning/presentation/morning_providers.dart';
@@ -173,8 +174,15 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     switch (state) {
       case AppLifecycleState.paused:
         controller.onPaused();
+        ref.read(coachSessionControllerProvider.notifier).left(DateTime.now());
       case AppLifecycleState.resumed:
         controller.onResumed();
+        // Away for a while: the coach starts afresh.
+        unawaited(
+          ref
+              .read(coachSessionControllerProvider.notifier)
+              .back(DateTime.now()),
+        );
         // Back in the app: whatever the watch handed Health Connect since.
         // Does nothing while locked or when Health Connect is not connected.
         unawaited(ref.read(healthSyncProvider.notifier).sync());

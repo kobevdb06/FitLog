@@ -4570,3 +4570,69 @@ de coach weet er alles van.
   instellingen. Een kaart die pas later aangetikt wordt, start vandaag, en
   houdt na het starten wat er echt gestart werd.
 
+## 217. De coach: een nieuw gesprek, het gesprek van de workout, een paneel en vragen op maat
+
+Gevraagd: de voorbeeldvragen waren altijd dezelfde; de gesprekken moesten
+in een menu aan de kant, zoals bij ChatGPT en Claude; en de coach opende
+altijd het laatste gesprek, zodat een snelle vraag twee tikken kostte - het
+oude gesprek alleen tijdens een workout, zodat je dan altijd in hetzelfde
+chat.
+
+- **Welk gesprek opent** (`CoachSessionController`): een nieuw, leeg bij het
+  opstarten en na een halfuur weg uit de app; even naar een ander tabblad is
+  geen weg zijn. Loopt er een workout, dan het gesprek van die workout, en
+  een workout die start neemt het tabblad mee; een die stopt laat het staan,
+  het laatste antwoord wordt misschien nog gelezen.
+- **Het gesprek van een workout** hoort bij haar (`chat_threads.workout_id`,
+  v52), heet naar haar, en het eiland schrijft erin. Het eiland onthield
+  zijn gesprek tot nu toe alleen in het geheugen van de app: sloot Android
+  FitLog midden in een workout, dan begon het een nieuw. Geen verwijzing naar
+  `workouts`: een weggegooide workout laat het gesprek staan als een gewoon.
+- **Het paneel** komt van links, over het hele scherm, ook over de tabbalk.
+  Alleen met de knop: vegen vanaf de rand zou botsen met vegen tussen de
+  tabbladen. Zoeken kijkt ook in wat erin staat. De groepen tellen op de
+  kalender (Vandaag, Gisteren, Afgelopen week, Eerder) - "Deze week" uit de
+  schets zou op maandag over vorige week gaan.
+- **De vragen** worden op de gsm gemaakt (`LocalCoachSuggester`): gratis,
+  meteen, en er gaat niets weg voor je er een aantikt. Een door de coach
+  geschreven reeks zou elke opening een vraag kosten, seconden wachten, en
+  je gegevens laten vertrekken voor je iets vroeg. Wie ze maakt is een
+  `CoachSuggester` achter `coachSuggesterProvider`, zodat er later een
+  AI-versie in kan zonder dat het scherm verandert. Een nacht van het
+  horloge alleen als de coach Health Connect mag zien: de vraag noemt hem.
+- **Zonder stromen**: de herstelschatting las haar geschiedenis door een
+  stroom te openen en de eerste waarde te nemen. Dat is één query met een
+  abonnement errond, en in een widgettest - waar de tijd nagebootst wordt -
+  komt die eerste waarde nooit; alles wat herstel schatte, kon daar niet
+  getest worden. Ze leest nu gewoon één keer.
+
+## 218. De coach onthoudt, zoals CLAUDE.md, en je ziet en wist alles
+
+Elk gesprek begon bij nul: wat je de coach over een knie of een doel
+vertelde, was in het volgende weg. Gevraagd of een CLAUDE.md-achtig
+geheugen kon; standaard aan.
+
+- **Een notitieboekje** (`coach_notes`, v53): hoogstens twintig notities
+  van hoogstens 150 tekens, genummerd - de coach noemt ze bij dat nummer,
+  één token waar een uuid er een dozijn kost. Ze gaan mee met elke vraag,
+  buiten het vaste deel van de prompt; twintig volle zijn een paar honderd
+  tokens, minder dan alles telkens opnieuw uitleggen.
+- **Alleen wat niet in het logboek staat**: doelen, blessures en
+  beperkingen, wanneer en waar je traint, materiaal thuis, hoe je je
+  antwoorden wil. Gewichten en sessies zoekt de coach vers op; een kopie in
+  het geheugen zou verouderen. Niets uit Health Connect. Die regels staan in
+  de beschrijving van de tool, niet in de vaste prompt, die zijn budget al
+  op heeft.
+- **De coach schrijft zelf**, met `remember` (of een notitie herschrijven
+  met `replaces`) en `forget`, zoals hij zijn eigen map routines heeft: een
+  kaartje onder het antwoord zegt wat, met *Aanpassen* en *Vergeten*. Het
+  eerste ooit zegt ook wat het geheugen is en waar het staat. Vol is vol:
+  de coach krijgt te horen dat hij moet samenvoegen of wissen.
+- **Jij beheert alles** onder *Instellingen → AI-coach → Geheugen*, ook
+  bereikbaar uit het paneel: elke notitie zien, aanpassen, wissen, er zelf
+  een toevoegen, alles vergeten, of het uitzetten. Uit blijven de notities
+  bewaard maar gaan ze niet mee, en worden de twee tools niet aangeboden.
+- **Standaard aan**, anders dan *Je profiel delen*: wat erin staat, vertelde
+  je de coach zelf al. Dat het bij elke vraag opnieuw meegaat, staat in de
+  privacyverklaring en op het eerste kaartje.
+

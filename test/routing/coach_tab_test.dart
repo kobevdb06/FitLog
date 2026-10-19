@@ -120,6 +120,59 @@ void main() {
     });
   });
 
+  group('als de sleutel binnenkomt terwijl je al ergens bent', () {
+    // Bij het opstarten is de sleutel er nog niet: de bar heeft dan vier
+    // tabbladen en Profiel is het vierde. Komt hij binnen, dan schuift Chat
+    // ertussen. Wie in dat moment op Profiel tikte, zag Profiel met Chat
+    // aangeduid in de bar, en niets reageerde nog.
+    testWidgets('blijft Profiel Profiel, in de bar en op het scherm', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      expect(find.text('Chat'), findsNothing);
+
+      await tester.tap(find.text('Profiel'));
+      await tester.pumpAndSettle();
+      expect(find.text('TOTALEN'), findsOneWidget);
+
+      await tester.runAsync(() => db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat'), findsOneWidget);
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        4,
+      );
+      expect(find.text('TOTALEN'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('en de andere tabbladen werken daarna gewoon', (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.text('Profiel'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Trainen'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+        1,
+      );
+      expect(find.text('Nog geen routines'), findsOneWidget);
+
+      await tester.tap(find.text('Chat'));
+      await tester.pumpAndSettle();
+      expect(find.text('Vraag je coach'), findsOneWidget);
+
+      await tester.tap(find.text('Profiel'));
+      await tester.pumpAndSettle();
+      expect(find.text('TOTALEN'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('de knop naar de instellingen', () {
     testWidgets('opent ze, in plaats van een wit scherm', (tester) async {
       // Die knop duwde een route uit de Profiel-tak vanaf een scherm dat daar

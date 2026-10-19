@@ -17,6 +17,7 @@
 /// they were left. `tab_pager_test.dart` holds both halves of that down.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,9 +72,7 @@ class TabPager extends ConsumerStatefulWidget {
 }
 
 class _TabPagerState extends ConsumerState<TabPager> {
-  late final PageController _controller = PageController(
-    initialPage: _pageOf(widget.shell.currentIndex),
-  );
+  late PageController _controller = _controllerAt(widget.shell.currentIndex);
 
   List<int> get _visible =>
       widget.visible ?? [for (var i = 0; i < widget.branches.length; i++) i];
@@ -85,15 +84,16 @@ class _TabPagerState extends ConsumerState<TabPager> {
     return page < 0 ? 0 : page;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _controller.addListener(_reportPosition);
-  }
+  PageController _controllerAt(int branch) =>
+      PageController(initialPage: _pageOf(branch))
+        ..addListener(_reportPosition);
 
   void _reportPosition() {
     final page = _controller.page;
-    if (page == null) return;
+    if (page != null) _tell(page);
+  }
+
+  void _tell(double page) {
     final position = ref.read(tabPositionProvider);
 
     // A jump that comes from didUpdateWidget happens inside somebody else's
@@ -114,6 +114,22 @@ class _TabPagerState extends ConsumerState<TabPager> {
   @override
   void didUpdateWidget(TabPager oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // The coach came or went - its key is read only after the app has
+    // started - and the same page number now means another tab: Profiel was
+    // the fourth and the coach is now. Scrolling the old pager to the fifth
+    // page stopped at the four it had, and from then on the pager, the bar
+    // and the router each said something else, and no tab answered. A new
+    // pager starts where the current tab is now; the branches keep their
+    // place, which go_router holds and not the pager.
+    if (!listEquals(oldWidget.visible, widget.visible)) {
+      final old = _controller;
+      _controller = _controllerAt(widget.shell.currentIndex);
+      _tell(_pageOf(widget.shell.currentIndex).toDouble());
+      // Still attached to the pager that is on its way out.
+      WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+      return;
+    }
+
     // The tab can also change from the navigation bar, or from a link that
     // lands in another branch. Swiping already moved the page itself, so this
     // only has to catch up when something else did the moving.
@@ -136,6 +152,8 @@ class _TabPagerState extends ConsumerState<TabPager> {
   @override
   Widget build(BuildContext context) {
     return PageView(
+      // A new controller is a new pager, not the old one told to move.
+      key: ObjectKey(_controller),
       controller: _controller,
       // Where you let go is where you meant to be; the router is told after
       // the page has settled rather than during the drag, so a swipe you pull

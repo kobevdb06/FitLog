@@ -179,8 +179,11 @@ void main() {
   });
 
   testWidgets('op Gezondheid staan de getallen op één lijn', (tester) async {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    // At noon: the night below ends at 9:40, and before then it has not
+    // ended yet - the test failed every morning.
+    final clock = DateTime.now();
+    final today = DateTime(clock.year, clock.month, clock.day);
+    final now = DateTime(clock.year, clock.month, clock.day, 12);
     await tester.runAsync(() async {
       await db.recoveryDao.setSleep(
         fellAsleepAt: today.subtract(const Duration(minutes: 30)),

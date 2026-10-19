@@ -143,6 +143,104 @@ final class CoachEnabledProvider extends $FunctionalProvider<bool, bool, bool>
 
 String _$coachEnabledHash() => r'2f1cf687f29e9e40a02bbbaf0c50fec54559931a';
 
+/// Who makes the questions an empty conversation offers. The phone, for now
+/// (DECISIONS 217): override this to let the coach write them.
+
+@ProviderFor(coachSuggester)
+final coachSuggesterProvider = CoachSuggesterProvider._();
+
+/// Who makes the questions an empty conversation offers. The phone, for now
+/// (DECISIONS 217): override this to let the coach write them.
+
+final class CoachSuggesterProvider
+    extends $FunctionalProvider<CoachSuggester, CoachSuggester, CoachSuggester>
+    with $Provider<CoachSuggester> {
+  /// Who makes the questions an empty conversation offers. The phone, for now
+  /// (DECISIONS 217): override this to let the coach write them.
+  CoachSuggesterProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachSuggesterProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachSuggesterHash();
+
+  @$internal
+  @override
+  $ProviderElement<CoachSuggester> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  CoachSuggester create(Ref ref) {
+    return coachSuggester(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CoachSuggester value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CoachSuggester>(value),
+    );
+  }
+}
+
+String _$coachSuggesterHash() => r'36755cf72b3f82055cf0c1c26455c3115a558ea2';
+
+/// The questions for the conversation that is empty now - made again each
+/// time one is, so they are about today.
+
+@ProviderFor(coachSuggestions)
+final coachSuggestionsProvider = CoachSuggestionsProvider._();
+
+/// The questions for the conversation that is empty now - made again each
+/// time one is, so they are about today.
+
+final class CoachSuggestionsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CoachSuggestion>>,
+          List<CoachSuggestion>,
+          FutureOr<List<CoachSuggestion>>
+        >
+    with
+        $FutureModifier<List<CoachSuggestion>>,
+        $FutureProvider<List<CoachSuggestion>> {
+  /// The questions for the conversation that is empty now - made again each
+  /// time one is, so they are about today.
+  CoachSuggestionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'coachSuggestionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$coachSuggestionsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<CoachSuggestion>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<CoachSuggestion>> create(Ref ref) {
+    return coachSuggestions(ref);
+  }
+}
+
+String _$coachSuggestionsHash() => r'25fcf33d347ec5dbb4a0f6fda6fa2ffd017411bf';
+
 /// Which service the coach talks to.
 ///
 /// Only one is offered at the moment, so there is nothing to guess and nothing

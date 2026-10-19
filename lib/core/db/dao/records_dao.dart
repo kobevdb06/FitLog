@@ -219,6 +219,26 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
     );
   }
 
+  /// The newest record, with its exercise, read once.
+  Future<RecordWithExercise?> newestRecord() async {
+    final row =
+        await (select(personalRecordsTable).join([
+                innerJoin(
+                  exercisesTable,
+                  exercisesTable.id.equalsExp(personalRecordsTable.exerciseId),
+                ),
+              ])
+              ..orderBy([OrderingTerm.desc(personalRecordsTable.achievedAt)])
+              ..limit(1))
+            .getSingleOrNull();
+    return row == null
+        ? null
+        : RecordWithExercise(
+            record: row.readTable(personalRecordsTable),
+            exercise: row.readTable(exercisesTable),
+          );
+  }
+
   Future<List<PersonalRecordRow>> recordsForExercise(String exerciseId) =>
       (select(personalRecordsTable)
             ..where((t) => t.exerciseId.equals(exerciseId))

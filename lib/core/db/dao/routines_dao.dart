@@ -635,11 +635,15 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
   /// Which day is which is decided by the caller: the whole week is a handful
   /// of rows, and reading them all keeps "what is on tomorrow" a question the
   /// dashboard can answer without going back to the database.
-  Stream<List<RoutineRow>> watchScheduledRoutines() =>
-      (select(routinesTable)
-            ..where((t) => t.scheduledDays.isBiggerThanValue(0))
-            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-          .watch();
+  Stream<List<RoutineRow>> watchScheduledRoutines() => _scheduled().watch();
+
+  /// The same, read once.
+  Future<List<RoutineRow>> scheduledRoutines() => _scheduled().get();
+
+  SimpleSelectStatement<$RoutinesTableTable, RoutineRow> _scheduled() =>
+      select(routinesTable)
+        ..where((t) => t.scheduledDays.isBiggerThanValue(0))
+        ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]);
 
   /// The starred routines, the ones you do most often first.
   ///

@@ -23,9 +23,11 @@ import '../data/ai_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
 import '../data/links.dart';
+import '../data/local_suggester.dart';
 import '../domain/coach_budget.dart';
 import '../domain/coach_prompt.dart';
 import '../domain/coach_proposal.dart';
+import '../domain/coach_suggestions.dart';
 
 part 'chat_providers.g.dart';
 
@@ -59,6 +61,18 @@ String? coachApiKey(Ref ref) {
 /// Whether the user has switched the coach on by entering a key.
 @riverpod
 bool coachEnabled(Ref ref) => ref.watch(coachApiKeyProvider) != null;
+
+/// Who makes the questions an empty conversation offers. The phone, for now
+/// (DECISIONS 217): override this to let the coach write them.
+@Riverpod(keepAlive: true)
+CoachSuggester coachSuggester(Ref ref) =>
+    LocalCoachSuggester(ref.watch(databaseProvider));
+
+/// The questions for the conversation that is empty now - made again each
+/// time one is, so they are about today.
+@riverpod
+Future<List<CoachSuggestion>> coachSuggestions(Ref ref) =>
+    ref.watch(coachSuggesterProvider).suggest();
 
 /// Which service the coach talks to.
 ///

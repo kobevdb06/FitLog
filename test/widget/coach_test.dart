@@ -12,6 +12,7 @@ import 'package:fitlog/features/chat/data/links.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/domain/answer_report.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
+import 'package:fitlog/features/chat/domain/coach_suggestions.dart';
 import 'package:fitlog/features/chat/presentation/coach_drawer.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_session.dart';
@@ -85,6 +86,7 @@ void main() {
     WidgetTester tester,
     Widget screen, {
     String? thread,
+    CoachSuggester? suggester,
     Object? api,
     bool drawing = false,
     LinkOpener? opener,
@@ -104,6 +106,8 @@ void main() {
           ),
         if (drawing) imageGenerationProvider.overrideWithValue(true),
         if (opener != null) linkOpenerProvider.overrideWithValue(opener),
+        if (suggester != null)
+          coachSuggesterProvider.overrideWithValue(suggester),
       ],
     );
 
@@ -1587,14 +1591,88 @@ void main() {
   });
 
   group('een gesprek', () {
-    testWidgets('begint met wat de coach is en waar je kan beginnen', (
+    testWidgets('begint met wat de coach is, en vragen voor jou', (
       tester,
     ) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
 
       expect(find.text('Vraag je coach'), findsOneWidget);
-      expect(find.text(kCoachOpeners.first), findsOneWidget);
+      expect(find.text('Voor jou, nu'), findsOneWidget);
+      // An empty logbook: how to begin.
+      expect(
+        find.text('Maak een schema voor drie dagen per week.'),
+        findsOneWidget,
+      );
+      expect(find.text('Om te beginnen'), findsWidgets);
+    });
+
+    testWidgets('Andere vragen toont de volgende, en een tik stelt de vraag', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('Rustig opbouwen.')),
+        suggester: _Suggests([
+          for (var i = 1; i <= 6; i++)
+            CoachSuggestion(
+              question: 'Vraag $i?',
+              why: 'Waarom $i',
+              reason: SuggestionReason.general,
+            ),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vraag 4?'), findsOneWidget);
+      expect(find.text('Vraag 5?'), findsNothing);
+      expect(find.text('Waarom 1'), findsOneWidget);
+
+      await tester.tap(find.text('Andere vragen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Vraag 5?'), findsOneWidget);
+      expect(find.text('Vraag 6?'), findsOneWidget);
+      expect(find.text('Vraag 1?'), findsNothing);
+
+      await tester.tap(find.text('Vraag 5?'));
+      await tester.pumpAndSettle();
+      expect(sent.single, contains('Vraag 5?'));
+      expect(find.text('Rustig opbouwen.'), findsOneWidget);
+    });
+
+    testWidgets('de vragen passen op een smalle gsm met grote letters', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        size: const Size(360, 1400),
+        suggester: const _Suggests([
+          CoachSuggestion(
+            question:
+                'Hoe kom ik voorbij mijn stilstand op Incline Dumbbell '
+                'Bench Press?',
+            why: 'Staat 12 weken stil',
+            reason: SuggestionReason.stalled,
+          ),
+          CoachSuggestion(
+            question: 'Mag ik vandaag quadriceps trainen?',
+            why: 'Quadriceps nog 14 u herstel',
+            reason: SuggestionReason.recovery,
+          ),
+        ]),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Staat 12 weken stil'), findsOneWidget);
     });
 
     testWidgets('het antwoord groeit terwijl het geschreven wordt', (
@@ -1960,4 +2038,14 @@ class _Opener implements LinkOpener {
     opened.add(url);
     return true;
   }
+}
+
+/// Questions that are always these.
+class _Suggests implements CoachSuggester {
+  const _Suggests(this.questions);
+
+  final List<CoachSuggestion> questions;
+
+  @override
+  Future<List<CoachSuggestion>> suggest() async => questions;
 }

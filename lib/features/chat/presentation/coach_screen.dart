@@ -28,20 +28,13 @@ import '../../photos/data/photo_store.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
 import '../domain/coach_proposal.dart';
+import '../domain/coach_suggestions.dart';
 import '../../../routing/routes.dart';
 import 'chat_providers.dart';
 import 'coach_drawer.dart';
 import 'coach_session.dart';
 import 'photo_prompts_sheet.dart';
 import 'report_answer_sheet.dart';
-
-/// What a new conversation offers when there is nothing to show yet.
-const List<String> kCoachOpeners = [
-  'Hoe ga ik verder met mijn bankdrukken?',
-  'Doe ik genoeg voor mijn rug deze week?',
-  'Geef me een oefening voor mijn schouders thuis.',
-  'Hoe log ik een dropset in deze app?',
-];
 
 class CoachScreen extends ConsumerStatefulWidget {
   const CoachScreen({super.key});
@@ -381,15 +374,51 @@ class _WorkoutStripState extends State<_WorkoutStrip> {
   }
 }
 
-/// An empty conversation: what the coach is, and four ways to start one.
-class _Opening extends StatelessWidget {
+/// An empty conversation: what the coach is, and questions about you,
+/// today, to start one with.
+class _Opening extends ConsumerStatefulWidget {
   const _Opening({required this.onPick});
 
   final void Function(String question) onPick;
 
   @override
+  ConsumerState<_Opening> createState() => _OpeningState();
+}
+
+class _OpeningState extends ConsumerState<_Opening> {
+  /// Which four are showing: Andere vragen moves on to the next.
+  var _page = 0;
+
+  static IconData _icon(SuggestionReason reason) => switch (reason) {
+    SuggestionReason.workout => Icons.fitness_center,
+    SuggestionReason.deload => Icons.battery_charging_full,
+    SuggestionReason.today => Icons.event_outlined,
+    SuggestionReason.recovery => Icons.schedule,
+    SuggestionReason.stalled => Icons.trending_flat,
+    SuggestionReason.record => Icons.emoji_events_outlined,
+    SuggestionReason.comeback => Icons.replay,
+    SuggestionReason.sleep => Icons.bedtime_outlined,
+    SuggestionReason.start => Icons.flag_outlined,
+    SuggestionReason.app => Icons.help_outline,
+    SuggestionReason.general => Icons.lightbulb_outline,
+  };
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    // Something to start with, also when reading the logbook failed.
+    final all = ref
+        .watch(coachSuggestionsProvider)
+        .when(
+          data: (found) => found,
+          loading: () => const <CoachSuggestion>[],
+          error: (_, _) => suggestQuestions(const SuggestionFacts()),
+        );
+    final pages = (all.length / kSuggestionsShown).ceil();
+    final page = pages == 0 ? 0 : _page % pages;
+    final shown = all.skip(page * kSuggestionsShown).take(kSuggestionsShown);
+
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
@@ -405,20 +434,66 @@ class _Opening extends StatelessWidget {
           'Over trainen, oefeningen, herstel en over deze app. De coach kent '
           'de oefeningencatalogus en mag je logboek raadplegen; onder elk '
           'antwoord staat wat het heeft opgezocht.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodyMedium?.copyWith(color: muted),
         ),
         const SizedBox(height: AppSpacing.lg),
-        for (final opener in kCoachOpeners)
+        if (all.isNotEmpty) ...[
+          Text(
+            'Voor jou, nu',
+            style: theme.textTheme.labelMedium?.copyWith(color: muted),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        for (final suggestion in shown)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: OutlinedButton(
-              onPressed: () => onPick(opener),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(opener, textAlign: TextAlign.left),
+              style: OutlinedButton.styleFrom(
+                alignment: AlignmentDirectional.centerStart,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              onPressed: () => widget.onPick(suggestion.question),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    suggestion.question,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(_icon(suggestion.reason), size: 14, color: muted),
+                      const SizedBox(width: AppSpacing.xs),
+                      Flexible(
+                        child: Text(
+                          suggestion.why,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (pages > 1)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _page = page + 1),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Andere vragen'),
             ),
           ),
       ],

@@ -3,250 +3,265 @@ import 'dart:convert';
 import 'package:fitlog/features/dashboard/domain/home_layout.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// The list of blocks the Start tab is built from.
+/// The Start tab as a grid: places and sizes in cells, and nothing ever
+/// shifting on its own.
 void main() {
-  group('the default', () {
-    test('opens with Vandaag', () {
-      expect(defaultHomeLayout.visible.first, HomeBlock.today);
+  HomeLayout grid(Map<HomeBlock, HomeSpot> spots) => HomeLayout(spots);
+
+  group('de standaard', () {
+    test('de blokken onder elkaar op hun beginmaat, Vandaag bovenaan', () {
+      final layout = defaultHomeLayout();
+
+      expect(layout.visible.first, HomeBlock.today);
+      expect(layout.spotOf(HomeBlock.today), const HomeSpot(0, 0, 4, 3));
+      expect(layout.spotOf(HomeBlock.week), const HomeSpot(0, 3, 4, 2));
+      expect(layout.shows(HomeBlock.favourites), isFalse);
     });
 
-    test('holds every block, favourites switched off', () {
-      expect(defaultHomeLayout.blocks, HomeBlock.values);
-      expect(defaultHomeLayout.shows(HomeBlock.favourites), isFalse);
-      expect(defaultHomeLayout.visible, isNot(contains(HomeBlock.favourites)));
+    test('stappen alleen met een horloge, de coach alleen met een sleutel', () {
+      expect(defaultHomeLayout().shows(HomeBlock.steps), isFalse);
+      expect(defaultHomeLayout().shows(HomeBlock.coach), isFalse);
+      final both = defaultHomeLayout(health: true, coach: true);
+      expect(both.shows(HomeBlock.steps), isTrue);
+      expect(both.shows(HomeBlock.coach), isTrue);
     });
 
-    test('is what an app that was never told otherwise gets', () {
-      expect(parseHomeLayout(null).visible, defaultHomeLayout.visible);
-      expect(parseHomeLayout('').visible, defaultHomeLayout.visible);
+    test('is wat een app krijgt die nooit iets anders hoorde', () {
+      expect(parseHomeLayout(null).spots, defaultHomeLayout().spots);
+      expect(parseHomeLayout('', coach: true).shows(HomeBlock.coach), isTrue);
     });
   });
 
-  group('switching a block', () {
-    test('off takes it out of the screen but not out of the list', () {
-      final off = defaultHomeLayout.withVisible(
-        HomeBlock.records,
-        visible: false,
+  group('verplaatsen', () {
+    final layout = grid({
+      HomeBlock.today: const HomeSpot(0, 0, 4, 3),
+      HomeBlock.recovery: const HomeSpot(0, 3, 2, 2),
+      HomeBlock.records: const HomeSpot(2, 3, 2, 2),
+      HomeBlock.week: const HomeSpot(0, 5, 4, 2),
+    });
+
+    test('naar een vrije plek: de oude plek blijft leeg, niets anders '
+        'beweegt', () {
+      final moved = layout.moved(HomeBlock.records, 2, 7);
+
+      expect(moved.spotOf(HomeBlock.records), const HomeSpot(2, 7, 2, 2));
+      for (final block in [
+        HomeBlock.today,
+        HomeBlock.recovery,
+        HomeBlock.week,
+      ]) {
+        expect(moved.spotOf(block), layout.spotOf(block), reason: '$block');
+      }
+      // Where it was is free now.
+      expect(moved.fits(HomeBlock.volume, const HomeSpot(2, 3, 2, 2)), isTrue);
+    });
+
+    test('op een blok van dezelfde grootte: ze wisselen van plaats', () {
+      expect(layout.dropAt(HomeBlock.records, 0, 3), (
+        HomeDrop.swaps,
+        HomeBlock.recovery,
+      ));
+
+      final swapped = layout.moved(HomeBlock.records, 0, 3);
+
+      expect(swapped.spotOf(HomeBlock.records), const HomeSpot(0, 3, 2, 2));
+      expect(swapped.spotOf(HomeBlock.recovery), const HomeSpot(2, 3, 2, 2));
+    });
+
+    test('half over een ander blok, of over een groter: terug, niets wordt '
+        'weggeduwd', () {
+      expect(layout.dropAt(HomeBlock.records, 1, 3).$1, HomeDrop.blocked);
+      expect(layout.dropAt(HomeBlock.records, 0, 5).$1, HomeDrop.blocked);
+      expect(layout.moved(HomeBlock.records, 1, 3).spots, layout.spots);
+    });
+
+    test('niet van het raster af', () {
+      expect(layout.dropAt(HomeBlock.records, 3, 8).$1, HomeDrop.blocked);
+      expect(layout.dropAt(HomeBlock.records, -1, 8).$1, HomeDrop.blocked);
+    });
+  });
+
+  group('aan een rand slepen', () {
+    final layout = grid({
+      HomeBlock.recovery: const HomeSpot(0, 0, 2, 2),
+      HomeBlock.records: const HomeSpot(3, 0, 1, 2),
+    });
+
+    test('groeit per vakje, en stopt tegen een buurblok', () {
+      expect(
+        layout.stretched(HomeBlock.recovery, HomeEdge.right, 1),
+        const HomeSpot(0, 0, 3, 2),
+      );
+      // One more would cover Records: it stops at three.
+      expect(
+        layout.stretched(HomeBlock.recovery, HomeEdge.right, 5),
+        const HomeSpot(0, 0, 3, 2),
+      );
+    });
+
+    test('naar beneden en terug, niet kleiner dan het mag', () {
+      expect(
+        layout.stretched(HomeBlock.recovery, HomeEdge.bottom, 2),
+        const HomeSpot(0, 0, 2, 4),
+      );
+      expect(
+        layout.stretched(HomeBlock.recovery, HomeEdge.bottom, -1),
+        const HomeSpot(0, 0, 2, 2),
+      );
+    });
+
+    test('links en boven verschuiven de hoek mee', () {
+      final lower = grid({HomeBlock.recovery: const HomeSpot(2, 2, 2, 2)});
+
+      expect(
+        lower.stretched(HomeBlock.recovery, HomeEdge.left, 2),
+        const HomeSpot(0, 2, 4, 2),
+      );
+      expect(
+        lower.stretched(HomeBlock.recovery, HomeEdge.top, 1),
+        const HomeSpot(2, 1, 2, 3),
+      );
+    });
+
+    test('nooit breder of hoger dan het blok mag zijn', () {
+      final week = grid({HomeBlock.week: const HomeSpot(0, 0, 4, 2)});
+      expect(
+        week.stretched(HomeBlock.week, HomeEdge.bottom, 4),
+        const HomeSpot(0, 0, 4, 3),
+      );
+    });
+  });
+
+  group('weghalen en terugzetten', () {
+    test('weg laat een lege plek; terug komt op de eerste vrije plek', () {
+      final layout = defaultHomeLayout();
+      final without = layout.without(HomeBlock.week);
+
+      expect(without.shows(HomeBlock.week), isFalse);
+      expect(without.hidden, contains(HomeBlock.week));
+      expect(
+        without.spotOf(HomeBlock.recovery),
+        layout.spotOf(HomeBlock.recovery),
       );
 
-      expect(off.visible, isNot(contains(HomeBlock.records)));
-      expect(off.blocks, contains(HomeBlock.records));
+      final back = without.withShown(HomeBlock.week);
+      expect(back.spotOf(HomeBlock.week), const HomeSpot(0, 3, 4, 2));
     });
 
-    test('back on puts it where it was, not at the bottom', () {
-      final before = defaultHomeLayout.visible;
-      final again = defaultHomeLayout
-          .withVisible(HomeBlock.records, visible: false)
-          .withVisible(HomeBlock.records, visible: true);
+    test('of op de plek waar je het naartoe sleepte', () {
+      final layout = defaultHomeLayout();
+      final at = HomeSpot(0, layout.rows + 1, 4, 3);
 
-      expect(again.visible, before);
+      expect(
+        layout
+            .withShown(HomeBlock.favourites, at: at)
+            .spotOf(HomeBlock.favourites),
+        at,
+      );
     });
+  });
 
-    test('on and off survives being written down and read back', () {
-      final layout = defaultHomeLayout
-          .withVisible(HomeBlock.favourites, visible: true)
-          .withVisible(HomeBlock.volume, visible: false);
+  group('opschrijven en teruglezen', () {
+    test('elke plek en elk verborgen blok overleeft het', () {
+      final layout = defaultHomeLayout()
+          .moved(HomeBlock.records, 0, 20)
+          .without(HomeBlock.volume);
 
       final read = parseHomeLayout(encodeHomeLayout(layout));
 
-      expect(read.visible, layout.visible);
-      expect(read.shows(HomeBlock.favourites), isTrue);
+      expect(read.spots, layout.spots);
       expect(read.shows(HomeBlock.volume), isFalse);
+      expect(read.shows(HomeBlock.favourites), isFalse);
+    });
+
+    test('een lege rij tussen twee blokken blijft leeg', () {
+      final layout = grid({
+        HomeBlock.today: const HomeSpot(0, 0, 4, 3),
+        HomeBlock.week: const HomeSpot(0, 6, 4, 2),
+      });
+
+      final read = parseHomeLayout(encodeHomeLayout(layout));
+
+      expect(read.spotOf(HomeBlock.week), const HomeSpot(0, 6, 4, 2));
+      expect(read.rows, 8);
     });
   });
 
-  group('dragging one', () {
-    test('down moves it past the ones it passed', () {
-      final moved = defaultHomeLayout.reordered(0, 2);
+  group('een indeling van voor het raster', () {
+    test('ziet eruit zoals ze eruitzag: breed onder elkaar, twee halve naast '
+        'elkaar', () {
+      final read = parseHomeLayout(
+        jsonEncode({
+          'order': [
+            'vandaag',
+            'herstel',
+            'records',
+            'deze-week',
+            'favorieten',
+            'volume',
+            'stappen',
+            'coach',
+          ],
+          'hidden': ['favorieten'],
+          'small': ['herstel', 'records'],
+        }),
+      );
 
-      expect(moved.blocks[2], HomeBlock.today);
-      expect(moved.blocks.first, HomeBlock.favourites);
-      expect(moved.blocks.toSet(), HomeBlock.values.toSet());
-    });
-
-    test('up does the same the other way', () {
-      final moved = defaultHomeLayout.reordered(3, 0);
-
-      expect(moved.blocks.first, HomeBlock.recovery);
-      expect(moved.blocks.toSet(), HomeBlock.values.toSet());
-    });
-
-    test('an order out of range changes nothing', () {
-      expect(defaultHomeLayout.reordered(99, 0).blocks, HomeBlock.values);
-    });
-
-    test('and the order survives a round trip', () {
-      final moved = defaultHomeLayout.reordered(0, 3);
-
-      expect(parseHomeLayout(encodeHomeLayout(moved)).blocks, moved.blocks);
+      expect(read.spotOf(HomeBlock.today), const HomeSpot(0, 0, 4, 3));
+      expect(read.spotOf(HomeBlock.recovery), const HomeSpot(0, 3, 2, 3));
+      expect(read.spotOf(HomeBlock.records), const HomeSpot(2, 3, 2, 3));
+      expect(read.spotOf(HomeBlock.week), const HomeSpot(0, 6, 4, 2));
+      expect(read.shows(HomeBlock.favourites), isFalse);
+      // What it showed, it shows: steps and coach were in the list.
+      expect(read.shows(HomeBlock.steps), isTrue);
+      expect(read.shows(HomeBlock.coach), isTrue);
     });
   });
 
-  group('hoe groot een blok staat', () {
-    test('alles begint op volle breedte', () {
-      for (final block in HomeBlock.values) {
-        expect(defaultHomeLayout.sizeOf(block), HomeBlockSize.wide);
+  group('een opgeslagen waarde die niet te vertrouwen is', () {
+    test('onzin valt terug op de standaard', () {
+      expect(parseHomeLayout('{{{').spots, defaultHomeLayout().spots);
+      expect(parseHomeLayout('[1, 2]').spots, defaultHomeLayout().spots);
+    });
+
+    test('een plek van het raster af, te groot of over een ander blok wordt '
+        'hersteld', () {
+      final read = parseHomeLayout(
+        jsonEncode({
+          'v': 2,
+          'spots': {
+            'vandaag': [0, 0, 4, 3],
+            'deze-week': [3, 1, 9, 9],
+            'herstel': [-2, 40, 1, 1],
+          },
+          'hidden': ['favorieten', 'records', 'volume', 'stappen', 'coach'],
+        }),
+      );
+
+      for (final block in read.visible) {
+        final spot = read.spotOf(block)!;
+        expect(read.fits(block, spot), isTrue, reason: '$block op $spot');
       }
+      expect(read.spotOf(HomeBlock.week)!.w, 4);
+      expect(read.spotOf(HomeBlock.week)!.h, 3);
+      expect(read.spotOf(HomeBlock.recovery), const HomeSpot(0, 40, 2, 2));
     });
 
-    test('een indeling van voor de maten leest als alles breed', () {
-      // Niemands scherm mag van vorm veranderen door een update.
-      final oud = jsonEncode({
-        'order': ['vandaag', 'deze-week'],
-        'hidden': <String>[],
-      });
-
-      expect(parseHomeLayout(oud).sizeOf(HomeBlock.week), HomeBlockSize.wide);
-    });
-
-    test('klein maken en weer breed', () {
-      final klein = defaultHomeLayout.withSize(
-        HomeBlock.week,
-        HomeBlockSize.small,
-      );
-      expect(klein.sizeOf(HomeBlock.week), HomeBlockSize.small);
-      expect(klein.sizeOf(HomeBlock.volume), HomeBlockSize.wide);
-
-      final breed = klein.withSize(HomeBlock.week, HomeBlockSize.wide);
-      expect(breed.sizeOf(HomeBlock.week), HomeBlockSize.wide);
-    });
-
-    test('tikken wisselt heen en weer', () {
-      final een = defaultHomeLayout.resized(HomeBlock.week);
-      expect(een.sizeOf(HomeBlock.week), HomeBlockSize.small);
-      expect(
-        een.resized(HomeBlock.week).sizeOf(HomeBlock.week),
-        HomeBlockSize.wide,
-      );
-    });
-
-    test('en de maat overleeft opschrijven en teruglezen', () {
-      final layout = defaultHomeLayout
-          .withSize(HomeBlock.week, HomeBlockSize.small)
-          .withSize(HomeBlock.recovery, HomeBlockSize.small);
-
-      final terug = parseHomeLayout(encodeHomeLayout(layout));
-
-      expect(terug.sizeOf(HomeBlock.week), HomeBlockSize.small);
-      expect(terug.sizeOf(HomeBlock.recovery), HomeBlockSize.small);
-      expect(terug.sizeOf(HomeBlock.volume), HomeBlockSize.wide);
-    });
-
-    test('de maat raakt de volgorde niet, en andersom ook niet', () {
-      final layout = defaultHomeLayout
-          .withSize(HomeBlock.volume, HomeBlockSize.small)
-          .reordered(0, 3);
-
-      expect(layout.sizeOf(HomeBlock.volume), HomeBlockSize.small);
-      expect(layout.blocks.toSet(), HomeBlock.values.toSet());
-    });
-
-    test('en verbergen ook niet', () {
-      final layout = defaultHomeLayout
-          .withSize(HomeBlock.week, HomeBlockSize.small)
-          .withVisible(HomeBlock.week, visible: false)
-          .withVisible(HomeBlock.week, visible: true);
-
-      expect(layout.sizeOf(HomeBlock.week), HomeBlockSize.small);
-    });
-  });
-
-  group('een blok ergens anders neerzetten', () {
-    test('komt op de plek van het blok waar je het op laat vallen', () {
-      final layout = defaultHomeLayout.movedOnto(
-        HomeBlock.volume,
-        HomeBlock.today,
-      );
-
-      expect(layout.blocks.first, HomeBlock.volume);
-      expect(layout.blocks[1], HomeBlock.today);
-      expect(layout.blocks.toSet(), HomeBlock.values.toSet());
-    });
-
-    test('op zichzelf laten vallen verandert niets', () {
-      expect(
-        defaultHomeLayout.movedOnto(HomeBlock.week, HomeBlock.week).blocks,
-        defaultHomeLayout.blocks,
-      );
-    });
-
-    test('en de maten gaan mee', () {
-      final layout = defaultHomeLayout
-          .withSize(HomeBlock.volume, HomeBlockSize.small)
-          .movedOnto(HomeBlock.volume, HomeBlock.today);
-
-      expect(layout.sizeOf(HomeBlock.volume), HomeBlockSize.small);
-    });
-  });
-
-  group('a stored value that cannot be trusted', () {
-    test('nonsense falls back rather than throwing', () {
-      expect(parseHomeLayout('dit is geen json').visible.isNotEmpty, isTrue);
-      expect(parseHomeLayout('[1,2,3]').visible, defaultHomeLayout.visible);
-      expect(parseHomeLayout('7').visible, defaultHomeLayout.visible);
-    });
-
-    test('a name this version does not know is dropped', () {
+    test('een blok dat er toen nog niet was, komt onderaan bij', () {
       final read = parseHomeLayout(
         jsonEncode({
-          'order': ['vandaag', 'raketten', 'herstel'],
-          'hidden': <String>[],
+          'v': 2,
+          'spots': {
+            'vandaag': [0, 0, 4, 3],
+          },
+          'hidden': ['deze-week'],
         }),
       );
 
-      expect(read.blocks.length, HomeBlock.values.length);
-      expect(read.blocks.first, HomeBlock.today);
-      expect(read.blocks[1], HomeBlock.recovery);
-    });
-
-    test('the same block twice is still one block', () {
-      final read = parseHomeLayout(
-        jsonEncode({
-          'order': ['vandaag', 'vandaag'],
-          'hidden': <String>[],
-        }),
-      );
-
-      expect(read.blocks.length, HomeBlock.values.length);
-    });
-
-    test('entries that are not text are ignored', () {
-      final read = parseHomeLayout(
-        jsonEncode({
-          'order': [7, 'vandaag', null],
-          'hidden': 'herstel',
-        }),
-      );
-
-      expect(read.blocks.first, HomeBlock.today);
+      expect(read.shows(HomeBlock.week), isFalse);
       expect(read.shows(HomeBlock.recovery), isTrue);
-    });
-  });
-
-  group('a block this version added', () {
-    test('appears even in a layout written before it existed', () {
-      // Which is why hiding is a name on a list rather than an absence from
-      // one: a new block must not be invisible for everyone who ever arranged
-      // their screen.
-      final old = jsonEncode({
-        'order': ['vandaag', 'deze-week'],
-        'hidden': <String>[],
-      });
-
-      final read = parseHomeLayout(old);
-
-      expect(read.blocks.take(2), [HomeBlock.today, HomeBlock.week]);
-      expect(read.visible, contains(HomeBlock.records));
-      expect(read.visible, contains(HomeBlock.volume));
-    });
-
-    test('unless it is one that starts out off', () {
-      final old = jsonEncode({
-        'order': ['vandaag'],
-        'hidden': <String>[],
-      });
-
-      expect(parseHomeLayout(old).shows(HomeBlock.favourites), isFalse);
+      expect(read.shows(HomeBlock.favourites), isFalse);
+      expect(read.spotOf(HomeBlock.recovery)!.y, greaterThanOrEqualTo(3));
     });
   });
 }

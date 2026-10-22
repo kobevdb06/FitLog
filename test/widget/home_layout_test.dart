@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers.dart';
 
-/// The Start tab built from the user's own list of blocks.
+/// The Start tab built from the user's own grid of blocks.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(initialiseTestLocale);
@@ -81,24 +81,21 @@ void main() {
   const volumeHeader = 'VOLUME, LAATSTE 8 WEKEN';
 
   testWidgets('the default shows the blocks it always showed', (tester) async {
-    await pump(tester, layout: defaultHomeLayout);
+    await pump(tester, layout: defaultHomeLayout());
 
     expect(find.text(weekHeader), findsOneWidget);
     expect(find.text(volumeHeader), findsOneWidget);
   });
 
   testWidgets('a block you switched off is not built', (tester) async {
-    await pump(
-      tester,
-      layout: defaultHomeLayout.withVisible(HomeBlock.week, visible: false),
-    );
+    await pump(tester, layout: defaultHomeLayout().without(HomeBlock.week));
 
     expect(find.text(weekHeader), findsNothing);
     expect(find.text(volumeHeader), findsOneWidget);
   });
 
   testWidgets('by default the week comes before the volume', (tester) async {
-    await pump(tester, layout: defaultHomeLayout);
+    await pump(tester, layout: defaultHomeLayout());
 
     expect(
       tester.getTopLeft(find.text(weekHeader)).dy,
@@ -106,13 +103,14 @@ void main() {
     );
   });
 
-  testWidgets('and dragging the volume up puts it above', (tester) async {
-    final moved = defaultHomeLayout.reordered(
-      defaultHomeLayout.blocks.indexOf(HomeBlock.volume),
-      0,
+  testWidgets('and with the volume placed above, it is above', (tester) async {
+    await pump(
+      tester,
+      layout: const HomeLayout({
+        HomeBlock.volume: HomeSpot(0, 0, 4, 3),
+        HomeBlock.week: HomeSpot(0, 3, 4, 2),
+      }),
     );
-
-    await pump(tester, layout: moved);
 
     expect(
       tester.getTopLeft(find.text(volumeHeader)).dy,
@@ -123,12 +121,7 @@ void main() {
   testWidgets('switching every block off says so rather than showing a blank', (
     tester,
   ) async {
-    var layout = defaultHomeLayout;
-    for (final block in HomeBlock.values) {
-      layout = layout.withVisible(block, visible: false);
-    }
-
-    await pump(tester, layout: layout);
+    await pump(tester, layout: const HomeLayout({}));
 
     expect(find.text('Je startscherm is leeg'), findsOneWidget);
     expect(find.text('Startscherm indelen'), findsOneWidget);
@@ -140,10 +133,7 @@ void main() {
     ) async {
       await pump(
         tester,
-        layout: defaultHomeLayout.withVisible(
-          HomeBlock.favourites,
-          visible: true,
-        ),
+        layout: defaultHomeLayout().withShown(HomeBlock.favourites),
         scheduled: [routine('Chest day 2', days: everyDay())],
         favourites: [routine('Arms')],
       );
@@ -160,23 +150,22 @@ void main() {
       // The same three routines twice is not a layout anybody chose.
       await pump(
         tester,
-        layout: defaultHomeLayout.withVisible(
-          HomeBlock.favourites,
-          visible: true,
-        ),
+        layout: defaultHomeLayout().withShown(HomeBlock.favourites),
         favourites: [routine('Arms')],
       );
 
       expect(find.text('Je favorieten'), findsOneWidget);
-      expect(find.text('FAVORIETEN'), findsNothing);
+      // Its place stays its own, and says why it is quiet.
+      expect(find.text('FAVORIETEN'), findsOneWidget);
+      expect(find.text('Je favorieten staan nu bij Vandaag.'), findsOneWidget);
     });
 
     testWidgets('but not when you switched Vandaag off', (tester) async {
       await pump(
         tester,
-        layout: defaultHomeLayout
-            .withVisible(HomeBlock.favourites, visible: true)
-            .withVisible(HomeBlock.today, visible: false),
+        layout: defaultHomeLayout()
+            .withShown(HomeBlock.favourites)
+            .without(HomeBlock.today),
         favourites: [routine('Arms')],
       );
 
@@ -184,17 +173,17 @@ void main() {
       expect(find.text('FAVORIETEN'), findsOneWidget);
     });
 
-    testWidgets('and stays away when nothing is starred', (tester) async {
+    testWidgets('and says so when nothing is starred', (tester) async {
       await pump(
         tester,
-        layout: defaultHomeLayout.withVisible(
-          HomeBlock.favourites,
-          visible: true,
-        ),
+        layout: defaultHomeLayout().withShown(HomeBlock.favourites),
         scheduled: [routine('Chest day 2', days: everyDay())],
       );
 
-      expect(find.text('FAVORIETEN'), findsNothing);
+      expect(
+        find.text('Nog geen favorieten. Geef een routine een ster.'),
+        findsOneWidget,
+      );
     });
   });
 }

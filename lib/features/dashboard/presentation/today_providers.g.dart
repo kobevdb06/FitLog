@@ -8,17 +8,20 @@ part of 'today_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Which blocks the Start tab shows, and in what order.
+/// Where every block on the Start tab is, and how big. Until you arranged
+/// it: steps only with a watch, the coach only with a key.
 
 @ProviderFor(homeLayout)
 final homeLayoutProvider = HomeLayoutProvider._();
 
-/// Which blocks the Start tab shows, and in what order.
+/// Where every block on the Start tab is, and how big. Until you arranged
+/// it: steps only with a watch, the coach only with a key.
 
 final class HomeLayoutProvider
     extends $FunctionalProvider<HomeLayout, HomeLayout, HomeLayout>
     with $Provider<HomeLayout> {
-  /// Which blocks the Start tab shows, and in what order.
+  /// Where every block on the Start tab is, and how big. Until you arranged
+  /// it: steps only with a watch, the coach only with a key.
   HomeLayoutProvider._()
     : super(
         from: null,
@@ -52,7 +55,7 @@ final class HomeLayoutProvider
   }
 }
 
-String _$homeLayoutHash() => r'd25b40b4d214a16118242af2e1a90f52b788e1e0';
+String _$homeLayoutHash() => r'8712215ed506a1d31a9d92a4345a70cec0515c03';
 
 /// Someone asked, from somewhere else in the app, to arrange the Start tab.
 ///

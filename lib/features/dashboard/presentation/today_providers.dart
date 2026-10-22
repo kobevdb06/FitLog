@@ -16,10 +16,14 @@ import '../domain/today_plan.dart';
 
 part 'today_providers.g.dart';
 
-/// Which blocks the Start tab shows, and in what order.
+/// Where every block on the Start tab is, and how big. Until you arranged
+/// it: steps only with a watch, the coach only with a key.
 @riverpod
-HomeLayout homeLayout(Ref ref) =>
-    parseHomeLayout(ref.watch(settingsProvider).value?.homeLayout);
+HomeLayout homeLayout(Ref ref) => parseHomeLayout(
+  ref.watch(settingsProvider).value?.homeLayout,
+  health: ref.watch(healthConnectEnabledProvider),
+  coach: ref.watch(coachEnabledProvider),
+);
 
 /// Someone asked, from somewhere else in the app, to arrange the Start tab.
 ///

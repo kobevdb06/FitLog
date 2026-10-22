@@ -22,7 +22,9 @@ import '../../progress/presentation/recovery_view.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../workout/presentation/workout_providers.dart';
+import '../../chat/presentation/chat_providers.dart';
 import '../domain/home_layout.dart';
+import 'fit_column.dart';
 import 'home_grid.dart';
 import '../domain/today_plan.dart';
 import 'today_providers.dart';
@@ -82,13 +84,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               child: _editing
                   ? _ArrangeBar(
-                      hidden: layout.blocks
-                          .where((b) => !layout.shows(b))
-                          .toList(),
+                      // No coach to open without a key: not something to add.
+                      hidden: [
+                        for (final block in layout.hidden)
+                          if (block != HomeBlock.coach ||
+                              ref.watch(coachEnabledProvider))
+                            block,
+                      ],
                       onDone: () => setState(() => _editing = false),
-                      onShow: (block) =>
-                          _save(layout.withVisible(block, visible: true)),
-                      onReset: () => _save(defaultHomeLayout),
+                      onShow: (block) => _save(layout.withShown(block)),
+                      onReset: () => _save(
+                        defaultHomeLayout(
+                          health: ref.read(healthConnectEnabledProvider),
+                          coach: ref.read(coachEnabledProvider),
+                        ),
+                      ),
                     )
                   : _Greeting(name: profile?.displayName, streak: streak),
             ),
@@ -97,36 +107,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const DeloadBanner(),
               const DeloadSuggestionCard(),
             ],
-            const SizedBox(height: AppSpacing.lg),
-            // Holding anything on the grid starts arranging, which is the
-            // gesture people already know from their launcher. The blocks
-            // themselves take taps, so it cannot be a tap.
+            // Holding a block starts arranging with that block already in
+            // your hand, the way a launcher does. Holding the room beside the
+            // blocks starts it too.
             GestureDetector(
+              // The greeting and the banners above change when arranging
+              // starts, and the list would hand the grid's place to whatever
+              // came first - dropping the block from your hand. A key keeps
+              // it the same grid.
+              key: const ValueKey('startscherm-raster'),
               onLongPress: _editing
                   ? null
                   : () => setState(() => _editing = true),
               child: HomeGrid(
                 layout: layout,
-                // A block with nothing in it draws nothing, and a slot for
-                // nothing is a hole between two cards. While arranging every
-                // block stays, or you could not move one that happens to be
-                // empty today - except the coach, which does not exist at all
-                // without a key.
-                only: {
-                  for (final block in layout.visible)
-                    if (ref.watch(homeBlockFilledProvider(block)) ||
-                        (_editing && block != HomeBlock.coach))
-                      block,
-                },
                 editing: _editing,
-                blockBuilder: (block, size) =>
-                    _editing && !ref.watch(homeBlockFilledProvider(block))
-                    ? _EmptyBlockCard(block: block)
-                    : _HomeBlockView(block: block, size: size),
-                onMove: (block, onto) => _save(layout.movedOnto(block, onto)),
-                onResize: (block) => _save(layout.resized(block)),
-                onHide: (block) =>
-                    _save(layout.withVisible(block, visible: false)),
+                blockBuilder: (block, spot) =>
+                    _HomeBlockView(block: block, spot: spot),
+                onChanged: _save,
+                onStartEditing: () => setState(() => _editing = true),
               ),
             ),
             if (layout.visible.isEmpty && !_editing)
@@ -142,8 +141,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 /// What the greeting turns into while you are arranging.
 ///
-/// Also where a block you switched off comes back from: hidden blocks have no
-/// place on the grid to drag them out of, so they wait here.
+/// Also where a block you took off comes back from: tap it and it goes to the
+/// first free place it fits, or hold it and drag it to a place of your own.
 class _ArrangeBar extends StatelessWidget {
   const _ArrangeBar({
     required this.hidden,
@@ -175,7 +174,8 @@ class _ArrangeBar extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Sleep om te verplaatsen, tik om groot of klein te maken.',
+          'Houd een blok vast en sleep het. Tik erop om het aan de randen '
+          'groter of kleiner te maken.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -187,10 +187,23 @@ class _ArrangeBar extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               for (final block in hidden)
-                ActionChip(
-                  avatar: const Icon(Icons.add, size: 18),
-                  label: Text(block.label),
-                  onPressed: () => onShow(block),
+                LongPressDraggable<HomeBlock>(
+                  data: block,
+                  // The block's corner goes where the finger is, and the
+                  // page scrolls when the finger nears an edge.
+                  dragAnchorStrategy: pointerDragAnchorStrategy,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Chip(
+                      avatar: const Icon(Icons.add, size: 18),
+                      label: Text(block.label),
+                    ),
+                  ),
+                  child: ActionChip(
+                    avatar: const Icon(Icons.add, size: 18),
+                    label: Text(block.label),
+                    onPressed: () => onShow(block),
+                  ),
                 ),
             ],
           ),
@@ -202,34 +215,102 @@ class _ArrangeBar extends StatelessWidget {
 
 /// One block of the Start tab, at the size the layout gave it.
 class _HomeBlockView extends StatelessWidget {
-  const _HomeBlockView({required this.block, required this.size});
+  const _HomeBlockView({required this.block, required this.spot});
 
   final HomeBlock block;
-  final HomeBlockSize size;
+
+  /// Its place on the grid, and so how much room it has.
+  final HomeSpot spot;
 
   @override
-  Widget build(BuildContext context) => switch (block) {
-    HomeBlock.today => _TodayCard(size: size),
-    HomeBlock.favourites => _FavouritesBlock(size: size),
-    HomeBlock.week => _WeekBlock(size: size),
-    HomeBlock.recovery => _RecoveryBlock(size: size),
-    HomeBlock.records => _RecordsBlock(size: size),
-    HomeBlock.volume => _VolumeBlock(size: size),
-    HomeBlock.coach => _CoachBlock(size: size),
-    HomeBlock.steps => _StepsBlock(size: size),
-  };
+  Widget build(BuildContext context) {
+    final size = HomeBlockSize.of(spot);
+    // One row is room for one line and no title.
+    final line = spot.h == 1;
+    return switch (block) {
+      HomeBlock.today => _TodayCard(spot: spot),
+      HomeBlock.favourites => _FavouritesBlock(size: size),
+      HomeBlock.week => _WeekBlock(size: size),
+      HomeBlock.recovery => _RecoveryBlock(size: size),
+      HomeBlock.records => _RecordsBlock(size: size),
+      HomeBlock.volume => _VolumeBlock(size: size),
+      HomeBlock.coach => _CoachBlock(size: size, line: line),
+      HomeBlock.steps => _StepsBlock(size: size, line: line),
+    };
+  }
 }
+
+/// What a block says when it has nothing to show today. It does not vanish:
+/// its place stays its place, and nothing moves up into it.
+Widget _emptyText(BuildContext context, String text) {
+  final theme = Theme.of(context);
+  return Text(
+    text,
+    style: theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    ),
+  );
+}
+
+/// A one-row block: an icon and one line, no title.
+class _LineCard extends StatelessWidget {
+  const _LineCard({required this.icon, required this.text, this.onTap});
+
+  final IconData icon;
+  final String text;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: theme.colorScheme.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodyMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Laid out at its own height and cut off where its block ends, rather than
+/// running over it: the safety under every block.
+Widget _clipped(Widget child) => ClipRect(
+  child: OverflowBox(
+    alignment: AlignmentDirectional.topStart,
+    maxHeight: double.infinity,
+    child: child,
+  ),
+);
 
 /// Today's steps, and this week's average beside them on a wide block.
 class _StepsBlock extends ConsumerWidget {
-  const _StepsBlock({required this.size});
+  const _StepsBlock({required this.size, required this.line});
 
   final HomeBlockSize size;
+  final bool line;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref.watch(homeBlockFilledProvider(HomeBlock.steps))) {
-      return const SizedBox.shrink();
+      const text = 'Verbind Health Connect om je stappen te zien.';
+      return line
+          ? const _LineCard(icon: Icons.directions_walk, text: text)
+          : _BlockCard(title: 'Stappen', child: _emptyText(context, text));
     }
     final theme = Theme.of(context);
     final now = DateTime.now();
@@ -247,6 +328,14 @@ class _StepsBlock extends ConsumerWidget {
     final average = counted.isEmpty
         ? null
         : counted.reduce((a, b) => a + b) ~/ counted.length;
+
+    if (line) {
+      return _LineCard(
+        icon: Icons.directions_walk,
+        text: '${todays == null ? '-' : formatSteps(todays)} stappen vandaag',
+        onTap: () => context.push(Routes.stepsWeeks),
+      );
+    }
 
     return _BlockCard(
       title: 'Stappen',
@@ -288,14 +377,38 @@ class _StepsBlock extends ConsumerWidget {
 }
 
 /// A way in to the coach, for whoever has one.
-class _CoachBlock extends StatelessWidget {
-  const _CoachBlock({required this.size});
+class _CoachBlock extends ConsumerWidget {
+  const _CoachBlock({required this.size, required this.line});
 
   final HomeBlockSize size;
+  final bool line;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    // Placed while there was a key, and the key is gone since.
+    if (!ref.watch(coachEnabledProvider)) {
+      return line
+          ? _LineCard(
+              icon: Icons.smart_toy_outlined,
+              text: 'De coach staat uit',
+              onTap: () => context.push(Routes.settingsCoach),
+            )
+          : _BlockCard(
+              title: 'Coach',
+              onTap: () => context.push(Routes.settingsCoach),
+              child: _emptyText(context, 'De coach staat uit.'),
+            );
+    }
+    if (line) {
+      return _LineCard(
+        icon: Icons.smart_toy_outlined,
+        text: size == HomeBlockSize.small
+            ? 'Stel een vraag'
+            : 'Stel een vraag over je training',
+        onTap: () => context.go(Routes.chat),
+      );
+    }
     return _BlockCard(
       title: 'Coach',
       onTap: () => context.go(Routes.chat),
@@ -319,30 +432,6 @@ class _CoachBlock extends StatelessWidget {
   }
 }
 
-/// What an empty block looks like while you are arranging.
-///
-/// It draws nothing on a normal screen, and you cannot drag something that is
-/// not there, so while arranging it says its name and why it is blank.
-class _EmptyBlockCard extends StatelessWidget {
-  const _EmptyBlockCard({required this.block});
-
-  final HomeBlock block;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return _BlockCard(
-      title: block.label,
-      child: Text(
-        'Nog niets te tonen',
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
 /// The frame every block sits in: a card with its name along the top.
 ///
 /// The names used to be section headers spanning the screen, which only works
@@ -354,10 +443,15 @@ class _BlockCard extends StatelessWidget {
     required this.child,
     this.action,
     this.onTap,
+    this.fills = false,
   });
 
   final String title;
   final Widget child;
+
+  /// Whether [child] takes the room left under the title - a [FitColumn] or
+  /// a chart - rather than its own height, cut off where the block ends.
+  final bool fills;
 
   /// The "Alles" or "Meer" link, which has no room on a small block.
   final Widget? action;
@@ -370,7 +464,6 @@ class _BlockCard extends StatelessWidget {
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -389,7 +482,7 @@ class _BlockCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          child,
+          Expanded(child: fills ? child : _clipped(child)),
         ],
       ),
     );
@@ -434,26 +527,35 @@ class _FavouritesBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(homeBlockFilledProvider(HomeBlock.favourites))) {
-      return const SizedBox.shrink();
-    }
     final favourites = ref.watch(favouriteRoutinesProvider).value ?? const [];
+    if (!ref.watch(homeBlockFilledProvider(HomeBlock.favourites))) {
+      return _BlockCard(
+        title: 'Favorieten',
+        child: _emptyText(
+          context,
+          favourites.isEmpty
+              ? 'Nog geen favorieten. Geef een routine een ster.'
+              : 'Je favorieten staan nu bij Vandaag.',
+        ),
+      );
+    }
 
     // Half a screen has room for one, and one you can actually read beats
     // three you cannot.
-    final shown = size == HomeBlockSize.small ? favourites.take(1) : favourites;
+    if (size == HomeBlockSize.small) {
+      return _BlockCard(
+        title: 'Favorieten',
+        child: _FavouriteRow(routine: favourites.first, compact: true),
+      );
+    }
 
     return _BlockCard(
       title: 'Favorieten',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
+      fills: true,
+      child: FitColumn(
         children: [
-          for (final routine in shown)
-            _FavouriteRow(
-              routine: routine,
-              compact: size == HomeBlockSize.small,
-            ),
+          for (final routine in favourites)
+            _FavouriteRow(routine: routine, compact: false),
         ],
       ),
     );
@@ -573,9 +675,16 @@ class _RecordsBlock extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref.watch(homeBlockFilledProvider(HomeBlock.records))) {
-      return const SizedBox.shrink();
+      return _BlockCard(
+        title: 'Laatste records',
+        child: _emptyText(context, 'Nog geen records.'),
+      );
     }
-    final records = ref.watch(latestRecordsProvider()).value ?? const [];
+    // As many as a tall block shows; a short one shows what fits.
+    final records =
+        ref.watch(latestRecordsProvider(limit: 8)).value ??
+        ref.watch(latestRecordsProvider()).value ??
+        const [];
 
     final formatters = ref.watch(formattersProvider);
     final theme = Theme.of(context);
@@ -612,9 +721,8 @@ class _RecordsBlock extends ConsumerWidget {
         onPressed: () => context.push(Routes.records),
         child: const Text('Alles'),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
+      fills: true,
+      child: FitColumn(
         children: [
           for (final record in records)
             ListTile(
@@ -670,7 +778,13 @@ class _VolumeBlock extends ConsumerWidget {
       color: theme.colorScheme.onSurfaceVariant,
     );
 
-    final chart = MiniBarChart(values: [for (final b in buckets) b.volumeKg]);
+    // As tall as the block lets it be.
+    final chart = LayoutBuilder(
+      builder: (context, constraints) => MiniBarChart(
+        values: [for (final b in buckets) b.volumeKg],
+        height: constraints.maxHeight,
+      ),
+    );
 
     // The dates under the bars are the first thing to go: at half width they
     // would sit on top of each other.
@@ -678,6 +792,7 @@ class _VolumeBlock extends ConsumerWidget {
       return _BlockCard(
         title: 'Volume, 8 weken',
         onTap: () => context.go(Routes.progress),
+        fills: true,
         child: chart,
       );
     }
@@ -688,11 +803,11 @@ class _VolumeBlock extends ConsumerWidget {
         onPressed: () => context.go(Routes.progress),
         child: const Text('Meer'),
       ),
+      fills: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          chart,
+          Expanded(child: chart),
           const SizedBox(height: AppSpacing.sm),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -780,9 +895,9 @@ class _Greeting extends StatelessWidget {
 /// what happens on a Tuesday. Now the heading says which rung of
 /// [buildTodayPlan] is talking, so the card never promises more than it knows.
 class _TodayCard extends ConsumerWidget {
-  const _TodayCard({required this.size});
+  const _TodayCard({required this.spot});
 
-  final HomeBlockSize size;
+  final HomeSpot spot;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -790,7 +905,12 @@ class _TodayCard extends ConsumerWidget {
     if (active != null) return _RunningCard(active: active);
 
     final plan = ref.watch(todayPlanProvider);
-    if (size == HomeBlockSize.small) return _CompactPlanCard(plan: plan);
+    // The full card needs three columns and three rows; in less, the name
+    // and one button.
+    if (HomeBlockSize.of(spot) == HomeBlockSize.small || spot.h < 3) {
+      // Two rows hold one line of the name above the button.
+      return _CompactPlanCard(plan: plan, nameLines: spot.h < 3 ? 1 : 2);
+    }
 
     return switch (plan.kind) {
       TodayPlanKind.none => const _NoRoutinesCard(),
@@ -806,9 +926,10 @@ class _TodayCard extends ConsumerWidget {
 /// it, the routine behind it, what else is on today - needs room this does not
 /// have, and a squeezed version of all of it would say none of it clearly.
 class _CompactPlanCard extends ConsumerWidget {
-  const _CompactPlanCard({required this.plan});
+  const _CompactPlanCard({required this.plan, required this.nameLines});
 
   final TodayPlan plan;
+  final int nameLines;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -839,7 +960,7 @@ class _CompactPlanCard extends ConsumerWidget {
           Text(
             lead.routine.name,
             style: theme.textTheme.titleSmall,
-            maxLines: 2,
+            maxLines: nameLines,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -905,40 +1026,43 @@ class _NoRoutinesCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Nog geen routine', style: theme.textTheme.titleSmall),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Maak er een en plan hem op je trainingsdagen, of start meteen '
-            'een lege workout.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+      child: _clipped(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Nog geen routine', style: theme.textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Maak er een en plan hem op je trainingsdagen, of start meteen '
+              'een lege workout.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: () async {
-                    await ref.read(workoutControllerProvider).startEmpty();
-                    if (context.mounted) context.push(Routes.workout);
-                  },
-                  child: const Text('Lege workout'),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () async {
+                      await ref.read(workoutControllerProvider).startEmpty();
+                      if (context.mounted) context.push(Routes.workout);
+                    },
+                    child: const Text('Lege workout'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => context.go(Routes.train),
-                  child: const Text('Routine maken'),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => context.go(Routes.train),
+                    child: const Text('Routine maken'),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -958,36 +1082,39 @@ class _RestCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.bedtime_outlined,
-                size: 20,
+      child: _clipped(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.bedtime_outlined,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text('Rustdag', style: theme.textTheme.titleLarge),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _next(),
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Rustdag', style: theme.textTheme.titleLarge),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            _next(),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () => context.go(Routes.train),
-              child: const Text('Toch trainen'),
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => context.go(Routes.train),
+                child: const Text('Toch trainen'),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1025,10 +1152,17 @@ class _PlanCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(lead.routine.name, style: theme.textTheme.titleLarge),
+          Text(
+            lead.routine.name,
+            style: theme.textTheme.titleLarge,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             _subtitle(lead),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
               color: lead.doneToday
                   ? AppColors.success
@@ -1036,39 +1170,62 @@ class _PlanCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
+          // Side by side rather than under each other: three rows of the
+          // grid hold the card that way, also with large text.
           SizedBox(
-            width: double.infinity,
             height: 52,
-            child: FilledButton.icon(
-              onPressed: () => _start(context, ref, lead.routine.id),
-              icon: const Icon(Icons.play_arrow),
-              label: Text(lead.doneToday ? 'Nog een keer' : 'Start workout'),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => _start(context, ref, lead.routine.id),
+                    icon: const Icon(Icons.play_arrow),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        lead.doneToday ? 'Nog een keer' : 'Start workout',
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                // An icon, so Start keeps its room in three columns too.
+                IconButton.outlined(
+                  tooltip: 'Bekijk de routine',
+                  constraints: const BoxConstraints.tightFor(
+                    width: 52,
+                    height: 52,
+                  ),
+                  onPressed: () =>
+                      context.push(Routes.routineDetail(lead.routine.id)),
+                  icon: const Icon(Icons.list_alt),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Center(
-            child: TextButton(
-              onPressed: () =>
-                  context.push(Routes.routineDetail(lead.routine.id)),
-              child: const Text('Bekijk de routine'),
-            ),
-          ),
-          if (others.isNotEmpty) ...[
-            const Divider(height: AppSpacing.lg),
-            Text(
-              plan.kind == TodayPlanKind.favourites
-                  ? 'Of een van deze'
-                  : 'Ook vandaag',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+          // What else is on today, as far as the block has room.
+          if (others.isNotEmpty)
+            Expanded(
+              child: FitColumn(
+                children: [
+                  const Divider(height: AppSpacing.lg),
+                  Text(
+                    plan.kind == TodayPlanKind.favourites
+                        ? 'Of een van deze'
+                        : 'Ook vandaag',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  for (final planned in others)
+                    _OtherRoutineRow(
+                      planned: planned,
+                      onStart: () => _start(context, ref, planned.routine.id),
+                    ),
+                ],
               ),
             ),
-            for (final planned in others)
-              _OtherRoutineRow(
-                planned: planned,
-                onStart: () => _start(context, ref, planned.routine.id),
-              ),
-          ],
         ],
       ),
     );
@@ -1143,13 +1300,14 @@ class _RecoveryBlock extends ConsumerWidget {
 
   final HomeBlockSize size;
 
-  /// More than this and the list stops being a glance.
-  static const int maxRows = 6;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref.watch(homeBlockFilledProvider(HomeBlock.recovery))) {
-      return const SizedBox.shrink();
+      return _BlockCard(
+        title: 'Herstel',
+        onTap: () => context.push(Routes.muscleRecovery),
+        child: _emptyText(context, 'Nog niets om van te herstellen.'),
+      );
     }
     final estimates = ref.watch(recoveryEstimatesProvider).value ?? const [];
 
@@ -1208,6 +1366,7 @@ class _RecoveryBlock extends ConsumerWidget {
     return _BlockCard(
       title: 'Herstel',
       onTap: () => context.push(Routes.muscleRecovery),
+      fills: recovering.isNotEmpty,
       child: recovering.isEmpty
           ? Row(
               children: [
@@ -1225,22 +1384,10 @@ class _RecoveryBlock extends ConsumerWidget {
                 ),
               ],
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+          : FitColumn(
               children: [
-                for (final estimate in recovering.take(maxRows))
+                for (final estimate in recovering)
                   RecoveryRow(estimate: estimate, now: now),
-                if (recovering.length > maxRows)
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.xs),
-                    child: Text(
-                      'en nog ${recovering.length - maxRows} andere',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
               ],
             ),
     );

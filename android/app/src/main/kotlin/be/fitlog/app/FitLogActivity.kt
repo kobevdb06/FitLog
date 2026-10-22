@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -90,6 +91,8 @@ class FitLogActivity : FlutterFragmentActivity() {
             .setMethodCallHandler(::onIconCall)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/links")
             .setMethodCallHandler(::onLinkCall)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/gestures")
+            .setMethodCallHandler(::onGestureCall)
         val workout = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/workout")
         workout.setMethodCallHandler(::onWorkoutCall)
         WorkoutLiveNotice.dart = workout
@@ -177,6 +180,32 @@ class FitLogActivity : FlutterFragmentActivity() {
                 } catch (error: ActivityNotFoundException) {
                     result.success(view(uri))
                 }
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    /**
+     * Keeps the back gesture off the places Flutter names, in logical pixels
+     * on the screen: the side handles of a block on the Start tab sit where a
+     * swipe from the edge means "back". Before Android 10 there is no such
+     * swipe to keep off.
+     */
+    private fun onGestureCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "exclude" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val density = resources.displayMetrics.density
+                    val rects = (call.arguments as? List<*>).orEmpty().mapNotNull { edges ->
+                        val (left, top, right, bottom) = (edges as? List<*>)
+                            ?.map { (it as Number).toFloat() * density }
+                            ?.takeIf { it.size == 4 }
+                            ?: return@mapNotNull null
+                        Rect(left.toInt(), top.toInt(), right.toInt() + 1, bottom.toInt() + 1)
+                    }
+                    window.decorView.systemGestureExclusionRects = rects
+                }
+                result.success(null)
             }
             else -> result.notImplemented()
         }

@@ -132,7 +132,7 @@ Geboortedatum, geslacht en lengte gaan alleen naar de coach met
 | `last_backup_at` | INT? | wanneer de laatste back-up gemaakt is |
 | `auto_backup_folder` | TEXT? | de content-URI van de map voor de wekelijkse back-up; null is uit |
 | `pending_pick_kind`, `pending_pick_ref` | TEXT? | een fotokeuze die Android onderbrak |
-| `home_layout` | TEXT? | JSON; leeg = de standaardschikking |
+| `home_layout` | TEXT? | JSON; leeg = de standaardschikking. Sinds 1.63 `{"v":2,"spots":{blok:[x,y,b,h]},"hidden":[...]}` op een raster van vier kolommen; de oude vorm (`order`, `hidden`, `small`) wordt gelezen en omgezet |
 | **Trainen** | | |
 | `default_rest_seconds` | INT | 90 |
 | `rest_sound_enabled` | BOOL | true |

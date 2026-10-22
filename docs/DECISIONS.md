@@ -4636,3 +4636,62 @@ geheugen kon; standaard aan.
   je de coach zelf al. Dat het bij elke vraag opnieuw meegaat, staat in de
   privacyverklaring en op het eerste kaartje.
 
+## 219. Het startscherm is een raster, zoals dat van je telefoon
+
+Drie klachten over het indelen: de blokken wiebelden, een tik maakte een
+blok half of heel breed in plaats van dat je de rand kon slepen, en een plek
+die een blok verliet werd meteen opgevuld, zodat heel het scherm verschoof.
+Gevraagd: doe het zoals een Android-startscherm. Dit vervangt de twee maten
+uit 118 en de kolom met rijen uit 122.
+
+- **Vier kolommen, vaste rijen**: elk blok heeft een eigen plek (kolom, rij,
+  breedte, hoogte). Een rij is 56 hoog bij gewone tekst en groeit mee met de
+  tekstgrootte, tot 1,6 keer, zodat wat bij gewone letters in een blok past
+  ook bij grote past. Niets schuift vanzelf op; een lege plek blijft leeg.
+  Vier kolommen, zoals gevraagd: op een telefoon van 360dp breed is een
+  kwart al smal genoeg.
+- **Vasthouden en slepen**: 350 ms vasthouden en het blok zit in je hand,
+  ook buiten de indeelstand (die gaat dan aan). Een rand toont waar het
+  landt: groen is plaats, *Wisselen* is een blok van exact dezelfde maat,
+  rood is iets in de weg - loslaten zet het dan terug. Alleen gelijke maten
+  wisselen, op verzoek; al het andere zou iets opzij moeten duwen, en dat
+  was net de klacht. Het blok waarmee je zou wisselen staat tijdens het
+  slepen al op zijn nieuwe plek, en de rand ligt boven het blok in je hand:
+  eronder was ze onzichtbaar zodra het blok er recht boven hing.
+- **Randen slepen**: tik op een blok in de indeelstand voor een kader met
+  een bolletje op elke rand. Slepen maakt het blok een vakje per keer groter
+  of kleiner, tussen zijn eigen kleinste en grootste maat (*Coach* en
+  *Stappen* mogen één rij, de lijsten tot vijf), en het stopt tegen zijn
+  buren. Het wiebelen is weg: het zei niets en kostte elke frame.
+- **De terug-veeg**: een blok over de hele breedte heeft zijn zijbolletjes
+  in de rand waar Android een veeg als *terug* neemt; op de emulator sloot
+  de app. Zolang de bolletjes er staan, gaan hun plekken via
+  `be.fitlog.app/gestures` naar `systemGestureExclusionRects` (Android 10 en
+  later; hoogstens 200dp per rand, en één bolletje van 44 per rand blijft
+  daar ruim onder).
+  Rond het raster ligt een marge (`kHomeInset`), zodat bolletjes en kruisje
+  binnen de grenzen van de `Stack` vallen - zie 119.
+- **Twee reserverijen** onder het laatste blok, en bij de rand van het
+  scherm schuift de pagina mee, ook met een knopje uit de balk. Een blok
+  begint hoogstens op de laatste reserverij: verder groeide het raster onder
+  je vinger mee en scrolde de pagina eindeloos door.
+- **Een blok toont wat in zijn maat past**: een lijst alleen hele regels
+  (`FitColumn`), *Vandaag* onder drie kolommen of drie rijen de naam en één
+  knop, *Stappen* en *Coach* op één rij een enkele regel. Een leeg blok houdt
+  zijn plek en zegt waarom het leeg is - dat vervangt 121: een gat dat
+  verschijnt en verdwijnt met je gegevens is precies het verschuiven waar de
+  klacht over ging.
+- **Knopjes**: tikken zet het blok op de eerste vrije plek, van boven naar
+  onder, op zijn beginmaat; de pagina gaat erheen en het blok heeft meteen
+  zijn kader. Vasthouden sleept het naar een plek naar keuze, met de hoek
+  van het blok onder je vinger.
+- **TalkBack**: per blok de acties *Naar links*, *Naar rechts*, *Omhoog*,
+  *Omlaag*, *Breder*, *Smaller*, *Hoger*, *Lager* en *Van het startscherm
+  halen*; slepen is voor een schermlezer geen gebaar.
+- **Opslag zonder migratie**: `home_layout` blijft een JSON-tekst, nu
+  `{"v":2,"spots":{...},"hidden":[...]}`. De oude vorm (`order`, `hidden`,
+  `small`) wordt gelezen zoals het scherm stond - brede blokken onder
+  elkaar, opeenvolgende halve naast elkaar - en na de eerste wijziging in de
+  nieuwe vorm bewaard. Een beschadigde plek gaat naar de eerste vrije die
+  past, een kapotte waarde wordt de standaard (95), en een blok dat in de
+  opgeslagen waarde niet voorkomt, komt onderaan bij.

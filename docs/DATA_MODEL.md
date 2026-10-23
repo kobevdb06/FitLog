@@ -82,6 +82,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 52 | `chat_threads.workout_id`: het gesprek van een workout, dat de Chat-tab en de coach in het eiland delen. Geen enkel bestaand gesprek hoorde bij een workout. |
 | 53 | `coach_notes` en `app_settings.coach_memory`: het geheugen van de coach, leeg en aan. |
 | 54 | `training_plans`, `routines.plan_id` en `plan_weekday`, `chat_threads.plan_id`: schema's. Geen enkele bestaande routine of gesprek hoorde bij een schema. |
+| 55 | `training_plans.volume`, `outline_approved` en `outline_at`, `routines.plan_focus` en `plan_state`: een schema stap voor stap. Elk bestaand schema was heel: opzet en sessies goedgekeurd. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -261,6 +262,8 @@ sleutel is ze verborgen, niet verwijderd.
 | `scheduled_days` | INT | weekdagen als bitmasker (`WeekdaySet`); 0 = niet gepland |
 | `plan_id` | TEXT? | het schema waar de routine een sessie van is; geen verwijzing |
 | `plan_weekday` | INT? | de dag waarvoor de sessie bedoeld is, 1 (maandag) tot 7; een richtlijn |
+| `plan_focus` | TEXT? | waar de sessie om draait, uit de opzet |
+| `plan_state` | TEXT | `planned` \| `proposed` \| `approved`: alleen opgezet, gemaakt en wachtend, goedgekeurd; standaard `approved` |
 | `last_performed_at` | INT? | |
 | `created_at`, `updated_at` | INT | |
 
@@ -281,6 +284,9 @@ routines; haar `sort_order` is de volgorde in het schema.
 | `progression` | TEXT | `app` \| `coach`: wie de cijfers elke week bijstelt; standaard `app` |
 | `weeks` | INT? | hoeveel weken, zoals de coach besliste |
 | `pattern` | TEXT? | JSON-array van weken: `kind` (`build` \| `deload`), `sets` en `reps` (-3 tot 3), `note` |
+| `volume` | TEXT? | JSON-object: werksets per spiergroep per week, uit de opzet |
+| `outline_approved` | BOOL | de opzet is goedgekeurd en de sessies mogen gemaakt worden; standaard waar, een nieuw ontwerp begint onwaar |
+| `outline_at` | INT? | wanneer de huidige opzet geschreven werd; een oudere kaart ervan biedt geen *Goedkeuren* |
 | `status` | TEXT | `draft` \| `running` \| `done`; hoogstens één `running` |
 | `start_day` | INT? | middernacht op de maandag van week 1 |
 | `ended_at` | INT? | afgerond of gestopt |

@@ -4793,3 +4793,41 @@ terug, of met een opzoeking die niet te lezen was
 - **De coach weet wat een schema is**, ook buiten het gesprek ervan: hij
   noemde het een routine. De vaste instructies zeggen het nu, binnen hun
   budget van 4300 tekens - door twee andere regels korter te maken.
+
+## 222. Een schema stap voor stap: eerst de opzet, dan sessie per sessie
+
+Een schema in één antwoord kwam er mager uit: vijf sessies tegelijk, elk met
+te weinig aandacht. Gevraagd: per routine een eigen aanvraag, meteen bewaard,
+getoond, en pas na het akkoord van de gebruiker de volgende - tot alle
+sessies van de split er zijn. Afgewogen in het gesprek, met één stap ervoor:
+de opzet.
+
+- **De opzet eerst** (`save_plan_outline`): de naam, de weken, de sessies van
+  een week met hun dag en hun focus ("borst zwaar, schouders, triceps"), en
+  de werksets per spiergroep per week - nog geen oefeningen. Zo liggen de
+  split en het volume vast voor er één oefening gekozen wordt, en bouwt elke
+  sessie daarop.
+- **Dan één sessie per aanvraag** (`save_plan_session`): elke oefening met
+  haar exacte naam, sets, herhalingen, gewicht, rust en een notitie waar dat
+  helpt, meteen op het toestel bewaard en volledig op een kaart. Een sessie
+  kan pas als de opzet goedgekeurd is; de coach maakt er telkens één.
+- **Goedkeuren** vraagt de coach meteen de volgende sessie, in hetzelfde
+  gesprek en in de woorden van de gebruiker ("Push is goed. Maak nu Pull."),
+  bewaard als een vraag die hij typte. **Aanpassen** vraagt wat er anders
+  moet en stuurt dat; de coach maakt alleen die stap opnieuw. Een oudere
+  kaart van een opzet of sessie die intussen herschreven is, biedt geen
+  *Goedkeuren* meer (`outline_at`, en de `updated_at` van de routine).
+- **Start schema** pas als de opzet en elke sessie goedgekeurd zijn: op de
+  kaart van de laatste sessie, en onder Schema's, dat toont hoe ver een
+  schema in de maak is. Een schema van voor deze stap was heel: de migratie
+  (v55) zet alles op goedgekeurd, en het blijft startbaar.
+- **Kleinere aanvragen**: meer stappen zijn meer aanvragen, dus elke aanvraag
+  is kleiner gemaakt. De stand van het schema - de opzet, en elke sessie tot
+  dan kort - gaat mee met de instructies, met de ene stap die nu moet, zodat
+  de coach ze niet hoeft op te zoeken; van het gesprek gaan zes beurten mee
+  in plaats van twintig. En het gesprek van een schema krijgt alleen de
+  opzoekingen die het bouwen vraagt: elke aangeboden opzoeking gaat met elke
+  aanvraag mee.
+- **Een lopend schema** verandert één sessie of zijn opzet meteen als de
+  gebruiker erom vraagt, met de sessie zoals ze was bewaard: daar is het al
+  gekozen. Het voorstel van zondagavond blijft een heel schema op één kaart.

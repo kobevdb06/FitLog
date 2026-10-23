@@ -4,6 +4,10 @@
 /// It comes over the whole screen, the tab bar too, and is opened with the
 /// button only: swiping in from the edge would fight the swipe between the
 /// tabs. Swiping it back, or tapping beside it, closes it.
+///
+/// Two lists, switched at the top the way Claude switches between Chat and
+/// Code: the conversations, and the schema's - each with the conversation it
+/// was made in.
 library;
 
 import 'dart:math' as math;
@@ -19,6 +23,7 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../plans/presentation/plan_providers.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'chat_providers.dart';
 import 'coach_session.dart';
@@ -70,6 +75,9 @@ enum ThreadGroup {
   }
 }
 
+/// Which list the panel shows.
+enum _Shelf { chats, plans }
+
 class _CoachDrawer extends ConsumerStatefulWidget {
   const _CoachDrawer();
 
@@ -83,6 +91,15 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
 
   /// How far it was pulled back towards the edge.
   double _drag = 0;
+
+  /// Opened on the schema's when a schema's conversation is on screen.
+  late _Shelf _shelf = _onPlan ? _Shelf.plans : _Shelf.chats;
+
+  bool get _onPlan {
+    final shown = ref.read(coachSessionControllerProvider).threadId;
+    final threads = ref.read(planThreadsProvider).value ?? const [];
+    return shown != null && threads.any((t) => t.id == shown);
+  }
 
   CoachSessionController get _session =>
       ref.read(coachSessionControllerProvider.notifier);
@@ -118,6 +135,69 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
     final router = GoRouter.of(context);
     Navigator.of(context).pop();
     router.push(route);
+  }
+
+  /// Stoppen, for the one being followed, and Verwijderen - the schema with
+  /// its conversation. What was done in its sessions stays in the history.
+  Future<void> _planActions(TrainingPlanRow plan, ChatThreadRow? thread) async {
+    final theme = Theme.of(context);
+    final running = plan.state == PlanStatus.running;
+    final picked = await showAppSheet<String>(
+      context: context,
+      title: plan.name,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (running)
+            ListTile(
+              leading: const Icon(Icons.stop_circle_outlined),
+              title: const Text('Stoppen'),
+              onTap: () => Navigator.of(context).pop('stop'),
+            ),
+          ListTile(
+            leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+            title: Text(
+              'Verwijderen',
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+            onTap: () => Navigator.of(context).pop('delete'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || picked == null) return;
+    final db = ref.read(databaseProvider);
+
+    if (picked == 'stop') {
+      final ok = await confirm(
+        context,
+        title: 'Schema stoppen?',
+        message:
+            '"${plan.name}" komt bij je eerdere schema\'s, met wat je erin '
+            'deed. Opnieuw starten kan niet.',
+        confirmLabel: 'Stoppen',
+      );
+      if (ok) await db.plansDao.finish(plan.id, DateTime.now());
+      return;
+    }
+
+    final ok = await confirm(
+      context,
+      title: 'Schema verwijderen?',
+      message:
+          '"${plan.name}", zijn sessies en het gesprek erover verdwijnen. '
+          'Wat je al trainde, blijft in je geschiedenis.',
+      confirmLabel: 'Verwijderen',
+      destructive: true,
+    );
+    if (!ok) return;
+    await db.plansDao.deletePlan(plan.id);
+    if (thread != null) {
+      await db.chatDao.deleteThread(thread.id);
+      if (ref.read(coachSessionControllerProvider).threadId == thread.id) {
+        _session.startNew();
+      }
+    }
   }
 
   /// Hernoemen and Verwijderen, from ⋮ or a long press.
@@ -196,7 +276,10 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final threads = ref.watch(chatThreadsProvider).value ?? const [];
+    final threads = [
+      for (final thread in ref.watch(chatThreadsProvider).value ?? const [])
+        if (thread.planId == null) thread,
+    ];
     final shown = ref.watch(coachSessionControllerProvider).threadId;
     final running = ref.watch(activeWorkoutProvider).value?.workout.id;
     final width = math.min(320.0, MediaQuery.sizeOf(context).width * 0.85);
@@ -296,6 +379,77 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
             ),
           ];
 
+    final plans = ref.watch(plansProvider).value ?? const [];
+    final planThreads = ref.watch(planThreadsProvider).value ?? const [];
+
+    Widget planTile(TrainingPlanRow plan) {
+      final thread = planThreads.where((t) => t.planId == plan.id).firstOrNull;
+      final week = plan.weekAt(now);
+      final where = switch (plan.state) {
+        PlanStatus.draft => 'In voorbereiding',
+        PlanStatus.running when plan.isOverAt(now) => 'Alle weken voorbij',
+        PlanStatus.running when week == 0 => 'Begint maandag',
+        PlanStatus.running =>
+          'Week $week${plan.weeks == null ? '' : ' van ${plan.weeks}'}',
+        PlanStatus.done => switch (plan.endedAt) {
+          final at? =>
+            'Afgerond ${Formatters.dayMonth(DateTime.fromMillisecondsSinceEpoch(at))}',
+          null => 'Afgerond',
+        },
+      };
+      return ListTile(
+        dense: true,
+        visualDensity: VisualDensity.compact,
+        contentPadding: const EdgeInsets.only(left: AppSpacing.sm),
+        selected: thread != null && thread.id == shown,
+        selectedTileColor: theme.colorScheme.surfaceContainerHighest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        leading: Icon(
+          plan.state == PlanStatus.running
+              ? Icons.event_available
+              : Icons.calendar_month_outlined,
+          size: 18,
+        ),
+        minLeadingWidth: 20,
+        title: Text(
+          plan.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium,
+        ),
+        subtitle: Text(where, style: theme.textTheme.bodySmall),
+        trailing: IconButton(
+          tooltip: 'Meer',
+          icon: const Icon(Icons.more_vert, size: 18),
+          onPressed: () => _planActions(plan, thread),
+        ),
+        onTap: thread == null ? null : () => _open(thread, running: running),
+        onLongPress: () => _planActions(plan, thread),
+      );
+    }
+
+    final planList = <Widget>[
+      for (final (label, state) in const [
+        ('Lopend', PlanStatus.running),
+        ('In voorbereiding', PlanStatus.draft),
+        ('Afgerond', PlanStatus.done),
+      ])
+        if (plans.where((p) => p.state == state).toList() case final some
+            when some.isNotEmpty) ...[
+          heading(label),
+          for (final plan in some) planTile(plan),
+        ],
+      if (plans.isEmpty)
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Text(
+            'Nog geen schema\'s. Met Nieuw schema maakt de coach er een, op '
+            'jouw doel.',
+            style: theme.textTheme.bodySmall,
+          ),
+        ),
+    ];
+
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: GestureDetector(
@@ -325,38 +479,78 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        OutlinedButton.icon(
-                          onPressed: _startNew,
-                          icon: const Icon(Icons.add_comment_outlined),
-                          label: const Text('Nieuw gesprek'),
+                        SegmentedButton<_Shelf>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(
+                              value: _Shelf.chats,
+                              icon: Icon(Icons.chat_bubble_outline, size: 18),
+                              label: Text('Chats'),
+                            ),
+                            ButtonSegment(
+                              value: _Shelf.plans,
+                              icon: Icon(
+                                Icons.calendar_month_outlined,
+                                size: 18,
+                              ),
+                              label: Text("Schema's"),
+                            ),
+                          ],
+                          selected: {_shelf},
+                          onSelectionChanged: (picked) =>
+                              setState(() => _shelf = picked.first),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        TextField(
-                          controller: _search,
-                          onChanged: _find,
-                          textInputAction: TextInputAction.search,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            hintText: 'Zoek in gesprekken',
-                            prefixIcon: const Icon(Icons.search, size: 20),
-                            suffixIcon: _search.text.isEmpty
-                                ? null
-                                : IconButton(
-                                    tooltip: 'Zoeken wissen',
-                                    icon: const Icon(Icons.close, size: 18),
-                                    onPressed: () {
-                                      _search.clear();
-                                      _find('');
-                                    },
-                                  ),
+                        if (_shelf == _Shelf.plans) ...[
+                          OutlinedButton.icon(
+                            onPressed: () => _go(Routes.planNew),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Nieuw schema'),
                           ),
-                        ),
-                        Expanded(
-                          child: ListView(
-                            padding: const EdgeInsets.only(top: AppSpacing.xs),
-                            children: list,
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.xs,
+                              ),
+                              children: planList,
+                            ),
                           ),
-                        ),
+                        ] else ...[
+                          OutlinedButton.icon(
+                            onPressed: _startNew,
+                            icon: const Icon(Icons.add_comment_outlined),
+                            label: const Text('Nieuw gesprek'),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          TextField(
+                            controller: _search,
+                            onChanged: _find,
+                            textInputAction: TextInputAction.search,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: 'Zoek in gesprekken',
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              suffixIcon: _search.text.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      tooltip: 'Zoeken wissen',
+                                      icon: const Icon(Icons.close, size: 18),
+                                      onPressed: () {
+                                        _search.clear();
+                                        _find('');
+                                      },
+                                    ),
+                            ),
+                          ),
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.xs,
+                              ),
+                              children: list,
+                            ),
+                          ),
+                        ],
                         const Divider(height: 1),
                         ListTile(
                           dense: true,

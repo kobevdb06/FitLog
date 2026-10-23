@@ -35,11 +35,13 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
             ..limit(1))
           .getSingleOrNull();
 
-  /// [workoutId] makes it the conversation of that workout.
+  /// [workoutId] makes it the conversation of that workout, [planId] the
+  /// one of that schema.
   Future<void> createThread(
     String id,
     String title, {
     String? workoutId,
+    String? planId,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await into(chatThreadsTable).insert(
@@ -49,9 +51,37 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
         createdAt: now,
         updatedAt: now,
         workoutId: Value(workoutId),
+        planId: Value(planId),
       ),
     );
   }
+
+  /// The conversation of a schema: where it was made and is talked over.
+  Future<ChatThreadRow?> threadForPlan(String planId) =>
+      (select(chatThreadsTable)
+            ..where((t) => t.planId.equals(planId))
+            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// The conversations of the schema's, the last added to first.
+  Stream<List<ChatThreadRow>> watchPlanThreads() =>
+      (select(chatThreadsTable)
+            ..where((t) => t.planId.isNotNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+          .watch();
+
+  /// The conversation of a schema is called what the schema is.
+  Future<void> renamePlanThread(String planId, String title) async {
+    final clean = title.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.isEmpty) return;
+    await (update(chatThreadsTable)..where((t) => t.planId.equals(planId)))
+        .write(ChatThreadsTableCompanion(title: Value(_shorten(clean))));
+  }
+
+  Future<ChatThreadRow?> thread(String id) => (select(
+    chatThreadsTable,
+  )..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<bool> threadExists(String id) async =>
       await (select(

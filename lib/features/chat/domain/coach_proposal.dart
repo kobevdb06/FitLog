@@ -22,11 +22,15 @@
 /// A note in the coach's memory is written by the coach itself, like a
 /// routine in its folder: the card says what it remembered, with Aanpassen
 /// and Vergeten.
+///
+/// So is a schema, in the conversation that belongs to it: the card shows
+/// what the coach laid out, and nothing is followed until Start schema.
 library;
 
 import 'dart:convert';
 
 import '../../../core/calc/deload.dart';
+import '../../../core/calc/plan_weeks.dart';
 
 /// What is being offered.
 enum ProposalKind {
@@ -46,7 +50,10 @@ enum ProposalKind {
   deload('deload'),
 
   /// A note the coach wrote in its memory, changed or wiped.
-  note('note');
+  note('note'),
+
+  /// A schema the coach laid out or changed, in its own conversation.
+  plan('plan');
 
   const ProposalKind(this.wire);
 
@@ -282,6 +289,74 @@ class RoutineProposal {
   );
 }
 
+/// One session of a schema, as its card shows it.
+class ProposedPlanSession {
+  const ProposedPlanSession({
+    required this.name,
+    required this.exercises,
+    this.weekday,
+  });
+
+  final String name;
+
+  /// The day it is meant for, `DateTime.monday` to `DateTime.sunday`.
+  final int? weekday;
+  final List<ProposedRoutineExercise> exercises;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'weekday': weekday,
+    'exercises': [for (final exercise in exercises) exercise.toJson()],
+  };
+
+  static ProposedPlanSession fromJson(Map<String, Object?> json) =>
+      ProposedPlanSession(
+        name: '${json['name']}',
+        weekday: json['weekday'] as int?,
+        exercises: [
+          for (final exercise in json['exercises'] as List? ?? const [])
+            if (exercise is Map)
+              ProposedRoutineExercise.fromJson(
+                exercise.map((key, value) => MapEntry('$key', value)),
+              ),
+        ],
+      );
+}
+
+/// A schema as the coach laid it out: its weeks and its sessions.
+class PlanProposal {
+  const PlanProposal({
+    required this.name,
+    required this.weeks,
+    required this.sessions,
+  });
+
+  final String name;
+  final List<PlanWeek> weeks;
+  final List<ProposedPlanSession> sessions;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'weeks': [for (final week in weeks) week.toJson()],
+    'sessions': [for (final session in sessions) session.toJson()],
+  };
+
+  static PlanProposal fromJson(Map<String, Object?> json) => PlanProposal(
+    name: '${json['name']}',
+    weeks: [
+      for (final week in json['weeks'] as List? ?? const [])
+        if (week is Map) PlanWeek.fromJson(week.cast<String, Object?>()),
+    ],
+    sessions: [
+      for (final session in json['sessions'] as List? ?? const [])
+        if (session is Map)
+          ProposedPlanSession.fromJson(
+            session.map((key, value) => MapEntry('$key', value)),
+          ),
+    ],
+  );
+}
+
 /// A deload the coach would start: from when, how long, how light, and why.
 class DeloadProposal {
   const DeloadProposal({
@@ -413,6 +488,7 @@ class CoachProposal {
     this.exerciseChange,
     this.deload,
     this.note,
+    this.plan,
   });
 
   CoachProposal.ofExercise(ExerciseProposal this.exercise, {this.appliedId})
@@ -422,7 +498,8 @@ class CoachProposal {
       change = null,
       exerciseChange = null,
       deload = null,
-      note = null;
+      note = null,
+      plan = null;
 
   CoachProposal.ofRoutine(RoutineProposal this.routine, {this.appliedId})
     : kind = ProposalKind.routine,
@@ -431,7 +508,8 @@ class CoachProposal {
       change = null,
       exerciseChange = null,
       deload = null,
-      note = null;
+      note = null,
+      plan = null;
 
   CoachProposal.ofExerciseChange(
     ExerciseChangeProposal this.exerciseChange, {
@@ -442,7 +520,8 @@ class CoachProposal {
        made = false,
        change = null,
        deload = null,
-       note = null;
+       note = null,
+       plan = null;
 
   /// A deload; [appliedId] is the deload's id once it was started.
   CoachProposal.ofDeload(DeloadProposal this.deload, {this.appliedId})
@@ -452,7 +531,8 @@ class CoachProposal {
       made = false,
       change = null,
       exerciseChange = null,
-      note = null;
+      note = null,
+      plan = null;
 
   /// A note the coach wrote: done already, so applied from the start.
   CoachProposal.ofNote(NoteProposal this.note)
@@ -463,7 +543,8 @@ class CoachProposal {
       made = false,
       change = null,
       exerciseChange = null,
-      deload = null;
+      deload = null,
+      plan = null;
 
   /// A routine the coach [made] - or changed, when false - in its own
   /// folder: already there, so [appliedId] is its id from the start.
@@ -474,6 +555,21 @@ class CoachProposal {
     this.change,
   }) : kind = ProposalKind.coachRoutine,
        exercise = null,
+       exerciseChange = null,
+       deload = null,
+       note = null,
+       plan = null;
+
+  /// A schema the coach [made] - or changed, when false - in its own
+  /// conversation: written already, so [appliedId] is the schema's id.
+  CoachProposal.ofPlan(
+    PlanProposal this.plan, {
+    required String this.appliedId,
+    required this.made,
+    this.change,
+  }) : kind = ProposalKind.plan,
+       exercise = null,
+       routine = null,
        exerciseChange = null,
        deload = null,
        note = null;
@@ -495,6 +591,7 @@ class CoachProposal {
   final ExerciseChangeProposal? exerciseChange;
   final DeloadProposal? deload;
   final NoteProposal? note;
+  final PlanProposal? plan;
 
   bool get isApplied => appliedId != null;
 
@@ -507,6 +604,7 @@ class CoachProposal {
           ? 'Deloadweek'
           : 'Deload van ${deload!.days} ${deload!.days == 1 ? 'dag' : 'dagen'}',
     ProposalKind.note => note!.text,
+    ProposalKind.plan => plan!.name,
   };
 
   CoachProposal applied(String id) => CoachProposal(
@@ -519,6 +617,7 @@ class CoachProposal {
     exerciseChange: exerciseChange,
     deload: deload,
     note: note,
+    plan: plan,
   );
 
   Map<String, Object?> toJson() => {
@@ -529,7 +628,11 @@ class CoachProposal {
     if (exerciseChange != null) 'exercise_change': exerciseChange!.toJson(),
     if (deload != null) 'deload': deload!.toJson(),
     if (note != null) 'note': note!.toJson(),
-    if (kind == ProposalKind.coachRoutine) ...{'made': made, 'change': change},
+    if (plan != null) 'plan': plan!.toJson(),
+    if (kind == ProposalKind.coachRoutine || kind == ProposalKind.plan) ...{
+      'made': made,
+      'change': change,
+    },
   };
 
   static CoachProposal? fromJson(Map<String, Object?> json) {
@@ -567,6 +670,13 @@ class CoachProposal {
           final deload? => CoachProposal.ofDeload(deload, appliedId: applied),
           null => null,
         },
+      ProposalKind.plan when json['plan'] is Map && applied != null =>
+        CoachProposal.ofPlan(
+          PlanProposal.fromJson(body('plan')),
+          appliedId: applied,
+          made: json['made'] == true,
+          change: json['change'] as String?,
+        ),
       ProposalKind.note when json['note'] is Map =>
         switch (NoteProposal.fromJson(body('note'))) {
           final note? => CoachProposal.ofNote(note),

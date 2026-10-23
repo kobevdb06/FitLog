@@ -25,6 +25,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../deload/presentation/deload_providers.dart';
 import '../../deload/presentation/deload_start_sheet.dart';
 import '../../photos/data/photo_store.dart';
+import '../../plans/presentation/plan_card.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
 import '../domain/coach_proposal.dart';
@@ -578,6 +579,8 @@ class _Bubble extends StatelessWidget {
             ).indexed)
               if (proposal.note case final note?)
                 _NoteCard(note: note)
+              else if (proposal.kind == ProposalKind.plan)
+                PlanProposalCard(proposal: proposal)
               else
                 _ProposalCard(
                   message: message,
@@ -733,6 +736,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
         ProposalKind.routine ||
         ProposalKind.coachRoutine => 'Routine toegevoegd.',
         ProposalKind.note => 'Onthouden.',
+        ProposalKind.plan => 'Schema opgeslagen.',
         ProposalKind.deload => deloadStartedText(
           widget.proposal.deload!.startAt(DateTime.now()),
           widget.proposal.deload!.days,
@@ -785,7 +789,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
     ProposalKind.exerciseChange => Routes.exerciseDetail(id),
     ProposalKind.routine ||
     ProposalKind.coachRoutine => Routes.routineDetail(id),
-    ProposalKind.deload || ProposalKind.note => null,
+    ProposalKind.deload || ProposalKind.note || ProposalKind.plan => null,
   };
 
   @override
@@ -802,6 +806,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
       ProposalKind.routine || ProposalKind.coachRoutine => 'Routine toevoegen',
       ProposalKind.deload => 'Starten',
       ProposalKind.note => 'Onthouden',
+      ProposalKind.plan => 'Start schema',
     };
 
     return Padding(
@@ -821,6 +826,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                     ProposalKind.exerciseChange => Icons.edit_outlined,
                     ProposalKind.deload => Icons.battery_charging_full,
                     ProposalKind.note => Icons.sticky_note_2_outlined,
+                    ProposalKind.plan => Icons.calendar_month_outlined,
                   },
                   size: 18,
                   color: theme.colorScheme.primary,
@@ -839,6 +845,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                         'Voorstel: oefening aanpassen',
                       ProposalKind.deload => 'Voorstel: deload',
                       ProposalKind.note => 'Onthouden',
+                      ProposalKind.plan => 'Schema',
                     },
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -913,6 +920,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                       ProposalKind.routine => 'Toegevoegd',
                       ProposalKind.deload => 'Ingepland',
                       ProposalKind.note => 'Onthouden',
+                      ProposalKind.plan => 'Opgeslagen',
                     }, style: theme.textTheme.bodySmall),
                   ),
                   if (_place(id) case final place?)

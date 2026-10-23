@@ -13,6 +13,7 @@ import '../features/chat/presentation/coach_screen.dart';
 import '../features/chat/presentation/coach_key_screen.dart';
 import '../features/chat/presentation/coach_memory_screen.dart';
 import '../features/chat/presentation/coach_settings_screen.dart';
+import '../features/plans/presentation/plan_new_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/exercises/presentation/custom_exercise_screen.dart';
 import '../features/exercises/presentation/exercise_detail_screen.dart';
@@ -161,6 +162,11 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
             appPage(state, const CoachSettingsScreen()),
+      ),
+      GoRoute(
+        path: Routes.planNew,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) => appPage(state, const PlanNewScreen()),
       ),
       GoRoute(
         path: Routes.coachMemory,

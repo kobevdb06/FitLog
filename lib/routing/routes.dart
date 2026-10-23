@@ -104,6 +104,10 @@ abstract final class Routes {
   static const coachKey = '/coach/sleutel';
   static const coachKeyPaste = '/coach/sleutel?stap=plakken';
 
+  /// A new schema: the form the coach starts from. At the root, because
+  /// Trainen and the coach's panel both lead to it.
+  static const planNew = '/schema/nieuw';
+
   /// The chat, as the fourth tab. Only there once there is a key.
   static const chat = '/chat';
   static const settingsTraining = '/profiel/instellingen/training';

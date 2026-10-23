@@ -28,7 +28,10 @@ import '../../deload/data/deload_standing.dart';
 import '../../exercises/presentation/exercise_providers.dart';
 import '../../progress/data/plateau_loader.dart';
 import '../../progress/data/recovery_loader.dart';
+import '../../../core/calc/plan_weeks.dart';
 import '../domain/coach_proposal.dart';
+
+part 'coach_plan_tools.dart';
 
 /// The result of one lookup: what goes back to the model, and what the user
 /// is told was looked at.
@@ -59,6 +62,7 @@ class CoachTools {
     this.photos = const [],
     this.health = false,
     this.memory = false,
+    this.planId,
   });
 
   final AppDatabase db;
@@ -82,9 +86,13 @@ class CoachTools {
   /// What writes in the notebook: offered while the memory is on.
   static const Set<String> memoryOnly = {'remember', 'forget'};
 
+  /// The schema whose conversation this is. Its two lookups are offered
+  /// there only, and reach that schema only.
+  final String? planId;
+
   /// The lookups this coach may use, as the API wants them.
   List<Map<String, Object?>> get offered =>
-      definitions(health: health, memory: memory);
+      definitions(health: health, memory: memory, plan: planId != null);
 
   /// The photos the coach may put on an exercise, as file names in the photo
   /// directory: those of the newest message in the conversation that had
@@ -96,11 +104,13 @@ class CoachTools {
   static List<Map<String, Object?>> definitions({
     bool health = true,
     bool memory = true,
+    bool plan = false,
   }) => [
     for (final tool in _definitions)
       if ((health || !healthOnly.contains(tool['name'])) &&
           (memory || !memoryOnly.contains(tool['name'])))
         tool,
+    if (plan) ..._PlanTools.definitions,
   ];
 
   static final List<Map<String, Object?>> _definitions = [
@@ -674,7 +684,19 @@ class CoachTools {
         summary: 'je geheugen: staat uit, niets onthouden',
       );
     }
+    if (planId == null && (name == 'plan' || name == 'save_plan')) {
+      return CoachLookup(
+        json: jsonEncode({
+          'error':
+              'dit gesprek hoort niet bij een schema; een schema maakt de '
+              'gebruiker met Nieuw schema',
+        }),
+        summary: 'een schema, buiten het gesprek van een schema',
+      );
+    }
     return switch (name) {
+      'plan' => _readPlan(),
+      'save_plan' => _savePlan(input),
       'remember' => _remember(input),
       'forget' => _forget(input),
       'propose_exercise' => _proposeExercise(input),
@@ -1017,8 +1039,6 @@ class CoachTools {
     final rows = await db.routinesDao.coachRoutines();
     final routines = <Map<String, Object?>>[];
     for (final row in rows.take(kCoachRowCap)) {
-      final detail = await db.routinesDao.getRoutineDetail(row.id);
-      if (detail == null) continue;
       routines.add({
         'name': row.name,
         'notes': ?_text(row.notes),
@@ -1027,25 +1047,7 @@ class CoachTools {
           final at? => _day(at),
           null => null,
         },
-        'exercises': [
-          for (final item in detail.exercises)
-            {
-              'exercise': item.exercise.name,
-              'rest_seconds': ?item.routineExercise.restSeconds,
-              'superset': ?item.routineExercise.supersetGroup,
-              'notes': ?_text(item.routineExercise.notes),
-              'sets': [
-                for (final set in item.sets)
-                  {
-                    'type': set.setType,
-                    'reps': ?set.targetReps,
-                    'weight_kg': ?set.targetWeightKg,
-                    'seconds': ?set.targetDurationSeconds,
-                    'meters': ?set.targetDistanceM,
-                  },
-              ],
-            },
-        ],
+        'exercises': await _routineContent(row.id),
       });
     }
 
@@ -1055,32 +1057,47 @@ class CoachTools {
     );
   }
 
+  /// A routine's exercises and every set of them, as the coach reads them.
+  Future<List<Map<String, Object?>>> _routineContent(String routineId) async {
+    final detail = await db.routinesDao.getRoutineDetail(routineId);
+    if (detail == null) return const [];
+    return [
+      for (final item in detail.exercises)
+        {
+          'exercise': item.exercise.name,
+          'rest_seconds': ?item.routineExercise.restSeconds,
+          'superset': ?item.routineExercise.supersetGroup,
+          'notes': ?_text(item.routineExercise.notes),
+          'sets': [
+            for (final set in item.sets)
+              {
+                'type': set.setType,
+                'reps': ?set.targetReps,
+                'weight_kg': ?set.targetWeightKg,
+                'seconds': ?set.targetDurationSeconds,
+                'meters': ?set.targetDistanceM,
+              },
+          ],
+        },
+    ];
+  }
+
   /// The most of each the coach may put in one routine. A guard against a
   /// runaway answer, far above anything a person would train.
   static const int _maxExercises = 20;
   static const int _maxSets = 12;
 
-  /// Makes a routine in the coach's folder, or changes one that is there.
-  ///
-  /// The only lookup that writes, and it can only write there: a routine
-  /// outside the folder is refused by name, whatever the model asks. The
-  /// routine as it was is kept first, so the change can be put back.
-  Future<CoachLookup> _saveCoachRoutine(Map<String, Object?> input) async {
-    CoachLookup refused(String error, String summary) => CoachLookup(
-      json: jsonEncode({'ok': false, 'error': error}),
-      summary: summary,
+  /// The exercises of a routine the coach wrote, checked and ready to save:
+  /// every one by its exact name, no more than a routine can hold, every
+  /// value possible. A refusal is what to answer the coach with.
+  Future<_Checked> _exercisesOf(List<Object?> wanted) async {
+    _Checked refused(String error, String summary) => _Checked.refused(
+      CoachLookup(
+        json: jsonEncode({'ok': false, 'error': error}),
+        summary: summary,
+      ),
     );
 
-    final name = _text(input['name']);
-    final change = _text(input['change']);
-    final wanted = input['exercises'];
-    if (name == null || change == null || wanted is! List || wanted.isEmpty) {
-      return refused(
-        'geef een naam, een zin over wat je doet (change) en minstens één '
-            'oefening',
-        'een routine zonder naam of oefeningen',
-      );
-    }
     if (wanted.length > _maxExercises) {
       return refused(
         'hoogstens $_maxExercises oefeningen in één routine',
@@ -1170,17 +1187,47 @@ class CoachTools {
       );
     }
     if (missing.isNotEmpty) {
-      return CoachLookup(
-        json: jsonEncode({
-          'ok': false,
-          'error':
-              'deze oefeningen bestaan niet met die naam; zoek ze op met '
-              'search_exercises en gebruik de naam exact zoals ze daar staat',
-          'not_found': missing,
-        }),
-        summary: 'oefeningen die niet bestaan: ${missing.join(', ')}',
+      return _Checked.refused(
+        CoachLookup(
+          json: jsonEncode({
+            'ok': false,
+            'error':
+                'deze oefeningen bestaan niet met die naam; zoek ze op met '
+                'search_exercises en gebruik de naam exact zoals ze daar staat',
+            'not_found': missing,
+          }),
+          summary: 'oefeningen die niet bestaan: ${missing.join(', ')}',
+        ),
       );
     }
+    return _Checked(exercises, card);
+  }
+
+  /// Makes a routine in the coach's folder, or changes one that is there.
+  ///
+  /// The only lookup that writes, and it can only write there: a routine
+  /// outside the folder is refused by name, whatever the model asks. The
+  /// routine as it was is kept first, so the change can be put back.
+  Future<CoachLookup> _saveCoachRoutine(Map<String, Object?> input) async {
+    CoachLookup refused(String error, String summary) => CoachLookup(
+      json: jsonEncode({'ok': false, 'error': error}),
+      summary: summary,
+    );
+
+    final name = _text(input['name']);
+    final change = _text(input['change']);
+    final wanted = input['exercises'];
+    if (name == null || change == null || wanted is! List || wanted.isEmpty) {
+      return refused(
+        'geef een naam, een zin over wat je doet (change) en minstens één '
+            'oefening',
+        'een routine zonder naam of oefeningen',
+      );
+    }
+    final checked = await _exercisesOf(wanted);
+    if (checked.refusal case final refusal?) return refusal;
+    final exercises = checked.drafts;
+    final card = checked.card;
 
     final ours = await db.routinesDao.coachRoutines();
     RoutineRow? named(String wanted) => ours
@@ -2235,4 +2282,18 @@ class CoachTools {
         if (mask & (1 << i) != 0) names[i],
     ];
   }
+}
+
+/// The exercises of a routine, checked: the drafts to save and the lines of
+/// the card - or the refusal to answer the coach with.
+class _Checked {
+  const _Checked(this.drafts, this.card) : refusal = null;
+
+  const _Checked.refused(CoachLookup this.refusal)
+    : drafts = const [],
+      card = const [];
+
+  final List<RoutineExerciseDraft> drafts;
+  final List<ProposedRoutineExercise> card;
+  final CoachLookup? refusal;
 }

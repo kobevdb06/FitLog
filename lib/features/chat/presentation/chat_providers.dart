@@ -12,6 +12,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
@@ -279,6 +280,25 @@ class CoachState {
   final bool keyRejected;
 }
 
+/// What the coach is told in the conversation of [plan], at [now].
+String describePlanOf(TrainingPlanRow plan, DateTime now) => describePlanThread(
+  status: plan.state.wire,
+  goal: plan.goal,
+  split: switch (plan.splitKind) {
+    PlanSplit.coach => 'kies zelf een split die past bij het doel en de dagen',
+    PlanSplit.custom =>
+      'zoals de gebruiker het beschrijft: "${plan.splitNote ?? ''}"',
+    final split => split.label,
+  },
+  days: [
+    for (var d = DateTime.monday; d <= DateTime.sunday; d++)
+      if (WeekdaySet(plan.days).has(d)) Formatters.weekdayName(d),
+  ],
+  coachSetsNumbers: plan.progressionKind == PlanProgression.coach,
+  week: plan.weekAt(now),
+  weeks: plan.weeks,
+);
+
 /// Asking a question, from the first keystroke to the answer on screen.
 @Riverpod(keepAlive: true)
 class CoachController extends _$CoachController {
@@ -422,6 +442,12 @@ class CoachController extends _$CoachController {
       final notes = memory
           ? await db.coachNotesDao.notes()
           : const <CoachNoteRow>[];
+      // The conversation of a schema: the coach can read and lay out that
+      // one, and is told what it is for.
+      final plan = switch ((await db.chatDao.thread(threadId))?.planId) {
+        final id? => await db.plansDao.plan(id),
+        null => null,
+      };
       final coach = Coach(
         client: client,
         tools: CoachTools(
@@ -429,6 +455,7 @@ class CoachController extends _$CoachController {
           photos: inPlay,
           health: settings.coachSeesHealth,
           memory: memory,
+          planId: plan?.id,
         ),
         model: ref.read(coachModelProvider),
         system: buildCoachPrompt(
@@ -450,6 +477,7 @@ class CoachController extends _$CoachController {
                   lastDay: deload.lastDay,
                 ),
           situation: situation,
+          plan: plan == null ? null : describePlanOf(plan, now),
           aboutUser: settings.coachSeesProfile && profile != null
               ? describeProfile(
                   now: now,
@@ -566,7 +594,7 @@ class CoachController extends _$CoachController {
       case ProposalKind.routine:
         id = await _createRoutine(db, proposal.routine!);
       // Made by the coach itself, so already there; isApplied caught it.
-      case ProposalKind.coachRoutine || ProposalKind.note:
+      case ProposalKind.coachRoutine || ProposalKind.note || ProposalKind.plan:
         return proposal.appliedId;
       case ProposalKind.exerciseChange:
         id = await _applyChange(db, proposal.exerciseChange!);

@@ -138,6 +138,10 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 37');
     raw.close();
@@ -188,6 +192,10 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 39');
     raw.close();
@@ -236,6 +244,10 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 41');
     raw.close();
@@ -281,6 +293,10 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 46');
     raw.close();
@@ -324,6 +340,10 @@ void main() {
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
         ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
         ..execute('DROP TABLE coach_notes')
+        ..execute('DROP TABLE training_plans')
+        ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+        ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+        ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute('PRAGMA user_version = 47');
       raw.close();
@@ -376,6 +396,10 @@ void main() {
         ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
         ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
         ..execute('DROP TABLE coach_notes')
+        ..execute('DROP TABLE training_plans')
+        ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+        ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+        ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute(
           "UPDATE chat_messages SET image_file = 'toestel.jpg' "
@@ -436,6 +460,10 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 49');
     raw.close();
@@ -473,6 +501,10 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 50');
     raw.close();
@@ -496,6 +528,10 @@ void main() {
 
     final raw = sqlite3.open(path)
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 52');
     raw.close();
@@ -504,6 +540,35 @@ void main() {
     expect((await db.settingsDao.getSettings()).coachMemory, isTrue);
     expect(await db.coachNotesDao.notes(), isEmpty);
     expect(await db.coachNotesDao.add('Doel: 100 kg bankdrukken'), 1);
+    await db.close();
+  });
+
+  test('a database from v53 gets no schemas, and no routine is a '
+      'session of one', () async {
+    final path = '${dir.path}/v53.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.chatDao.createThread('t-1', 'Een schema voor mij?');
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute(
+        "INSERT INTO routines (id, name, sort_order, created_at, updated_at) "
+        "VALUES ('r-1', 'Push', 0, 1000, 1000)",
+      )
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
+      ..execute('PRAGMA user_version = 53');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    expect(await db.plansDao.running(), isNull);
+    final routine = (await db.routinesDao.getRoutine('r-1'))!;
+    expect(routine.planId, isNull);
+    expect(routine.planWeekday, isNull);
+    expect((await db.chatDao.newestThread())!.planId, isNull);
     await db.close();
   });
 
@@ -519,6 +584,10 @@ void main() {
       final raw = sqlite3.open(path)
         ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
         ..execute('DROP TABLE coach_notes')
+        ..execute('DROP TABLE training_plans')
+        ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+        ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+        ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute('PRAGMA user_version = 51');
       raw.close();
@@ -567,6 +636,10 @@ void main() {
       ..execute('ALTER TABLE app_settings DROP COLUMN deload_snoozed_until')
       ..execute('ALTER TABLE chat_threads DROP COLUMN workout_id')
       ..execute('DROP TABLE coach_notes')
+      ..execute('DROP TABLE training_plans')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_id')
+      ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
+      ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 43');
     raw.close();
@@ -638,7 +711,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 53);
+    expect(raw.select('PRAGMA user_version').first.values.first, 54);
     raw.close();
   });
 
@@ -854,7 +927,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 53);
+    expect(db.schemaVersion, 54);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

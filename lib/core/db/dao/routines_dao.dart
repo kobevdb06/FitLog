@@ -221,7 +221,9 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
 
   // --- Routines -------------------------------------------------------------
 
-  Stream<List<RoutineSummary>> watchRoutines() {
+  /// Your own routines - or, with [planId], the sessions of that schema,
+  /// which live under Schema's rather than among them.
+  Stream<List<RoutineSummary>> watchRoutines({String? planId}) {
     final query = customSelect(
       'SELECT r.*, '
       '(SELECT COUNT(*) FROM routine_exercises re WHERE re.routine_id = r.id) '
@@ -229,7 +231,10 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
       '(SELECT COUNT(*) FROM routine_sets rs '
       ' JOIN routine_exercises re2 ON re2.id = rs.routine_exercise_id '
       ' WHERE re2.routine_id = r.id) AS set_count '
-      'FROM routines r ORDER BY r.sort_order ASC',
+      'FROM routines r '
+      '${planId == null ? 'WHERE r.plan_id IS NULL' : 'WHERE r.plan_id = ?'} '
+      'ORDER BY r.sort_order ASC',
+      variables: [if (planId != null) Variable.withString(planId)],
       // The exercises too: a muscle changed on one changes the card.
       readsFrom: {
         routinesTable,
@@ -657,7 +662,7 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
       'SELECT r.id AS id, COUNT(w.id) AS uses '
       'FROM routines r '
       'LEFT JOIN workouts w ON w.routine_id = r.id AND w.ended_at IS NOT NULL '
-      'WHERE r.is_favourite = 1 '
+      'WHERE r.is_favourite = 1 AND r.plan_id IS NULL '
       'GROUP BY r.id '
       'ORDER BY uses DESC, r.last_performed_at DESC, r.sort_order ASC '
       'LIMIT ?',
@@ -695,12 +700,13 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
   Future<RoutineRow?> suggestedRoutine() async {
     final never =
         await (select(routinesTable)
-              ..where((t) => t.lastPerformedAt.isNull())
+              ..where((t) => t.lastPerformedAt.isNull() & t.planId.isNull())
               ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])
               ..limit(1))
             .getSingleOrNull();
     if (never != null) return never;
     return (select(routinesTable)
+          ..where((t) => t.planId.isNull())
           ..orderBy([(t) => OrderingTerm.asc(t.lastPerformedAt)])
           ..limit(1))
         .getSingleOrNull();

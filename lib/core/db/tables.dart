@@ -410,6 +410,10 @@ class ChatThreadsTable extends Table {
   /// workout thrown away leaves the conversation as an ordinary one.
   TextColumn get workoutId => text().named('workout_id').nullable()();
 
+  /// The schema this is the conversation of: where it was made, and where
+  /// the coach says what it would change. No reference, like [workoutId].
+  TextColumn get planId => text().named('plan_id').nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -626,6 +630,16 @@ class RoutinesTable extends Table {
   /// else's Monday with it.
   IntColumn get scheduledDays =>
       integer().named('scheduled_days').withDefault(const Constant(0))();
+
+  /// The schema this routine is a session of. Such a routine lives under
+  /// Schema's, not among your own workouts, and its order is the schema's.
+  /// No reference: a column with one cannot be dropped from a test database
+  /// that plays an older version.
+  TextColumn get planId => text().named('plan_id').nullable()();
+
+  /// The weekday the session is meant for - a guide, not an appointment: a
+  /// session counts in the week it is done, on whatever day.
+  IntColumn get planWeekday => integer().named('plan_weekday').nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -1205,6 +1219,54 @@ class WeekReviewsTable extends Table {
   IntColumn get requests => integer().nullable()();
   IntColumn get inputTokens => integer().named('input_tokens').nullable()();
   IntColumn get outputTokens => integer().named('output_tokens').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A schema: a few weeks of training the coach lays out for a goal in the
+/// user's words, and adjusts along the way.
+///
+/// The sessions are ordinary routines that carry its id. The weeks hold what
+/// changes from one week to the next, as JSON (`PlanWeek`).
+@DataClassName('TrainingPlanRow')
+class TrainingPlansTable extends Table {
+  @override
+  String get tableName => 'training_plans';
+
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+
+  /// What the user wants from it, in their own words.
+  TextColumn get goal => text()();
+
+  /// One of `PlanSplit`; [splitNote] holds a custom one.
+  TextColumn get split => text()();
+  TextColumn get splitNote => text().named('split_note').nullable()();
+
+  /// The days the user means to train, as a `WeekdaySet` mask.
+  IntColumn get days => integer().withDefault(const Constant(0))();
+
+  /// One of `PlanProgression`: who sets the numbers each week.
+  TextColumn get progression =>
+      text().withDefault(const Constant('app'))();
+
+  /// How many weeks, as the coach decided; null until it did.
+  IntColumn get weeks => integer().nullable()();
+
+  /// The weeks, as a JSON array of `PlanWeek`.
+  TextColumn get pattern => text().nullable()();
+
+  /// One of `PlanStatus`.
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+
+  /// Midnight at the start of the Monday of the first week.
+  IntColumn get startDay => integer().named('start_day').nullable()();
+
+  /// When it finished or was stopped.
+  IntColumn get endedAt => integer().named('ended_at').nullable()();
+  IntColumn get createdAt => integer().named('created_at')();
+  IntColumn get updatedAt => integer().named('updated_at')();
 
   @override
   Set<Column> get primaryKey => {id};

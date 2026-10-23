@@ -332,3 +332,62 @@ enum PrAttemptResult {
     return null;
   }
 }
+
+/// How the sessions of a schema are divided over the week.
+///
+/// [coach] leaves it to the coach; [custom] is the user's own, described in
+/// their words next to it.
+enum PlanSplit {
+  coach('coach', 'Laat de coach kiezen'),
+  fullBody('full_body', 'Full body'),
+  upperLower('upper_lower', 'Upper/lower'),
+  pushPullLegs('ppl', 'Push/pull/legs'),
+  pushPullLegsPushPull('pplpp', 'Push/pull/legs/push/pull'),
+  custom('custom', 'Custom');
+
+  const PlanSplit(this.wire, this.label);
+
+  final String wire;
+  final String label;
+
+  static PlanSplit fromWire(String? value) =>
+      values.firstWhere((e) => e.wire == value, orElse: () => PlanSplit.coach);
+}
+
+/// Who sets the weights and repetitions of a schema, week after week.
+///
+/// [app] costs nothing: FitLog works it out from what you did. [coach]
+/// costs a question a week, and the coach can weigh more than the numbers.
+enum PlanProgression {
+  app('app', 'FitLog'),
+  coach('coach', 'Coach');
+
+  const PlanProgression(this.wire, this.label);
+
+  final String wire;
+  final String label;
+
+  static PlanProgression fromWire(String? value) => values.firstWhere(
+    (e) => e.wire == value,
+    orElse: () => PlanProgression.app,
+  );
+}
+
+/// Where a schema is in its life.
+enum PlanStatus {
+  /// Being talked over with the coach; nothing changes until it starts.
+  draft('draft'),
+
+  /// The one being followed. There is at most one.
+  running('running'),
+
+  /// Finished, or stopped before its last week.
+  done('done');
+
+  const PlanStatus(this.wire);
+
+  final String wire;
+
+  static PlanStatus fromWire(String? value) =>
+      values.firstWhere((e) => e.wire == value, orElse: () => PlanStatus.draft);
+}

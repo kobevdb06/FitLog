@@ -5,6 +5,7 @@ import 'dao/coach_notes_dao.dart';
 import 'dao/deload_dao.dart';
 import 'dao/exercises_dao.dart';
 import 'dao/health_dao.dart';
+import 'dao/plans_dao.dart';
 import 'dao/records_dao.dart';
 import 'dao/recovery_dao.dart';
 import 'dao/reports_dao.dart';
@@ -18,6 +19,7 @@ export 'dao/coach_notes_dao.dart'
     show CoachNoteKind, CoachNotesDao, kCoachNoteLength, kCoachNoteMax;
 export 'dao/deload_dao.dart' show DeloadWeekDays;
 export 'dao/exercises_dao.dart' show ExerciseFilter;
+export 'dao/plans_dao.dart' show TrainingPlanWeeks;
 export 'dao/routines_dao.dart'
     show RoutineDraft, RoutineExerciseDraft, RoutineSetDraft;
 export 'dao/settings_dao.dart' show kSingletonId;
@@ -58,6 +60,7 @@ part 'database.drift.dart';
     WeekReviewsTable,
     DeloadWeeksTable,
     CoachNotesTable,
+    TrainingPlansTable,
   ],
   daos: [
     SettingsDao,
@@ -71,13 +74,14 @@ part 'database.drift.dart';
     ReportsDao,
     DeloadDao,
     CoachNotesDao,
+    PlansDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 53;
+  int get schemaVersion => 54;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -508,6 +512,17 @@ class AppDatabase extends _$AppDatabase {
           // The coach's notebook: empty, and on - as for a new install.
           await m.createTable(coachNotesTable);
           await m.addColumn(appSettingsTable, appSettingsTable.coachMemory);
+        }
+        if (from < 54) {
+          // Schema's: none yet, so no routine is a session of one.
+          await m.createTable(trainingPlansTable);
+          await m.addColumn(routinesTable, routinesTable.planId);
+          await m.addColumn(routinesTable, routinesTable.planWeekday);
+          // Before v21 there were no conversations; the table is made whole
+          // above.
+          if (from >= 21) {
+            await m.addColumn(chatThreadsTable, chatThreadsTable.planId);
+          }
         }
       });
 

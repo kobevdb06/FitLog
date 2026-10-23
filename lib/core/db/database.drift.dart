@@ -5710,6 +5710,15 @@ class $ChatThreadsTableTable extends ChatThreadsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5717,6 +5726,7 @@ class $ChatThreadsTableTable extends ChatThreadsTable
     createdAt,
     updatedAt,
     workoutId,
+    planId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5765,6 +5775,12 @@ class $ChatThreadsTableTable extends ChatThreadsTable
         workoutId.isAcceptableOrUnknown(data['workout_id']!, _workoutIdMeta),
       );
     }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    }
     return context;
   }
 
@@ -5794,6 +5810,10 @@ class $ChatThreadsTableTable extends ChatThreadsTable
         DriftSqlType.string,
         data['${effectivePrefix}workout_id'],
       ),
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      ),
     );
   }
 
@@ -5815,12 +5835,17 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
   /// coach in the island share while it runs. No reference on purpose - a
   /// workout thrown away leaves the conversation as an ordinary one.
   final String? workoutId;
+
+  /// The schema this is the conversation of: where it was made, and where
+  /// the coach says what it would change. No reference, like [workoutId].
+  final String? planId;
   const ChatThreadRow({
     required this.id,
     required this.title,
     required this.createdAt,
     required this.updatedAt,
     this.workoutId,
+    this.planId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5831,6 +5856,9 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     map['updated_at'] = Variable<int>(updatedAt);
     if (!nullToAbsent || workoutId != null) {
       map['workout_id'] = Variable<String>(workoutId);
+    }
+    if (!nullToAbsent || planId != null) {
+      map['plan_id'] = Variable<String>(planId);
     }
     return map;
   }
@@ -5844,6 +5872,9 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       workoutId: workoutId == null && nullToAbsent
           ? const Value.absent()
           : Value(workoutId),
+      planId: planId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planId),
     );
   }
 
@@ -5858,6 +5889,7 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
       workoutId: serializer.fromJson<String?>(json['workoutId']),
+      planId: serializer.fromJson<String?>(json['planId']),
     );
   }
   @override
@@ -5869,6 +5901,7 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
       'workoutId': serializer.toJson<String?>(workoutId),
+      'planId': serializer.toJson<String?>(planId),
     };
   }
 
@@ -5878,12 +5911,14 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     int? createdAt,
     int? updatedAt,
     Value<String?> workoutId = const Value.absent(),
+    Value<String?> planId = const Value.absent(),
   }) => ChatThreadRow(
     id: id ?? this.id,
     title: title ?? this.title,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     workoutId: workoutId.present ? workoutId.value : this.workoutId,
+    planId: planId.present ? planId.value : this.planId,
   );
   ChatThreadRow copyWithCompanion(ChatThreadsTableCompanion data) {
     return ChatThreadRow(
@@ -5892,6 +5927,7 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
+      planId: data.planId.present ? data.planId.value : this.planId,
     );
   }
 
@@ -5902,13 +5938,15 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
           ..write('title: $title, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('workoutId: $workoutId')
+          ..write('workoutId: $workoutId, ')
+          ..write('planId: $planId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, title, createdAt, updatedAt, workoutId);
+  int get hashCode =>
+      Object.hash(id, title, createdAt, updatedAt, workoutId, planId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5917,7 +5955,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
           other.title == this.title &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.workoutId == this.workoutId);
+          other.workoutId == this.workoutId &&
+          other.planId == this.planId);
 }
 
 class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
@@ -5926,6 +5965,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<String?> workoutId;
+  final Value<String?> planId;
   final Value<int> rowid;
   const ChatThreadsTableCompanion({
     this.id = const Value.absent(),
@@ -5933,6 +5973,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.workoutId = const Value.absent(),
+    this.planId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatThreadsTableCompanion.insert({
@@ -5941,6 +5982,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     required int createdAt,
     required int updatedAt,
     this.workoutId = const Value.absent(),
+    this.planId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -5952,6 +5994,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<String>? workoutId,
+    Expression<String>? planId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5960,6 +6003,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (workoutId != null) 'workout_id': workoutId,
+      if (planId != null) 'plan_id': planId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5970,6 +6014,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<String?>? workoutId,
+    Value<String?>? planId,
     Value<int>? rowid,
   }) {
     return ChatThreadsTableCompanion(
@@ -5978,6 +6023,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       workoutId: workoutId ?? this.workoutId,
+      planId: planId ?? this.planId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6000,6 +6046,9 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     if (workoutId.present) {
       map['workout_id'] = Variable<String>(workoutId.value);
     }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6014,6 +6063,7 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('workoutId: $workoutId, ')
+          ..write('planId: $planId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7272,6 +7322,26 @@ class $RoutinesTableTable extends RoutinesTable
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _planWeekdayMeta = const VerificationMeta(
+    'planWeekday',
+  );
+  @override
+  late final GeneratedColumn<int> planWeekday = GeneratedColumn<int>(
+    'plan_weekday',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7285,6 +7355,8 @@ class $RoutinesTableTable extends RoutinesTable
     colorIndex,
     isFavourite,
     scheduledDays,
+    planId,
+    planWeekday,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7380,6 +7452,21 @@ class $RoutinesTableTable extends RoutinesTable
         ),
       );
     }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    }
+    if (data.containsKey('plan_weekday')) {
+      context.handle(
+        _planWeekdayMeta,
+        planWeekday.isAcceptableOrUnknown(
+          data['plan_weekday']!,
+          _planWeekdayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -7433,6 +7520,14 @@ class $RoutinesTableTable extends RoutinesTable
         DriftSqlType.int,
         data['${effectivePrefix}scheduled_days'],
       )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      ),
+      planWeekday: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plan_weekday'],
+      ),
     );
   }
 
@@ -7469,6 +7564,16 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
   /// `RoutineDraft`: a routine you receive over QR must not bring someone
   /// else's Monday with it.
   final int scheduledDays;
+
+  /// The schema this routine is a session of. Such a routine lives under
+  /// Schema's, not among your own workouts, and its order is the schema's.
+  /// No reference: a column with one cannot be dropped from a test database
+  /// that plays an older version.
+  final String? planId;
+
+  /// The weekday the session is meant for - a guide, not an appointment: a
+  /// session counts in the week it is done, on whatever day.
+  final int? planWeekday;
   const RoutineRow({
     required this.id,
     required this.name,
@@ -7481,6 +7586,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     this.colorIndex,
     required this.isFavourite,
     required this.scheduledDays,
+    this.planId,
+    this.planWeekday,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7504,6 +7611,12 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     }
     map['is_favourite'] = Variable<bool>(isFavourite);
     map['scheduled_days'] = Variable<int>(scheduledDays);
+    if (!nullToAbsent || planId != null) {
+      map['plan_id'] = Variable<String>(planId);
+    }
+    if (!nullToAbsent || planWeekday != null) {
+      map['plan_weekday'] = Variable<int>(planWeekday);
+    }
     return map;
   }
 
@@ -7528,6 +7641,12 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           : Value(colorIndex),
       isFavourite: Value(isFavourite),
       scheduledDays: Value(scheduledDays),
+      planId: planId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planId),
+      planWeekday: planWeekday == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planWeekday),
     );
   }
 
@@ -7548,6 +7667,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       isFavourite: serializer.fromJson<bool>(json['isFavourite']),
       scheduledDays: serializer.fromJson<int>(json['scheduledDays']),
+      planId: serializer.fromJson<String?>(json['planId']),
+      planWeekday: serializer.fromJson<int?>(json['planWeekday']),
     );
   }
   @override
@@ -7565,6 +7686,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'isFavourite': serializer.toJson<bool>(isFavourite),
       'scheduledDays': serializer.toJson<int>(scheduledDays),
+      'planId': serializer.toJson<String?>(planId),
+      'planWeekday': serializer.toJson<int?>(planWeekday),
     };
   }
 
@@ -7580,6 +7703,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     Value<int?> colorIndex = const Value.absent(),
     bool? isFavourite,
     int? scheduledDays,
+    Value<String?> planId = const Value.absent(),
+    Value<int?> planWeekday = const Value.absent(),
   }) => RoutineRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -7594,6 +7719,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
     isFavourite: isFavourite ?? this.isFavourite,
     scheduledDays: scheduledDays ?? this.scheduledDays,
+    planId: planId.present ? planId.value : this.planId,
+    planWeekday: planWeekday.present ? planWeekday.value : this.planWeekday,
   );
   RoutineRow copyWithCompanion(RoutinesTableCompanion data) {
     return RoutineRow(
@@ -7616,6 +7743,10 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       scheduledDays: data.scheduledDays.present
           ? data.scheduledDays.value
           : this.scheduledDays,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      planWeekday: data.planWeekday.present
+          ? data.planWeekday.value
+          : this.planWeekday,
     );
   }
 
@@ -7632,7 +7763,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           ..write('lastPerformedAt: $lastPerformedAt, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('isFavourite: $isFavourite, ')
-          ..write('scheduledDays: $scheduledDays')
+          ..write('scheduledDays: $scheduledDays, ')
+          ..write('planId: $planId, ')
+          ..write('planWeekday: $planWeekday')
           ..write(')'))
         .toString();
   }
@@ -7650,6 +7783,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     colorIndex,
     isFavourite,
     scheduledDays,
+    planId,
+    planWeekday,
   );
   @override
   bool operator ==(Object other) =>
@@ -7665,7 +7800,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           other.lastPerformedAt == this.lastPerformedAt &&
           other.colorIndex == this.colorIndex &&
           other.isFavourite == this.isFavourite &&
-          other.scheduledDays == this.scheduledDays);
+          other.scheduledDays == this.scheduledDays &&
+          other.planId == this.planId &&
+          other.planWeekday == this.planWeekday);
 }
 
 class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
@@ -7680,6 +7817,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
   final Value<int?> colorIndex;
   final Value<bool> isFavourite;
   final Value<int> scheduledDays;
+  final Value<String?> planId;
+  final Value<int?> planWeekday;
   final Value<int> rowid;
   const RoutinesTableCompanion({
     this.id = const Value.absent(),
@@ -7693,6 +7832,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.colorIndex = const Value.absent(),
     this.isFavourite = const Value.absent(),
     this.scheduledDays = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.planWeekday = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinesTableCompanion.insert({
@@ -7707,6 +7848,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.colorIndex = const Value.absent(),
     this.isFavourite = const Value.absent(),
     this.scheduledDays = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.planWeekday = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -7725,6 +7868,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Expression<int>? colorIndex,
     Expression<bool>? isFavourite,
     Expression<int>? scheduledDays,
+    Expression<String>? planId,
+    Expression<int>? planWeekday,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -7739,6 +7884,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       if (colorIndex != null) 'color_index': colorIndex,
       if (isFavourite != null) 'is_favourite': isFavourite,
       if (scheduledDays != null) 'scheduled_days': scheduledDays,
+      if (planId != null) 'plan_id': planId,
+      if (planWeekday != null) 'plan_weekday': planWeekday,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7755,6 +7902,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Value<int?>? colorIndex,
     Value<bool>? isFavourite,
     Value<int>? scheduledDays,
+    Value<String?>? planId,
+    Value<int?>? planWeekday,
     Value<int>? rowid,
   }) {
     return RoutinesTableCompanion(
@@ -7769,6 +7918,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       colorIndex: colorIndex ?? this.colorIndex,
       isFavourite: isFavourite ?? this.isFavourite,
       scheduledDays: scheduledDays ?? this.scheduledDays,
+      planId: planId ?? this.planId,
+      planWeekday: planWeekday ?? this.planWeekday,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7809,6 +7960,12 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     if (scheduledDays.present) {
       map['scheduled_days'] = Variable<int>(scheduledDays.value);
     }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
+    if (planWeekday.present) {
+      map['plan_weekday'] = Variable<int>(planWeekday.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7829,6 +7986,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
           ..write('colorIndex: $colorIndex, ')
           ..write('isFavourite: $isFavourite, ')
           ..write('scheduledDays: $scheduledDays, ')
+          ..write('planId: $planId, ')
+          ..write('planWeekday: $planWeekday, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -17077,6 +17236,816 @@ class CoachNotesTableCompanion extends UpdateCompanion<CoachNoteRow> {
   }
 }
 
+class $TrainingPlansTableTable extends TrainingPlansTable
+    with TableInfo<$TrainingPlansTableTable, TrainingPlanRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrainingPlansTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _goalMeta = const VerificationMeta('goal');
+  @override
+  late final GeneratedColumn<String> goal = GeneratedColumn<String>(
+    'goal',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _splitMeta = const VerificationMeta('split');
+  @override
+  late final GeneratedColumn<String> split = GeneratedColumn<String>(
+    'split',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _splitNoteMeta = const VerificationMeta(
+    'splitNote',
+  );
+  @override
+  late final GeneratedColumn<String> splitNote = GeneratedColumn<String>(
+    'split_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _daysMeta = const VerificationMeta('days');
+  @override
+  late final GeneratedColumn<int> days = GeneratedColumn<int>(
+    'days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _progressionMeta = const VerificationMeta(
+    'progression',
+  );
+  @override
+  late final GeneratedColumn<String> progression = GeneratedColumn<String>(
+    'progression',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('app'),
+  );
+  static const VerificationMeta _weeksMeta = const VerificationMeta('weeks');
+  @override
+  late final GeneratedColumn<int> weeks = GeneratedColumn<int>(
+    'weeks',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _patternMeta = const VerificationMeta(
+    'pattern',
+  );
+  @override
+  late final GeneratedColumn<String> pattern = GeneratedColumn<String>(
+    'pattern',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('draft'),
+  );
+  static const VerificationMeta _startDayMeta = const VerificationMeta(
+    'startDay',
+  );
+  @override
+  late final GeneratedColumn<int> startDay = GeneratedColumn<int>(
+    'start_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<int> endedAt = GeneratedColumn<int>(
+    'ended_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    goal,
+    split,
+    splitNote,
+    days,
+    progression,
+    weeks,
+    pattern,
+    status,
+    startDay,
+    endedAt,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'training_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrainingPlanRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('goal')) {
+      context.handle(
+        _goalMeta,
+        goal.isAcceptableOrUnknown(data['goal']!, _goalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_goalMeta);
+    }
+    if (data.containsKey('split')) {
+      context.handle(
+        _splitMeta,
+        split.isAcceptableOrUnknown(data['split']!, _splitMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_splitMeta);
+    }
+    if (data.containsKey('split_note')) {
+      context.handle(
+        _splitNoteMeta,
+        splitNote.isAcceptableOrUnknown(data['split_note']!, _splitNoteMeta),
+      );
+    }
+    if (data.containsKey('days')) {
+      context.handle(
+        _daysMeta,
+        days.isAcceptableOrUnknown(data['days']!, _daysMeta),
+      );
+    }
+    if (data.containsKey('progression')) {
+      context.handle(
+        _progressionMeta,
+        progression.isAcceptableOrUnknown(
+          data['progression']!,
+          _progressionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weeks')) {
+      context.handle(
+        _weeksMeta,
+        weeks.isAcceptableOrUnknown(data['weeks']!, _weeksMeta),
+      );
+    }
+    if (data.containsKey('pattern')) {
+      context.handle(
+        _patternMeta,
+        pattern.isAcceptableOrUnknown(data['pattern']!, _patternMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('start_day')) {
+      context.handle(
+        _startDayMeta,
+        startDay.isAcceptableOrUnknown(data['start_day']!, _startDayMeta),
+      );
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TrainingPlanRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrainingPlanRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      goal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal'],
+      )!,
+      split: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}split'],
+      )!,
+      splitNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}split_note'],
+      ),
+      days: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}days'],
+      )!,
+      progression: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}progression'],
+      )!,
+      weeks: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weeks'],
+      ),
+      pattern: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pattern'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      startDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_day'],
+      ),
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TrainingPlansTableTable createAlias(String alias) {
+    return $TrainingPlansTableTable(attachedDatabase, alias);
+  }
+}
+
+class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
+  final String id;
+  final String name;
+
+  /// What the user wants from it, in their own words.
+  final String goal;
+
+  /// One of `PlanSplit`; [splitNote] holds a custom one.
+  final String split;
+  final String? splitNote;
+
+  /// The days the user means to train, as a `WeekdaySet` mask.
+  final int days;
+
+  /// One of `PlanProgression`: who sets the numbers each week.
+  final String progression;
+
+  /// How many weeks, as the coach decided; null until it did.
+  final int? weeks;
+
+  /// The weeks, as a JSON array of `PlanWeek`.
+  final String? pattern;
+
+  /// One of `PlanStatus`.
+  final String status;
+
+  /// Midnight at the start of the Monday of the first week.
+  final int? startDay;
+
+  /// When it finished or was stopped.
+  final int? endedAt;
+  final int createdAt;
+  final int updatedAt;
+  const TrainingPlanRow({
+    required this.id,
+    required this.name,
+    required this.goal,
+    required this.split,
+    this.splitNote,
+    required this.days,
+    required this.progression,
+    this.weeks,
+    this.pattern,
+    required this.status,
+    this.startDay,
+    this.endedAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['goal'] = Variable<String>(goal);
+    map['split'] = Variable<String>(split);
+    if (!nullToAbsent || splitNote != null) {
+      map['split_note'] = Variable<String>(splitNote);
+    }
+    map['days'] = Variable<int>(days);
+    map['progression'] = Variable<String>(progression);
+    if (!nullToAbsent || weeks != null) {
+      map['weeks'] = Variable<int>(weeks);
+    }
+    if (!nullToAbsent || pattern != null) {
+      map['pattern'] = Variable<String>(pattern);
+    }
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || startDay != null) {
+      map['start_day'] = Variable<int>(startDay);
+    }
+    if (!nullToAbsent || endedAt != null) {
+      map['ended_at'] = Variable<int>(endedAt);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  TrainingPlansTableCompanion toCompanion(bool nullToAbsent) {
+    return TrainingPlansTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      goal: Value(goal),
+      split: Value(split),
+      splitNote: splitNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(splitNote),
+      days: Value(days),
+      progression: Value(progression),
+      weeks: weeks == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weeks),
+      pattern: pattern == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pattern),
+      status: Value(status),
+      startDay: startDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDay),
+      endedAt: endedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TrainingPlanRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrainingPlanRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      goal: serializer.fromJson<String>(json['goal']),
+      split: serializer.fromJson<String>(json['split']),
+      splitNote: serializer.fromJson<String?>(json['splitNote']),
+      days: serializer.fromJson<int>(json['days']),
+      progression: serializer.fromJson<String>(json['progression']),
+      weeks: serializer.fromJson<int?>(json['weeks']),
+      pattern: serializer.fromJson<String?>(json['pattern']),
+      status: serializer.fromJson<String>(json['status']),
+      startDay: serializer.fromJson<int?>(json['startDay']),
+      endedAt: serializer.fromJson<int?>(json['endedAt']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'goal': serializer.toJson<String>(goal),
+      'split': serializer.toJson<String>(split),
+      'splitNote': serializer.toJson<String?>(splitNote),
+      'days': serializer.toJson<int>(days),
+      'progression': serializer.toJson<String>(progression),
+      'weeks': serializer.toJson<int?>(weeks),
+      'pattern': serializer.toJson<String?>(pattern),
+      'status': serializer.toJson<String>(status),
+      'startDay': serializer.toJson<int?>(startDay),
+      'endedAt': serializer.toJson<int?>(endedAt),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  TrainingPlanRow copyWith({
+    String? id,
+    String? name,
+    String? goal,
+    String? split,
+    Value<String?> splitNote = const Value.absent(),
+    int? days,
+    String? progression,
+    Value<int?> weeks = const Value.absent(),
+    Value<String?> pattern = const Value.absent(),
+    String? status,
+    Value<int?> startDay = const Value.absent(),
+    Value<int?> endedAt = const Value.absent(),
+    int? createdAt,
+    int? updatedAt,
+  }) => TrainingPlanRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    goal: goal ?? this.goal,
+    split: split ?? this.split,
+    splitNote: splitNote.present ? splitNote.value : this.splitNote,
+    days: days ?? this.days,
+    progression: progression ?? this.progression,
+    weeks: weeks.present ? weeks.value : this.weeks,
+    pattern: pattern.present ? pattern.value : this.pattern,
+    status: status ?? this.status,
+    startDay: startDay.present ? startDay.value : this.startDay,
+    endedAt: endedAt.present ? endedAt.value : this.endedAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TrainingPlanRow copyWithCompanion(TrainingPlansTableCompanion data) {
+    return TrainingPlanRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      goal: data.goal.present ? data.goal.value : this.goal,
+      split: data.split.present ? data.split.value : this.split,
+      splitNote: data.splitNote.present ? data.splitNote.value : this.splitNote,
+      days: data.days.present ? data.days.value : this.days,
+      progression: data.progression.present
+          ? data.progression.value
+          : this.progression,
+      weeks: data.weeks.present ? data.weeks.value : this.weeks,
+      pattern: data.pattern.present ? data.pattern.value : this.pattern,
+      status: data.status.present ? data.status.value : this.status,
+      startDay: data.startDay.present ? data.startDay.value : this.startDay,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrainingPlanRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('goal: $goal, ')
+          ..write('split: $split, ')
+          ..write('splitNote: $splitNote, ')
+          ..write('days: $days, ')
+          ..write('progression: $progression, ')
+          ..write('weeks: $weeks, ')
+          ..write('pattern: $pattern, ')
+          ..write('status: $status, ')
+          ..write('startDay: $startDay, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    goal,
+    split,
+    splitNote,
+    days,
+    progression,
+    weeks,
+    pattern,
+    status,
+    startDay,
+    endedAt,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrainingPlanRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.goal == this.goal &&
+          other.split == this.split &&
+          other.splitNote == this.splitNote &&
+          other.days == this.days &&
+          other.progression == this.progression &&
+          other.weeks == this.weeks &&
+          other.pattern == this.pattern &&
+          other.status == this.status &&
+          other.startDay == this.startDay &&
+          other.endedAt == this.endedAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> goal;
+  final Value<String> split;
+  final Value<String?> splitNote;
+  final Value<int> days;
+  final Value<String> progression;
+  final Value<int?> weeks;
+  final Value<String?> pattern;
+  final Value<String> status;
+  final Value<int?> startDay;
+  final Value<int?> endedAt;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const TrainingPlansTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.split = const Value.absent(),
+    this.splitNote = const Value.absent(),
+    this.days = const Value.absent(),
+    this.progression = const Value.absent(),
+    this.weeks = const Value.absent(),
+    this.pattern = const Value.absent(),
+    this.status = const Value.absent(),
+    this.startDay = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TrainingPlansTableCompanion.insert({
+    required String id,
+    required String name,
+    required String goal,
+    required String split,
+    this.splitNote = const Value.absent(),
+    this.days = const Value.absent(),
+    this.progression = const Value.absent(),
+    this.weeks = const Value.absent(),
+    this.pattern = const Value.absent(),
+    this.status = const Value.absent(),
+    this.startDay = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       goal = Value(goal),
+       split = Value(split),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<TrainingPlanRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? goal,
+    Expression<String>? split,
+    Expression<String>? splitNote,
+    Expression<int>? days,
+    Expression<String>? progression,
+    Expression<int>? weeks,
+    Expression<String>? pattern,
+    Expression<String>? status,
+    Expression<int>? startDay,
+    Expression<int>? endedAt,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (goal != null) 'goal': goal,
+      if (split != null) 'split': split,
+      if (splitNote != null) 'split_note': splitNote,
+      if (days != null) 'days': days,
+      if (progression != null) 'progression': progression,
+      if (weeks != null) 'weeks': weeks,
+      if (pattern != null) 'pattern': pattern,
+      if (status != null) 'status': status,
+      if (startDay != null) 'start_day': startDay,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TrainingPlansTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? goal,
+    Value<String>? split,
+    Value<String?>? splitNote,
+    Value<int>? days,
+    Value<String>? progression,
+    Value<int?>? weeks,
+    Value<String?>? pattern,
+    Value<String>? status,
+    Value<int?>? startDay,
+    Value<int?>? endedAt,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TrainingPlansTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      goal: goal ?? this.goal,
+      split: split ?? this.split,
+      splitNote: splitNote ?? this.splitNote,
+      days: days ?? this.days,
+      progression: progression ?? this.progression,
+      weeks: weeks ?? this.weeks,
+      pattern: pattern ?? this.pattern,
+      status: status ?? this.status,
+      startDay: startDay ?? this.startDay,
+      endedAt: endedAt ?? this.endedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (goal.present) {
+      map['goal'] = Variable<String>(goal.value);
+    }
+    if (split.present) {
+      map['split'] = Variable<String>(split.value);
+    }
+    if (splitNote.present) {
+      map['split_note'] = Variable<String>(splitNote.value);
+    }
+    if (days.present) {
+      map['days'] = Variable<int>(days.value);
+    }
+    if (progression.present) {
+      map['progression'] = Variable<String>(progression.value);
+    }
+    if (weeks.present) {
+      map['weeks'] = Variable<int>(weeks.value);
+    }
+    if (pattern.present) {
+      map['pattern'] = Variable<String>(pattern.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (startDay.present) {
+      map['start_day'] = Variable<int>(startDay.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<int>(endedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrainingPlansTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('goal: $goal, ')
+          ..write('split: $split, ')
+          ..write('splitNote: $splitNote, ')
+          ..write('days: $days, ')
+          ..write('progression: $progression, ')
+          ..write('weeks: $weeks, ')
+          ..write('pattern: $pattern, ')
+          ..write('status: $status, ')
+          ..write('startDay: $startDay, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -17141,6 +18110,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CoachNotesTableTable coachNotesTable = $CoachNotesTableTable(
     this,
   );
+  late final $TrainingPlansTableTable trainingPlansTable =
+      $TrainingPlansTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -17204,6 +18175,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ReportsDao reportsDao = ReportsDao(this as AppDatabase);
   late final DeloadDao deloadDao = DeloadDao(this as AppDatabase);
   late final CoachNotesDao coachNotesDao = CoachNotesDao(this as AppDatabase);
+  late final PlansDao plansDao = PlansDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -17237,6 +18209,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     weekReviewsTable,
     deloadWeeksTable,
     coachNotesTable,
+    trainingPlansTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -20198,6 +21171,7 @@ typedef $$ChatThreadsTableTableCreateCompanionBuilder =
       required int createdAt,
       required int updatedAt,
       Value<String?> workoutId,
+      Value<String?> planId,
       Value<int> rowid,
     });
 typedef $$ChatThreadsTableTableUpdateCompanionBuilder =
@@ -20207,6 +21181,7 @@ typedef $$ChatThreadsTableTableUpdateCompanionBuilder =
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<String?> workoutId,
+      Value<String?> planId,
       Value<int> rowid,
     });
 
@@ -20275,6 +21250,11 @@ class $$ChatThreadsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> chatMessagesTableRefs(
     Expression<bool> Function($$ChatMessagesTableTableFilterComposer f) f,
   ) {
@@ -20334,6 +21314,11 @@ class $$ChatThreadsTableTableOrderingComposer
     column: $table.workoutId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChatThreadsTableTableAnnotationComposer
@@ -20359,6 +21344,9 @@ class $$ChatThreadsTableTableAnnotationComposer
 
   GeneratedColumn<String> get workoutId =>
       $composableBuilder(column: $table.workoutId, builder: (column) => column);
+
+  GeneratedColumn<String> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
 
   Expression<T> chatMessagesTableRefs<T extends Object>(
     Expression<T> Function($$ChatMessagesTableTableAnnotationComposer a) f,
@@ -20422,6 +21410,7 @@ class $$ChatThreadsTableTableTableManager
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<String?> workoutId = const Value.absent(),
+                Value<String?> planId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatThreadsTableCompanion(
                 id: id,
@@ -20429,6 +21418,7 @@ class $$ChatThreadsTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 workoutId: workoutId,
+                planId: planId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -20438,6 +21428,7 @@ class $$ChatThreadsTableTableTableManager
                 required int createdAt,
                 required int updatedAt,
                 Value<String?> workoutId = const Value.absent(),
+                Value<String?> planId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatThreadsTableCompanion.insert(
                 id: id,
@@ -20445,6 +21436,7 @@ class $$ChatThreadsTableTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 workoutId: workoutId,
+                planId: planId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -21305,6 +22297,8 @@ typedef $$RoutinesTableTableCreateCompanionBuilder =
       Value<int?> colorIndex,
       Value<bool> isFavourite,
       Value<int> scheduledDays,
+      Value<String?> planId,
+      Value<int?> planWeekday,
       Value<int> rowid,
     });
 typedef $$RoutinesTableTableUpdateCompanionBuilder =
@@ -21320,6 +22314,8 @@ typedef $$RoutinesTableTableUpdateCompanionBuilder =
       Value<int?> colorIndex,
       Value<bool> isFavourite,
       Value<int> scheduledDays,
+      Value<String?> planId,
+      Value<int?> planWeekday,
       Value<int> rowid,
     });
 
@@ -21474,6 +22470,16 @@ class $$RoutinesTableTableFilterComposer
 
   ColumnFilters<int> get scheduledDays => $composableBuilder(
     column: $table.scheduledDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get planWeekday => $composableBuilder(
+    column: $table.planWeekday,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21636,6 +22642,16 @@ class $$RoutinesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get planWeekday => $composableBuilder(
+    column: $table.planWeekday,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutineFoldersTableTableOrderingComposer get folderId {
     final $$RoutineFoldersTableTableOrderingComposer composer =
         $composerBuilder(
@@ -21705,6 +22721,14 @@ class $$RoutinesTableTableAnnotationComposer
 
   GeneratedColumn<int> get scheduledDays => $composableBuilder(
     column: $table.scheduledDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
+
+  GeneratedColumn<int> get planWeekday => $composableBuilder(
+    column: $table.planWeekday,
     builder: (column) => column,
   );
 
@@ -21854,6 +22878,8 @@ class $$RoutinesTableTableTableManager
                 Value<int?> colorIndex = const Value.absent(),
                 Value<bool> isFavourite = const Value.absent(),
                 Value<int> scheduledDays = const Value.absent(),
+                Value<String?> planId = const Value.absent(),
+                Value<int?> planWeekday = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion(
                 id: id,
@@ -21867,6 +22893,8 @@ class $$RoutinesTableTableTableManager
                 colorIndex: colorIndex,
                 isFavourite: isFavourite,
                 scheduledDays: scheduledDays,
+                planId: planId,
+                planWeekday: planWeekday,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -21882,6 +22910,8 @@ class $$RoutinesTableTableTableManager
                 Value<int?> colorIndex = const Value.absent(),
                 Value<bool> isFavourite = const Value.absent(),
                 Value<int> scheduledDays = const Value.absent(),
+                Value<String?> planId = const Value.absent(),
+                Value<int?> planWeekday = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion.insert(
                 id: id,
@@ -21895,6 +22925,8 @@ class $$RoutinesTableTableTableManager
                 colorIndex: colorIndex,
                 isFavourite: isFavourite,
                 scheduledDays: scheduledDays,
+                planId: planId,
+                planWeekday: planWeekday,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -28566,6 +29598,392 @@ typedef $$CoachNotesTableTableProcessedTableManager =
       CoachNoteRow,
       PrefetchHooks Function()
     >;
+typedef $$TrainingPlansTableTableCreateCompanionBuilder =
+    TrainingPlansTableCompanion Function({
+      required String id,
+      required String name,
+      required String goal,
+      required String split,
+      Value<String?> splitNote,
+      Value<int> days,
+      Value<String> progression,
+      Value<int?> weeks,
+      Value<String?> pattern,
+      Value<String> status,
+      Value<int?> startDay,
+      Value<int?> endedAt,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TrainingPlansTableTableUpdateCompanionBuilder =
+    TrainingPlansTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> goal,
+      Value<String> split,
+      Value<String?> splitNote,
+      Value<int> days,
+      Value<String> progression,
+      Value<int?> weeks,
+      Value<String?> pattern,
+      Value<String> status,
+      Value<int?> startDay,
+      Value<int?> endedAt,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$TrainingPlansTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TrainingPlansTableTable> {
+  $$TrainingPlansTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get split => $composableBuilder(
+    column: $table.split,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get splitNote => $composableBuilder(
+    column: $table.splitNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get progression => $composableBuilder(
+    column: $table.progression,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weeks => $composableBuilder(
+    column: $table.weeks,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pattern => $composableBuilder(
+    column: $table.pattern,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startDay => $composableBuilder(
+    column: $table.startDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TrainingPlansTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TrainingPlansTableTable> {
+  $$TrainingPlansTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get split => $composableBuilder(
+    column: $table.split,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get splitNote => $composableBuilder(
+    column: $table.splitNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get progression => $composableBuilder(
+    column: $table.progression,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weeks => $composableBuilder(
+    column: $table.weeks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pattern => $composableBuilder(
+    column: $table.pattern,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startDay => $composableBuilder(
+    column: $table.startDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TrainingPlansTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TrainingPlansTableTable> {
+  $$TrainingPlansTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
+
+  GeneratedColumn<String> get split =>
+      $composableBuilder(column: $table.split, builder: (column) => column);
+
+  GeneratedColumn<String> get splitNote =>
+      $composableBuilder(column: $table.splitNote, builder: (column) => column);
+
+  GeneratedColumn<int> get days =>
+      $composableBuilder(column: $table.days, builder: (column) => column);
+
+  GeneratedColumn<String> get progression => $composableBuilder(
+    column: $table.progression,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get weeks =>
+      $composableBuilder(column: $table.weeks, builder: (column) => column);
+
+  GeneratedColumn<String> get pattern =>
+      $composableBuilder(column: $table.pattern, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get startDay =>
+      $composableBuilder(column: $table.startDay, builder: (column) => column);
+
+  GeneratedColumn<int> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$TrainingPlansTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TrainingPlansTableTable,
+          TrainingPlanRow,
+          $$TrainingPlansTableTableFilterComposer,
+          $$TrainingPlansTableTableOrderingComposer,
+          $$TrainingPlansTableTableAnnotationComposer,
+          $$TrainingPlansTableTableCreateCompanionBuilder,
+          $$TrainingPlansTableTableUpdateCompanionBuilder,
+          (
+            TrainingPlanRow,
+            BaseReferences<
+              _$AppDatabase,
+              $TrainingPlansTableTable,
+              TrainingPlanRow
+            >,
+          ),
+          TrainingPlanRow,
+          PrefetchHooks Function()
+        > {
+  $$TrainingPlansTableTableTableManager(
+    _$AppDatabase db,
+    $TrainingPlansTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrainingPlansTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrainingPlansTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TrainingPlansTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> goal = const Value.absent(),
+                Value<String> split = const Value.absent(),
+                Value<String?> splitNote = const Value.absent(),
+                Value<int> days = const Value.absent(),
+                Value<String> progression = const Value.absent(),
+                Value<int?> weeks = const Value.absent(),
+                Value<String?> pattern = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int?> startDay = const Value.absent(),
+                Value<int?> endedAt = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrainingPlansTableCompanion(
+                id: id,
+                name: name,
+                goal: goal,
+                split: split,
+                splitNote: splitNote,
+                days: days,
+                progression: progression,
+                weeks: weeks,
+                pattern: pattern,
+                status: status,
+                startDay: startDay,
+                endedAt: endedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String goal,
+                required String split,
+                Value<String?> splitNote = const Value.absent(),
+                Value<int> days = const Value.absent(),
+                Value<String> progression = const Value.absent(),
+                Value<int?> weeks = const Value.absent(),
+                Value<String?> pattern = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int?> startDay = const Value.absent(),
+                Value<int?> endedAt = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => TrainingPlansTableCompanion.insert(
+                id: id,
+                name: name,
+                goal: goal,
+                split: split,
+                splitNote: splitNote,
+                days: days,
+                progression: progression,
+                weeks: weeks,
+                pattern: pattern,
+                status: status,
+                startDay: startDay,
+                endedAt: endedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TrainingPlansTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TrainingPlansTableTable,
+      TrainingPlanRow,
+      $$TrainingPlansTableTableFilterComposer,
+      $$TrainingPlansTableTableOrderingComposer,
+      $$TrainingPlansTableTableAnnotationComposer,
+      $$TrainingPlansTableTableCreateCompanionBuilder,
+      $$TrainingPlansTableTableUpdateCompanionBuilder,
+      (
+        TrainingPlanRow,
+        BaseReferences<
+          _$AppDatabase,
+          $TrainingPlansTableTable,
+          TrainingPlanRow
+        >,
+      ),
+      TrainingPlanRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -28626,4 +30044,6 @@ class $AppDatabaseManager {
       $$DeloadWeeksTableTableTableManager(_db, _db.deloadWeeksTable);
   $$CoachNotesTableTableTableManager get coachNotesTable =>
       $$CoachNotesTableTableTableManager(_db, _db.coachNotesTable);
+  $$TrainingPlansTableTableTableManager get trainingPlansTable =>
+      $$TrainingPlansTableTableTableManager(_db, _db.trainingPlansTable);
 }

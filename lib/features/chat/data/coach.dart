@@ -13,6 +13,25 @@ import 'ai_client.dart';
 import 'coach_tools.dart';
 import '../domain/coach_proposal.dart';
 
+/// How much the coach may write in one answer - lookups included, and on a
+/// model that thinks first, its thinking too.
+const int kCoachMaxTokens = 1024;
+
+/// The same in the conversation of a schema, and on its Sunday evening.
+///
+/// A whole schema is one lookup: five sessions of six exercises is thousands
+/// of tokens before the model has said a word, and a Gemini 3 model thinks
+/// it over first, within the same limit. At 1024 the answer was cut off
+/// before the schema was written, and came back empty. Only what is written
+/// is paid for; the limit costs nothing.
+const int kPlanMaxTokens = 16384;
+
+/// How often the coach may look something up while making or changing a
+/// schema: its gym and history, every exercise by name, the schema itself,
+/// and once more when a name was wrong. Four rounds - enough for a question -
+/// ran out before the schema was written.
+const int kPlanToolRounds = 8;
+
 /// One turn of a stored conversation.
 class CoachTurn {
   const CoachTurn({
@@ -113,13 +132,18 @@ class Coach {
     var usage = CoachUsage.none;
     var requests = 0;
 
-    for (var round = 0; round <= maxToolRounds; round++) {
+    final plan = tools.planId != null;
+    final maxTokens = plan ? kPlanMaxTokens : kCoachMaxTokens;
+    final rounds = plan ? kPlanToolRounds : maxToolRounds;
+    var retried = false;
+    for (var round = 0; round <= rounds; round++) {
       final reply = onText == null
           ? await client.send(
               system: system,
               messages: messages,
               tools: tools.offered,
               model: model,
+              maxTokens: maxTokens,
             )
           : await client.sendStreaming(
               system: system,
@@ -127,9 +151,32 @@ class Coach {
               tools: tools.offered,
               model: model,
               onText: onText,
+              maxTokens: maxTokens,
             );
       usage = usage.plus(reply.usage);
       requests++;
+
+      // A lookup written in a shape nobody can read: the same question once
+      // more, which nearly always comes back right. Twice is not luck.
+      if (reply.malformed && !reply.wantsTools && reply.text.isEmpty) {
+        if (retried || round == rounds) {
+          throw const CoachException(
+            'De coach schreef een opzoeking die de app niet kon lezen. Vraag '
+            'het nog eens.',
+          );
+        }
+        retried = true;
+        continue;
+      }
+
+      // Stopped at the limit with nothing to show: saying "no answer" would
+      // be wrong - there was one, too long to fit.
+      if (reply.cutOff && !reply.wantsTools && reply.text.isEmpty) {
+        throw const CoachException(
+          'Het antwoord werd afgebroken: het was langer dan de coach in één '
+          'keer mag schrijven. Vraag het in kleinere stukken.',
+        );
+      }
 
       if (!reply.wantsTools) {
         return CoachAnswer(
@@ -145,7 +192,7 @@ class Coach {
 
       // The last round is spent answering, not looking up: otherwise the loop
       // could end on a question nobody answers.
-      if (round == maxToolRounds) {
+      if (round == rounds) {
         return CoachAnswer(
           text: reply.text.isEmpty
               ? 'Ik bleef in je logboek zoeken zonder eruit te komen. Stel de '

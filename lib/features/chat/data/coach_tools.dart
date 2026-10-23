@@ -1176,7 +1176,7 @@ class CoachTools {
     for (final entry in wanted) {
       if (entry is! Map) continue;
       final asked = _text(entry['exercise']);
-      final sets = entry['sets'];
+      final sets = _setsOf(entry);
       if (asked == null || sets is! List || sets.isEmpty) {
         return refused(
           'elke oefening heeft een naam en minstens één set',
@@ -1264,6 +1264,30 @@ class CoachTools {
       );
     }
     return _Checked(exercises, card);
+  }
+
+  /// The sets of an exercise as the coach wrote them: each one, or - for a
+  /// schema, where every set written out made the answer too long to fit -
+  /// how many working sets of the same, after so many warm-ups.
+  Object? _setsOf(Map<Object?, Object?> entry) {
+    final sets = entry['sets'];
+    final count = _number(sets)?.round();
+    if (count == null) return sets;
+    if (count < 1 || count > _maxSets) return [];
+    final warmups = (_number(entry['warmup_sets'])?.round() ?? 0).clamp(
+      0,
+      _maxSets - count,
+    );
+    return [
+      for (var i = 0; i < warmups; i++) {'type': 'warmup'},
+      for (var i = 0; i < count; i++)
+        {
+          'type': entry['type'] ?? 'normal',
+          'reps': ?entry['reps'],
+          'weight_kg': ?entry['weight_kg'],
+          'seconds': ?entry['seconds'],
+        },
+    ];
   }
 
   /// Makes a routine in the coach's folder, or changes one that is there.

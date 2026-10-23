@@ -6,6 +6,40 @@ const int kPlanMinWeeks = 2;
 const int kPlanMaxWeeks = 16;
 const int kPlanMaxSessions = 7;
 
+/// The exercises of a session, written short: how many working sets of
+/// what, not every set - a whole schema written set by set was too long to
+/// fit in one answer.
+const Map<String, Object?> _shortExercises = {
+  'type': 'array',
+  'items': {
+    'type': 'object',
+    'properties': {
+      'exercise': {
+        'type': 'string',
+        'description': 'Exact de naam zoals ze in de app staat.',
+      },
+      'sets': {'type': 'integer', 'description': 'Aantal werksets.'},
+      'reps': {'type': 'integer', 'description': 'Herhalingen per werkset.'},
+      'weight_kg': {
+        'type': 'number',
+        'description': 'Gewicht per werkset; weglaten als je het niet weet.',
+      },
+      'seconds': {
+        'type': 'integer',
+        'description': 'Voor een houding: seconden per set.',
+      },
+      'warmup_sets': {
+        'type': 'integer',
+        'description': 'Warming-upsets voor de werksets.',
+      },
+      'rest_seconds': {'type': 'integer'},
+      'superset': {'type': 'integer'},
+      'notes': {'type': 'string'},
+    },
+    'required': ['exercise', 'sets'],
+  },
+};
+
 /// A whole schema, as save_plan and propose_plan_change take it.
 const Map<String, Object?> _layoutSchema = {
   'type': 'object',
@@ -62,37 +96,7 @@ const Map<String, Object?> _layoutSchema = {
             'description': 'De dag ervoor: 1 is maandag, 7 zondag.',
           },
           'notes': {'type': 'string'},
-          'exercises': {
-            'type': 'array',
-            'items': {
-              'type': 'object',
-              'properties': {
-                'exercise': {
-                  'type': 'string',
-                  'description': 'Exact de naam zoals ze in de app staat.',
-                },
-                'rest_seconds': {'type': 'integer'},
-                'superset': {'type': 'integer'},
-                'notes': {'type': 'string'},
-                'sets': {
-                  'type': 'array',
-                  'items': {
-                    'type': 'object',
-                    'properties': {
-                      'type': {
-                        'type': 'string',
-                        'enum': ['normal', 'warmup', 'drop', 'failure'],
-                      },
-                      'reps': {'type': 'integer'},
-                      'weight_kg': {'type': 'number'},
-                      'seconds': {'type': 'integer'},
-                    },
-                  },
-                },
-              },
-              'required': ['exercise', 'sets'],
-            },
-          },
+          'exercises': _shortExercises,
         },
         'required': ['name', 'exercises'],
       },
@@ -122,7 +126,8 @@ extension _PlanTools on CoachTools {
       'name': 'set_week_numbers',
       'description':
           'Zet de gewichten en herhalingen van volgende week: per sessie, '
-          'per oefening die er al in staat, alle sets zoals ze moeten worden. '
+          'per oefening die er al in staat, de werksets zoals ze moeten '
+          'worden. De warming-up blijft als je er geen opgeeft. '
           'Andere oefeningen kunnen niet; die stel je voor met '
           'propose_plan_change.',
       'input_schema': {
@@ -134,31 +139,7 @@ extension _PlanTools on CoachTools {
               'type': 'object',
               'properties': {
                 'name': {'type': 'string'},
-                'exercises': {
-                  'type': 'array',
-                  'items': {
-                    'type': 'object',
-                    'properties': {
-                      'exercise': {'type': 'string'},
-                      'sets': {
-                        'type': 'array',
-                        'items': {
-                          'type': 'object',
-                          'properties': {
-                            'type': {
-                              'type': 'string',
-                              'enum': ['normal', 'warmup', 'drop', 'failure'],
-                            },
-                            'reps': {'type': 'integer'},
-                            'weight_kg': {'type': 'number'},
-                            'seconds': {'type': 'integer'},
-                          },
-                        },
-                      },
-                    },
-                    'required': ['exercise', 'sets'],
-                  },
-                },
+                'exercises': _shortExercises,
               },
               'required': ['name', 'exercises'],
             },
@@ -309,7 +290,19 @@ extension _PlanTools on CoachTools {
               : null,
           notes: _text(entry['notes']),
           drafts: checked.drafts,
-          card: checked.card,
+          // On a schema's card the working sets: "4×6", not the warm-up
+          // counted in.
+          card: [
+            for (final (i, line) in checked.card.indexed)
+              ProposedRoutineExercise(
+                exerciseId: line.exerciseId,
+                name: line.name,
+                sets: checked.drafts[i].sets
+                    .where((s) => s.setType != SetType.warmup)
+                    .length,
+                targetReps: line.targetReps,
+              ),
+          ],
         ),
       );
     }
@@ -520,19 +513,25 @@ extension _PlanTools on CoachTools {
           );
         }
         final checked = await _exercisesOf([
-          {
-            'exercise': detail.exercises[at].exercise.name,
-            'sets': item['sets'],
-          },
+          {...item, 'exercise': detail.exercises[at].exercise.name},
         ]);
         if (checked.refusal case final refusal?) return refusal;
         final old = exercises[at];
+        final sets = checked.drafts.single.sets;
         exercises[at] = RoutineExerciseDraft(
           exerciseId: old.exerciseId,
           restSeconds: old.restSeconds,
           supersetGroup: old.supersetGroup,
           notes: old.notes,
-          sets: checked.drafts.single.sets,
+          // Next week's numbers are the working sets; the warm-up stays as
+          // it was unless the coach wrote one.
+          sets: sets.any((s) => s.setType == SetType.warmup)
+              ? sets
+              : [
+                  for (final s in old.sets)
+                    if (s.setType == SetType.warmup) s,
+                  ...sets,
+                ],
         );
         changed++;
       }

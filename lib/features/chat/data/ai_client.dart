@@ -339,7 +339,19 @@ class CoachReply {
     required this.toolCalls,
     required this.usage,
     this.textSignature,
+    this.cutOff = false,
+    this.malformed = false,
   });
+
+  /// It meant to look something up, and wrote the request in a shape that
+  /// could not be read - Gemini's MALFORMED_FUNCTION_CALL, most likely on a
+  /// long one. It came back with nothing; asked again, it usually works.
+  final bool malformed;
+
+  /// It ran into its limit of output and stopped there. A model that thinks
+  /// first spends that limit thinking too, so a long answer can come back
+  /// with nothing in it at all.
+  final bool cutOff;
 
   /// Google's thought signature on the text part of this answer, if it sent
   /// one.
@@ -1045,6 +1057,7 @@ class AiClient {
     final parts = <Object?>[];
     Object? usage;
     Object? feedback;
+    Object? finish;
     var answered = false;
     for (final chunk in chunks) {
       if (chunk['usageMetadata'] case final Object found) usage = found;
@@ -1053,6 +1066,8 @@ class AiClient {
       if (candidates is! List || candidates.isEmpty) continue;
       answered = true;
       final first = candidates.first;
+      final reason = first is Map ? first['finishReason'] : null;
+      if (reason != null) finish = reason;
       final content = first is Map ? first['content'] : null;
       if (content is Map && content['parts'] is List) {
         parts.addAll(content['parts']! as List);
@@ -1063,6 +1078,7 @@ class AiClient {
         'candidates': [
           {
             'content': {'parts': parts},
+            'finishReason': ?finish,
           },
         ],
       'usageMetadata': ?usage,
@@ -1484,6 +1500,7 @@ class AiClient {
         inputTokens: usage is Map ? (usage['input_tokens'] as int? ?? 0) : 0,
         outputTokens: usage is Map ? (usage['output_tokens'] as int? ?? 0) : 0,
       ),
+      cutOff: json['stop_reason'] == 'max_tokens',
     );
   }
 
@@ -1538,6 +1555,9 @@ class AiClient {
 
     final usage = json['usageMetadata'];
     return CoachReply(
+      cutOff: first is Map && first['finishReason'] == 'MAX_TOKENS',
+      malformed:
+          first is Map && first['finishReason'] == 'MALFORMED_FUNCTION_CALL',
       text: text.toString().trim(),
       toolCalls: calls,
       usage: CoachUsage(

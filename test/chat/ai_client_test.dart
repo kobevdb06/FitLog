@@ -397,6 +397,29 @@ void main() {
       expect(sent.body, isNot(contains('AIza')));
     });
 
+    test('een antwoord dat tegen zijn grens liep, zegt dat het afgebroken '
+        'werd', () async {
+      // Gemini 3 denkt eerst, en dat denken telt mee in de grens: een lang
+      // antwoord komt dan zonder tekst en zonder opzoeking terug.
+      final client = gemini({
+        'candidates': [
+          {
+            'content': {'role': 'model'},
+            'finishReason': 'MAX_TOKENS',
+          },
+        ],
+        'usageMetadata': {
+          'promptTokenCount': 16000,
+          'candidatesTokenCount': 67,
+          'thoughtsTokenCount': 957,
+        },
+      });
+
+      final reply = await ask(client);
+      expect(reply.cutOff, isTrue);
+      expect(reply.text, isEmpty);
+    });
+
     test('de tekst en de tokens komen uit hun eigen velden', () async {
       final reply = await ask(gemini(saying('Tussen 10 en 20 per week.')));
 

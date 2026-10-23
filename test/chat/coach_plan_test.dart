@@ -3,11 +3,15 @@ import 'dart:convert';
 import 'package:fitlog/core/calc/plan_weeks.dart';
 import 'package:fitlog/core/calc/schedule.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/features/chat/data/ai_client.dart';
+import 'package:fitlog/features/chat/data/coach.dart';
 import 'package:fitlog/features/chat/data/coach_tools.dart';
 import 'package:fitlog/features/chat/domain/coach_prompt.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/plans/presentation/plan_new_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../widget/helpers.dart';
 
@@ -234,6 +238,212 @@ void main() {
     final sessions = read['sessions']! as List;
     expect((sessions.first as Map)['done_this_week'], isFalse);
     expect(((sessions.first as Map)['exercises'] as List), hasLength(2));
+  });
+
+  test('a whole session may be written short: sets as a number', () async {
+    final lookup = await tools.run('save_plan', {
+      'name': 'Kracht',
+      'change': 'Kort opgeschreven.',
+      'weeks': [
+        {'kind': 'build'},
+        {'kind': 'deload'},
+      ],
+      'sessions': [
+        {
+          'name': 'Upper',
+          'exercises': [
+            {
+              'exercise': 'Bench Press',
+              'warmup_sets': 1,
+              'sets': 4,
+              'reps': 6,
+              'weight_kg': 100,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(decode(lookup)['ok'], isTrue);
+    final upper = (await db.plansDao.sessions('p-1')).single;
+    final sets = (await db.routinesDao.getRoutineDetail(upper.id))!
+        .exercises
+        .single
+        .sets;
+    expect(
+      [for (final s in sets) s.setType],
+      ['warmup', 'normal', 'normal', 'normal', 'normal'],
+    );
+    expect([for (final s in sets.skip(1)) s.targetReps], [6, 6, 6, 6]);
+    expect(
+      [for (final s in sets.skip(1)) s.targetWeightKg],
+      [100, 100, 100, 100],
+    );
+    expect(lookup.proposal!.plan!.sessions.single.exercises.single.sets, 4);
+  });
+
+  test(
+    'an answer cut off at its limit is said to be, not "geen antwoord"',
+    () async {
+      final coach = Coach(
+        client: AiClient(
+          apiKey: 'AQ.Ab8RNiZhX2Mkg',
+          provider: CoachProvider.gemini,
+          client: MockClient(
+            (request) async => http.Response(
+              jsonEncode({
+                'candidates': [
+                  {
+                    'content': {'role': 'model'},
+                    'finishReason': 'MAX_TOKENS',
+                  },
+                ],
+                'usageMetadata': {'promptTokenCount': 900},
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        ),
+        tools: tools,
+        model: 'gemini-3-flash-lite',
+        system: 'Je bent een coach.',
+      );
+
+      await expectLater(
+        coach.ask(history: const [], question: 'Maak een schema.'),
+        throwsA(
+          isA<CoachException>().having(
+            (e) => e.message,
+            'message',
+            contains('afgebroken'),
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
+    'in the conversation of a schema the coach has room to write one',
+    () async {
+      late Map<String, Object?> body;
+      final coach = Coach(
+        client: AiClient(
+          apiKey: 'AQ.Ab8RNiZhX2Mkg',
+          provider: CoachProvider.gemini,
+          client: MockClient((request) async {
+            body = jsonDecode(request.body) as Map<String, Object?>;
+            return http.Response(
+              jsonEncode({
+                'candidates': [
+                  {
+                    'content': {
+                      'role': 'model',
+                      'parts': [
+                        {'text': 'ok'},
+                      ],
+                    },
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
+        ),
+        tools: tools,
+        model: 'gemini-3-flash-lite',
+        system: 'Je bent een coach.',
+      );
+
+      await coach.ask(history: const [], question: 'Maak een schema.');
+      final config = body['generationConfig']! as Map<String, Object?>;
+      expect(config['maxOutputTokens'], greaterThanOrEqualTo(kPlanMaxTokens));
+    },
+  );
+
+  test(
+    'making a schema may take more rounds of looking up than a question',
+    () async {
+      var asked = 0;
+      AiClient lookingUp(int rounds) => AiClient(
+        apiKey: 'AQ.Ab8RNiZhX2Mkg',
+        provider: CoachProvider.gemini,
+        client: MockClient((request) async {
+          asked++;
+          final part = asked <= rounds
+              ? {
+                  'functionCall': {
+                    'name': 'search_exercises',
+                    'args': {'query': 'bench'},
+                  },
+                }
+              : {'text': 'Klaar.'};
+          return http.Response(
+            jsonEncode({
+              'candidates': [
+                {
+                  'content': {
+                    'role': 'model',
+                    'parts': [part],
+                  },
+                },
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+
+      final answer = await Coach(
+        client: lookingUp(6),
+        tools: tools,
+        model: 'gemini-3-flash-lite',
+        system: 'Je bent een coach.',
+      ).ask(history: const [], question: 'Maak een schema.');
+      expect(answer.text, 'Klaar.');
+      expect(answer.requests, 7);
+      expect(kPlanToolRounds, greaterThan(Coach.maxToolRounds));
+    },
+  );
+
+  test('a lookup the model wrote wrongly is tried once more', () async {
+    var asked = 0;
+    final answer = await Coach(
+      client: AiClient(
+        apiKey: 'AQ.Ab8RNiZhX2Mkg',
+        provider: CoachProvider.gemini,
+        client: MockClient((request) async {
+          asked++;
+          return http.Response(
+            jsonEncode({
+              'candidates': [
+                asked == 1
+                    ? {'finishReason': 'MALFORMED_FUNCTION_CALL'}
+                    : {
+                        'content': {
+                          'role': 'model',
+                          'parts': [
+                            {'text': 'Klaar.'},
+                          ],
+                        },
+                        'finishReason': 'STOP',
+                      },
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      ),
+      tools: tools,
+      model: 'gemini-3-flash-lite',
+      system: 'Je bent een coach.',
+    ).ask(history: const [], question: 'Maak een schema.');
+
+    expect(answer.text, 'Klaar.');
+    expect(answer.requests, 2);
   });
 
   group('what the coach is told', () {

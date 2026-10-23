@@ -281,4 +281,40 @@ void main() {
       },
     );
   });
+
+  test(
+    'een gestreamd antwoord dat tegen zijn grens liep, zegt dat ook',
+    () async {
+      final pieces = <String>[];
+      final reply = await ask(
+        streaming([
+          text(''),
+          {
+            'candidates': [
+              {'finishReason': 'MAX_TOKENS'},
+            ],
+            'usageMetadata': {'promptTokenCount': 16000},
+          },
+        ]),
+        pieces,
+      );
+      expect(reply.cutOff, isTrue);
+      expect(reply.malformed, isFalse);
+    },
+  );
+
+  test('en een opzoeking die niet te lezen was, ook', () async {
+    final reply = await ask(
+      streaming([
+        {
+          'candidates': [
+            {'finishReason': 'MALFORMED_FUNCTION_CALL'},
+          ],
+        },
+      ]),
+      [],
+    );
+    expect(reply.malformed, isTrue);
+    expect(reply.text, isEmpty);
+  });
 }

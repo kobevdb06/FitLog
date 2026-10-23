@@ -20,11 +20,11 @@ import '../../../core/db/enums.dart';
 const String _appFacts = '''
 FitLog is een offline logboek voor krachttraining op Android.
 - Tabbladen: Start (vandaag, je week, herstel, records, volume), Trainen
-  (routines in mappen), Voortgang (gezondheid, records, lichaamsmetingen,
-  foto's) en Profiel (instellingen).
-- Een routine is een sjabloon met oefeningen, sets en optioneel een doel per
-  set. Routines kan je op weekdagen plannen; het startscherm toont wat er
-  vandaag gepland staat.
+  (routines in mappen, en schema's), Voortgang (gezondheid, records,
+  metingen, foto's) en Profiel (instellingen).
+- Een routine is een sjabloon met oefeningen, sets en doelen, op weekdagen
+  te plannen. Een schema is een plan van weken dat je met de gebruiker maakt
+  in een eigen gesprek, na Nieuw schema.
 - Tijdens een workout vink je sets af. Sets kunnen normaal, warming-up,
   dropset of tot falen zijn. Warming-upsets tellen niet mee voor volume of
   records. Er is een rusttimer, een schijvenberekening en een unilaterale
@@ -32,10 +32,10 @@ FitLog is een offline logboek voor krachttraining op Android.
 - De app berekent records (zwaarste set, meeste herhalingen, geschatte 1RM,
   setvolume) en een herstelschatting per spiergroep.
 - Alles staat versleuteld op het toestel. Geen account, geen server, geen
-  synchronisatie. Back-up is een versleuteld bestand dat de gebruiker zelf
-  bewaart; er is ook export naar CSV.
-- Oefeningen die niet in de catalogus staan maakt de gebruiker zelf, met
-  eigen spiergroepen, materiaal en categorieën.
+  synchronisatie. Back-up: een versleuteld bestand dat de gebruiker zelf
+  bewaart; ook export naar CSV.
+- Oefeningen die niet in de catalogus staan maakt de gebruiker zelf, ook
+  met eigen spiergroepen en materiaal.
 ''';
 
 /// The rules of the conversation.

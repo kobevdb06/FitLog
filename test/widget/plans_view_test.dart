@@ -257,6 +257,21 @@ void main() {
     expect(find.text('Nog deze week'), findsOneWidget);
   });
 
+  testWidgets('het lopende schema past op een smalle gsm met grote letters', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+    await runningPlan(sessions: 5);
+    await pump(tester, size: const Size(360, 800));
+    await toPlans(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Week 1 van 3'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+  });
+
   testWidgets('wat onderaan staat, komt boven de knop uit', (tester) async {
     await runningPlan(sessions: 7);
     await pump(tester, size: const Size(360, 640));

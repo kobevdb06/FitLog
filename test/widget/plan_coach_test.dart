@@ -179,6 +179,24 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Start schema'), findsNothing);
   });
 
+  testWidgets('de kaart past op een smalle gsm met grote letters', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await seedDraft();
+    makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
+    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Schema van de coach'), findsOneWidget);
+  });
+
   testWidgets('het paneel heeft Chats en Schema\'s, elk met het zijne', (
     tester,
   ) async {

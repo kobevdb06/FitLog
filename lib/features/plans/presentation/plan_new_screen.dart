@@ -148,11 +148,13 @@ class _PlanNewScreenState extends ConsumerState<PlanNewScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Nieuw schema')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        // Clear of the system's bar at the bottom: a list given its own
+        // padding no longer adds it.
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.lg,
           AppSpacing.sm,
           AppSpacing.lg,
-          AppSpacing.xl,
+          AppSpacing.xl + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
           if (!enabled)

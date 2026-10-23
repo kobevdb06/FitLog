@@ -272,18 +272,21 @@ class _RunningPlan extends ConsumerWidget {
             ),
           ] else ...[
             const SizedBox(height: AppSpacing.md),
-            Row(
+            // Side by side where there is room, the hint under it where
+            // there is not: large text on a narrow phone.
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: AppSpacing.sm,
               children: [
-                Expanded(
-                  child: Text(
-                    week == 0
-                        ? 'WEEK 1'
-                        : 'DEZE WEEK · ${standing?.doneCount ?? 0} VAN '
-                              '${sessions.length}',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.8,
-                    ),
+                Text(
+                  week == 0
+                      ? 'WEEK 1'
+                      : 'DEZE WEEK · ${standing?.doneCount ?? 0} VAN '
+                            '${sessions.length}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.8,
                   ),
                 ),
                 Text('dagen zijn een richtlijn', style: muted),

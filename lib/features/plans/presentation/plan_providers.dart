@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/plan_weeks.dart';
 import '../../../core/db/database.dart';
+import '../../chat/domain/coach_proposal.dart';
 
 part 'plan_providers.g.dart';
 
@@ -65,3 +66,21 @@ class TrainShelfChoice extends _$TrainShelfChoice {
 
   void show(TrainShelf shelf) => state = shelf;
 }
+
+/// How many changes the coach proposed for [planId] that wait for
+/// Aanvaarden or Houden.
+@riverpod
+Stream<int> planOpenChanges(Ref ref, String planId) => ref
+    .watch(databaseProvider)
+    .chatDao
+    .watchPlanMessages(planId)
+    .map(
+      (messages) => [
+        for (final message in messages)
+          for (final proposal in parseProposals(message.proposals))
+            if (proposal.kind == ProposalKind.planChange &&
+                proposal.appliedId == null &&
+                !(proposal.planChange?.kept ?? false))
+              proposal,
+      ].length,
+    );

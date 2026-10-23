@@ -6,6 +6,7 @@ import 'package:fitlog/core/calc/plan_weeks.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
+import 'package:fitlog/features/chat/data/coach_tools.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
@@ -200,6 +201,87 @@ void main() {
     expect(find.text('In voorbereiding'), findsWidgets);
     expect(find.text('Kracht'), findsOneWidget);
     expect(find.text('Hoeveel sets voor borst?'), findsNothing);
+  });
+
+  testWidgets('een voorstel van zondag: Houden laat het schema zoals het '
+      'was', (tester) async {
+    bigScreen(tester);
+    await db
+        .into(db.exercisesTable)
+        .insert(
+          ExercisesTableCompanion.insert(
+            id: 'ex-bench',
+            name: 'Bench Press',
+            primaryMuscle: 'borst',
+            category: 'barbell',
+            createdAt: 0,
+          ),
+        );
+    await db.plansDao.createDraft(
+      id: 'p-1',
+      goal: 'Sterker',
+      split: PlanSplit.fullBody,
+      days: 0x01,
+      progression: PlanProgression.app,
+      at: DateTime.now(),
+    );
+    await db.chatDao.createThread('t-1', 'Kracht', planId: 'p-1');
+    final layout = {
+      'name': 'Kracht',
+      'change': 'De week overdoen.',
+      'weeks': [
+        for (var i = 0; i < 4; i++) {'kind': 'build'},
+      ],
+      'sessions': [
+        {
+          'name': 'Full body',
+          'weekday': 1,
+          'exercises': [
+            {
+              'exercise': 'Bench Press',
+              'sets': [
+                {'reps': 5},
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    await CoachTools(db, planId: 'p-1').run('save_plan', layout);
+    final now = DateTime.now();
+    await db.plansDao.start(
+      'p-1',
+      startDay: DateTime(now.year, now.month, now.day - (now.weekday - 1)),
+      at: now,
+    );
+    final card = (await CoachTools(db, planId: 'p-1', sunday: true).run(
+      'propose_plan_change',
+      layout
+        ..['weeks'] = [
+          for (var i = 0; i < 5; i++) {'kind': 'build'},
+        ],
+    )).proposal!;
+    await db.chatDao.addMessage(
+      id: 'm-1',
+      threadId: 't-1',
+      role: 'assistant',
+      content: 'Doe de week nog eens.',
+      proposals: encodeProposals([card]),
+    );
+    makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
+    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Voorstel voor je schema'), findsOneWidget);
+    expect(find.text('De week overdoen.'), findsOneWidget);
+    await tester.tap(find.text('Houden'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Gehouden zoals het was.'), findsOneWidget);
+    final plan = await tester.runAsync(() => db.plansDao.plan('p-1'));
+    expect(plan!.weeks, 4);
   });
 
   group('het formulier', () {

@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
+import '../../plans/data/plan_week_check.dart';
 import '../../../core/db/connection.dart';
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
@@ -134,6 +135,9 @@ Future<WeekReview> makeWeekReview(
   required DateTime now,
   ReportClientFactory? clientFactory,
 }) async {
+  // The schema being followed looks back on the same week: once, with the
+  // review, from wherever the review is made.
+  await PlanWeekCheck(db, clientFactory: clientFactory).run(start, now: now);
   final written = await WeekReviewer(
     db,
     clientFactory: clientFactory,

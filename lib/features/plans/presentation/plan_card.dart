@@ -8,7 +8,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../routing/routes.dart';
+import '../../../core/widgets/dialogs.dart';
+import '../../chat/data/ai_client.dart';
 import '../../chat/domain/coach_proposal.dart';
+import '../../chat/presentation/chat_providers.dart';
 import 'plan_providers.dart';
 import 'plan_start_sheet.dart';
 
@@ -49,14 +52,6 @@ class _PlanProposalCardState extends ConsumerState<PlanProposalCard> {
     final proposal = widget.proposal;
     final shown = proposal.plan!;
     final live = ref.watch(planProvider(proposal.appliedId!));
-    final deloads = [
-      for (final (i, week) in shown.weeks.indexed)
-        if (week.isDeload) i + 1,
-    ];
-    final notes = [
-      for (final (i, week) in shown.weeks.indexed)
-        if (week.note != null) 'Week ${i + 1}: ${week.note}',
-    ];
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -85,48 +80,7 @@ class _PlanProposalCardState extends ConsumerState<PlanProposalCard> {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(shown.name, style: theme.textTheme.titleMedium),
-            Text(
-              [
-                Formatters.amount(shown.weeks.length, 'week', 'weken'),
-                '${Formatters.amount(shown.sessions.length, 'sessie', 'sessies')} per week',
-                if (deloads.isNotEmpty)
-                  'deload in week ${deloads.join(' en ')}',
-              ].join(' · '),
-              style: muted,
-            ),
-            if (proposal.change case final why?) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(why, style: theme.textTheme.bodySmall),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            for (final session in shown.sessions)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text:
-                            '${session.weekday == null ? '' : '${Formatters.weekdayShort(session.weekday!)} · '}'
-                            '${session.name}: ',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      TextSpan(
-                        text: [
-                          for (final exercise in session.exercises)
-                            '${exercise.name} ${exercise.sets}'
-                                '${exercise.targetReps == null ? '' : '×${exercise.targetReps}'}',
-                        ].join(', '),
-                      ),
-                    ],
-                  ),
-                  style: theme.textTheme.bodySmall,
-                ),
-              ),
-            for (final note in notes) Text(note, style: muted),
+            _PlanSummary(plan: shown, change: proposal.change),
             const SizedBox(height: AppSpacing.sm),
             switch (live) {
               AsyncData(value: final plan?) => _footer(context, plan),
@@ -189,6 +143,215 @@ class _PlanProposalCardState extends ConsumerState<PlanProposalCard> {
             child: const Text('Bekijken'),
           ),
       ],
+    );
+  }
+}
+
+/// What a schema is, as the coach wrote it: its weeks, its sessions with
+/// their exercises, and what each week is for.
+class _PlanSummary extends StatelessWidget {
+  const _PlanSummary({required this.plan, this.change});
+
+  final PlanProposal plan;
+  final String? change;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final deloads = [
+      for (final (i, week) in plan.weeks.indexed)
+        if (week.isDeload) i + 1,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(plan.name, style: theme.textTheme.titleMedium),
+        Text(
+          [
+            Formatters.amount(plan.weeks.length, 'week', 'weken'),
+            '${Formatters.amount(plan.sessions.length, 'sessie', 'sessies')} '
+                'per week',
+            if (deloads.isNotEmpty) 'deload in week ${deloads.join(' en ')}',
+          ].join(' · '),
+          style: muted,
+        ),
+        if (change case final why?) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(why, style: theme.textTheme.bodySmall),
+        ],
+        const SizedBox(height: AppSpacing.sm),
+        for (final session in plan.sessions)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text:
+                        '${session.weekday == null ? '' : '${Formatters.weekdayShort(session.weekday!)} · '}'
+                        '${session.name}: ',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextSpan(
+                    text: [
+                      for (final exercise in session.exercises)
+                        '${exercise.name} ${exercise.sets}'
+                            '${exercise.targetReps == null ? '' : '×${exercise.targetReps}'}',
+                    ].join(', '),
+                  ),
+                ],
+              ),
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        for (final (i, week) in plan.weeks.indexed)
+          if (week.note != null)
+            Text('Week ${i + 1}: ${week.note}', style: muted),
+      ],
+    );
+  }
+}
+
+/// A change to the running schema the coach proposed on Sunday evening.
+///
+/// Nothing changed yet: Aanvaarden lays the schema out as the card shows
+/// it, Houden leaves it as it was. Either way the card keeps what was
+/// decided.
+class PlanChangeCard extends ConsumerStatefulWidget {
+  const PlanChangeCard({
+    super.key,
+    required this.message,
+    required this.index,
+    required this.proposal,
+  });
+
+  final ChatMessageRow message;
+  final int index;
+  final CoachProposal proposal;
+
+  @override
+  ConsumerState<PlanChangeCard> createState() => _PlanChangeCardState();
+}
+
+class _PlanChangeCardState extends ConsumerState<PlanChangeCard> {
+  bool _busy = false;
+
+  Future<void> _decide({required bool accept}) async {
+    setState(() => _busy = true);
+    final coach = ref.read(coachControllerProvider.notifier);
+    try {
+      if (accept) {
+        await coach.accept(message: widget.message, index: widget.index);
+        if (mounted) showSnack(context, 'Schema aangepast.');
+      } else {
+        await coach.keepPlan(message: widget.message, index: widget.index);
+      }
+    } on CoachException catch (error) {
+      if (mounted) showSnack(context, error.message, isError: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final proposal = widget.proposal;
+    final change = proposal.planChange!;
+    final live = ref.watch(planProvider(proposal.planId!)).value;
+    final open =
+        proposal.appliedId == null &&
+        !change.kept &&
+        live?.state == PlanStatus.running;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AppCard(
+        borderColor: open ? theme.colorScheme.primary : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.edit_calendar_outlined,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    'Voorstel voor je schema',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _PlanSummary(plan: change.layout, change: proposal.change),
+            const SizedBox(height: AppSpacing.sm),
+            if (proposal.appliedId != null)
+              Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: AppColors.success,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text('Aangepast', style: theme.textTheme.bodySmall),
+                ],
+              )
+            else if (change.kept)
+              Text('Gehouden zoals het was.', style: muted)
+            else if (!open)
+              Text('Dit schema loopt niet meer.', style: muted)
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                      ),
+                      onPressed: _busy ? null : () => _decide(accept: true),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Aanvaarden'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                      ),
+                      onPressed: _busy ? null : () => _decide(accept: false),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Houden'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

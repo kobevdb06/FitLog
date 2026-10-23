@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/calc/plan_weeks.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/routines/presentation/routines_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -166,6 +167,39 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('een voorstel van de coach staat bovenaan het schema', (
+    tester,
+  ) async {
+    await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+    await runningPlan();
+    await db.chatDao.createThread('t-1', 'Kracht en massa', planId: 'p-1');
+    await db.chatDao.addMessage(
+      id: 'm-1',
+      threadId: 't-1',
+      role: 'assistant',
+      content: 'Sessie 3 schuift op.',
+      proposals: encodeProposals([
+        CoachProposal.ofPlanChange(
+          const PlanChangeProposal(
+            layout: PlanProposal(
+              name: 'Kracht en massa',
+              weeks: [PlanWeek(), PlanWeek()],
+              sessions: [],
+            ),
+            input: {'name': 'Kracht en massa'},
+          ),
+          planId: 'p-1',
+          change: 'Sessie 3 schuift op.',
+        ),
+      ]),
+    );
+    await pump(tester);
+    await toPlans(tester);
+
+    expect(find.text('De coach stelt iets voor'), findsOneWidget);
+    expect(find.text('Aanvaarden of houden'), findsOneWidget);
   });
 
   testWidgets('wat onderaan staat, komt boven de knop uit', (tester) async {

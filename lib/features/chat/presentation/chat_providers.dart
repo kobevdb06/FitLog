@@ -12,7 +12,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/app/app_controller.dart';
-import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
@@ -20,6 +19,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/util/paths.dart';
 import '../../exercises/presentation/exercise_providers.dart';
 import '../../photos/data/photo_store.dart';
+import '../../plans/data/plan_prompt.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
 import '../data/coach.dart';
@@ -279,25 +279,6 @@ class CoachState {
   /// The failure was the key itself, so the answer is in the settings.
   final bool keyRejected;
 }
-
-/// What the coach is told in the conversation of [plan], at [now].
-String describePlanOf(TrainingPlanRow plan, DateTime now) => describePlanThread(
-  status: plan.state.wire,
-  goal: plan.goal,
-  split: switch (plan.splitKind) {
-    PlanSplit.coach => 'kies zelf een split die past bij het doel en de dagen',
-    PlanSplit.custom =>
-      'zoals de gebruiker het beschrijft: "${plan.splitNote ?? ''}"',
-    final split => split.label,
-  },
-  days: [
-    for (var d = DateTime.monday; d <= DateTime.sunday; d++)
-      if (WeekdaySet(plan.days).has(d)) Formatters.weekdayName(d),
-  ],
-  coachSetsNumbers: plan.progressionKind == PlanProgression.coach,
-  week: plan.weekAt(now),
-  weeks: plan.weeks,
-);
 
 /// Asking a question, from the first keystroke to the answer on screen.
 @Riverpod(keepAlive: true)
@@ -598,6 +579,20 @@ class CoachController extends _$CoachController {
         return proposal.appliedId;
       case ProposalKind.exerciseChange:
         id = await _applyChange(db, proposal.exerciseChange!);
+      case ProposalKind.planChange:
+        // What the coach wrote is laid out as it would have been by the
+        // coach itself; it is checked again, as things may have changed.
+        final lookup = await CoachTools(
+          db,
+          planId: proposal.planId,
+        ).applyPlanLayout(proposal.planChange!.input);
+        final result = jsonDecode(lookup.json) as Map<String, Object?>;
+        if (result['ok'] != true) {
+          throw CoachException(
+            'Het voorstel kan niet meer: ${result['error'] ?? 'onbekend'}.',
+          );
+        }
+        id = proposal.planId!;
       case ProposalKind.deload:
         final deload = proposal.deload!;
         final started = await db.deloadDao.start(
@@ -613,6 +608,21 @@ class CoachController extends _$CoachController {
     proposals[index] = proposal.applied(id);
     await db.chatDao.setProposals(message.id, encodeProposals(proposals));
     return id;
+  }
+
+  /// Houden: a proposed change to a schema is put aside, and the schema
+  /// stays as it was.
+  Future<void> keepPlan({
+    required ChatMessageRow message,
+    required int index,
+  }) async {
+    final proposals = parseProposals(message.proposals);
+    if (index >= proposals.length) return;
+    proposals[index] = proposals[index].kept();
+    await ref
+        .read(databaseProvider)
+        .chatDao
+        .setProposals(message.id, encodeProposals(proposals));
   }
 
   /// Marks a proposed deload as started - with Starten, or from the sheet

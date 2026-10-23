@@ -442,3 +442,86 @@ abstract class _$TrainShelfChoice extends $Notifier<TrainShelf> {
     return element.handleCreate(ref, build);
   }
 }
+
+/// How many changes the coach proposed for [planId] that wait for
+/// Aanvaarden or Houden.
+
+@ProviderFor(planOpenChanges)
+final planOpenChangesProvider = PlanOpenChangesFamily._();
+
+/// How many changes the coach proposed for [planId] that wait for
+/// Aanvaarden or Houden.
+
+final class PlanOpenChangesProvider
+    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
+    with $FutureModifier<int>, $StreamProvider<int> {
+  /// How many changes the coach proposed for [planId] that wait for
+  /// Aanvaarden or Houden.
+  PlanOpenChangesProvider._({
+    required PlanOpenChangesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'planOpenChangesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$planOpenChangesHash();
+
+  @override
+  String toString() {
+    return r'planOpenChangesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<int> create(Ref ref) {
+    final argument = this.argument as String;
+    return planOpenChanges(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PlanOpenChangesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$planOpenChangesHash() => r'22b25a09fa307a238fa1209f4ab9c9828b595cb6';
+
+/// How many changes the coach proposed for [planId] that wait for
+/// Aanvaarden or Houden.
+
+final class PlanOpenChangesFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<int>, String> {
+  PlanOpenChangesFamily._()
+    : super(
+        retry: null,
+        name: r'planOpenChangesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// How many changes the coach proposed for [planId] that wait for
+  /// Aanvaarden or Houden.
+
+  PlanOpenChangesProvider call(String planId) =>
+      PlanOpenChangesProvider._(argument: planId, from: this);
+
+  @override
+  String toString() => r'planOpenChangesProvider';
+}

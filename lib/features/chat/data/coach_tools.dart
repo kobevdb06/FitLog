@@ -22,6 +22,7 @@ import '../../../core/calc/deload.dart';
 import '../../../core/calc/plateau.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/calc/sleep_score.dart';
+import '../../../core/db/dao/routines_dao.dart' show draftOf;
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../deload/data/deload_standing.dart';
@@ -64,6 +65,8 @@ class CoachTools {
     this.health = false,
     this.memory = false,
     this.planId,
+    this.sunday = false,
+    this.numbers = false,
   });
 
   final AppDatabase db;
@@ -91,9 +94,50 @@ class CoachTools {
   /// there only, and reach that schema only.
   final String? planId;
 
+  /// Sunday evening, looking back on the schema's week: only what reads,
+  /// and proposing instead of writing - plus next week's numbers when
+  /// [numbers], while the coach keeps them.
+  final bool sunday;
+  final bool numbers;
+
+  /// What may be read on Sunday evening.
+  static const Set<String> sundayReads = {
+    'plan',
+    'search_exercises',
+    'recent_workouts',
+    'exercise_history',
+    'personal_records',
+    'weekly_volume',
+    'plateaus',
+    'recovery',
+    'sleep',
+    'gym',
+  };
+
+  /// What only the Sunday evening may use.
+  static const Set<String> sundayOnly = {
+    'propose_plan_change',
+    'set_week_numbers',
+  };
+
   /// The lookups this coach may use, as the API wants them.
-  List<Map<String, Object?>> get offered =>
-      definitions(health: health, memory: memory, plan: planId != null);
+  List<Map<String, Object?>> get offered => sunday
+      ? [
+          for (final tool in definitions(
+            health: health,
+            memory: false,
+            plan: true,
+          ))
+            if (sundayReads.contains(tool['name'])) tool,
+          ..._PlanTools.sundayDefinitions,
+          if (numbers) ..._PlanTools.numbersDefinitions,
+        ]
+      : definitions(health: health, memory: memory, plan: planId != null);
+
+  /// Lays out the schema of [planId] as [input] says - the whole schema, as
+  /// save_plan takes it. What Aanvaarden does with the coach's proposal.
+  Future<CoachLookup> applyPlanLayout(Map<String, Object?> input) =>
+      _savePlan(input);
 
   /// The photos the coach may put on an exercise, as file names in the photo
   /// directory: those of the newest message in the conversation that had
@@ -685,7 +729,23 @@ class CoachTools {
         summary: 'je geheugen: staat uit, niets onthouden',
       );
     }
-    if (planId == null && (name == 'plan' || name == 'save_plan')) {
+    final allowed = sunday
+        ? sundayReads.contains(name) ||
+              name == 'propose_plan_change' ||
+              (numbers && name == 'set_week_numbers')
+        : !sundayOnly.contains(name);
+    if (!allowed) {
+      return CoachLookup(
+        json: jsonEncode({
+          'error': sunday
+              ? 'nu niet: stel een wijziging voor met propose_plan_change'
+              : 'dat kan alleen op zondagavond',
+        }),
+        summary: 'een opzoeking die nu niet kan ($name)',
+      );
+    }
+    if (planId == null &&
+        (name == 'plan' || name == 'save_plan' || sundayOnly.contains(name))) {
       return CoachLookup(
         json: jsonEncode({
           'error':
@@ -698,6 +758,8 @@ class CoachTools {
     return switch (name) {
       'plan' => _readPlan(),
       'save_plan' => _savePlan(input),
+      'propose_plan_change' => _proposePlanChange(input),
+      'set_week_numbers' => _setWeekNumbers(input),
       'remember' => _remember(input),
       'forget' => _forget(input),
       'propose_exercise' => _proposeExercise(input),

@@ -53,7 +53,11 @@ enum ProposalKind {
   note('note'),
 
   /// A schema the coach laid out or changed, in its own conversation.
-  plan('plan');
+  plan('plan'),
+
+  /// A change to a running schema the coach proposed on Sunday evening,
+  /// with Aanvaarden and Houden.
+  planChange('plan_change');
 
   const ProposalKind(this.wire);
 
@@ -357,6 +361,45 @@ class PlanProposal {
   );
 }
 
+/// A change to a schema, proposed on Sunday evening: the whole schema as it
+/// would become, for the card, and what the coach wrote, to lay it out with
+/// when the user accepts - the model is not asked again.
+class PlanChangeProposal {
+  const PlanChangeProposal({
+    required this.layout,
+    required this.input,
+    this.kept = false,
+  });
+
+  final PlanProposal layout;
+  final Map<String, Object?> input;
+
+  /// Houden: the schema stays as it was.
+  final bool kept;
+
+  PlanChangeProposal keep() =>
+      PlanChangeProposal(layout: layout, input: input, kept: true);
+
+  Map<String, Object?> toJson() => {
+    'layout': layout.toJson(),
+    'input': input,
+    if (kept) 'kept': true,
+  };
+
+  static PlanChangeProposal? fromJson(Map<String, Object?> json) {
+    final layout = json['layout'];
+    final input = json['input'];
+    if (layout is! Map || input is! Map) return null;
+    return PlanChangeProposal(
+      layout: PlanProposal.fromJson(
+        layout.map((key, value) => MapEntry('$key', value)),
+      ),
+      input: input.map((key, value) => MapEntry('$key', value)),
+      kept: json['kept'] == true,
+    );
+  }
+}
+
 /// A deload the coach would start: from when, how long, how light, and why.
 class DeloadProposal {
   const DeloadProposal({
@@ -489,6 +532,8 @@ class CoachProposal {
     this.deload,
     this.note,
     this.plan,
+    this.planChange,
+    this.planId,
   });
 
   CoachProposal.ofExercise(ExerciseProposal this.exercise, {this.appliedId})
@@ -499,7 +544,9 @@ class CoachProposal {
       exerciseChange = null,
       deload = null,
       note = null,
-      plan = null;
+      plan = null,
+      planChange = null,
+      planId = null;
 
   CoachProposal.ofRoutine(RoutineProposal this.routine, {this.appliedId})
     : kind = ProposalKind.routine,
@@ -509,7 +556,9 @@ class CoachProposal {
       exerciseChange = null,
       deload = null,
       note = null,
-      plan = null;
+      plan = null,
+      planChange = null,
+      planId = null;
 
   CoachProposal.ofExerciseChange(
     ExerciseChangeProposal this.exerciseChange, {
@@ -521,7 +570,9 @@ class CoachProposal {
        change = null,
        deload = null,
        note = null,
-       plan = null;
+       plan = null,
+       planChange = null,
+       planId = null;
 
   /// A deload; [appliedId] is the deload's id once it was started.
   CoachProposal.ofDeload(DeloadProposal this.deload, {this.appliedId})
@@ -532,7 +583,9 @@ class CoachProposal {
       change = null,
       exerciseChange = null,
       note = null,
-      plan = null;
+      plan = null,
+      planChange = null,
+      planId = null;
 
   /// A note the coach wrote: done already, so applied from the start.
   CoachProposal.ofNote(NoteProposal this.note)
@@ -544,7 +597,9 @@ class CoachProposal {
       change = null,
       exerciseChange = null,
       deload = null,
-      plan = null;
+      plan = null,
+      planChange = null,
+      planId = null;
 
   /// A routine the coach [made] - or changed, when false - in its own
   /// folder: already there, so [appliedId] is its id from the start.
@@ -558,7 +613,9 @@ class CoachProposal {
        exerciseChange = null,
        deload = null,
        note = null,
-       plan = null;
+       plan = null,
+       planChange = null,
+       planId = null;
 
   /// A schema the coach [made] - or changed, when false - in its own
   /// conversation: written already, so [appliedId] is the schema's id.
@@ -572,7 +629,25 @@ class CoachProposal {
        routine = null,
        exerciseChange = null,
        deload = null,
-       note = null;
+       note = null,
+       planChange = null,
+       planId = null;
+
+  /// A change to the running schema [planId], proposed on Sunday evening;
+  /// [appliedId] is the schema's id once it was accepted.
+  CoachProposal.ofPlanChange(
+    PlanChangeProposal this.planChange, {
+    required String this.planId,
+    this.change,
+    this.appliedId,
+  }) : kind = ProposalKind.planChange,
+       exercise = null,
+       routine = null,
+       made = false,
+       exerciseChange = null,
+       deload = null,
+       note = null,
+       plan = null;
 
   final ProposalKind kind;
   final ExerciseProposal? exercise;
@@ -592,6 +667,10 @@ class CoachProposal {
   final DeloadProposal? deload;
   final NoteProposal? note;
   final PlanProposal? plan;
+  final PlanChangeProposal? planChange;
+
+  /// The schema a change is proposed for.
+  final String? planId;
 
   bool get isApplied => appliedId != null;
 
@@ -605,6 +684,7 @@ class CoachProposal {
           : 'Deload van ${deload!.days} ${deload!.days == 1 ? 'dag' : 'dagen'}',
     ProposalKind.note => note!.text,
     ProposalKind.plan => plan!.name,
+    ProposalKind.planChange => planChange!.layout.name,
   };
 
   CoachProposal applied(String id) => CoachProposal(
@@ -618,6 +698,24 @@ class CoachProposal {
     deload: deload,
     note: note,
     plan: plan,
+    planChange: planChange,
+    planId: planId,
+  );
+
+  /// Houden, for a proposed change to a schema.
+  CoachProposal kept() => CoachProposal(
+    kind: kind,
+    exercise: exercise,
+    routine: routine,
+    appliedId: appliedId,
+    made: made,
+    change: change,
+    exerciseChange: exerciseChange,
+    deload: deload,
+    note: note,
+    plan: plan,
+    planChange: planChange?.keep(),
+    planId: planId,
   );
 
   Map<String, Object?> toJson() => {
@@ -629,6 +727,11 @@ class CoachProposal {
     if (deload != null) 'deload': deload!.toJson(),
     if (note != null) 'note': note!.toJson(),
     if (plan != null) 'plan': plan!.toJson(),
+    if (planChange != null) ...{
+      'plan_change': planChange!.toJson(),
+      'plan_id': planId,
+      'change': change,
+    },
     if (kind == ProposalKind.coachRoutine || kind == ProposalKind.plan) ...{
       'made': made,
       'change': change,
@@ -677,6 +780,17 @@ class CoachProposal {
           made: json['made'] == true,
           change: json['change'] as String?,
         ),
+      ProposalKind.planChange
+          when json['plan_change'] is Map && json['plan_id'] is String =>
+        switch (PlanChangeProposal.fromJson(body('plan_change'))) {
+          final change? => CoachProposal.ofPlanChange(
+            change,
+            planId: json['plan_id']! as String,
+            change: json['change'] as String?,
+            appliedId: applied,
+          ),
+          null => null,
+        },
       ProposalKind.note when json['note'] is Map =>
         switch (NoteProposal.fromJson(body('note'))) {
           final note? => CoachProposal.ofNote(note),

@@ -418,7 +418,14 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyMedium,
         ),
-        subtitle: Text(where, style: theme.textTheme.bodySmall),
+        subtitle: Text(
+          switch (ref.watch(planOpenChangesProvider(plan.id)).value ?? 0) {
+            0 => where,
+            1 => '$where · 1 voorstel wacht',
+            final n => '$where · $n voorstellen wachten',
+          },
+          style: theme.textTheme.bodySmall,
+        ),
         trailing: IconButton(
           tooltip: 'Meer',
           icon: const Icon(Icons.more_vert, size: 18),

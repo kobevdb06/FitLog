@@ -71,6 +71,18 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
             ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
           .watch();
 
+  /// Every message in the conversation of a schema, the oldest first.
+  Stream<List<ChatMessageRow>> watchPlanMessages(String planId) =>
+      customSelect(
+        'SELECT m.* FROM chat_messages m '
+        'JOIN chat_threads t ON t.id = m.thread_id '
+        'WHERE t.plan_id = ? ORDER BY m.created_at',
+        variables: [Variable.withString(planId)],
+        readsFrom: {chatMessagesTable, chatThreadsTable},
+      ).watch().map(
+        (rows) => [for (final row in rows) chatMessagesTable.map(row.data)],
+      );
+
   /// The conversation of a schema is called what the schema is.
   Future<void> renamePlanThread(String planId, String title) async {
     final clean = title.trim().replaceAll(RegExp(r'\s+'), ' ');

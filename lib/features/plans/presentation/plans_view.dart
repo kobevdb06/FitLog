@@ -147,6 +147,7 @@ class _RunningPlan extends ConsumerWidget {
     final standing = ref.watch(planThisWeekProvider(plan.id)).value;
     final coach = ref.watch(coachEnabledProvider);
     final thisWeek = plan.weekPlan(week);
+    final waiting = ref.watch(planOpenChangesProvider(plan.id)).value ?? 0;
 
     final where = switch (week) {
       _ when over => 'Alle weken voorbij',
@@ -211,7 +212,24 @@ class _RunningPlan extends ConsumerWidget {
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
-                if (coach) ...[
+                if (coach && waiting > 0) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Material(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    child: ListTile(
+                      leading: const Icon(Icons.edit_calendar_outlined),
+                      title: Text(
+                        waiting == 1
+                            ? 'De coach stelt iets voor'
+                            : 'De coach stelt $waiting dingen voor',
+                      ),
+                      subtitle: const Text('Aanvaarden of houden'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => openPlanConversation(context, ref, plan.id),
+                    ),
+                  ),
+                ] else if (coach) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Align(
                     alignment: AlignmentDirectional.centerStart,

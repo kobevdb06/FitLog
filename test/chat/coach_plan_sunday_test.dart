@@ -106,7 +106,7 @@ void main() {
       at: now,
     );
     await db.chatDao.createThread('t-1', 'Kracht', planId: 'p-1');
-    await CoachTools(db, planId: 'p-1').run('save_plan', layout(weeks: weeks));
+    await CoachTools(db, planId: 'p-1').applyPlanLayout(layout(weeks: weeks));
     await PlanActions.start(db, 'p-1', from: lastMonday);
   }
 

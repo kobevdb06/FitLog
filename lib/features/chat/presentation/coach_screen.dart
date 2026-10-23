@@ -25,6 +25,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../deload/presentation/deload_providers.dart';
 import '../../deload/presentation/deload_start_sheet.dart';
 import '../../photos/data/photo_store.dart';
+import '../../plans/presentation/plan_build_cards.dart';
 import '../../plans/presentation/plan_card.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
@@ -581,6 +582,18 @@ class _Bubble extends StatelessWidget {
                 _NoteCard(note: note)
               else if (proposal.kind == ProposalKind.plan)
                 PlanProposalCard(proposal: proposal)
+              else if (proposal.outline case final outline?)
+                PlanOutlineCard(
+                  message: message,
+                  outline: outline,
+                  proposal: proposal,
+                )
+              else if (proposal.session case final session?)
+                PlanSessionCard(
+                  message: message,
+                  session: session,
+                  proposal: proposal,
+                )
               else if (proposal.kind == ProposalKind.planChange)
                 PlanChangeCard(
                   message: message,
@@ -744,6 +757,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
         ProposalKind.note => 'Onthouden.',
         ProposalKind.plan => 'Schema opgeslagen.',
         ProposalKind.planChange => 'Schema aangepast.',
+        ProposalKind.planOutline || ProposalKind.planSession => 'Opgeslagen.',
         ProposalKind.deload => deloadStartedText(
           widget.proposal.deload!.startAt(DateTime.now()),
           widget.proposal.deload!.days,
@@ -799,7 +813,9 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
     ProposalKind.deload ||
     ProposalKind.note ||
     ProposalKind.plan ||
-    ProposalKind.planChange => null,
+    ProposalKind.planChange ||
+    ProposalKind.planOutline ||
+    ProposalKind.planSession => null,
   };
 
   @override
@@ -818,6 +834,7 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
       ProposalKind.note => 'Onthouden',
       ProposalKind.plan => 'Start schema',
       ProposalKind.planChange => 'Aanvaarden',
+      ProposalKind.planOutline || ProposalKind.planSession => 'Goedkeuren',
     };
 
     return Padding(
@@ -838,7 +855,9 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                     ProposalKind.deload => Icons.battery_charging_full,
                     ProposalKind.note => Icons.sticky_note_2_outlined,
                     ProposalKind.plan ||
-                    ProposalKind.planChange => Icons.calendar_month_outlined,
+                    ProposalKind.planChange ||
+                    ProposalKind.planOutline ||
+                    ProposalKind.planSession => Icons.calendar_month_outlined,
                   },
                   size: 18,
                   color: theme.colorScheme.primary,
@@ -859,6 +878,8 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                       ProposalKind.note => 'Onthouden',
                       ProposalKind.plan => 'Schema',
                       ProposalKind.planChange => 'Voorstel: schema',
+                      ProposalKind.planOutline => 'Opzet van je schema',
+                      ProposalKind.planSession => 'Sessie van je schema',
                     },
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -935,6 +956,8 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
                       ProposalKind.note => 'Onthouden',
                       ProposalKind.plan => 'Opgeslagen',
                       ProposalKind.planChange => 'Aangepast',
+                      ProposalKind.planOutline ||
+                      ProposalKind.planSession => 'Opgeslagen',
                     }, style: theme.textTheme.bodySmall),
                   ),
                   if (_place(id) case final place?)

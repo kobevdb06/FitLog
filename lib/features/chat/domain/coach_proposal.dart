@@ -57,7 +57,15 @@ enum ProposalKind {
 
   /// A change to a running schema the coach proposed on Sunday evening,
   /// with Aanvaarden and Houden.
-  planChange('plan_change');
+  planChange('plan_change'),
+
+  /// The outline of a schema: its weeks, its sessions and their focus, and
+  /// the weekly sets per muscle group. Goedkeuren lets the sessions be built.
+  planOutline('plan_outline'),
+
+  /// One session of a schema, built by the coach on its own, with
+  /// Goedkeuren and Aanpassen.
+  planSession('plan_session');
 
   const ProposalKind(this.wire);
 
@@ -361,6 +369,188 @@ class PlanProposal {
   );
 }
 
+/// A session in the outline of a schema: no exercises yet.
+class OutlineSession {
+  const OutlineSession({required this.name, this.weekday, this.focus});
+
+  final String name;
+  final int? weekday;
+  final String? focus;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'weekday': weekday,
+    'focus': focus,
+  };
+
+  static OutlineSession fromJson(Map<String, Object?> json) => OutlineSession(
+    name: '${json['name']}',
+    weekday: json['weekday'] as int?,
+    focus: json['focus'] as String?,
+  );
+}
+
+/// The outline of a schema as the coach wrote it, at [at]: a newer one
+/// makes this card's Goedkeuren go.
+class OutlineProposal {
+  const OutlineProposal({
+    required this.planId,
+    required this.at,
+    required this.name,
+    required this.weeks,
+    required this.sessions,
+    required this.volume,
+  });
+
+  final String planId;
+  final int at;
+  final String name;
+  final List<PlanWeek> weeks;
+  final List<OutlineSession> sessions;
+  final Map<String, int> volume;
+
+  Map<String, Object?> toJson() => {
+    'plan_id': planId,
+    'at': at,
+    'name': name,
+    'weeks': [for (final week in weeks) week.toJson()],
+    'sessions': [for (final session in sessions) session.toJson()],
+    'volume': volume,
+  };
+
+  static OutlineProposal? fromJson(Map<String, Object?> json) {
+    final planId = json['plan_id'];
+    final at = json['at'];
+    if (planId is! String || at is! int) return null;
+    final volume = json['volume'];
+    return OutlineProposal(
+      planId: planId,
+      at: at,
+      name: '${json['name']}',
+      weeks: [
+        for (final week in json['weeks'] as List? ?? const [])
+          if (week is Map) PlanWeek.fromJson(week.cast<String, Object?>()),
+      ],
+      sessions: [
+        for (final session in json['sessions'] as List? ?? const [])
+          if (session is Map)
+            OutlineSession.fromJson(
+              session.map((key, value) => MapEntry('$key', value)),
+            ),
+      ],
+      volume: {
+        if (volume is Map)
+          for (final MapEntry(:key, :value) in volume.entries)
+            if (value is num) '$key': value.round(),
+      },
+    );
+  }
+}
+
+/// One exercise of a session, as its card shows it: every number that
+/// matters to decide whether the session is right.
+class SessionExercise {
+  const SessionExercise({
+    required this.name,
+    required this.sets,
+    this.warmups = 0,
+    this.reps,
+    this.weightKg,
+    this.seconds,
+    this.restSeconds,
+    this.notes,
+  });
+
+  final String name;
+
+  /// Working sets.
+  final int sets;
+  final int warmups;
+  final int? reps;
+  final double? weightKg;
+  final int? seconds;
+  final int? restSeconds;
+  final String? notes;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'sets': sets,
+    if (warmups > 0) 'warmups': warmups,
+    'reps': ?reps,
+    'weight_kg': ?weightKg,
+    'seconds': ?seconds,
+    'rest_seconds': ?restSeconds,
+    'notes': ?notes,
+  };
+
+  static SessionExercise fromJson(Map<String, Object?> json) => SessionExercise(
+    name: '${json['name']}',
+    sets: json['sets'] as int? ?? 0,
+    warmups: json['warmups'] as int? ?? 0,
+    reps: json['reps'] as int?,
+    weightKg: (json['weight_kg'] as num?)?.toDouble(),
+    seconds: json['seconds'] as int?,
+    restSeconds: json['rest_seconds'] as int?,
+    notes: json['notes'] as String?,
+  );
+}
+
+/// One session of a schema as the coach built it, saved at [savedAt]: a
+/// newer version of it makes this card's Goedkeuren go.
+class SessionProposal {
+  const SessionProposal({
+    required this.planId,
+    required this.routineId,
+    required this.savedAt,
+    required this.name,
+    required this.exercises,
+    this.weekday,
+    this.focus,
+  });
+
+  final String planId;
+  final String routineId;
+  final int savedAt;
+  final String name;
+  final int? weekday;
+  final String? focus;
+  final List<SessionExercise> exercises;
+
+  Map<String, Object?> toJson() => {
+    'plan_id': planId,
+    'routine_id': routineId,
+    'saved_at': savedAt,
+    'name': name,
+    'weekday': weekday,
+    'focus': focus,
+    'exercises': [for (final exercise in exercises) exercise.toJson()],
+  };
+
+  static SessionProposal? fromJson(Map<String, Object?> json) {
+    final planId = json['plan_id'];
+    final routineId = json['routine_id'];
+    final savedAt = json['saved_at'];
+    if (planId is! String || routineId is! String || savedAt is! int) {
+      return null;
+    }
+    return SessionProposal(
+      planId: planId,
+      routineId: routineId,
+      savedAt: savedAt,
+      name: '${json['name']}',
+      weekday: json['weekday'] as int?,
+      focus: json['focus'] as String?,
+      exercises: [
+        for (final exercise in json['exercises'] as List? ?? const [])
+          if (exercise is Map)
+            SessionExercise.fromJson(
+              exercise.map((key, value) => MapEntry('$key', value)),
+            ),
+      ],
+    );
+  }
+}
+
 /// A change to a schema, proposed on Sunday evening: the whole schema as it
 /// would become, for the card, and what the coach wrote, to lay it out with
 /// when the user accepts - the model is not asked again.
@@ -534,6 +724,8 @@ class CoachProposal {
     this.plan,
     this.planChange,
     this.planId,
+    this.outline,
+    this.session,
   });
 
   CoachProposal.ofExercise(ExerciseProposal this.exercise, {this.appliedId})
@@ -546,7 +738,9 @@ class CoachProposal {
       note = null,
       plan = null,
       planChange = null,
-      planId = null;
+      planId = null,
+      outline = null,
+      session = null;
 
   CoachProposal.ofRoutine(RoutineProposal this.routine, {this.appliedId})
     : kind = ProposalKind.routine,
@@ -558,7 +752,9 @@ class CoachProposal {
       note = null,
       plan = null,
       planChange = null,
-      planId = null;
+      planId = null,
+      outline = null,
+      session = null;
 
   CoachProposal.ofExerciseChange(
     ExerciseChangeProposal this.exerciseChange, {
@@ -572,7 +768,9 @@ class CoachProposal {
        note = null,
        plan = null,
        planChange = null,
-       planId = null;
+       planId = null,
+       outline = null,
+       session = null;
 
   /// A deload; [appliedId] is the deload's id once it was started.
   CoachProposal.ofDeload(DeloadProposal this.deload, {this.appliedId})
@@ -585,7 +783,9 @@ class CoachProposal {
       note = null,
       plan = null,
       planChange = null,
-      planId = null;
+      planId = null,
+      outline = null,
+      session = null;
 
   /// A note the coach wrote: done already, so applied from the start.
   CoachProposal.ofNote(NoteProposal this.note)
@@ -599,7 +799,9 @@ class CoachProposal {
       deload = null,
       plan = null,
       planChange = null,
-      planId = null;
+      planId = null,
+      outline = null,
+      session = null;
 
   /// A routine the coach [made] - or changed, when false - in its own
   /// folder: already there, so [appliedId] is its id from the start.
@@ -615,7 +817,9 @@ class CoachProposal {
        note = null,
        plan = null,
        planChange = null,
-       planId = null;
+       planId = null,
+       outline = null,
+       session = null;
 
   /// A schema the coach [made] - or changed, when false - in its own
   /// conversation: written already, so [appliedId] is the schema's id.
@@ -631,7 +835,9 @@ class CoachProposal {
        deload = null,
        note = null,
        planChange = null,
-       planId = null;
+       planId = null,
+       outline = null,
+       session = null;
 
   /// A change to the running schema [planId], proposed on Sunday evening;
   /// [appliedId] is the schema's id once it was accepted.
@@ -647,7 +853,40 @@ class CoachProposal {
        exerciseChange = null,
        deload = null,
        note = null,
-       plan = null;
+       plan = null,
+       outline = null,
+       session = null;
+
+  /// The outline of a schema, written already: [appliedId] is the
+  /// schema's id.
+  CoachProposal.ofOutline(OutlineProposal this.outline, {this.change})
+    : kind = ProposalKind.planOutline,
+      appliedId = outline.planId,
+      exercise = null,
+      routine = null,
+      made = false,
+      exerciseChange = null,
+      deload = null,
+      note = null,
+      plan = null,
+      planChange = null,
+      planId = outline.planId,
+      session = null;
+
+  /// A session of a schema, written already: [appliedId] is its routine.
+  CoachProposal.ofSession(SessionProposal this.session, {this.change})
+    : kind = ProposalKind.planSession,
+      appliedId = session.routineId,
+      exercise = null,
+      routine = null,
+      made = false,
+      exerciseChange = null,
+      deload = null,
+      note = null,
+      plan = null,
+      planChange = null,
+      planId = session.planId,
+      outline = null;
 
   final ProposalKind kind;
   final ExerciseProposal? exercise;
@@ -672,6 +911,9 @@ class CoachProposal {
   /// The schema a change is proposed for.
   final String? planId;
 
+  final OutlineProposal? outline;
+  final SessionProposal? session;
+
   bool get isApplied => appliedId != null;
 
   String get title => switch (kind) {
@@ -685,6 +927,8 @@ class CoachProposal {
     ProposalKind.note => note!.text,
     ProposalKind.plan => plan!.name,
     ProposalKind.planChange => planChange!.layout.name,
+    ProposalKind.planOutline => outline!.name,
+    ProposalKind.planSession => session!.name,
   };
 
   CoachProposal applied(String id) => CoachProposal(
@@ -700,6 +944,8 @@ class CoachProposal {
     plan: plan,
     planChange: planChange,
     planId: planId,
+    outline: outline,
+    session: session,
   );
 
   /// Houden, for a proposed change to a schema.
@@ -716,6 +962,8 @@ class CoachProposal {
     plan: plan,
     planChange: planChange?.keep(),
     planId: planId,
+    outline: outline,
+    session: session,
   );
 
   Map<String, Object?> toJson() => {
@@ -732,6 +980,8 @@ class CoachProposal {
       'plan_id': planId,
       'change': change,
     },
+    if (outline != null) ...{'outline': outline!.toJson(), 'change': change},
+    if (session != null) ...{'session': session!.toJson(), 'change': change},
     if (kind == ProposalKind.coachRoutine || kind == ProposalKind.plan) ...{
       'made': made,
       'change': change,
@@ -788,6 +1038,22 @@ class CoachProposal {
             planId: json['plan_id']! as String,
             change: json['change'] as String?,
             appliedId: applied,
+          ),
+          null => null,
+        },
+      ProposalKind.planOutline when json['outline'] is Map =>
+        switch (OutlineProposal.fromJson(body('outline'))) {
+          final outline? => CoachProposal.ofOutline(
+            outline,
+            change: json['change'] as String?,
+          ),
+          null => null,
+        },
+      ProposalKind.planSession when json['session'] is Map =>
+        switch (SessionProposal.fromJson(body('session'))) {
+          final session? => CoachProposal.ofSession(
+            session,
+            change: json['change'] as String?,
           ),
           null => null,
         },

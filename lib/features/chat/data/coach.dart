@@ -32,6 +32,13 @@ const int kPlanMaxTokens = 16384;
 /// ran out before the schema was written.
 const int kPlanToolRounds = 8;
 
+/// How many earlier turns ride along in the conversation of a schema.
+///
+/// Fewer than elsewhere: the state of the schema - its outline, and every
+/// session made so far - goes along with the instructions every time, so
+/// the turns are only needed for what was just said.
+const int kPlanHistoryTurns = 6;
+
 /// One turn of a stored conversation.
 class CoachTurn {
   const CoachTurn({
@@ -118,8 +125,9 @@ class Coach {
     void Function(String text)? onText,
     void Function(String lookup)? onLookup,
   }) async {
-    final trimmed = history.length > historyTurns
-        ? history.sublist(history.length - historyTurns)
+    final keep = tools.planId == null ? historyTurns : kPlanHistoryTurns;
+    final trimmed = history.length > keep
+        ? history.sublist(history.length - keep)
         : history;
 
     final messages = <CoachMessage>[

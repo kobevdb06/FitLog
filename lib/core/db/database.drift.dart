@@ -7342,6 +7342,29 @@ class $RoutinesTableTable extends RoutinesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _planFocusMeta = const VerificationMeta(
+    'planFocus',
+  );
+  @override
+  late final GeneratedColumn<String> planFocus = GeneratedColumn<String>(
+    'plan_focus',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _planStateMeta = const VerificationMeta(
+    'planState',
+  );
+  @override
+  late final GeneratedColumn<String> planState = GeneratedColumn<String>(
+    'plan_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('approved'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7357,6 +7380,8 @@ class $RoutinesTableTable extends RoutinesTable
     scheduledDays,
     planId,
     planWeekday,
+    planFocus,
+    planState,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7467,6 +7492,18 @@ class $RoutinesTableTable extends RoutinesTable
         ),
       );
     }
+    if (data.containsKey('plan_focus')) {
+      context.handle(
+        _planFocusMeta,
+        planFocus.isAcceptableOrUnknown(data['plan_focus']!, _planFocusMeta),
+      );
+    }
+    if (data.containsKey('plan_state')) {
+      context.handle(
+        _planStateMeta,
+        planState.isAcceptableOrUnknown(data['plan_state']!, _planStateMeta),
+      );
+    }
     return context;
   }
 
@@ -7528,6 +7565,14 @@ class $RoutinesTableTable extends RoutinesTable
         DriftSqlType.int,
         data['${effectivePrefix}plan_weekday'],
       ),
+      planFocus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_focus'],
+      ),
+      planState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_state'],
+      )!,
     );
   }
 
@@ -7574,6 +7619,15 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
   /// The weekday the session is meant for - a guide, not an appointment: a
   /// session counts in the week it is done, on whatever day.
   final int? planWeekday;
+
+  /// What the session is for, from the schema's outline: "borst zwaar,
+  /// schouders, triceps". What the coach builds it to.
+  final String? planFocus;
+
+  /// One of `PlanSessionState`: only outlined, proposed by the coach, or
+  /// approved by the user. A schema starts once every session is approved.
+  /// Approved for everything from before the step by step: those were whole.
+  final String planState;
   const RoutineRow({
     required this.id,
     required this.name,
@@ -7588,6 +7642,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     required this.scheduledDays,
     this.planId,
     this.planWeekday,
+    this.planFocus,
+    required this.planState,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7617,6 +7673,10 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     if (!nullToAbsent || planWeekday != null) {
       map['plan_weekday'] = Variable<int>(planWeekday);
     }
+    if (!nullToAbsent || planFocus != null) {
+      map['plan_focus'] = Variable<String>(planFocus);
+    }
+    map['plan_state'] = Variable<String>(planState);
     return map;
   }
 
@@ -7647,6 +7707,10 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       planWeekday: planWeekday == null && nullToAbsent
           ? const Value.absent()
           : Value(planWeekday),
+      planFocus: planFocus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(planFocus),
+      planState: Value(planState),
     );
   }
 
@@ -7669,6 +7733,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       scheduledDays: serializer.fromJson<int>(json['scheduledDays']),
       planId: serializer.fromJson<String?>(json['planId']),
       planWeekday: serializer.fromJson<int?>(json['planWeekday']),
+      planFocus: serializer.fromJson<String?>(json['planFocus']),
+      planState: serializer.fromJson<String>(json['planState']),
     );
   }
   @override
@@ -7688,6 +7754,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       'scheduledDays': serializer.toJson<int>(scheduledDays),
       'planId': serializer.toJson<String?>(planId),
       'planWeekday': serializer.toJson<int?>(planWeekday),
+      'planFocus': serializer.toJson<String?>(planFocus),
+      'planState': serializer.toJson<String>(planState),
     };
   }
 
@@ -7705,6 +7773,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     int? scheduledDays,
     Value<String?> planId = const Value.absent(),
     Value<int?> planWeekday = const Value.absent(),
+    Value<String?> planFocus = const Value.absent(),
+    String? planState,
   }) => RoutineRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -7721,6 +7791,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     scheduledDays: scheduledDays ?? this.scheduledDays,
     planId: planId.present ? planId.value : this.planId,
     planWeekday: planWeekday.present ? planWeekday.value : this.planWeekday,
+    planFocus: planFocus.present ? planFocus.value : this.planFocus,
+    planState: planState ?? this.planState,
   );
   RoutineRow copyWithCompanion(RoutinesTableCompanion data) {
     return RoutineRow(
@@ -7747,6 +7819,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
       planWeekday: data.planWeekday.present
           ? data.planWeekday.value
           : this.planWeekday,
+      planFocus: data.planFocus.present ? data.planFocus.value : this.planFocus,
+      planState: data.planState.present ? data.planState.value : this.planState,
     );
   }
 
@@ -7765,7 +7839,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           ..write('isFavourite: $isFavourite, ')
           ..write('scheduledDays: $scheduledDays, ')
           ..write('planId: $planId, ')
-          ..write('planWeekday: $planWeekday')
+          ..write('planWeekday: $planWeekday, ')
+          ..write('planFocus: $planFocus, ')
+          ..write('planState: $planState')
           ..write(')'))
         .toString();
   }
@@ -7785,6 +7861,8 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
     scheduledDays,
     planId,
     planWeekday,
+    planFocus,
+    planState,
   );
   @override
   bool operator ==(Object other) =>
@@ -7802,7 +7880,9 @@ class RoutineRow extends DataClass implements Insertable<RoutineRow> {
           other.isFavourite == this.isFavourite &&
           other.scheduledDays == this.scheduledDays &&
           other.planId == this.planId &&
-          other.planWeekday == this.planWeekday);
+          other.planWeekday == this.planWeekday &&
+          other.planFocus == this.planFocus &&
+          other.planState == this.planState);
 }
 
 class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
@@ -7819,6 +7899,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
   final Value<int> scheduledDays;
   final Value<String?> planId;
   final Value<int?> planWeekday;
+  final Value<String?> planFocus;
+  final Value<String> planState;
   final Value<int> rowid;
   const RoutinesTableCompanion({
     this.id = const Value.absent(),
@@ -7834,6 +7916,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.scheduledDays = const Value.absent(),
     this.planId = const Value.absent(),
     this.planWeekday = const Value.absent(),
+    this.planFocus = const Value.absent(),
+    this.planState = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutinesTableCompanion.insert({
@@ -7850,6 +7934,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     this.scheduledDays = const Value.absent(),
     this.planId = const Value.absent(),
     this.planWeekday = const Value.absent(),
+    this.planFocus = const Value.absent(),
+    this.planState = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -7870,6 +7956,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Expression<int>? scheduledDays,
     Expression<String>? planId,
     Expression<int>? planWeekday,
+    Expression<String>? planFocus,
+    Expression<String>? planState,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -7886,6 +7974,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       if (scheduledDays != null) 'scheduled_days': scheduledDays,
       if (planId != null) 'plan_id': planId,
       if (planWeekday != null) 'plan_weekday': planWeekday,
+      if (planFocus != null) 'plan_focus': planFocus,
+      if (planState != null) 'plan_state': planState,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7904,6 +7994,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     Value<int>? scheduledDays,
     Value<String?>? planId,
     Value<int?>? planWeekday,
+    Value<String?>? planFocus,
+    Value<String>? planState,
     Value<int>? rowid,
   }) {
     return RoutinesTableCompanion(
@@ -7920,6 +8012,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
       scheduledDays: scheduledDays ?? this.scheduledDays,
       planId: planId ?? this.planId,
       planWeekday: planWeekday ?? this.planWeekday,
+      planFocus: planFocus ?? this.planFocus,
+      planState: planState ?? this.planState,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7966,6 +8060,12 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
     if (planWeekday.present) {
       map['plan_weekday'] = Variable<int>(planWeekday.value);
     }
+    if (planFocus.present) {
+      map['plan_focus'] = Variable<String>(planFocus.value);
+    }
+    if (planState.present) {
+      map['plan_state'] = Variable<String>(planState.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7988,6 +8088,8 @@ class RoutinesTableCompanion extends UpdateCompanion<RoutineRow> {
           ..write('scheduledDays: $scheduledDays, ')
           ..write('planId: $planId, ')
           ..write('planWeekday: $planWeekday, ')
+          ..write('planFocus: $planFocus, ')
+          ..write('planState: $planState, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -17331,6 +17433,41 @@ class $TrainingPlansTableTable extends TrainingPlansTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _volumeMeta = const VerificationMeta('volume');
+  @override
+  late final GeneratedColumn<String> volume = GeneratedColumn<String>(
+    'volume',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outlineApprovedMeta = const VerificationMeta(
+    'outlineApproved',
+  );
+  @override
+  late final GeneratedColumn<bool> outlineApproved = GeneratedColumn<bool>(
+    'outline_approved',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("outline_approved" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _outlineAtMeta = const VerificationMeta(
+    'outlineAt',
+  );
+  @override
+  late final GeneratedColumn<int> outlineAt = GeneratedColumn<int>(
+    'outline_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -17396,6 +17533,9 @@ class $TrainingPlansTableTable extends TrainingPlansTable
     progression,
     weeks,
     pattern,
+    volume,
+    outlineApproved,
+    outlineAt,
     status,
     startDay,
     endedAt,
@@ -17474,6 +17614,27 @@ class $TrainingPlansTableTable extends TrainingPlansTable
       context.handle(
         _patternMeta,
         pattern.isAcceptableOrUnknown(data['pattern']!, _patternMeta),
+      );
+    }
+    if (data.containsKey('volume')) {
+      context.handle(
+        _volumeMeta,
+        volume.isAcceptableOrUnknown(data['volume']!, _volumeMeta),
+      );
+    }
+    if (data.containsKey('outline_approved')) {
+      context.handle(
+        _outlineApprovedMeta,
+        outlineApproved.isAcceptableOrUnknown(
+          data['outline_approved']!,
+          _outlineApprovedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('outline_at')) {
+      context.handle(
+        _outlineAtMeta,
+        outlineAt.isAcceptableOrUnknown(data['outline_at']!, _outlineAtMeta),
       );
     }
     if (data.containsKey('status')) {
@@ -17555,6 +17716,18 @@ class $TrainingPlansTableTable extends TrainingPlansTable
         DriftSqlType.string,
         data['${effectivePrefix}pattern'],
       ),
+      volume: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}volume'],
+      ),
+      outlineApproved: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}outline_approved'],
+      )!,
+      outlineAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}outline_at'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -17607,6 +17780,19 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
   /// The weeks, as a JSON array of `PlanWeek`.
   final String? pattern;
 
+  /// Working sets per muscle group per week, from the outline, as a JSON
+  /// object: what every session is built towards.
+  final String? volume;
+
+  /// The outline - weeks, sessions and their focus - was approved, and the
+  /// sessions may be built. Approved for a schema from before the step by
+  /// step.
+  final bool outlineApproved;
+
+  /// When the outline as it stands was written: an older card of it offers
+  /// no Goedkeuren.
+  final int? outlineAt;
+
   /// One of `PlanStatus`.
   final String status;
 
@@ -17627,6 +17813,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
     required this.progression,
     this.weeks,
     this.pattern,
+    this.volume,
+    required this.outlineApproved,
+    this.outlineAt,
     required this.status,
     this.startDay,
     this.endedAt,
@@ -17650,6 +17839,13 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
     }
     if (!nullToAbsent || pattern != null) {
       map['pattern'] = Variable<String>(pattern);
+    }
+    if (!nullToAbsent || volume != null) {
+      map['volume'] = Variable<String>(volume);
+    }
+    map['outline_approved'] = Variable<bool>(outlineApproved);
+    if (!nullToAbsent || outlineAt != null) {
+      map['outline_at'] = Variable<int>(outlineAt);
     }
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || startDay != null) {
@@ -17680,6 +17876,13 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
       pattern: pattern == null && nullToAbsent
           ? const Value.absent()
           : Value(pattern),
+      volume: volume == null && nullToAbsent
+          ? const Value.absent()
+          : Value(volume),
+      outlineApproved: Value(outlineApproved),
+      outlineAt: outlineAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outlineAt),
       status: Value(status),
       startDay: startDay == null && nullToAbsent
           ? const Value.absent()
@@ -17707,6 +17910,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
       progression: serializer.fromJson<String>(json['progression']),
       weeks: serializer.fromJson<int?>(json['weeks']),
       pattern: serializer.fromJson<String?>(json['pattern']),
+      volume: serializer.fromJson<String?>(json['volume']),
+      outlineApproved: serializer.fromJson<bool>(json['outlineApproved']),
+      outlineAt: serializer.fromJson<int?>(json['outlineAt']),
       status: serializer.fromJson<String>(json['status']),
       startDay: serializer.fromJson<int?>(json['startDay']),
       endedAt: serializer.fromJson<int?>(json['endedAt']),
@@ -17727,6 +17933,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
       'progression': serializer.toJson<String>(progression),
       'weeks': serializer.toJson<int?>(weeks),
       'pattern': serializer.toJson<String?>(pattern),
+      'volume': serializer.toJson<String?>(volume),
+      'outlineApproved': serializer.toJson<bool>(outlineApproved),
+      'outlineAt': serializer.toJson<int?>(outlineAt),
       'status': serializer.toJson<String>(status),
       'startDay': serializer.toJson<int?>(startDay),
       'endedAt': serializer.toJson<int?>(endedAt),
@@ -17745,6 +17954,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
     String? progression,
     Value<int?> weeks = const Value.absent(),
     Value<String?> pattern = const Value.absent(),
+    Value<String?> volume = const Value.absent(),
+    bool? outlineApproved,
+    Value<int?> outlineAt = const Value.absent(),
     String? status,
     Value<int?> startDay = const Value.absent(),
     Value<int?> endedAt = const Value.absent(),
@@ -17760,6 +17972,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
     progression: progression ?? this.progression,
     weeks: weeks.present ? weeks.value : this.weeks,
     pattern: pattern.present ? pattern.value : this.pattern,
+    volume: volume.present ? volume.value : this.volume,
+    outlineApproved: outlineApproved ?? this.outlineApproved,
+    outlineAt: outlineAt.present ? outlineAt.value : this.outlineAt,
     status: status ?? this.status,
     startDay: startDay.present ? startDay.value : this.startDay,
     endedAt: endedAt.present ? endedAt.value : this.endedAt,
@@ -17779,6 +17994,11 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
           : this.progression,
       weeks: data.weeks.present ? data.weeks.value : this.weeks,
       pattern: data.pattern.present ? data.pattern.value : this.pattern,
+      volume: data.volume.present ? data.volume.value : this.volume,
+      outlineApproved: data.outlineApproved.present
+          ? data.outlineApproved.value
+          : this.outlineApproved,
+      outlineAt: data.outlineAt.present ? data.outlineAt.value : this.outlineAt,
       status: data.status.present ? data.status.value : this.status,
       startDay: data.startDay.present ? data.startDay.value : this.startDay,
       endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
@@ -17799,6 +18019,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
           ..write('progression: $progression, ')
           ..write('weeks: $weeks, ')
           ..write('pattern: $pattern, ')
+          ..write('volume: $volume, ')
+          ..write('outlineApproved: $outlineApproved, ')
+          ..write('outlineAt: $outlineAt, ')
           ..write('status: $status, ')
           ..write('startDay: $startDay, ')
           ..write('endedAt: $endedAt, ')
@@ -17819,6 +18042,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
     progression,
     weeks,
     pattern,
+    volume,
+    outlineApproved,
+    outlineAt,
     status,
     startDay,
     endedAt,
@@ -17838,6 +18064,9 @@ class TrainingPlanRow extends DataClass implements Insertable<TrainingPlanRow> {
           other.progression == this.progression &&
           other.weeks == this.weeks &&
           other.pattern == this.pattern &&
+          other.volume == this.volume &&
+          other.outlineApproved == this.outlineApproved &&
+          other.outlineAt == this.outlineAt &&
           other.status == this.status &&
           other.startDay == this.startDay &&
           other.endedAt == this.endedAt &&
@@ -17855,6 +18084,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
   final Value<String> progression;
   final Value<int?> weeks;
   final Value<String?> pattern;
+  final Value<String?> volume;
+  final Value<bool> outlineApproved;
+  final Value<int?> outlineAt;
   final Value<String> status;
   final Value<int?> startDay;
   final Value<int?> endedAt;
@@ -17871,6 +18103,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
     this.progression = const Value.absent(),
     this.weeks = const Value.absent(),
     this.pattern = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.outlineApproved = const Value.absent(),
+    this.outlineAt = const Value.absent(),
     this.status = const Value.absent(),
     this.startDay = const Value.absent(),
     this.endedAt = const Value.absent(),
@@ -17888,6 +18123,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
     this.progression = const Value.absent(),
     this.weeks = const Value.absent(),
     this.pattern = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.outlineApproved = const Value.absent(),
+    this.outlineAt = const Value.absent(),
     this.status = const Value.absent(),
     this.startDay = const Value.absent(),
     this.endedAt = const Value.absent(),
@@ -17910,6 +18148,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
     Expression<String>? progression,
     Expression<int>? weeks,
     Expression<String>? pattern,
+    Expression<String>? volume,
+    Expression<bool>? outlineApproved,
+    Expression<int>? outlineAt,
     Expression<String>? status,
     Expression<int>? startDay,
     Expression<int>? endedAt,
@@ -17927,6 +18168,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
       if (progression != null) 'progression': progression,
       if (weeks != null) 'weeks': weeks,
       if (pattern != null) 'pattern': pattern,
+      if (volume != null) 'volume': volume,
+      if (outlineApproved != null) 'outline_approved': outlineApproved,
+      if (outlineAt != null) 'outline_at': outlineAt,
       if (status != null) 'status': status,
       if (startDay != null) 'start_day': startDay,
       if (endedAt != null) 'ended_at': endedAt,
@@ -17946,6 +18190,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
     Value<String>? progression,
     Value<int?>? weeks,
     Value<String?>? pattern,
+    Value<String?>? volume,
+    Value<bool>? outlineApproved,
+    Value<int?>? outlineAt,
     Value<String>? status,
     Value<int?>? startDay,
     Value<int?>? endedAt,
@@ -17963,6 +18210,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
       progression: progression ?? this.progression,
       weeks: weeks ?? this.weeks,
       pattern: pattern ?? this.pattern,
+      volume: volume ?? this.volume,
+      outlineApproved: outlineApproved ?? this.outlineApproved,
+      outlineAt: outlineAt ?? this.outlineAt,
       status: status ?? this.status,
       startDay: startDay ?? this.startDay,
       endedAt: endedAt ?? this.endedAt,
@@ -18002,6 +18252,15 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
     if (pattern.present) {
       map['pattern'] = Variable<String>(pattern.value);
     }
+    if (volume.present) {
+      map['volume'] = Variable<String>(volume.value);
+    }
+    if (outlineApproved.present) {
+      map['outline_approved'] = Variable<bool>(outlineApproved.value);
+    }
+    if (outlineAt.present) {
+      map['outline_at'] = Variable<int>(outlineAt.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -18035,6 +18294,9 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
           ..write('progression: $progression, ')
           ..write('weeks: $weeks, ')
           ..write('pattern: $pattern, ')
+          ..write('volume: $volume, ')
+          ..write('outlineApproved: $outlineApproved, ')
+          ..write('outlineAt: $outlineAt, ')
           ..write('status: $status, ')
           ..write('startDay: $startDay, ')
           ..write('endedAt: $endedAt, ')
@@ -22299,6 +22561,8 @@ typedef $$RoutinesTableTableCreateCompanionBuilder =
       Value<int> scheduledDays,
       Value<String?> planId,
       Value<int?> planWeekday,
+      Value<String?> planFocus,
+      Value<String> planState,
       Value<int> rowid,
     });
 typedef $$RoutinesTableTableUpdateCompanionBuilder =
@@ -22316,6 +22580,8 @@ typedef $$RoutinesTableTableUpdateCompanionBuilder =
       Value<int> scheduledDays,
       Value<String?> planId,
       Value<int?> planWeekday,
+      Value<String?> planFocus,
+      Value<String> planState,
       Value<int> rowid,
     });
 
@@ -22480,6 +22746,16 @@ class $$RoutinesTableTableFilterComposer
 
   ColumnFilters<int> get planWeekday => $composableBuilder(
     column: $table.planWeekday,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planFocus => $composableBuilder(
+    column: $table.planFocus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planState => $composableBuilder(
+    column: $table.planState,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22652,6 +22928,16 @@ class $$RoutinesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get planFocus => $composableBuilder(
+    column: $table.planFocus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get planState => $composableBuilder(
+    column: $table.planState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutineFoldersTableTableOrderingComposer get folderId {
     final $$RoutineFoldersTableTableOrderingComposer composer =
         $composerBuilder(
@@ -22731,6 +23017,12 @@ class $$RoutinesTableTableAnnotationComposer
     column: $table.planWeekday,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get planFocus =>
+      $composableBuilder(column: $table.planFocus, builder: (column) => column);
+
+  GeneratedColumn<String> get planState =>
+      $composableBuilder(column: $table.planState, builder: (column) => column);
 
   $$RoutineFoldersTableTableAnnotationComposer get folderId {
     final $$RoutineFoldersTableTableAnnotationComposer composer =
@@ -22880,6 +23172,8 @@ class $$RoutinesTableTableTableManager
                 Value<int> scheduledDays = const Value.absent(),
                 Value<String?> planId = const Value.absent(),
                 Value<int?> planWeekday = const Value.absent(),
+                Value<String?> planFocus = const Value.absent(),
+                Value<String> planState = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion(
                 id: id,
@@ -22895,6 +23189,8 @@ class $$RoutinesTableTableTableManager
                 scheduledDays: scheduledDays,
                 planId: planId,
                 planWeekday: planWeekday,
+                planFocus: planFocus,
+                planState: planState,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -22912,6 +23208,8 @@ class $$RoutinesTableTableTableManager
                 Value<int> scheduledDays = const Value.absent(),
                 Value<String?> planId = const Value.absent(),
                 Value<int?> planWeekday = const Value.absent(),
+                Value<String?> planFocus = const Value.absent(),
+                Value<String> planState = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RoutinesTableCompanion.insert(
                 id: id,
@@ -22927,6 +23225,8 @@ class $$RoutinesTableTableTableManager
                 scheduledDays: scheduledDays,
                 planId: planId,
                 planWeekday: planWeekday,
+                planFocus: planFocus,
+                planState: planState,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -29609,6 +29909,9 @@ typedef $$TrainingPlansTableTableCreateCompanionBuilder =
       Value<String> progression,
       Value<int?> weeks,
       Value<String?> pattern,
+      Value<String?> volume,
+      Value<bool> outlineApproved,
+      Value<int?> outlineAt,
       Value<String> status,
       Value<int?> startDay,
       Value<int?> endedAt,
@@ -29627,6 +29930,9 @@ typedef $$TrainingPlansTableTableUpdateCompanionBuilder =
       Value<String> progression,
       Value<int?> weeks,
       Value<String?> pattern,
+      Value<String?> volume,
+      Value<bool> outlineApproved,
+      Value<int?> outlineAt,
       Value<String> status,
       Value<int?> startDay,
       Value<int?> endedAt,
@@ -29686,6 +29992,21 @@ class $$TrainingPlansTableTableFilterComposer
 
   ColumnFilters<String> get pattern => $composableBuilder(
     column: $table.pattern,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get outlineApproved => $composableBuilder(
+    column: $table.outlineApproved,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outlineAt => $composableBuilder(
+    column: $table.outlineAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -29769,6 +30090,21 @@ class $$TrainingPlansTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get outlineApproved => $composableBuilder(
+    column: $table.outlineApproved,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outlineAt => $composableBuilder(
+    column: $table.outlineAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -29832,6 +30168,17 @@ class $$TrainingPlansTableTableAnnotationComposer
 
   GeneratedColumn<String> get pattern =>
       $composableBuilder(column: $table.pattern, builder: (column) => column);
+
+  GeneratedColumn<String> get volume =>
+      $composableBuilder(column: $table.volume, builder: (column) => column);
+
+  GeneratedColumn<bool> get outlineApproved => $composableBuilder(
+    column: $table.outlineApproved,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outlineAt =>
+      $composableBuilder(column: $table.outlineAt, builder: (column) => column);
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
@@ -29898,6 +30245,9 @@ class $$TrainingPlansTableTableTableManager
                 Value<String> progression = const Value.absent(),
                 Value<int?> weeks = const Value.absent(),
                 Value<String?> pattern = const Value.absent(),
+                Value<String?> volume = const Value.absent(),
+                Value<bool> outlineApproved = const Value.absent(),
+                Value<int?> outlineAt = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int?> startDay = const Value.absent(),
                 Value<int?> endedAt = const Value.absent(),
@@ -29914,6 +30264,9 @@ class $$TrainingPlansTableTableTableManager
                 progression: progression,
                 weeks: weeks,
                 pattern: pattern,
+                volume: volume,
+                outlineApproved: outlineApproved,
+                outlineAt: outlineAt,
                 status: status,
                 startDay: startDay,
                 endedAt: endedAt,
@@ -29932,6 +30285,9 @@ class $$TrainingPlansTableTableTableManager
                 Value<String> progression = const Value.absent(),
                 Value<int?> weeks = const Value.absent(),
                 Value<String?> pattern = const Value.absent(),
+                Value<String?> volume = const Value.absent(),
+                Value<bool> outlineApproved = const Value.absent(),
+                Value<int?> outlineAt = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<int?> startDay = const Value.absent(),
                 Value<int?> endedAt = const Value.absent(),
@@ -29948,6 +30304,9 @@ class $$TrainingPlansTableTableTableManager
                 progression: progression,
                 weeks: weeks,
                 pattern: pattern,
+                volume: volume,
+                outlineApproved: outlineApproved,
+                outlineAt: outlineAt,
                 status: status,
                 startDay: startDay,
                 endedAt: endedAt,

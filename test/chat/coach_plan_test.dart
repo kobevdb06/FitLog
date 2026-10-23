@@ -8,6 +8,7 @@ import 'package:fitlog/features/chat/data/coach.dart';
 import 'package:fitlog/features/chat/data/coach_tools.dart';
 import 'package:fitlog/features/chat/domain/coach_prompt.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
+import 'package:fitlog/features/plans/data/plan_prompt.dart';
 import 'package:fitlog/features/plans/presentation/plan_new_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -103,19 +104,26 @@ void main() {
   test('only the conversation of a schema is offered its two lookups', () {
     String names(CoachTools tools) =>
         [for (final tool in tools.offered) tool['name']].join(',');
-    expect(names(tools), contains('save_plan'));
+    expect(names(tools), contains('save_plan_outline'));
+    expect(names(tools), contains('save_plan_session'));
     expect(names(tools), contains(',plan'));
+    // Only what building a schema needs: every lookup offered rides along
+    // with every request.
+    expect(names(tools), contains('search_exercises'));
+    expect(names(tools), isNot(contains('drinks')));
+    expect(names(tools), isNot(contains('save_coach_routine')));
+    expect(names(tools), isNot(contains('save_plan,')));
     expect(names(CoachTools(db)), isNot(contains('plan')));
   });
 
   test('outside it, asking for one anyway is refused', () async {
-    final lookup = await CoachTools(db).run('save_plan', layout());
+    final lookup = await CoachTools(db).run('save_plan_outline', layout());
     expect(decode(lookup)['error'], contains('hoort niet bij een schema'));
     expect(await db.plansDao.sessions('p-1'), isEmpty);
   });
 
   test('a draft is laid out: its weeks, its sessions, and a card', () async {
-    final lookup = await tools.run('save_plan', layout());
+    final lookup = await tools.applyPlanLayout(layout());
 
     expect(decode(lookup)['ok'], isTrue);
     final plan = (await db.plansDao.plan('p-1'))!;
@@ -150,8 +158,8 @@ void main() {
   });
 
   test('a draft laid out again is simply made again', () async {
-    await tools.run('save_plan', layout());
-    final lookup = await tools.run('save_plan', layout(upper: 'Boven'));
+    await tools.applyPlanLayout(layout());
+    final lookup = await tools.applyPlanLayout(layout(upper: 'Boven'));
 
     expect(lookup.proposal!.made, isFalse);
     final sessions = await db.plansDao.sessions('p-1');
@@ -161,7 +169,7 @@ void main() {
   test(
     'a running schema keeps its sessions by name, and how they were',
     () async {
-      await tools.run('save_plan', layout());
+      await tools.applyPlanLayout(layout());
       final before = await db.plansDao.sessions('p-1');
       await db.plansDao.start(
         'p-1',
@@ -169,7 +177,7 @@ void main() {
         at: DateTime(2026, 10, 20),
       );
 
-      await tools.run('save_plan', layout(benchSets: 4));
+      await tools.applyPlanLayout(layout(benchSets: 4));
 
       final after = await db.plansDao.sessions('p-1');
       expect([for (final s in after) s.id], [for (final s in before) s.id]);
@@ -182,7 +190,7 @@ void main() {
 
   test('what cannot be is refused, and nothing is written', () async {
     Future<String> error(Map<String, Object?> input) async =>
-        '${decode(await tools.run('save_plan', input))['error']}';
+        '${decode(await tools.applyPlanLayout(input))['error']}';
 
     expect(
       await error(
@@ -220,12 +228,12 @@ void main() {
 
   test('a finished schema does not change any more', () async {
     await db.plansDao.finish('p-1', DateTime(2026, 10, 21));
-    final lookup = await tools.run('save_plan', layout());
+    final lookup = await tools.applyPlanLayout(layout());
     expect(decode(lookup)['error'], contains('afgelopen'));
   });
 
   test('plan reads it back, with how this week stands', () async {
-    await tools.run('save_plan', layout());
+    await tools.applyPlanLayout(layout());
     final now = DateTime.now();
     final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
     await db.plansDao.start('p-1', startDay: monday, at: now);
@@ -241,7 +249,7 @@ void main() {
   });
 
   test('a whole session may be written short: sets as a number', () async {
-    final lookup = await tools.run('save_plan', {
+    final lookup = await tools.applyPlanLayout({
       'name': 'Kracht',
       'change': 'Kort opgeschreven.',
       'weeks': [
@@ -447,23 +455,23 @@ void main() {
   });
 
   group('what the coach is told', () {
-    test('in the conversation of a draft: lay it out, then ask', () {
+    test('in the conversation of a draft: the outline first', () async {
       final prompt = buildCoachPrompt(
         now: DateTime(2026, 10, 20),
         weightUnit: 'kg',
-        plan: describePlanThread(
-          status: 'draft',
-          goal: 'Sterker op bench',
-          split: 'Upper/lower',
-          days: const ['maandag', 'donderdag'],
-          coachSetsNumbers: false,
+        plan: await describePlanOf(
+          db,
+          (await db.plansDao.plan('p-1'))!,
+          DateTime(2026, 10, 20),
         ),
       );
       expect(prompt, contains('Dit gesprek hoort bij een schema'));
+      expect(prompt, contains('stap voor stap'));
       expect(prompt, contains('"Sterker op bench"'));
       expect(prompt, contains('maandag, donderdag'));
       expect(prompt, contains('stelt de app elke week bij'));
-      expect(prompt, contains('Start schema'));
+      expect(prompt, contains('Nu: Stap 1'));
+      expect(prompt, contains('save_plan_outline'));
     });
 
     test('elsewhere, nothing about schema\'s', () {

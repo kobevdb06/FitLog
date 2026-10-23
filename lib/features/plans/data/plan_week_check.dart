@@ -147,7 +147,7 @@ class PlanWeekCheck {
               (id: note.id, kind: note.kind, text: note.note),
           ]),
           situation: 'zondagavond; je kijkt terug op week $week van het schema',
-          plan: describePlanOf(plan, now),
+          plan: await describePlanOf(db, plan, now),
         ),
       ).ask(history: history, question: question);
 

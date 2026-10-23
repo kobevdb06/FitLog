@@ -391,3 +391,24 @@ enum PlanStatus {
   static PlanStatus fromWire(String? value) =>
       values.firstWhere((e) => e.wire == value, orElse: () => PlanStatus.draft);
 }
+
+/// Where a session of a schema is while the schema is being built.
+enum PlanSessionState {
+  /// In the outline: a name, a day and a focus, no exercises yet.
+  planned('planned'),
+
+  /// Built by the coach, waiting for the user's Goedkeuren.
+  proposed('proposed'),
+
+  /// Approved: it stays as it is unless the user asks for a change.
+  approved('approved');
+
+  const PlanSessionState(this.wire);
+
+  final String wire;
+
+  static PlanSessionState fromWire(String? value) => values.firstWhere(
+    (e) => e.wire == value,
+    orElse: () => PlanSessionState.approved,
+  );
+}

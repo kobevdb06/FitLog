@@ -251,51 +251,37 @@ String describeDeload({
             '${date(lastDay)}: lichter is nu de bedoeling.';
 }
 
-/// What the conversation of a schema is about, and how one is laid out.
+/// What the conversation of a schema is about, how far it is, and the one
+/// step to take now.
 ///
 /// Only in that conversation, outside the budget of the fixed rules: it is
 /// the whole job there, and nowhere else.
 String describePlanThread({
-  required String status,
+  required String step,
   required String goal,
   required String split,
   required List<String> days,
   required bool coachSetsNumbers,
-  int? week,
-  int? weeks,
+  List<String> outline = const [],
 }) {
-  final where = switch (status) {
-    'running' when week != null && week >= 1 =>
-      'Het schema loopt, week $week${weeks == null ? '' : ' van $weeks'}. '
-          'Pas het alleen aan als de gebruiker erom vraagt; wat al gedaan '
-          'is, blijft.',
-    'running' =>
-      'Het schema is gestart en begint maandag. Pas het alleen aan als de '
-          'gebruiker erom vraagt.',
-    'done' => 'Het schema is afgelopen en verandert niet meer.',
-    _ =>
-      'Het schema is een ontwerp: niets verandert voor de gebruiker op '
-          'Start schema tikt. Leg het meteen vast met save_plan en vraag dan '
-          'of het zo goed is.',
-  };
   final numbers = coachSetsNumbers
       ? 'Jij stelt elke zondag de gewichten en herhalingen van de volgende '
             'week bij.'
       : 'De gewichten en herhalingen stelt de app elke week bij uit wat de '
             'gebruiker deed.';
   return [
-    'Dit gesprek hoort bij een schema van de gebruiker. $where',
+    'Dit gesprek hoort bij een schema van de gebruiker. Je bouwt het stap '
+        'voor stap: eerst de opzet, dan één sessie per keer, en elke stap '
+        'pas als de gebruiker de vorige goedkeurde.',
     'Wat de gebruiker wil: "$goal".',
     'Split: $split.',
     'Dagen: ${days.isEmpty ? 'niet gekozen' : days.join(', ')}. Een '
         'richtlijn: een sessie telt in de week dat ze gedaan wordt, op welke '
         'dag ook.',
     numbers,
-    'Lees het schema met plan; leg het vast met save_plan, altijd helemaal. '
-        'Kies zelf de lengte, 4 tot 12 weken, meestal met een deloadweek als '
-        'laatste. Zet de sessies in de volgorde van de week, op de gekozen '
-        'dagen. Een week verandert alleen sets of herhalingen, of is een '
-        'deload.',
+    'Een week verandert alleen sets of herhalingen, of is een deload.',
+    ...outline,
+    'Nu: $step',
   ].join('\n');
 }
 

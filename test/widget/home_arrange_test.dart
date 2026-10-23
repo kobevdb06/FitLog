@@ -448,6 +448,7 @@ void main() {
       const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
     );
     RoutineRow routine(String name, int days) => RoutineRow(
+      planState: 'approved',
       id: name,
       name: name,
       sortOrder: 0,

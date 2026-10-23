@@ -429,6 +429,9 @@ class CoachController extends _$CoachController {
         final id? => await db.plansDao.plan(id),
         null => null,
       };
+      final planBrief = plan == null
+          ? null
+          : await describePlanOf(db, plan, now);
       final coach = Coach(
         client: client,
         tools: CoachTools(
@@ -458,7 +461,7 @@ class CoachController extends _$CoachController {
                   lastDay: deload.lastDay,
                 ),
           situation: situation,
-          plan: plan == null ? null : describePlanOf(plan, now),
+          plan: planBrief,
           aboutUser: settings.coachSeesProfile && profile != null
               ? describeProfile(
                   now: now,
@@ -575,7 +578,11 @@ class CoachController extends _$CoachController {
       case ProposalKind.routine:
         id = await _createRoutine(db, proposal.routine!);
       // Made by the coach itself, so already there; isApplied caught it.
-      case ProposalKind.coachRoutine || ProposalKind.note || ProposalKind.plan:
+      case ProposalKind.coachRoutine ||
+          ProposalKind.note ||
+          ProposalKind.plan ||
+          ProposalKind.planOutline ||
+          ProposalKind.planSession:
         return proposal.appliedId;
       case ProposalKind.exerciseChange:
         id = await _applyChange(db, proposal.exerciseChange!);

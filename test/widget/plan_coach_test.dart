@@ -110,6 +110,13 @@ void main() {
       ],
       at: DateTime(2026, 10, 20),
     );
+    // Whole, as a schema laid out in one go was: outline and session
+    // approved.
+    await db.plansDao.approveOutline('p-1', DateTime(2026, 10, 20));
+    final upper = await db.routinesDao.createRoutine(
+      const RoutineDraft(name: 'Upper', exercises: []),
+    );
+    await db.plansDao.placeSession(upper, planId: 'p-1', position: 0);
     await db.chatDao.createThread('t-1', 'Kracht', planId: 'p-1');
     await db.chatDao.addMessage(
       id: 'm-1',
@@ -158,6 +165,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
+    // The sessions, which say whether it is whole, arrive after the schema.
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Schema van de coach'), findsOneWidget);
     expect(find.textContaining('3 weken'), findsOneWidget);
     expect(find.textContaining('deload in week 3'), findsOneWidget);
@@ -265,7 +274,7 @@ void main() {
         },
       ],
     };
-    await CoachTools(db, planId: 'p-1').run('save_plan', layout);
+    await CoachTools(db, planId: 'p-1').applyPlanLayout(layout);
     final now = DateTime.now();
     await db.plansDao.start(
       'p-1',
@@ -300,6 +309,146 @@ void main() {
     expect(find.text('Gehouden zoals het was.'), findsOneWidget);
     final plan = await tester.runAsync(() => db.plansDao.plan('p-1'));
     expect(plan!.weeks, 4);
+  });
+
+  group('stap voor stap', () {
+    /// An outline with Push and Pull, written by the coach, in t-1.
+    Future<CoachTools> outlined() async {
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-bench',
+              name: 'Bench Press',
+              primaryMuscle: 'borst',
+              category: 'barbell',
+              createdAt: 0,
+            ),
+          );
+      await db.plansDao.createDraft(
+        id: 'p-1',
+        goal: '140 kg bench',
+        split: PlanSplit.coach,
+        days: 0x05,
+        progression: PlanProgression.app,
+        at: DateTime.now(),
+      );
+      await db.chatDao.createThread('t-1', 'Nieuw schema', planId: 'p-1');
+      final tools = CoachTools(db, planId: 'p-1');
+      final card = (await tools.run('save_plan_outline', {
+        'name': 'Kracht',
+        'change': 'Twee dagen.',
+        'weeks': [
+          {'kind': 'build'},
+          {'kind': 'deload'},
+        ],
+        'sessions': [
+          {'name': 'Push', 'weekday': 1, 'focus': 'borst zwaar'},
+          {'name': 'Pull', 'weekday': 3, 'focus': 'rug'},
+        ],
+        'volume': [
+          {'muscle': 'borst', 'sets': 12},
+        ],
+      })).proposal!;
+      await db.chatDao.addMessage(
+        id: 'm-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Zo zou ik het opzetten.',
+        proposals: encodeProposals([card]),
+      );
+      return tools;
+    }
+
+    Future<void> showThread(WidgetTester tester) async {
+      bigScreen(tester);
+      makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
+      await tester.pumpWidget(
+        wrapWithContainer(container!, const CoachScreen()),
+      );
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    Future<void> settle(WidgetTester tester) async {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 300)),
+      );
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+    }
+
+    testWidgets('Goedkeuren op de opzet vraagt de coach de eerste sessie', (
+      tester,
+    ) async {
+      await outlined();
+      await showThread(tester);
+
+      expect(find.text('Opzet van je schema'), findsOneWidget);
+      expect(find.textContaining('borst zwaar'), findsOneWidget);
+      expect(find.text('Werksets per week: borst 12'), findsOneWidget);
+      await tester.tap(find.text('Goedkeuren'));
+      await settle(tester);
+
+      final plan = await tester.runAsync(() => db.plansDao.plan('p-1'));
+      expect(plan!.outlineApproved, isTrue);
+      expect(sent.single, contains('De opzet is goed. Maak nu Push.'));
+      expect(find.text('Goedgekeurd'), findsOneWidget);
+    });
+
+    testWidgets('Aanpassen zegt de coach wat er anders moet', (tester) async {
+      await outlined();
+      await showThread(tester);
+
+      await tester.tap(find.text('Aanpassen'));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.enterText(find.byType(TextField).last, 'Drie dagen');
+      await tester.tap(find.text('Vraag het de coach'));
+      await settle(tester);
+
+      expect(sent.single, contains('Pas de opzet aan: Drie dagen'));
+      final plan = await tester.runAsync(() => db.plansDao.plan('p-1'));
+      expect(plan!.outlineApproved, isFalse);
+    });
+
+    testWidgets('de laatste sessie goedgekeurd: geen vraag meer, wel Start '
+        'schema', (tester) async {
+      final tools = await outlined();
+      await db.plansDao.approveOutline('p-1', DateTime.now());
+      for (final name in ['Push', 'Pull']) {
+        final card = (await tools.run('save_plan_session', {
+          'session': name,
+          'change': 'Kort.',
+          'exercises': [
+            {'exercise': 'Bench Press', 'sets': 3, 'reps': 5, 'weight_kg': 90},
+          ],
+        })).proposal!;
+        await db.chatDao.addMessage(
+          id: 'm-$name',
+          threadId: 't-1',
+          role: 'assistant',
+          content: '$name staat klaar.',
+          proposals: encodeProposals([card]),
+        );
+      }
+      final push = (await db.plansDao.sessions('p-1')).first;
+      await db.plansDao.markSession(push.id, PlanSessionState.approved);
+      await showThread(tester);
+
+      expect(find.text('Sessie van je schema · woensdag'), findsOneWidget);
+      expect(find.textContaining('3×5 @ 90 kg'), findsNWidgets(2));
+      await tester.tap(find.text('Goedkeuren'));
+      await settle(tester);
+
+      expect(sent, isEmpty);
+      expect(
+        find.text('Goedgekeurd. Alle sessies zijn klaar.'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(FilledButton, 'Start schema'), findsOneWidget);
+    });
   });
 
   group('het formulier', () {
@@ -383,7 +532,7 @@ void main() {
       // The coach was told what the conversation is for, and could lay it
       // out.
       expect(sent.single, contains('Dit gesprek hoort bij een schema'));
-      expect(sent.single, contains('save_plan'));
+      expect(sent.single, contains('save_plan_outline'));
     });
   });
 }

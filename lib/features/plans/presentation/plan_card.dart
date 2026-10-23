@@ -99,6 +99,15 @@ class _PlanProposalCardState extends ConsumerState<PlanProposalCard> {
   Widget _footer(BuildContext context, TrainingPlanRow plan) {
     final theme = Theme.of(context);
     if (plan.state == PlanStatus.draft) {
+      // Only once it is whole: a schema built step by step waits for every
+      // session to be approved.
+      final sessions = ref.watch(planSessionsProvider(plan.id)).value;
+      if (sessions == null || !planComplete(plan, sessions)) {
+        return Text(
+          'Wordt verder gemaakt in dit gesprek.',
+          style: theme.textTheme.bodySmall,
+        );
+      }
       return SizedBox(
         width: double.infinity,
         height: 48,

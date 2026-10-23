@@ -641,6 +641,16 @@ class RoutinesTable extends Table {
   /// session counts in the week it is done, on whatever day.
   IntColumn get planWeekday => integer().named('plan_weekday').nullable()();
 
+  /// What the session is for, from the schema's outline: "borst zwaar,
+  /// schouders, triceps". What the coach builds it to.
+  TextColumn get planFocus => text().named('plan_focus').nullable()();
+
+  /// One of `PlanSessionState`: only outlined, proposed by the coach, or
+  /// approved by the user. A schema starts once every session is approved.
+  /// Approved for everything from before the step by step: those were whole.
+  TextColumn get planState =>
+      text().named('plan_state').withDefault(const Constant('approved'))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -1248,14 +1258,27 @@ class TrainingPlansTable extends Table {
   IntColumn get days => integer().withDefault(const Constant(0))();
 
   /// One of `PlanProgression`: who sets the numbers each week.
-  TextColumn get progression =>
-      text().withDefault(const Constant('app'))();
+  TextColumn get progression => text().withDefault(const Constant('app'))();
 
   /// How many weeks, as the coach decided; null until it did.
   IntColumn get weeks => integer().nullable()();
 
   /// The weeks, as a JSON array of `PlanWeek`.
   TextColumn get pattern => text().nullable()();
+
+  /// Working sets per muscle group per week, from the outline, as a JSON
+  /// object: what every session is built towards.
+  TextColumn get volume => text().nullable()();
+
+  /// The outline - weeks, sessions and their focus - was approved, and the
+  /// sessions may be built. Approved for a schema from before the step by
+  /// step.
+  BoolColumn get outlineApproved =>
+      boolean().named('outline_approved').withDefault(const Constant(true))();
+
+  /// When the outline as it stands was written: an older card of it offers
+  /// no Goedkeuren.
+  IntColumn get outlineAt => integer().named('outline_at').nullable()();
 
   /// One of `PlanStatus`.
   TextColumn get status => text().withDefault(const Constant('draft'))();

@@ -179,4 +179,49 @@ void main() {
     expect(await db.plansDao.plan('p-1'), isNull);
     expect(await db.routinesDao.getRoutine(push), isNull);
   });
+
+  test('an outline waits for approval, and so does every session', () async {
+    await draft('p-1');
+    await db.plansDao.saveOutline(
+      'p-1',
+      name: 'Kracht',
+      weeks: const [
+        PlanWeek(),
+        PlanWeek(kind: PlanWeekKind.deload),
+      ],
+      volume: const {'borst': 12, 'rug': 14},
+      at: at,
+      approved: false,
+    );
+    final push = await db.routinesDao.createRoutine(
+      const RoutineDraft(name: 'Push', exercises: []),
+    );
+    await db.plansDao.placeSession(
+      push,
+      planId: 'p-1',
+      position: 0,
+      focus: 'borst zwaar',
+      state: PlanSessionState.planned,
+    );
+
+    var plan = (await db.plansDao.plan('p-1'))!;
+    expect(plan.outlineApproved, isFalse);
+    expect(plan.outlineAt, at.millisecondsSinceEpoch);
+    expect(plan.weeklySets, {'borst': 12, 'rug': 14});
+    var sessions = await db.plansDao.sessions('p-1');
+    expect(sessions.single.planFocus, 'borst zwaar');
+    expect(sessions.single.sessionState, PlanSessionState.planned);
+    expect(planComplete(plan, sessions), isFalse);
+
+    await db.plansDao.approveOutline('p-1', at);
+    await db.plansDao.markSession(push, PlanSessionState.proposed);
+    plan = (await db.plansDao.plan('p-1'))!;
+    sessions = await db.plansDao.sessions('p-1');
+    expect(plan.outlineApproved, isTrue);
+    expect(planComplete(plan, sessions), isFalse);
+
+    await db.plansDao.markSession(push, PlanSessionState.approved);
+    sessions = await db.plansDao.sessions('p-1');
+    expect(planComplete(plan, sessions), isTrue);
+  });
 }

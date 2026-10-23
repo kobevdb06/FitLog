@@ -14,6 +14,7 @@ import '../../chat/presentation/chat_providers.dart';
 import '../../chat/presentation/coach_session.dart';
 import '../../routines/presentation/routine_start.dart';
 import '../data/plan_actions.dart';
+import 'plan_start_sheet.dart';
 import 'plan_providers.dart';
 
 /// Opens the conversation of [planId] in the Chat tab: where it was made,
@@ -70,11 +71,7 @@ class PlansView extends ConsumerWidget {
             if (running != null) _RunningPlan(plan: running),
             if (drafts.isNotEmpty) ...[
               const SectionHeader('In voorbereiding'),
-              for (final plan in drafts)
-                _PlanTile(
-                  plan: plan,
-                  subtitle: 'Verder in het gesprek met de coach',
-                ),
+              for (final plan in drafts) _DraftTile(plan: plan),
             ],
             if (done.isNotEmpty) ...[
               const SectionHeader("Eerdere schema's"),
@@ -112,6 +109,50 @@ class _PlanTile extends ConsumerWidget {
         ? () => openPlanConversation(context, ref, plan.id)
         : null,
   );
+}
+
+/// A schema still being built: how far, and Start schema once it is whole.
+class _DraftTile extends ConsumerWidget {
+  const _DraftTile({required this.plan});
+
+  final TrainingPlanRow plan;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessions = ref.watch(planSessionsProvider(plan.id)).value ?? const [];
+    final complete = planComplete(plan, sessions);
+    return ListTile(
+      leading: const Icon(Icons.calendar_month_outlined),
+      title: Text(plan.name),
+      subtitle: Text(planProgress(plan, sessions)),
+      trailing: complete
+          ? FilledButton(
+              onPressed: () async {
+                final started = await showPlanStartSheet(context, ref, plan);
+                if (started && context.mounted) {
+                  await sayPlanStarted(context, ref, plan.id);
+                }
+              },
+              child: const Text('Start'),
+            )
+          : const Icon(Icons.chevron_right),
+      onTap: ref.watch(coachEnabledProvider)
+          ? () => openPlanConversation(context, ref, plan.id)
+          : null,
+    );
+  }
+}
+
+/// How far a schema being built is: `Opzet wacht op akkoord`, `2 van 5
+/// sessies goedgekeurd`, `Klaar om te starten`.
+String planProgress(TrainingPlanRow plan, List<RoutineRow> sessions) {
+  if (sessions.isEmpty) return 'De coach maakt de opzet';
+  if (!plan.outlineApproved) return 'Opzet wacht op je akkoord';
+  if (planComplete(plan, sessions)) return 'Klaar om te starten';
+  final approved = sessions
+      .where((s) => s.sessionState == PlanSessionState.approved)
+      .length;
+  return '$approved van ${sessions.length} sessies goedgekeurd';
 }
 
 /// The schema being followed: where it is, and this week of it.

@@ -41,6 +41,7 @@ void main() {
     WeekdaySet days = WeekdaySet.none,
     DateTime? lastPerformed,
   }) => RoutineRow(
+    planState: 'approved',
     id: name,
     name: name,
     sortOrder: 0,

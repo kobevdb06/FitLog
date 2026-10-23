@@ -32,6 +32,7 @@ void main() {
 
   RoutineRow routine(String name, {WeekdaySet days = WeekdaySet.none}) =>
       RoutineRow(
+        planState: 'approved',
         id: name,
         name: name,
         sortOrder: 0,

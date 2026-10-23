@@ -25,6 +25,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../../plans/data/plan_actions.dart';
 import '../../plans/presentation/plan_providers.dart';
+import '../../plans/presentation/plans_view.dart' show planProgress;
 import '../../workout/presentation/workout_providers.dart';
 import 'chat_providers.dart';
 import 'coach_session.dart';
@@ -387,7 +388,10 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
       final thread = planThreads.where((t) => t.planId == plan.id).firstOrNull;
       final week = plan.weekAt(now);
       final where = switch (plan.state) {
-        PlanStatus.draft => 'In voorbereiding',
+        PlanStatus.draft => planProgress(
+          plan,
+          ref.watch(planSessionsProvider(plan.id)).value ?? const [],
+        ),
         PlanStatus.running when plan.isOverAt(now) => 'Alle weken voorbij',
         PlanStatus.running when week == 0 => 'Begint maandag',
         PlanStatus.running =>

@@ -144,6 +144,7 @@ void main() {
 
   group('what the launcher is handed', () {
     RoutineRow row(String id, String name) => RoutineRow(
+      planState: 'approved',
       id: id,
       name: name,
       sortOrder: 0,

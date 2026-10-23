@@ -114,6 +114,21 @@ class CoachTools {
     'gym',
   };
 
+  /// What the conversation of a schema may read: what building one needs,
+  /// and no more - every lookup offered goes along with every request.
+  static const Set<String> planReads = {
+    'search_exercises',
+    'recent_workouts',
+    'exercise_history',
+    'personal_records',
+    'weekly_volume',
+    'plateaus',
+    'recovery',
+    'gym',
+    'remember',
+    'forget',
+  };
+
   /// What only the Sunday evening may use.
   static const Set<String> sundayOnly = {
     'propose_plan_change',
@@ -132,7 +147,13 @@ class CoachTools {
           ..._PlanTools.sundayDefinitions,
           if (numbers) ..._PlanTools.numbersDefinitions,
         ]
-      : definitions(health: health, memory: memory, plan: planId != null);
+      : planId != null
+      ? [
+          for (final tool in definitions(health: health, memory: memory))
+            if (planReads.contains(tool['name'])) tool,
+          ..._PlanTools.definitions,
+        ]
+      : definitions(health: health, memory: memory);
 
   /// Lays out the schema of [planId] as [input] says - the whole schema, as
   /// save_plan takes it. What Aanvaarden does with the coach's proposal.
@@ -745,7 +766,10 @@ class CoachTools {
       );
     }
     if (planId == null &&
-        (name == 'plan' || name == 'save_plan' || sundayOnly.contains(name))) {
+        (name == 'plan' ||
+            name == 'save_plan_outline' ||
+            name == 'save_plan_session' ||
+            sundayOnly.contains(name))) {
       return CoachLookup(
         json: jsonEncode({
           'error':
@@ -757,7 +781,8 @@ class CoachTools {
     }
     return switch (name) {
       'plan' => _readPlan(),
-      'save_plan' => _savePlan(input),
+      'save_plan_outline' => _saveOutline(input),
+      'save_plan_session' => _saveSession(input),
       'propose_plan_change' => _proposePlanChange(input),
       'set_week_numbers' => _setWeekNumbers(input),
       'remember' => _remember(input),

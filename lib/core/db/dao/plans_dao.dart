@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../../calc/plan_weeks.dart';
@@ -35,7 +37,35 @@ extension TrainingPlanWeeks on TrainingPlanRow {
     final all = planWeeks;
     return week >= 1 && week <= all.length ? all[week - 1] : const PlanWeek();
   }
+
+  /// Working sets per muscle group per week, as the outline set them.
+  Map<String, int> get weeklySets {
+    final raw = volume;
+    if (raw == null || raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return const {};
+      return {
+        for (final MapEntry(:key, :value) in decoded.entries)
+          if (value is num) '$key': value.round(),
+      };
+    } on FormatException {
+      return const {};
+    }
+  }
 }
+
+/// A session's place in the building of its schema.
+extension PlanSessionRow on RoutineRow {
+  PlanSessionState get sessionState => PlanSessionState.fromWire(planState);
+}
+
+/// Whether a schema is ready to start: its outline approved, and every one
+/// of its [sessions] too.
+bool planComplete(TrainingPlanRow plan, List<RoutineRow> sessions) =>
+    plan.outlineApproved &&
+    sessions.isNotEmpty &&
+    sessions.every((s) => s.sessionState == PlanSessionState.approved);
 
 /// The schema's: the one being followed, the ones being talked over, and
 /// the ones that were.
@@ -69,6 +99,8 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
       ),
       days: Value(days),
       progression: Value(progression.wire),
+      // Built step by step: the outline waits for the user.
+      outlineApproved: const Value(false),
       createdAt: at.millisecondsSinceEpoch,
       updatedAt: at.millisecondsSinceEpoch,
     ),
@@ -133,13 +165,54 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
     required String planId,
     required int position,
     int? weekday,
+    String? focus,
+    PlanSessionState state = PlanSessionState.approved,
   }) => (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
     RoutinesTableCompanion(
       planId: Value(planId),
       planWeekday: Value(weekday),
+      planFocus: Value(focus),
+      planState: Value(state.wire),
       sortOrder: Value(position),
     ),
   );
+
+  /// The outline the coach wrote: the name, the weeks and the weekly sets
+  /// per muscle group. Written at [at]; [approved] for a running schema,
+  /// whose outline changes when the user asks for it.
+  Future<void> saveOutline(
+    String planId, {
+    required String name,
+    required List<PlanWeek> weeks,
+    required Map<String, int> volume,
+    required DateTime at,
+    required bool approved,
+  }) => (update(trainingPlansTable)..where((t) => t.id.equals(planId))).write(
+    TrainingPlansTableCompanion(
+      name: Value(name.trim()),
+      weeks: Value(weeks.length),
+      pattern: Value(encodePlanWeeks(weeks)),
+      volume: Value(jsonEncode(volume)),
+      outlineApproved: Value(approved),
+      outlineAt: Value(at.millisecondsSinceEpoch),
+      updatedAt: Value(at.millisecondsSinceEpoch),
+    ),
+  );
+
+  /// Goedkeuren on the outline: the sessions may now be built.
+  Future<void> approveOutline(String planId, DateTime at) =>
+      (update(trainingPlansTable)..where((t) => t.id.equals(planId))).write(
+        TrainingPlansTableCompanion(
+          outlineApproved: const Value(true),
+          updatedAt: Value(at.millisecondsSinceEpoch),
+        ),
+      );
+
+  /// Where [routineId] is in the building of its schema.
+  Future<void> markSession(String routineId, PlanSessionState state) =>
+      (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
+        RoutinesTableCompanion(planState: Value(state.wire)),
+      );
 
   /// Follows [planId] from [startDay] on. A schema that was being followed
   /// stops: there is only ever one.

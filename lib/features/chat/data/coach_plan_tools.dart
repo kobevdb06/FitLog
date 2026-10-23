@@ -40,6 +40,36 @@ const Map<String, Object?> _shortExercises = {
   },
 };
 
+/// The weeks of a schema, in order.
+const Map<String, Object?> _weeksSchema = {
+  'type': 'array',
+  'description':
+      'Elke week van het schema, in volgorde: $kPlanMinWeeks tot '
+      '$kPlanMaxWeeks. Meestal een deload als laatste.',
+  'items': {
+    'type': 'object',
+    'properties': {
+      'kind': {
+        'type': 'string',
+        'enum': ['build', 'deload'],
+      },
+      'sets': {
+        'type': 'integer',
+        'description': 'Werksets per oefening erbij (of eraf: -1).',
+      },
+      'reps': {
+        'type': 'integer',
+        'description': 'Herhalingen per set erbij (of eraf: -2).',
+      },
+      'note': {
+        'type': 'string',
+        'description': 'Waarvoor de week is, in een paar woorden.',
+      },
+    },
+    'required': ['kind'],
+  },
+};
+
 /// A whole schema, as save_plan and propose_plan_change take it.
 const Map<String, Object?> _layoutSchema = {
   'type': 'object',
@@ -54,34 +84,7 @@ const Map<String, Object?> _layoutSchema = {
           'Eén zin voor de gebruiker: wat je maakte of veranderde, en '
           'waarom.',
     },
-    'weeks': {
-      'type': 'array',
-      'description':
-          'Elke week van het schema, in volgorde: $kPlanMinWeeks tot '
-          '$kPlanMaxWeeks. Meestal een deload als laatste.',
-      'items': {
-        'type': 'object',
-        'properties': {
-          'kind': {
-            'type': 'string',
-            'enum': ['build', 'deload'],
-          },
-          'sets': {
-            'type': 'integer',
-            'description': 'Werksets per oefening erbij (of eraf: -1).',
-          },
-          'reps': {
-            'type': 'integer',
-            'description': 'Herhalingen per set erbij (of eraf: -2).',
-          },
-          'note': {
-            'type': 'string',
-            'description': 'Waarvoor de week is, in een paar woorden.',
-          },
-        },
-        'required': ['kind'],
-      },
-    },
+    'weeks': _weeksSchema,
     'sessions': {
       'type': 'array',
       'description':
@@ -162,18 +165,93 @@ extension _PlanTools on CoachTools {
       'input_schema': {'type': 'object', 'properties': <String, Object?>{}},
     },
     {
-      'name': 'save_plan',
+      'name': 'save_plan_outline',
       'description':
-          'Legt het schema van dit gesprek vast: de naam, de weken en elke '
-          'sessie. Geef altijd het hele schema, niet alleen wat verandert. '
-          'Een sessie is een routine; oefeningen met exact de naam uit '
-          'search_exercises en alleen wat kan in de zaal van de gebruiker '
-          '(gym). Gewichten op basis van exercise_history; laat een gewicht '
-          'weg als je het niet weet. Een week verandert alleen het aantal '
-          'werksets per oefening (sets) of de herhalingen per set (reps), '
-          'hoogstens 3 erbij of eraf, of is een deload. Bij een lopend schema '
-          'blijft hoe een sessie ervoor was bewaard.',
-      'input_schema': _layoutSchema,
+          'Legt de opzet van het schema vast, nog zonder oefeningen: de naam, '
+          'de weken, de sessies van een week met hun dag en hun focus, en '
+          'hoeveel werksets per spiergroep per week. Een sessie die al '
+          'bestaat, houdt haar oefeningen. Bij een ontwerp wacht de opzet '
+          'daarna op het akkoord van de gebruiker.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'name': {
+            'type': 'string',
+            'description': 'Een korte naam, bijvoorbeeld "Kracht en massa".',
+          },
+          'change': {
+            'type': 'string',
+            'description':
+                'Eén zin voor de gebruiker: wat je opzette of veranderde, en '
+                'waarom.',
+          },
+          'weeks': _weeksSchema,
+          'sessions': {
+            'type': 'array',
+            'description':
+                'De sessies van een week, in de volgorde waarin ze gedaan '
+                'worden: 1 tot $kPlanMaxSessions.',
+            'items': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+                'weekday': {
+                  'type': 'integer',
+                  'description': 'De dag ervoor: 1 is maandag, 7 zondag.',
+                },
+                'focus': {
+                  'type': 'string',
+                  'description':
+                      'Waar de sessie om draait, in een paar woorden: '
+                      '"borst zwaar, schouders, triceps".',
+                },
+              },
+              'required': ['name', 'focus'],
+            },
+          },
+          'volume': {
+            'type': 'array',
+            'description': 'Werksets per spiergroep per week.',
+            'items': {
+              'type': 'object',
+              'properties': {
+                'muscle': {'type': 'string'},
+                'sets': {'type': 'integer'},
+              },
+              'required': ['muscle', 'sets'],
+            },
+          },
+        },
+        'required': ['name', 'change', 'weeks', 'sessions', 'volume'],
+      },
+    },
+    {
+      'name': 'save_plan_session',
+      'description':
+          'Legt één sessie uit de opzet vast, met al haar oefeningen. '
+          'Oefeningen met exact de naam uit search_exercises en alleen wat kan '
+          'in de zaal van de gebruiker (gym); gewichten op basis van '
+          'exercise_history, weglaten als je het niet weet. Bij een ontwerp '
+          'wacht de sessie daarna op het akkoord van de gebruiker; bij een '
+          'lopend schema blijft hoe ze ervoor was bewaard.',
+      'input_schema': {
+        'type': 'object',
+        'properties': {
+          'session': {
+            'type': 'string',
+            'description': 'De naam van de sessie, zoals in de opzet.',
+          },
+          'change': {
+            'type': 'string',
+            'description':
+                'Eén zin voor de gebruiker: wat je koos of veranderde, en '
+                'waarom.',
+          },
+          'notes': {'type': 'string'},
+          'exercises': _shortExercises,
+        },
+        'required': ['session', 'change', 'exercises'],
+      },
     },
   ];
 
@@ -195,6 +273,8 @@ extension _PlanTools on CoachTools {
       sessions.add({
         'name': session.name,
         'weekday': ?session.planWeekday,
+        'focus': ?session.planFocus,
+        'state': session.sessionState.wire,
         'notes': ?_text(session.notes),
         if (standing != null)
           'done_this_week': standing.done.contains(session.id),
@@ -214,6 +294,8 @@ extension _PlanTools on CoachTools {
         if (plan.startDay case final start?) 'started': CoachTools._day(start),
         if (running) 'week': week,
         'weeks': [for (final w in plan.planWeeks) w.toJson()],
+        'weekly_sets': plan.weeklySets,
+        'outline_approved': plan.outlineApproved,
         'sessions': sessions,
       }),
       summary: 'je schema "${plan.name}"',
@@ -432,6 +514,258 @@ extension _PlanTools on CoachTools {
         made: made,
         change: layout.change,
       ),
+    );
+  }
+
+  /// The outline: name, weeks, the sessions of a week with their day and
+  /// focus, and the weekly sets per muscle group - no exercises yet. A
+  /// session that is already there keeps what it has. While the schema is
+  /// a draft the outline then waits for the user; a running one changes
+  /// because the user asked.
+  Future<CoachLookup> _saveOutline(Map<String, Object?> input) async {
+    CoachLookup refused(String error, String summary) => CoachLookup(
+      json: jsonEncode({'ok': false, 'error': error}),
+      summary: summary,
+    );
+    final (plan, closed) = await _changeable();
+    if (plan == null) return closed!;
+
+    final name = _text(input['name']);
+    final change = _text(input['change']);
+    final weeksIn = input['weeks'];
+    final sessionsIn = input['sessions'];
+    if (name == null ||
+        change == null ||
+        weeksIn is! List ||
+        sessionsIn is! List ||
+        sessionsIn.isEmpty) {
+      return refused(
+        'geef een naam, een zin over wat je doet (change), de weken en '
+            'minstens één sessie',
+        'een opzet zonder naam, weken of sessies',
+      );
+    }
+    if (weeksIn.length < kPlanMinWeeks || weeksIn.length > kPlanMaxWeeks) {
+      return refused(
+        'een schema heeft $kPlanMinWeeks tot $kPlanMaxWeeks weken',
+        'een opzet van ${weeksIn.length} weken',
+      );
+    }
+    if (sessionsIn.length > kPlanMaxSessions) {
+      return refused(
+        'hoogstens $kPlanMaxSessions sessies per week',
+        'een opzet met te veel sessies',
+      );
+    }
+    final outline = <OutlineSession>[];
+    final names = <String>{};
+    for (final entry in sessionsIn) {
+      if (entry is! Map) continue;
+      final session = _text(entry['name']);
+      if (session == null) {
+        return refused('elke sessie heeft een naam', 'een sessie zonder naam');
+      }
+      if (!names.add(session.toLowerCase())) {
+        return refused(
+          'twee sessies heten "$session"; geef elke sessie een eigen naam',
+          'twee sessies met dezelfde naam',
+        );
+      }
+      final weekday = _number(entry['weekday'])?.round();
+      outline.add(
+        OutlineSession(
+          name: session,
+          weekday: weekday != null && weekday >= 1 && weekday <= 7
+              ? weekday
+              : null,
+          focus: _text(entry['focus']),
+        ),
+      );
+    }
+    final weeks = [
+      for (final week in weeksIn)
+        if (week is Map) PlanWeek.fromJson(week.cast<String, Object?>()),
+    ];
+    final volume = <String, int>{
+      for (final entry in input['volume'] as List? ?? const [])
+        if (entry is Map &&
+            _text(entry['muscle']) != null &&
+            _number(entry['sets']) != null)
+          _text(entry['muscle'])!: _number(entry['sets'])!.round().clamp(0, 60),
+    };
+
+    final running = plan.state == PlanStatus.running;
+    final at = DateTime.now();
+    final before = {
+      for (final row in await db.plansDao.sessions(plan.id))
+        row.name.toLowerCase(): row,
+    };
+    await db.transaction(() async {
+      for (final row in before.values) {
+        if (!names.contains(row.name.toLowerCase())) {
+          // Gone from the outline. What was done in it stays in the history.
+          await db.routinesDao.deleteRoutine(row.id);
+        }
+      }
+      for (final (position, session) in outline.indexed) {
+        final existing = before[session.name.toLowerCase()];
+        final id =
+            existing?.id ??
+            await db.routinesDao.createRoutine(
+              RoutineDraft(name: session.name, exercises: const []),
+            );
+        await db.plansDao.placeSession(
+          id,
+          planId: plan.id,
+          position: position,
+          weekday: session.weekday,
+          focus: session.focus,
+          state: existing?.sessionState ?? PlanSessionState.planned,
+        );
+      }
+      await db.plansDao.saveOutline(
+        plan.id,
+        name: name,
+        weeks: weeks,
+        volume: volume,
+        at: at,
+        approved: running,
+      );
+      await db.chatDao.renamePlanThread(plan.id, name);
+    });
+    if (running) {
+      await schedulePlanDeload(db, (await db.plansDao.plan(plan.id))!);
+    }
+
+    return CoachLookup(
+      json: jsonEncode({
+        'ok': true,
+        'shown_to_user': true,
+        'note': running
+            ? 'De opzet is aangepast. Een nieuwe sessie maak je met '
+                  'save_plan_session.'
+            : 'De opzet staat als kaart met Goedkeuren. Zeg in een paar '
+                  'zinnen waarom je ze zo opzette en vraag of ze goed is; '
+                  'maak nog geen sessies.',
+      }),
+      summary: 'de opzet van je schema "$name"',
+      proposal: CoachProposal.ofOutline(
+        OutlineProposal(
+          planId: plan.id,
+          at: at.millisecondsSinceEpoch,
+          name: name,
+          weeks: weeks,
+          sessions: outline,
+          volume: volume,
+        ),
+        change: change,
+      ),
+    );
+  }
+
+  /// One session of the outline, with all of its exercises. While the
+  /// schema is a draft, only once the outline was approved, and the session
+  /// then waits for the user; a running schema's changes because the user
+  /// asked, keeping the session as it was first.
+  Future<CoachLookup> _saveSession(Map<String, Object?> input) async {
+    CoachLookup refused(String error, String summary) => CoachLookup(
+      json: jsonEncode({'ok': false, 'error': error}),
+      summary: summary,
+    );
+    final (plan, closed) = await _changeable();
+    if (plan == null) return closed!;
+    final running = plan.state == PlanStatus.running;
+    if (!running && !plan.outlineApproved) {
+      return refused(
+        'de opzet is nog niet goedgekeurd; wacht op de gebruiker',
+        'een sessie voor de opzet goedgekeurd is',
+      );
+    }
+
+    final name = _text(input['session']);
+    final change = _text(input['change']);
+    final wanted = input['exercises'];
+    if (name == null || change == null || wanted is! List || wanted.isEmpty) {
+      return refused(
+        'geef de naam van de sessie, een zin over wat je doet (change) en '
+            'minstens één oefening',
+        'een sessie zonder naam of oefeningen',
+      );
+    }
+    final session = (await db.plansDao.sessions(plan.id))
+        .where((s) => s.name.toLowerCase() == name.toLowerCase())
+        .firstOrNull;
+    if (session == null) {
+      return refused(
+        'de opzet heeft geen sessie "$name"; zet ze eerst in de opzet met '
+            'save_plan_outline',
+        'een sessie die niet in de opzet staat',
+      );
+    }
+    final checked = await _exercisesOf(wanted);
+    if (checked.refusal case final refusal?) return refusal;
+
+    if (running) await db.routinesDao.keepVersion(session.id, 'Voor: $change');
+    await db.routinesDao.updateRoutine(
+      session.id,
+      RoutineDraft(
+        name: session.name,
+        notes: _text(input['notes']),
+        folderId: session.folderId,
+        colorIndex: session.colorIndex,
+        exercises: checked.drafts,
+      ),
+    );
+    await db.plansDao.markSession(
+      session.id,
+      running ? PlanSessionState.approved : PlanSessionState.proposed,
+    );
+    final saved = (await db.routinesDao.getRoutine(session.id))!;
+
+    return CoachLookup(
+      json: jsonEncode({
+        'ok': true,
+        'shown_to_user': true,
+        'note': running
+            ? 'De sessie is aangepast. Zeg kort wat je veranderde en waarom.'
+            : 'De sessie staat als kaart met Goedkeuren en Aanpassen. Leg in '
+                  'een paar zinnen uit wat je koos en vraag of ze goed is; maak '
+                  'nog geen volgende sessie.',
+      }),
+      summary: 'sessie "${session.name}" van je schema',
+      proposal: CoachProposal.ofSession(
+        SessionProposal(
+          planId: plan.id,
+          routineId: session.id,
+          savedAt: saved.updatedAt,
+          name: session.name,
+          weekday: session.planWeekday,
+          focus: session.planFocus,
+          exercises: [
+            for (final (i, draft) in checked.drafts.indexed)
+              _sessionExercise(checked.card[i].name, draft),
+          ],
+        ),
+        change: change,
+      ),
+    );
+  }
+
+  SessionExercise _sessionExercise(String name, RoutineExerciseDraft draft) {
+    final working = [
+      for (final s in draft.sets)
+        if (s.setType != SetType.warmup) s,
+    ];
+    final first = working.firstOrNull;
+    return SessionExercise(
+      name: name,
+      sets: working.length,
+      warmups: draft.sets.length - working.length,
+      reps: first?.targetReps,
+      weightKg: first?.targetWeightKg,
+      seconds: first?.targetDurationSeconds,
+      restSeconds: draft.restSeconds,
+      notes: draft.notes,
     );
   }
 

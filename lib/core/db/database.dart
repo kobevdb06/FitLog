@@ -19,7 +19,8 @@ export 'dao/coach_notes_dao.dart'
     show CoachNoteKind, CoachNotesDao, kCoachNoteLength, kCoachNoteMax;
 export 'dao/deload_dao.dart' show DeloadWeekDays;
 export 'dao/exercises_dao.dart' show ExerciseFilter;
-export 'dao/plans_dao.dart' show TrainingPlanWeeks;
+export 'dao/plans_dao.dart'
+    show TrainingPlanWeeks, PlanSessionRow, planComplete;
 export 'dao/routines_dao.dart'
     show RoutineDraft, RoutineExerciseDraft, RoutineSetDraft;
 export 'dao/settings_dao.dart' show kSingletonId;
@@ -81,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 54;
+  int get schemaVersion => 55;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -523,6 +524,21 @@ class AppDatabase extends _$AppDatabase {
           if (from >= 21) {
             await m.addColumn(chatThreadsTable, chatThreadsTable.planId);
           }
+        }
+        if (from >= 54 && from < 55) {
+          // A schema built step by step: an outline, and a state per
+          // session. Every schema there was, was whole: approved. Before v54
+          // the table is made whole above.
+          await m.addColumn(trainingPlansTable, trainingPlansTable.volume);
+          await m.addColumn(
+            trainingPlansTable,
+            trainingPlansTable.outlineApproved,
+          );
+          await m.addColumn(trainingPlansTable, trainingPlansTable.outlineAt);
+        }
+        if (from < 55) {
+          await m.addColumn(routinesTable, routinesTable.planFocus);
+          await m.addColumn(routinesTable, routinesTable.planState);
         }
       });
 

@@ -380,6 +380,53 @@ void main() {
       }
     }
 
+    testWidgets('de kaarten passen op een smalle gsm met grote letters', (
+      tester,
+    ) async {
+      final tools = await outlined();
+      await db.plansDao.approveOutline('p-1', DateTime.now());
+      final card = (await tools.run('save_plan_session', {
+        'session': 'Push',
+        'change': 'Zwaar en kort.',
+        'exercises': [
+          {
+            'exercise': 'Bench Press',
+            'warmup_sets': 2,
+            'sets': 4,
+            'reps': 6,
+            'weight_kg': 102.5,
+            'rest_seconds': 180,
+            'notes': 'Pauze op de borst, voeten plat',
+          },
+        ],
+      })).proposal!;
+      await db.chatDao.addMessage(
+        id: 'm-2',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Push staat klaar.',
+        proposals: encodeProposals([card]),
+      );
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      tester.view.physicalSize = const Size(360, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
+      await tester.pumpWidget(
+        wrapWithContainer(container!, const CoachScreen()),
+      );
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.textContaining('2 warming-ups · 4×6 @ 102,5 kg · rust 3 min'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('Goedkeuren op de opzet vraagt de coach de eerste sessie', (
       tester,
     ) async {

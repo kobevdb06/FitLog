@@ -81,6 +81,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 51 | `deload_weeks`, `workouts.is_deload` en de `app_settings.deload_*`-instellingen: deloads, met voorstellen aan. Geen enkele bestaande training was er een. |
 | 52 | `chat_threads.workout_id`: het gesprek van een workout, dat de Chat-tab en de coach in het eiland delen. Geen enkel bestaand gesprek hoorde bij een workout. |
 | 53 | `coach_notes` en `app_settings.coach_memory`: het geheugen van de coach, leeg en aan. |
+| 54 | `training_plans`, `routines.plan_id` en `plan_weekday`, `chat_threads.plan_id`: schema's. Geen enkele bestaande routine of gesprek hoorde bij een schema. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -258,10 +259,36 @@ sleutel is ze verborgen, niet verwijderd.
 | `color_index` | INT? | plaats in `AppColors.routinePalette` |
 | `is_favourite` | BOOL | |
 | `scheduled_days` | INT | weekdagen als bitmasker (`WeekdaySet`); 0 = niet gepland |
+| `plan_id` | TEXT? | het schema waar de routine een sessie van is; geen verwijzing |
+| `plan_weekday` | INT? | de dag waarvoor de sessie bedoeld is, 1 (maandag) tot 7; een richtlijn |
 | `last_performed_at` | INT? | |
 | `created_at`, `updated_at` | INT | |
 
 Een map verwijderen laat de routines dus bestaan; ze komen op het hoofdniveau.
+Een routine met `plan_id` staat onder Trainen › Schema's, niet tussen je eigen
+routines; haar `sort_order` is de volgorde in het schema.
+
+#### `training_plans`
+
+| Kolom | Type | Opmerking |
+|---|---|---|
+| `id` | TEXT PK | |
+| `name` | TEXT | wat de coach het noemde; `Nieuw schema` tot dan |
+| `goal` | TEXT | wat de gebruiker wil, in eigen woorden |
+| `split` | TEXT | `coach` \| `full_body` \| `upper_lower` \| `ppl` \| `pplpp` \| `custom` |
+| `split_note` | TEXT? | de eigen split, bij `custom` |
+| `days` | INT | de bedoelde trainingsdagen als bitmasker (`WeekdaySet`) |
+| `progression` | TEXT | `app` \| `coach`: wie de cijfers elke week bijstelt; standaard `app` |
+| `weeks` | INT? | hoeveel weken, zoals de coach besliste |
+| `pattern` | TEXT? | JSON-array van weken: `kind` (`build` \| `deload`), `sets` en `reps` (-3 tot 3), `note` |
+| `status` | TEXT | `draft` \| `running` \| `done`; hoogstens één `running` |
+| `start_day` | INT? | middernacht op de maandag van week 1 |
+| `ended_at` | INT? | afgerond of gestopt |
+| `created_at`, `updated_at` | INT | |
+
+De sessies zijn gewone routines met `plan_id`. Een schema verwijderen neemt ze
+mee; wat erin getraind is, blijft in de geschiedenis. De deloadweek is een
+gewone rij in `deload_weeks` met `source = 'plan'`.
 
 #### `routine_exercises`
 
@@ -481,7 +508,7 @@ telkens opnieuw berekend; alleen de tekst van de coach komt hier vandaan.
 
 #### `chat_threads`
 
-`id`, `title` (je eerste vraag, ingekort; bij het gesprek van een workout de naam en de dag van die workout), `created_at`, `updated_at`, `workout_id` (TEXT?, de workout waar het gesprek bij hoort; geen verwijzing, zodat een weggegooide workout het gesprek laat staan).
+`id`, `title` (je eerste vraag, ingekort; bij het gesprek van een workout de naam en de dag van die workout; bij een schema de naam van het schema), `created_at`, `updated_at`, `workout_id` (TEXT?, de workout waar het gesprek bij hoort; geen verwijzing, zodat een weggegooide workout het gesprek laat staan), `plan_id` (TEXT?, het schema waar het gesprek bij hoort; geen verwijzing).
 
 #### `coach_notes`
 
@@ -506,7 +533,7 @@ Instellingen → AI-coach → Geheugen.
 | `lookups` | TEXT? | JSON-array: wat de coach opzocht, in leesbare zinnen |
 | `image_file` | TEXT? | de ene foto van een vraag van voor v49, in de fotomap; wordt gelezen, niet meer geschreven |
 | `image_files` | TEXT | JSON-array: de foto's bij een vraag (hoogstens vier), in de fotomap; standaard `[]` |
-| `proposals` | TEXT? | JSON: kaarten bij het antwoord - een voorstel met een knop, of een routine die de coach maakte of aanpaste |
+| `proposals` | TEXT? | JSON: kaarten bij het antwoord - een voorstel met een knop, een routine die de coach maakte of aanpaste, een schema, of een voorgestelde wijziging van een schema met wat de coach schreef |
 | `requests` | INT? | hoeveel aanvragen het antwoord kostte |
 | `input_tokens`, `output_tokens` | INT? | |
 | `created_at` | INT | |
@@ -558,6 +585,7 @@ routine_folders 1─┐ (SET NULL)
                               └─* progress_photos (SET NULL)
 
 chat_threads 1─* chat_messages
+training_plans ┄* routines (plan_id, geen verwijzing)
 
 Los, één rij of één rij per dag:
 user_profile  app_settings  body_measurements  custom_muscles

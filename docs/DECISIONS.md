@@ -4695,3 +4695,73 @@ uit 118 en de kolom met rijen uit 122.
   nieuwe vorm bewaard. Een beschadigde plek gaat naar de eerste vrije die
   past, een kapotte waarde wordt de standaard (95), en een blok dat in de
   opgeslagen waarde niet voorkomt, komt onderaan bij.
+
+## 220. Schema's: een plan van weken, van de coach, dat zich aanpast
+
+Gevraagd: een schema dat zich aanpast (het plan, §3.2). Uitgewerkt in een
+mockup en twee rondes vragen. Trainen splitst in *Workouts* en *Schema's*,
+met een wissel rechtsboven (icoontjes) en *+ Schema* zoals *+ Routine*; het
+coachmenu krijgt *Chats* en *Schema's*, zoals Chat en Code bij Claude, met
+een gesprek per schema; bij het maken een eigen tekst voor de coach, de
+split met *Custom* als laatste, de dagen, en een schakelaar wie de cijfers
+bijstelt, standaard FitLog om tokens te sparen. De lengte kiest de coach.
+Gemist op zondag: een voorstel.
+
+- **Een schema is een rij en gewone routines** (schema v54,
+  `training_plans`, `routines.plan_id` en `plan_weekday`,
+  `chat_threads.plan_id`). De sessies zijn routines, dus de editor, de
+  geschiedenis, de vorige versies en *VORIGE* werken zoals altijd; ze staan
+  alleen onder Schema's en niet tussen je eigen routines, je favorieten of
+  wat Start voorstelt. Geen verwijzingen op de nieuwe kolommen: een kolom met
+  een verwijzing kan een test die een oudere versie naspeelt niet laten
+  vallen, en een weggegooid schema hoeft niets mee te slepen.
+- **Kalenderweken, dagen als richtlijn.** Een schema loopt van maandag tot
+  zondag, zoals het weekoverzicht: dan kijkt de coach terug. Week 1 begint
+  deze maandag tot en met woensdag, daarna de volgende - drie dagen tellen
+  anders als een week vol gemiste sessies - maar het startblad laat beide
+  kiezen. Een sessie telt in de week dat ze af is, op welke dag ook; de
+  volgende is de eerste in de volgorde van het schema die nog niet gedaan
+  is. Er loopt er hoogstens één.
+- **Een week verplaatst weinig.** Een week zegt hoeveel werksets erbij of
+  eraf per oefening en hoeveel herhalingen per set, hoogstens drie, of is
+  een deload. Meer is een andere sessie, en dat is een wijziging, geen week.
+- **De coach legt het hele schema vast** met `save_plan`, alleen in het
+  gesprek van dat schema: twee tot zestien weken, hoogstens zeven sessies,
+  oefeningen met hun exacte naam, met dezelfde controles als een routine in
+  de map Coach (die controles en hoe een routine aan de coach wordt
+  voorgelezen, zijn daarvoor gedeeld). Een ontwerp wordt telkens opnieuw
+  gemaakt; een lopend schema houdt zijn sessies bij naam, met wat erin
+  gedaan is en een vorige versie. `plan` leest het. De kaart toont wat de
+  coach schreef; onderaan staat het schema zoals het nu is.
+- **De cijfers.** Zolang FitLog ze bijstelt, krijgt elke werkset bij de
+  start wat de hint zou zeggen - een stap zwaarder zodra alle sets het doel
+  van de routine haalden, gelijk tot dan - en de herhalingen van de week
+  erbovenop. Laat je ze aan de coach, dan is de routine de week al: hij zet
+  ze op zondag met `set_week_numbers`, alleen voor oefeningen die er al in
+  staan, en elke sessie wordt eerst bewaard zoals ze was. Dat is geen
+  voorstel: je koos ervoor de cijfers aan de coach te laten.
+- **De deloadweek is een gewone deload** (`deload_weeks`, bron `plan`): bij
+  het starten en bij elke wijziging ingepland op zijn maandag, tenzij er een
+  van jezelf loopt of gepland staat, en weggehaald als het schema stopt
+  voor hij begint. Zo weten de balk, de lichtere sessies, het weekoverzicht,
+  de coach en wat over lichtere weken heen kijkt ervan, en stelt Start er
+  geen tweede voor. Elke zondag wordt de volgende opnieuw ingepland.
+- **Zondagavond** kijkt het lopende schema terug, met het weekoverzicht en
+  dus één keer per week, ook als de app dicht is. Een week waarin alles
+  gedaan is vraagt niets zolang FitLog de cijfers bijstelt, en de laatste
+  week ook niet - geen aanvraag om niets. Anders wordt de coach gevraagd in
+  het gesprek van het schema, met alleen opzoekingen die lezen,
+  `propose_plan_change` - het hele schema zoals het zou worden, gecontroleerd,
+  op een kaart met *Aanvaarden* en *Houden*; aanvaarden legt het uit wat de
+  coach schreef, zonder het model opnieuw te vragen - en, als hij de cijfers
+  bijstelt, `set_week_numbers`. Zijn vraag wordt niet bewaard, zijn antwoord
+  wel: wat hij zegt staat in het gesprek, met wat hij opzocht. Een wachtend
+  voorstel staat op het schema onder Schema's en in het paneel.
+- **Vandaag** krijgt een trede boven je eigen planning: de volgende sessie
+  van het schema, onder zijn naam en week, en de rest van de week eronder.
+  Is de week af, dan zegt het blok dat.
+- **Zonder sleutel** loopt een schema door met cijfers van FitLog, maar
+  zonder voorstellen; een nieuw schema vraagt de coach, en het formulier zegt
+  dat.
+- **Privacy**: het formulier, het gesprek en de vraag van zondagavond gaan
+  naar Google als de coach aan staat; de privacyverklaring zegt het.

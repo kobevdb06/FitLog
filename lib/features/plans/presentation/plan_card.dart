@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../../routing/routes.dart';
 import '../../chat/domain/coach_proposal.dart';
 import 'plan_providers.dart';
 import 'plan_start_sheet.dart';
@@ -176,6 +178,16 @@ class _PlanProposalCardState extends ConsumerState<PlanProposalCard> {
         ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(child: Text(text, style: theme.textTheme.bodySmall)),
+        if (plan.state == PlanStatus.running)
+          TextButton(
+            onPressed: () {
+              ref
+                  .read(trainShelfChoiceProvider.notifier)
+                  .show(TrainShelf.plans);
+              context.go(Routes.train);
+            },
+            child: const Text('Bekijken'),
+          ),
       ],
     );
   }

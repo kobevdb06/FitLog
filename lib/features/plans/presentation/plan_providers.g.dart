@@ -301,3 +301,144 @@ final class PlanThreadsProvider
 }
 
 String _$planThreadsHash() => r'cd91092a255cf885ed829f40399a92875aee638e';
+
+/// How the current week of [planId] stands: its sessions in order, and
+/// which were done this week, on any day.
+
+@ProviderFor(planThisWeek)
+final planThisWeekProvider = PlanThisWeekFamily._();
+
+/// How the current week of [planId] stands: its sessions in order, and
+/// which were done this week, on any day.
+
+final class PlanThisWeekProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<PlanWeekStanding>,
+          PlanWeekStanding,
+          Stream<PlanWeekStanding>
+        >
+    with $FutureModifier<PlanWeekStanding>, $StreamProvider<PlanWeekStanding> {
+  /// How the current week of [planId] stands: its sessions in order, and
+  /// which were done this week, on any day.
+  PlanThisWeekProvider._({
+    required PlanThisWeekFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'planThisWeekProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$planThisWeekHash();
+
+  @override
+  String toString() {
+    return r'planThisWeekProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<PlanWeekStanding> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<PlanWeekStanding> create(Ref ref) {
+    final argument = this.argument as String;
+    return planThisWeek(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PlanThisWeekProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$planThisWeekHash() => r'227673dcb577ddf2df42ea25fefd03a7a1a289d2';
+
+/// How the current week of [planId] stands: its sessions in order, and
+/// which were done this week, on any day.
+
+final class PlanThisWeekFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<PlanWeekStanding>, String> {
+  PlanThisWeekFamily._()
+    : super(
+        retry: null,
+        name: r'planThisWeekProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// How the current week of [planId] stands: its sessions in order, and
+  /// which were done this week, on any day.
+
+  PlanThisWeekProvider call(String planId) =>
+      PlanThisWeekProvider._(argument: planId, from: this);
+
+  @override
+  String toString() => r'planThisWeekProvider';
+}
+
+@ProviderFor(TrainShelfChoice)
+final trainShelfChoiceProvider = TrainShelfChoiceProvider._();
+
+final class TrainShelfChoiceProvider
+    extends $NotifierProvider<TrainShelfChoice, TrainShelf> {
+  TrainShelfChoiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'trainShelfChoiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainShelfChoiceHash();
+
+  @$internal
+  @override
+  TrainShelfChoice create() => TrainShelfChoice();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TrainShelf value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TrainShelf>(value),
+    );
+  }
+}
+
+String _$trainShelfChoiceHash() => r'6d099e610187266b207c8e35aa4112bebd0e7a93';
+
+abstract class _$TrainShelfChoice extends $Notifier<TrainShelf> {
+  TrainShelf build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<TrainShelf, TrainShelf>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<TrainShelf, TrainShelf>,
+              TrainShelf,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

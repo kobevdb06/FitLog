@@ -22,6 +22,8 @@ import '../../share/presentation/scan_routine_screen.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../../deload/presentation/deload_banner.dart';
 import '../../deload/presentation/deload_start_sheet.dart';
+import '../../plans/presentation/plan_providers.dart';
+import '../../plans/presentation/plans_view.dart';
 import 'coach_folder.dart';
 import 'favourite_star.dart';
 import 'routine_providers.dart';
@@ -42,7 +44,7 @@ bool routineMatches(
 }
 
 /// The Trainen tab: what is planned today, the two ways in, and every
-/// routine, in folders.
+/// routine, in folders - or, switched at the top right, the schema's.
 class RoutinesScreen extends ConsumerStatefulWidget {
   const RoutinesScreen({super.key});
 
@@ -73,6 +75,22 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
     );
     final routines = ref.watch(routineSummariesProvider);
     final query = _searching ? _search.text.trim() : '';
+    final shelf = ref.watch(trainShelfChoiceProvider);
+
+    if (shelf == TrainShelf.plans) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Trainen'),
+          actions: [_shelfSwitch(shelf)],
+        ),
+        body: const PlansView(),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => context.push(Routes.planNew),
+          icon: const Icon(Icons.add),
+          label: const Text('Schema'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -117,6 +135,7 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
               ),
             ],
           ),
+          _shelfSwitch(shelf),
         ],
       ),
       body: routines.when(
@@ -216,6 +235,33 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
       ),
     );
   }
+
+  /// Workouts or Schema's, in the top right corner. Not a swipe: sideways
+  /// already goes from one tab to the next.
+  Widget _shelfSwitch(TrainShelf shelf) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+    child: SegmentedButton<TrainShelf>(
+      showSelectedIcon: false,
+      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+      segments: const [
+        ButtonSegment(
+          value: TrainShelf.workouts,
+          icon: Icon(Icons.fitness_center, size: 20),
+          tooltip: 'Workouts',
+        ),
+        ButtonSegment(
+          value: TrainShelf.plans,
+          icon: Icon(Icons.calendar_month_outlined, size: 20),
+          tooltip: "Schema's",
+        ),
+      ],
+      selected: {shelf},
+      onSelectionChanged: (picked) {
+        if (_searching) _toggleSearch();
+        ref.read(trainShelfChoiceProvider.notifier).show(picked.first);
+      },
+    ),
+  );
 
   Future<void> _newFolder() async {
     final name = await promptForText(

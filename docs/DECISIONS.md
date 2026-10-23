@@ -4765,3 +4765,31 @@ Gemist op zondag: een voorstel.
   dat.
 - **Privacy**: het formulier, het gesprek en de vraag van zondagavond gaan
   naar Google als de coach aan staat; de privacyverklaring zegt het.
+
+## 221. Een schema past in één antwoord
+
+Op de gsm zocht de coach de oefeningen op en antwoordde dan drie keer "Ik
+heb hier geen antwoord op gevonden.", zonder schema. Een antwoord mocht 1024
+tokens zijn, en een Gemini 3-model denkt binnen diezelfde grens voor het
+schrijft; een heel schema in één `save_plan`, elke set van elke oefening van
+vijf sessies, paste er niet in. Google kapte het af en stuurde het leeg
+terug, of met een opzoeking die niet te lezen was
+(`MALFORMED_FUNCTION_CALL`). FitLog las geen van beide redenen.
+
+- **Ruimte waar een schema geschreven wordt**: in het gesprek van een schema
+  en op zijn zondagavond 16384 tokens en acht rondes opzoeken in plaats van
+  vier. Betaald wordt wat geschreven wordt, niet de grens. Elders blijft het
+  1024 en vier: een vraag heeft er genoeg aan, en daar stond niets te
+  verliezen.
+- **Kort opschrijven**: een oefening van een schema is hoeveel werksets van
+  hoeveel herhalingen op welk gewicht, na zoveel warming-ups - niet elke set
+  apart. Dat is een paar keer korter, en een schema heeft toch zelden
+  verschillende sets binnen een oefening. `save_coach_routine` schrijft nog
+  set per set; beide vormen worden gelezen. De kaart van een schema telt de
+  werksets: "4×6", niet de warming-up erbij.
+- **Een reden is geen leeg antwoord**: een opzoeking die niet te lezen was,
+  wordt één keer opnieuw gevraagd - dat lukt meestal - en een antwoord dat
+  tegen zijn grens liep, zegt dat het afgebroken werd.
+- **De coach weet wat een schema is**, ook buiten het gesprek ervan: hij
+  noemde het een routine. De vaste instructies zeggen het nu, binnen hun
+  budget van 4300 tekens - door twee andere regels korter te maken.

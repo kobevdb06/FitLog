@@ -187,8 +187,11 @@ void main() {
     testWidgets('op Gezondheid: stappen van vandaag en zuurstof bij de nacht', (
       tester,
     ) async {
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
+      // Noon: at one in the night, a night that ends at seven is still to
+      // come, and the screen rightly shows none.
+      final clock = DateTime.now();
+      final today = DateTime(clock.year, clock.month, clock.day);
+      final now = DateTime(today.year, today.month, today.day, 12);
       await tester.runAsync(() async {
         await db.settingsDao.updateSettings(
           const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),

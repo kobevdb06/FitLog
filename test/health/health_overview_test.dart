@@ -105,8 +105,17 @@ void main() {
       tester.view.physicalSize = Size(width, 3600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
+      // Noon: at one in the night, a night that ends at seven - and a
+      // session at four - are still to come, and the screen rightly shows
+      // neither.
+      final clock = DateTime.now();
       await tester.pumpWidget(
-        wrapWithContainer(container, HealthOverviewScreen(now: DateTime.now())),
+        wrapWithContainer(
+          container,
+          HealthOverviewScreen(
+            now: DateTime(clock.year, clock.month, clock.day, 12),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
     }

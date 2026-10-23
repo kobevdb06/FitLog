@@ -222,10 +222,12 @@ void main() {
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
       );
-      final today = DateTime.now();
+      // A night that is over whatever the hour: one that ends at seven is
+      // still to come at one in the night, and then there is no night yet.
+      final now = DateTime.now();
       await db.recoveryDao.setSleep(
-        fellAsleepAt: DateTime(today.year, today.month, today.day - 1, 23),
-        wokeAt: DateTime(today.year, today.month, today.day, 7),
+        fellAsleepAt: now.subtract(const Duration(hours: 8)),
+        wokeAt: now.subtract(const Duration(minutes: 30)),
       );
       await pumpApp(tester);
       container!.read(routerProvider).push(Routes.health);

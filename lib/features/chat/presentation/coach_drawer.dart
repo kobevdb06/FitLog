@@ -23,6 +23,7 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../plans/data/plan_actions.dart';
 import '../../plans/presentation/plan_providers.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'chat_providers.dart';
@@ -177,7 +178,7 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
             'deed. Opnieuw starten kan niet.',
         confirmLabel: 'Stoppen',
       );
-      if (ok) await db.plansDao.finish(plan.id, DateTime.now());
+      if (ok) await PlanActions.stop(db, plan.id);
       return;
     }
 
@@ -191,7 +192,7 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
       destructive: true,
     );
     if (!ok) return;
-    await db.plansDao.deletePlan(plan.id);
+    await PlanActions.delete(db, plan.id);
     if (thread != null) {
       await db.chatDao.deleteThread(thread.id);
       if (ref.read(coachSessionControllerProvider).threadId == thread.id) {

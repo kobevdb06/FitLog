@@ -309,6 +309,10 @@ extension _PlanTools on CoachTools {
       );
       await db.chatDao.renamePlanThread(plan.id, name);
     });
+    // The weeks may have moved its deload week.
+    if (running) {
+      await schedulePlanDeload(db, (await db.plansDao.plan(plan.id))!);
+    }
 
     final made = before.isEmpty;
     return CoachLookup(

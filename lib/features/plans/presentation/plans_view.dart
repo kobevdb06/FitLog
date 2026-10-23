@@ -13,6 +13,7 @@ import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../chat/presentation/coach_session.dart';
 import '../../routines/presentation/routine_start.dart';
+import '../data/plan_actions.dart';
 import 'plan_providers.dart';
 
 /// Opens the conversation of [planId] in the Chat tab: where it was made,
@@ -129,7 +130,7 @@ class _RunningPlan extends ConsumerWidget {
       confirmLabel: 'Stoppen',
     );
     if (!ok) return;
-    await ref.read(databaseProvider).plansDao.finish(plan.id, DateTime.now());
+    await PlanActions.stop(ref.read(databaseProvider), plan.id);
   }
 
   @override
@@ -237,10 +238,8 @@ class _RunningPlan extends ConsumerWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => ref
-                        .read(databaseProvider)
-                        .plansDao
-                        .finish(plan.id, DateTime.now()),
+                    onPressed: () =>
+                        PlanActions.stop(ref.read(databaseProvider), plan.id),
                     child: const Text('Afronden'),
                   ),
                 ),

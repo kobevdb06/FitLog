@@ -949,6 +949,118 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     ]);
   }
 
+  /// Makes [workoutId] a session of a week of a schema: [sets] working sets
+  /// more or fewer per exercise - never below one - and [reps] more or fewer
+  /// per set.
+  ///
+  /// With [progress], FitLog keeps the numbers: every working set first gets
+  /// what the hint would say, from the last time the exercise was done - one
+  /// step heavier once every set reached the routine's target, the same
+  /// until then - and the week's repetitions go on top of that.
+  Future<void> makePlanWeek(
+    String workoutId, {
+    required int sets,
+    required int reps,
+    required bool progress,
+    List<double> platesKg = const [],
+  }) async {
+    final workout = await getWorkoutDetail(workoutId);
+    if (workout == null) return;
+
+    for (final exercise in workout.exercises) {
+      final working = [
+        for (final s in exercise.sets)
+          if (SetType.fromWire(s.setType) != SetType.warmup) s,
+      ];
+      if (working.isEmpty) continue;
+
+      ProgressionHint? hint;
+      if (progress) {
+        final before = await previousSetsFor(
+          exercise.exercise.id,
+          excludingWorkoutId: workoutId,
+        );
+        hint = progressionHint(
+          category: exercise.category,
+          last: [
+            for (final s in before)
+              if (s.isCompleted &&
+                  !s.isSkipped &&
+                  SetType.fromWire(s.setType) != SetType.warmup)
+                HintSet(
+                  weightKg: s.weightKg,
+                  reps: s.reps,
+                  durationSeconds: s.durationSeconds,
+                  rpe: s.rpe,
+                ),
+          ],
+          targetReps: working.first.reps,
+          step:
+              await learnedStepFor(exercise.exercise.id) ??
+              defaultWeightStep(exercise.category, platesKg: platesKg),
+        );
+      }
+
+      // A set fewer comes off the end; a set more is the last one again.
+      var kept = working;
+      if (sets < 0) {
+        final drop = (-sets).clamp(0, working.length - 1);
+        kept = working.sublist(0, working.length - drop);
+        for (final gone in working.sublist(working.length - drop)) {
+          await (delete(
+            workoutSetsTable,
+          )..where((t) => t.id.equals(gone.id))).go();
+        }
+      }
+      final added = <String>[];
+      if (sets > 0) {
+        final last = working.last;
+        final after = exercise.sets
+            .map((s) => s.sortOrder)
+            .reduce((a, b) => a > b ? a : b);
+        for (var i = 1; i <= sets; i++) {
+          final id = _uuid.v4();
+          added.add(id);
+          await into(workoutSetsTable).insert(
+            WorkoutSetsTableCompanion.insert(
+              id: id,
+              workoutExerciseId: exercise.workoutExercise.id,
+              sortOrder: after + i,
+              setType: Value(last.setType),
+              weightKg: Value(last.weightKg),
+              reps: Value(last.reps),
+              durationSeconds: Value(last.durationSeconds),
+              distanceM: Value(last.distanceM),
+              side: Value(last.side),
+            ),
+          );
+        }
+      }
+
+      for (final (id, type, setReps) in [
+        for (final s in kept) (s.id, SetType.fromWire(s.setType), s.reps),
+        for (final id in added)
+          (id, SetType.fromWire(working.last.setType), working.last.reps),
+      ]) {
+        // A drop set follows the set before it down; the hint's weight is
+        // for the sets that carry the work.
+        final weight = type == SetType.drop ? null : hint?.weightKg;
+        final base = hint?.reps ?? setReps;
+        await (update(workoutSetsTable)..where((t) => t.id.equals(id))).write(
+          WorkoutSetsTableCompanion(
+            weightKg: weight == null ? const Value.absent() : Value(weight),
+            reps: base == null
+                ? const Value.absent()
+                : Value((base + reps).clamp(1, 100)),
+            durationSeconds: hint?.seconds == null
+                ? const Value.absent()
+                : Value(hint!.seconds),
+          ),
+        );
+      }
+    }
+  }
+
   /// Makes [workoutId] a deload session: marked as one, and every exercise
   /// lighter as [plan] says.
   ///

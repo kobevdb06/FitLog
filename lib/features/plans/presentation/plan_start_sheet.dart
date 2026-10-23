@@ -7,6 +7,7 @@ import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../data/plan_actions.dart';
 
 /// Start schema: from which Monday, and which schema stops for it.
 ///
@@ -38,7 +39,7 @@ Future<bool> showPlanStartSheet(
         _StartSheet(plan: plan, mondays: mondays, stops: stops, now: now),
   );
   if (from == null) return false;
-  await dao.start(plan.id, startDay: from, at: DateTime.now());
+  await PlanActions.start(ref.read(databaseProvider), plan.id, from: from);
   return true;
 }
 

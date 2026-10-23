@@ -12,6 +12,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../core/util/notification_service.dart';
 import '../../health/presentation/health_providers.dart';
+import '../../plans/data/plan_deload.dart';
 import '../domain/pr_ramp.dart';
 import '../domain/set_columns.dart';
 import '../domain/rest_timer.dart';
@@ -166,6 +167,7 @@ class WorkoutController {
       routineId: routineId,
       defaultRestSeconds: await _defaultRest,
     );
+    await _planWeek(id, routineId);
     await _deloadIfOn(id);
     await _askAboutNotifications();
     return id;
@@ -179,6 +181,37 @@ class WorkoutController {
     await _deloadIfOn(id);
     await _askAboutNotifications();
     return id;
+  }
+
+  /// A session of the schema being followed is this week's: in a deload
+  /// week the schema's deload, which [_deloadIfOn] then applies; otherwise
+  /// what the week asks on top of the routine, and - while FitLog keeps the
+  /// numbers - the weights of the hint. When the coach keeps them, the
+  /// routine already is this week's.
+  Future<void> _planWeek(String workoutId, String routineId) async {
+    final routine = await _db.routinesDao.getRoutine(routineId);
+    final planId = routine?.planId;
+    if (planId == null) return;
+    final plan = await _db.plansDao.plan(planId);
+    final now = DateTime.now();
+    if (plan == null || plan.state != PlanStatus.running) return;
+    final week = plan.weekAt(now);
+    if (week < 1 || plan.isOverAt(now)) return;
+
+    final asked = plan.weekPlan(week);
+    if (asked.isDeload) {
+      await schedulePlanDeload(_db, plan, now: now);
+      return;
+    }
+    if (plan.progressionKind != PlanProgression.app) return;
+    final settings = await _db.settingsDao.getSettings();
+    await _db.workoutsDao.makePlanWeek(
+      workoutId,
+      sets: asked.sets,
+      reps: asked.reps,
+      progress: true,
+      platesKg: decodePlates(settings.availablePlatesKg),
+    );
   }
 
   /// During a deload, every session started is one: lighter as the deload's

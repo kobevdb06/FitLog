@@ -326,6 +326,55 @@ final class FavouriteRoutinesProvider
 
 String _$favouriteRoutinesHash() => r'645708f42c2a2844758b10fc41fd029f81ea3bd5';
 
+/// The schema being followed, while it is between its first and its last
+/// week: what the top of the ladder offers.
+
+@ProviderFor(planToday)
+final planTodayProvider = PlanTodayProvider._();
+
+/// The schema being followed, while it is between its first and its last
+/// week: what the top of the ladder offers.
+
+final class PlanTodayProvider
+    extends $FunctionalProvider<PlanToday?, PlanToday?, PlanToday?>
+    with $Provider<PlanToday?> {
+  /// The schema being followed, while it is between its first and its last
+  /// week: what the top of the ladder offers.
+  PlanTodayProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'planTodayProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$planTodayHash();
+
+  @$internal
+  @override
+  $ProviderElement<PlanToday?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  PlanToday? create(Ref ref) {
+    return planToday(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PlanToday? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PlanToday?>(value),
+    );
+  }
+}
+
+String _$planTodayHash() => r'9c37fbdf728c7e399cbe6b54eb6f6983b6ecc06d';
+
 /// The three of them read as one answer.
 ///
 /// Each part arrives on its own and the card should not blink through three
@@ -382,4 +431,4 @@ final class TodayPlanProvider
   }
 }
 
-String _$todayPlanHash() => r'8ebc2bb284f5c25bb23651181b9231e975bb8da3';
+String _$todayPlanHash() => r'91c8a255b2e2c957e9132edd023953d66f32e03b';

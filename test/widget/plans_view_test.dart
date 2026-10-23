@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/calc/plan_weeks.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/util/paths.dart';
+import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:fitlog/features/dashboard/presentation/today_providers.dart';
+import 'package:fitlog/features/routines/presentation/routine_providers.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/routines/presentation/routines_screen.dart';
 import 'package:flutter/material.dart';
@@ -200,6 +206,55 @@ void main() {
 
     expect(find.text('De coach stelt iets voor'), findsOneWidget);
     expect(find.text('Aanvaarden of houden'), findsOneWidget);
+  });
+
+  testWidgets('op Start biedt Vandaag de volgende sessie van het schema aan', (
+    tester,
+  ) async {
+    final ids = await runningPlan();
+    await db
+        .into(db.workoutsTable)
+        .insert(
+          WorkoutsTableCompanion.insert(
+            id: 'w-1',
+            routineId: Value(ids[0]),
+            name: 'Sessie 1',
+            startedAt: DateTime.now()
+                .subtract(const Duration(minutes: 90))
+                .millisecondsSinceEpoch,
+            endedAt: Value(
+              DateTime.now()
+                  .subtract(const Duration(minutes: 30))
+                  .millisecondsSinceEpoch,
+            ),
+          ),
+        );
+    tester.view.physicalSize = const Size(1100, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
+        scheduledRoutinesProvider.overrideWith((ref) => Stream.value([])),
+        favouriteRoutinesProvider.overrideWith((ref) => Stream.value([])),
+        suggestedRoutineProvider.overrideWith((ref) async => null),
+      ],
+    );
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const DashboardScreen()),
+    );
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.text('Kracht en massa · week 1 van 3'), findsOneWidget);
+    expect(find.text('Sessie 2'), findsOneWidget);
+    expect(
+      find.text('Volgende in je schema · 1 van 3 gedaan deze week'),
+      findsOneWidget,
+    );
+    expect(find.text('Nog deze week'), findsOneWidget);
   });
 
   testWidgets('wat onderaan staat, komt boven de knop uit', (tester) async {

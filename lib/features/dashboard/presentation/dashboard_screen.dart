@@ -32,6 +32,7 @@ import '../../health/presentation/steps_week_screen.dart';
 import '../../health/presentation/health_providers.dart';
 import '../../../core/widgets/week_navigator.dart';
 import '../../deload/presentation/deload_banner.dart';
+import '../../plans/presentation/plan_providers.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
 ///
@@ -915,8 +916,54 @@ class _TodayCard extends ConsumerWidget {
     return switch (plan.kind) {
       TodayPlanKind.none => const _NoRoutinesCard(),
       TodayPlanKind.rest => _RestCard(plan: plan),
+      TodayPlanKind.planWeekDone => _PlanWeekDoneCard(plan: plan),
       _ => _PlanCard(plan: plan),
     };
+  }
+}
+
+/// Opens Trainen on the schema's.
+void _toPlans(BuildContext context, WidgetRef ref) {
+  ref.read(trainShelfChoiceProvider.notifier).show(TrainShelf.plans);
+  context.go(Routes.train);
+}
+
+/// The schema's week is done: every session of it, on whatever days.
+class _PlanWeekDoneCard extends ConsumerWidget {
+  const _PlanWeekDoneCard({required this.plan});
+
+  final TodayPlan plan;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final schema = plan.schema!;
+    return _BlockCard(
+      title: 'Vandaag',
+      onTap: () => _toPlans(context, ref),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            schema.label,
+            style: theme.textTheme.titleSmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            schema.week < schema.weeks
+                ? 'Alle sessies van deze week zijn gedaan. Maandag begint '
+                      'week ${schema.week + 1}.'
+                : 'Alle sessies zijn gedaan: dit was de laatste week.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.success,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -936,6 +983,16 @@ class _CompactPlanCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final lead = plan.lead;
 
+    if (plan.kind == TodayPlanKind.planWeekDone) {
+      return _BlockCard(
+        title: 'Vandaag',
+        onTap: () => _toPlans(context, ref),
+        child: Text(
+          'Deze week is klaar.',
+          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.success),
+        ),
+      );
+    }
     if (lead == null) {
       return _BlockCard(
         title: plan.kind == TodayPlanKind.rest ? 'Rustdag' : 'Vandaag',
@@ -1146,7 +1203,9 @@ class _PlanCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _heading(plan.kind),
+            plan.schema?.label ?? _heading(plan.kind),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -1211,9 +1270,11 @@ class _PlanCard extends ConsumerWidget {
                 children: [
                   const Divider(height: AppSpacing.lg),
                   Text(
-                    plan.kind == TodayPlanKind.favourites
-                        ? 'Of een van deze'
-                        : 'Ook vandaag',
+                    switch (plan.kind) {
+                      TodayPlanKind.favourites => 'Of een van deze',
+                      TodayPlanKind.plan => 'Nog deze week',
+                      _ => 'Ook vandaag',
+                    },
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -1241,6 +1302,11 @@ class _PlanCard extends ConsumerWidget {
   };
 
   String _subtitle(PlannedRoutine planned) {
+    if (plan.kind == TodayPlanKind.plan) {
+      final schema = plan.schema!;
+      return 'Volgende in je schema · ${schema.done.length} van '
+          '${schema.sessions.length} gedaan deze week';
+    }
     if (planned.doneToday) return 'Vandaag al gedaan';
     final last = planned.routine.lastPerformedAt;
     if (last == null) return 'Nog nooit gedaan';

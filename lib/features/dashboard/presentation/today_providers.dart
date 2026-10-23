@@ -8,6 +8,7 @@ import '../../../core/db/database.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../health/presentation/health_providers.dart';
+import '../../plans/presentation/plan_providers.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../progress/presentation/recovery_providers.dart';
 import '../../routines/presentation/routine_providers.dart';
@@ -80,6 +81,27 @@ Stream<List<RoutineRow>> favouriteRoutines(Ref ref) => ref
     .routinesDao
     .watchFavouritesByUse(limit: kHomeFavourites);
 
+/// The schema being followed, while it is between its first and its last
+/// week: what the top of the ladder offers.
+@riverpod
+PlanToday? planToday(Ref ref) {
+  final plan = ref.watch(runningPlanProvider).value;
+  if (plan == null) return null;
+  final now = DateTime.now();
+  final week = plan.weekAt(now);
+  if (week < 1 || plan.isOverAt(now)) return null;
+  final sessions = ref.watch(planSessionsProvider(plan.id)).value;
+  final standing = ref.watch(planThisWeekProvider(plan.id)).value;
+  if (sessions == null || standing == null) return null;
+  return PlanToday(
+    name: plan.name,
+    week: week,
+    weeks: plan.weeks ?? plan.planWeeks.length,
+    sessions: sessions,
+    done: standing.done,
+  );
+}
+
 /// The three of them read as one answer.
 ///
 /// Each part arrives on its own and the card should not blink through three
@@ -91,4 +113,5 @@ TodayPlan todayPlan(Ref ref) => buildTodayPlan(
   favourites: ref.watch(favouriteRoutinesProvider).value ?? const [],
   suggested: ref.watch(suggestedRoutineProvider).value,
   now: DateTime.now(),
+  schema: ref.watch(planTodayProvider),
 );

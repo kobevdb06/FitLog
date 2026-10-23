@@ -5,12 +5,22 @@
 /// claim it could not back up: nothing told it what you do on a Tuesday. Now
 /// the top rung is your own schedule, and each rung below it is what is left
 /// to say when the one above is silent.
+///
+/// Above even that, a schema you follow: its next session this week, on
+/// whatever day - the days of a schema are a guide, not an appointment.
 library;
 
 import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 
 enum TodayPlanKind {
+  /// The schema being followed: its sessions not done yet this week, the
+  /// next first.
+  plan,
+
+  /// The schema being followed, and every session of this week done.
+  planWeekDone,
+
   /// Planned on today, and not all of it done yet.
   scheduled,
 
@@ -42,6 +52,31 @@ class PlannedRoutine {
   final bool doneToday;
 }
 
+/// The schema being followed, as far as today goes: which week, and what
+/// was done in it.
+class PlanToday {
+  const PlanToday({
+    required this.name,
+    required this.week,
+    required this.weeks,
+    required this.sessions,
+    required this.done,
+  });
+
+  final String name;
+  final int week;
+  final int weeks;
+
+  /// Its sessions, in its order.
+  final List<RoutineRow> sessions;
+
+  /// The ones done this week.
+  final Set<String> done;
+
+  /// `Kracht en massa · week 3 van 6`.
+  String get label => '$name · week $week van $weeks';
+}
+
 class TodayPlan {
   const TodayPlan({
     required this.kind,
@@ -49,9 +84,13 @@ class TodayPlan {
     this.nextWeekday,
     this.daysUntilNext,
     this.nextRoutines = const [],
+    this.schema,
   });
 
   final TodayPlanKind kind;
+
+  /// The schema, for [TodayPlanKind.plan] and [TodayPlanKind.planWeekDone].
+  final PlanToday? schema;
 
   /// What to offer, in your own order. Empty for [TodayPlanKind.rest] and
   /// [TodayPlanKind.none].
@@ -89,7 +128,21 @@ TodayPlan buildTodayPlan({
   required List<RoutineRow> favourites,
   required RoutineRow? suggested,
   required DateTime now,
+  PlanToday? schema,
 }) {
+  if (schema != null && schema.sessions.isNotEmpty) {
+    final open = [
+      for (final session in schema.sessions)
+        if (!schema.done.contains(session.id))
+          PlannedRoutine(routine: session, doneToday: false),
+    ];
+    return TodayPlan(
+      kind: open.isEmpty ? TodayPlanKind.planWeekDone : TodayPlanKind.plan,
+      routines: open,
+      schema: schema,
+    );
+  }
+
   final today = trainingWeekday(now);
   final onToday = [
     for (final routine in scheduled)

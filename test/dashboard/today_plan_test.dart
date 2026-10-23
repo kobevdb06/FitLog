@@ -36,6 +36,45 @@ void main() {
     now: at ?? now,
   );
 
+  group('a schema being followed', () {
+    PlanToday schema({Set<String> done = const {}}) => PlanToday(
+      name: 'Kracht',
+      week: 3,
+      weeks: 6,
+      sessions: [routine('Push'), routine('Pull'), routine('Legs')],
+      done: done,
+    );
+
+    test('comes first: its sessions not done this week, in its order', () {
+      final today = buildTodayPlan(
+        scheduled: [
+          routine('Eigen', days: [DateTime.wednesday]),
+        ],
+        favourites: const [],
+        suggested: null,
+        now: now,
+        schema: schema(done: {'Push'}),
+      );
+      expect(today.kind, TodayPlanKind.plan);
+      expect(today.lead!.routine.name, 'Pull');
+      expect([for (final p in today.rest) p.routine.name], ['Legs']);
+      expect(today.schema!.label, 'Kracht · week 3 van 6');
+    });
+
+    test('with every session done, the week is', () {
+      final today = buildTodayPlan(
+        scheduled: const [],
+        favourites: const [],
+        suggested: null,
+        now: now,
+        schema: schema(done: {'Push', 'Pull', 'Legs'}),
+      );
+      expect(today.kind, TodayPlanKind.planWeekDone);
+      expect(today.routines, isEmpty);
+      expect(today.lead, isNull);
+    });
+  });
+
   group('what is on today', () {
     test('the routine planned on this weekday', () {
       final wednesday = routine('Pull', days: [DateTime.wednesday]);

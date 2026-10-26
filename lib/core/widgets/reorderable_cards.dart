@@ -169,31 +169,64 @@ class _ReorderableCardsState extends State<ReorderableCards> {
       _tail = position.pixels + position.viewportDimension;
     });
 
+    SchedulerBinding.instance.addPostFrameCallback(
+      (_) => _settle(key, before, recognizer),
+    );
+  }
+
+  /// Puts the folded row you hold where the card was under your finger,
+  /// then lets the drag start.
+  ///
+  /// Folded, a long session is a short list, and the row of a card far down
+  /// lies far above where the list was scrolled - not laid out at all. Then
+  /// the screen showed nothing but empty room, and the drag, given a row
+  /// that did not exist, never started: the cards stayed folded, and none
+  /// could be picked up again. So when the row is not there, the list goes
+  /// to its top first, where the whole folded order is laid out.
+  void _settle(
+    Key key,
+    double? before,
+    _FoldFirstDrag recognizer, {
+    bool fromTop = false,
+  }) {
+    if (!mounted || !_folded || !_scroll.hasClients) return;
+    final position = _scroll.position;
+    final after = _topOf(key);
+    if (after == null && !fromTop) {
+      position.jumpTo(position.minScrollExtent);
+      SchedulerBinding.instance.addPostFrameCallback(
+        (_) => _settle(key, before, recognizer, fromTop: true),
+      );
+      return;
+    }
+
+    // Scrolled to [pixels] with [spacer] above the cards, the row is at
+    // after + spacer - (pixels - now) on screen: where it was, [before],
+    // takes pixels - spacer = now + after - before. As little room above as
+    // that leaves, and as little below as it takes to scroll there.
+    final now = position.pixels;
+    final want = before == null || after == null ? now : now + after - before;
+    final pixels = math.max(position.minScrollExtent, want);
+    final spacer = pixels - want;
+    final content =
+        position.maxScrollExtent +
+        position.viewportDimension -
+        _tail -
+        _spacer +
+        spacer;
+    final tail = math.max(0.0, pixels + position.viewportDimension - content);
+    // First to where the row belongs, while there is still room below to
+    // be there; only then the room above and below as it should be. The
+    // other way round, the list stood past its end for a frame and lost
+    // track of where it was.
+    position.jumpTo(pixels);
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_folded || !_scroll.hasClients) return;
-      final after = _topOf(key);
-      final spacer = before == null || after == null
-          ? 0.0
-          : math.max(0.0, before - after);
-      // Only as much room below as it takes to stay where the list is.
-      final position = _scroll.position;
-      final content =
-          position.maxScrollExtent +
-          position.viewportDimension -
-          _tail +
-          spacer;
-      final tail = math.max(
-        0.0,
-        position.pixels + position.viewportDimension - content,
-      );
-      if ((spacer - _spacer).abs() < 0.5 && (tail - _tail).abs() < 0.5) {
-        recognizer.ready();
-        return;
-      }
       setState(() {
         _spacer = spacer;
         _tail = tail;
       });
+      // The drag takes the row where it is laid out: a frame later.
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (mounted) recognizer.ready();
       });
@@ -526,7 +559,9 @@ class _FoldFirstPointer extends MultiDragPointerState {
     if (start == null || _started) return;
     _start = null;
     _started = true;
-    start(initialPosition);
+    // The list said no - it found no row to lift. Folded and holding
+    // nothing, the cards would stay that way.
+    if (start(initialPosition) == null) _owner.onAbandoned();
   }
 
   @override

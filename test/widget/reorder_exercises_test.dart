@@ -231,6 +231,66 @@ void main() {
       expect(find.text('10 sets'), findsNothing);
     });
 
+    testWidgets('ver naar beneden gescrold: ingeklapt staat alles in beeld, '
+        'en daarna kan het opnieuw', (tester) async {
+      await pump(tester);
+      final list = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byType(ReorderableCards),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      list.position.jumpTo(list.position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      // The last card's handle in the middle of the screen, the list far
+      // down: folded, the rows lie far above, out of what is laid out.
+      await tester.ensureVisible(handles.last);
+      await tester.pumpAndSettle();
+      list.position.jumpTo(list.position.pixels - 300);
+      await tester.pumpAndSettle();
+      expect(list.position.pixels, greaterThan(800));
+
+      // The last exercise, picked up at the bottom of a long session. Folded,
+      // the rows it was scrolled past lie far above: they were not even laid
+      // out, and the screen showed nothing but the row in your hand.
+      // The lowest handle on screen: the last exercise's.
+      final onScreen = [
+        for (final handle in handles.evaluate())
+          if ((handle.renderObject! as RenderBox).localToGlobal(
+                (handle.renderObject! as RenderBox).size.center(Offset.zero),
+              )
+              case final center when center.dy > 0 && center.dy < 700)
+            center,
+      ]..sort((a, b) => a.dy.compareTo(b.dy));
+
+      final drag = await tester.startGesture(onScreen.last);
+      for (var i = 0; i < 3; i++) {
+        await drag.moveBy(const Offset(0, -10));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final rows = find.text('10 sets');
+      expect(rows, findsNWidgets(3));
+      for (final row in rows.evaluate()) {
+        final box = row.renderObject! as RenderBox;
+        final top = box.localToGlobal(Offset.zero).dy;
+        expect(top, greaterThanOrEqualTo(0));
+        expect(top + box.size.height, lessThanOrEqualTo(740));
+      }
+      await drag.up();
+      await tester.pumpAndSettle();
+      expect(find.text('10 sets'), findsNothing);
+
+      // And the next one still folds, and still moves.
+      list.position.jumpTo(0);
+      await tester.pumpAndSettle();
+      await carryFirstDown(tester);
+      expect(await tester.runAsync(order), ['ex-bench', 'ex-squat', 'ex-row']);
+    });
+
     testWidgets('dezelfde greep als in de editor', (tester) async {
       await pump(tester);
       sameHandle();

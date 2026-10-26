@@ -77,190 +77,232 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
     final query = _searching ? _search.text.trim() : '';
     final shelf = ref.watch(trainShelfChoiceProvider);
 
-    if (shelf == TrainShelf.plans) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Trainen'),
-          actions: [_shelfSwitch(shelf)],
-        ),
-        body: const PlansView(),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.push(Routes.planNew),
-          icon: const Icon(Icons.add),
-          label: const Text('Schema'),
-        ),
-      );
-    }
+    final workouts = shelf == TrainShelf.workouts;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Trainen'),
-        actions: [
-          IconButton(
-            tooltip: _searching ? 'Zoeken sluiten' : 'Routine zoeken',
-            onPressed: _toggleSearch,
-            icon: Icon(_searching ? Icons.search_off : Icons.search),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Stack(
+          children: [
+            AppBar(
+              // Clear of the switch in the middle, also with large text on a
+              // narrow phone: then the title gets a little smaller rather
+              // than running into it.
+              title: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth:
+                      MediaQuery.sizeOf(context).width / 2 -
+                      _ShelfTabs.width / 2 -
+                      AppSpacing.lg -
+                      AppSpacing.sm,
+                ),
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text('Trainen'),
+                ),
+              ),
+              // Search and the menu are about your own routines.
+              actions: workouts ? _workoutActions() : const [],
+            ),
+            // Exactly in the middle of the screen, whatever stands left and
+            // right of it.
+            Positioned.fill(
+              child: SafeArea(
+                bottom: false,
+                child: Center(
+                  child: _ShelfTabs(
+                    shelf: shelf,
+                    onPick: (picked) {
+                      if (_searching) _toggleSearch();
+                      ref.read(trainShelfChoiceProvider.notifier).show(picked);
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        // Each half comes from its own side, as the line above it moves:
+        // Workouts from the left, Schema's from the right.
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween(
+              begin: Offset(
+                child.key == const ValueKey(TrainShelf.plans) ? 0.12 : -0.12,
+                0,
+              ),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
           ),
-          PopupMenuButton<_Menu>(
-            tooltip: 'Meer',
-            onSelected: (item) => switch (item) {
-              _Menu.folder => _newFolder(),
-              _Menu.scan => scanAndImportRoutine(context, ref),
-              _Menu.deload => showDeloadStartSheet(context, source: 'user'),
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: _Menu.folder,
-                child: ListTile(
-                  leading: Icon(Icons.create_new_folder_outlined),
-                  title: Text('Nieuwe map'),
-                  contentPadding: EdgeInsets.zero,
-                ),
+        ),
+        child: workouts
+            ? KeyedSubtree(
+                key: const ValueKey(TrainShelf.workouts),
+                child: _workouts(context, routines, folders, query),
+              )
+            : const KeyedSubtree(
+                key: ValueKey(TrainShelf.plans),
+                child: PlansView(),
               ),
-              PopupMenuItem(
-                value: _Menu.scan,
-                child: ListTile(
-                  leading: Icon(Icons.qr_code_scanner),
-                  title: Text('Routine scannen'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: _Menu.deload,
-                child: ListTile(
-                  leading: Icon(Icons.battery_charging_full),
-                  title: Text('Deload'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-          _shelfSwitch(shelf),
-        ],
       ),
-      body: routines.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
-        data: (list) {
-          if (list.isEmpty && folders.isEmpty) {
-            return EmptyState(
-              icon: Icons.fitness_center,
-              title: 'Nog geen routines',
-              message:
-                  'Maak een routine met je vaste oefeningen, of begin meteen '
-                  'met een lege workout.',
-              actionLabel: 'Routine maken',
-              onAction: () => context.push(Routes.routineNew),
-            );
-          }
-
-          // A folder whose name you typed shows all of it; any other only
-          // what matches. Folders with nothing to show are left out while
-          // searching, and kept otherwise: an empty folder is still yours.
-          final sections = [
-            for (final folder in folders)
-              (
-                folder: folder,
-                routines: [
-                  for (final r in list)
-                    if (r.routine.folderId == folder.id &&
-                        routineMatches(r, query, folderName: folder.name))
-                      r,
-                ],
-              ),
-          ];
-          final loose = [
-            for (final r in list)
-              if (r.routine.folderId == null && routineMatches(r, query)) r,
-          ];
-          final shown = query.isEmpty
-              ? sections
-              : sections.where((s) => s.routines.isNotEmpty).toList();
-
-          return ListView(
-            padding: const EdgeInsets.only(bottom: 120),
-            children: [
-              if (_searching)
-                Padding(
-                  // Room below of its own: the first thing under it can be a
-                  // card, with no folder header in between.
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.sm,
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                  ),
-                  child: TextField(
-                    controller: _search,
-                    autofocus: true,
-                    textInputAction: TextInputAction.search,
-                    decoration: const InputDecoration(
-                      hintText: 'Zoek op naam, map of spiergroep',
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                )
-              else
-                _StartActions(summaries: list),
-              for (final section in shown)
-                _FolderSection(
-                  folder: section.folder,
-                  routines: section.routines,
-                  searching: query.isNotEmpty,
-                ),
-              if (loose.isNotEmpty) ...[
-                if (shown.isNotEmpty) const SectionHeader('Losse routines'),
-                for (final routine in loose) _RoutineTile(summary: routine),
-              ],
-              if (query.isNotEmpty && shown.isEmpty && loose.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Text(
-                    'Geen routine gevonden voor "$query".',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(Routes.routineNew),
-        icon: const Icon(Icons.add),
-        label: const Text('Routine'),
-      ),
+      floatingActionButton: workouts
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push(Routes.routineNew),
+              icon: const Icon(Icons.add),
+              label: const Text('Routine'),
+            )
+          : FloatingActionButton.extended(
+              onPressed: () => context.push(Routes.planNew),
+              icon: const Icon(Icons.add),
+              label: const Text('Schema'),
+            ),
     );
   }
 
-  /// Workouts or Schema's, in the top right corner. Not a swipe: sideways
-  /// already goes from one tab to the next.
-  Widget _shelfSwitch(TrainShelf shelf) => Padding(
-    padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
-    child: SegmentedButton<TrainShelf>(
-      showSelectedIcon: false,
-      style: const ButtonStyle(visualDensity: VisualDensity.compact),
-      segments: const [
-        ButtonSegment(
-          value: TrainShelf.workouts,
-          icon: Icon(Icons.fitness_center, size: 20),
-          tooltip: 'Workouts',
+  List<Widget> _workoutActions() => [
+    IconButton(
+      tooltip: _searching ? 'Zoeken sluiten' : 'Routine zoeken',
+      onPressed: _toggleSearch,
+      icon: Icon(_searching ? Icons.search_off : Icons.search),
+    ),
+    PopupMenuButton<_Menu>(
+      tooltip: 'Meer',
+      onSelected: (item) => switch (item) {
+        _Menu.folder => _newFolder(),
+        _Menu.scan => scanAndImportRoutine(context, ref),
+        _Menu.deload => showDeloadStartSheet(context, source: 'user'),
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: _Menu.folder,
+          child: ListTile(
+            leading: Icon(Icons.create_new_folder_outlined),
+            title: Text('Nieuwe map'),
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
-        ButtonSegment(
-          value: TrainShelf.plans,
-          icon: Icon(Icons.calendar_month_outlined, size: 20),
-          tooltip: "Schema's",
+        PopupMenuItem(
+          value: _Menu.scan,
+          child: ListTile(
+            leading: Icon(Icons.qr_code_scanner),
+            title: Text('Routine scannen'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem(
+          value: _Menu.deload,
+          child: ListTile(
+            leading: Icon(Icons.battery_charging_full),
+            title: Text('Deload'),
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
       ],
-      selected: {shelf},
-      onSelectionChanged: (picked) {
-        if (_searching) _toggleSearch();
-        ref.read(trainShelfChoiceProvider.notifier).show(picked.first);
-      },
     ),
+  ];
+
+  Widget _workouts(
+    BuildContext context,
+    AsyncValue<List<RoutineSummary>> routines,
+    List<RoutineFolderRow> folders,
+    String query,
+  ) => routines.when(
+    loading: () => const Center(child: CircularProgressIndicator()),
+    error: (error, _) => Center(child: Text('$error')),
+    data: (list) {
+      if (list.isEmpty && folders.isEmpty) {
+        return EmptyState(
+          icon: Icons.fitness_center,
+          title: 'Nog geen routines',
+          message:
+              'Maak een routine met je vaste oefeningen, of begin meteen '
+              'met een lege workout.',
+          actionLabel: 'Routine maken',
+          onAction: () => context.push(Routes.routineNew),
+        );
+      }
+
+      // A folder whose name you typed shows all of it; any other only
+      // what matches. Folders with nothing to show are left out while
+      // searching, and kept otherwise: an empty folder is still yours.
+      final sections = [
+        for (final folder in folders)
+          (
+            folder: folder,
+            routines: [
+              for (final r in list)
+                if (r.routine.folderId == folder.id &&
+                    routineMatches(r, query, folderName: folder.name))
+                  r,
+            ],
+          ),
+      ];
+      final loose = [
+        for (final r in list)
+          if (r.routine.folderId == null && routineMatches(r, query)) r,
+      ];
+      final shown = query.isEmpty
+          ? sections
+          : sections.where((s) => s.routines.isNotEmpty).toList();
+
+      return ListView(
+        padding: const EdgeInsets.only(bottom: 120),
+        children: [
+          if (_searching)
+            Padding(
+              // Room below of its own: the first thing under it can be a
+              // card, with no folder header in between.
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
+              child: TextField(
+                controller: _search,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                decoration: const InputDecoration(
+                  hintText: 'Zoek op naam, map of spiergroep',
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            )
+          else
+            _StartActions(summaries: list),
+          for (final section in shown)
+            _FolderSection(
+              folder: section.folder,
+              routines: section.routines,
+              searching: query.isNotEmpty,
+            ),
+          if (loose.isNotEmpty) ...[
+            if (shown.isNotEmpty) const SectionHeader('Losse routines'),
+            for (final routine in loose) _RoutineTile(summary: routine),
+          ],
+          if (query.isNotEmpty && shown.isEmpty && loose.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Text(
+                'Geen routine gevonden voor "$query".',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+        ],
+      );
+    },
   );
 
   Future<void> _newFolder() async {
@@ -772,4 +814,88 @@ Future<void> scanAndImportRoutine(BuildContext context, WidgetRef ref) async {
 
   showSnack(context, 'Routine "${routine.name}" toegevoegd');
   context.push(Routes.routineDetail(added));
+}
+
+/// Workouts or Schema's: two icons in the middle of the bar, with a line
+/// under the one that shows, which slides to the other. Not a swipe:
+/// sideways already goes from one tab to the next.
+class _ShelfTabs extends StatelessWidget {
+  const _ShelfTabs({required this.shelf, required this.onPick});
+
+  final TrainShelf shelf;
+  final ValueChanged<TrainShelf> onPick;
+
+  static const double _width = 52;
+
+  /// Both icons: what the title keeps clear of.
+  static const double width = 2 * _width;
+  static const _slide = Duration(milliseconds: 260);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget tab(TrainShelf value, IconData icon, String label) {
+      final selected = shelf == value;
+      return SizedBox(
+        width: _width,
+        child: Center(
+          child: TweenAnimationBuilder<Color?>(
+            duration: _slide,
+            tween: ColorTween(
+              end: selected ? scheme.primary : scheme.onSurfaceVariant,
+            ),
+            builder: (context, color, _) => IconButton(
+              tooltip: label,
+              isSelected: selected,
+              color: color,
+              onPressed: () => onPick(value),
+              icon: Icon(icon),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: kToolbarHeight,
+      child: Stack(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              tab(TrainShelf.workouts, Icons.fitness_center, 'Workouts'),
+              tab(TrainShelf.plans, Icons.calendar_month_outlined, "Schema's"),
+            ],
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedAlign(
+                duration: _slide,
+                curve: Curves.easeOutCubic,
+                alignment: shelf == TrainShelf.workouts
+                    ? Alignment.bottomLeft
+                    : Alignment.bottomRight,
+                child: SizedBox(
+                  width: _width,
+                  child: Center(
+                    child: Container(
+                      width: 28,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: scheme.primary,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(3),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -119,6 +119,41 @@ void main() {
     );
   });
 
+  testWidgets('de wissel staat precies in het midden, en het lijntje schuift '
+      'mee', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pump(tester, size: const Size(360, 800));
+    expect(tester.takeException(), isNull);
+
+    final workouts = tester.getCenter(find.byTooltip('Workouts'));
+    final plans = tester.getCenter(find.byTooltip("Schema's"));
+    expect((workouts.dx + plans.dx) / 2, closeTo(180, 0.5));
+    // The title and the switch stay clear of each other.
+    expect(
+      tester.getRect(find.text('Trainen')).right,
+      lessThan(tester.getRect(find.byTooltip('Workouts')).left),
+    );
+
+    Finder line() => find.byWidgetPredicate(
+      (w) => w is Container && w.constraints?.maxWidth == 28,
+    );
+    expect(tester.getCenter(line()).dx, closeTo(workouts.dx, 1));
+
+    await tester.tap(find.byTooltip("Schema's"));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    // On its way.
+    final halfway = tester.getCenter(line()).dx;
+    expect(halfway, greaterThan(workouts.dx + 1));
+    expect(halfway, lessThan(plans.dx - 1));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.getCenter(line()).dx, closeTo(plans.dx, 1));
+    // Search and the menu belong to your own routines.
+    expect(find.byTooltip('Routine zoeken'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('zonder schema nodigt Schema\'s uit om er een te maken', (
     tester,
   ) async {

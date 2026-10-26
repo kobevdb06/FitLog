@@ -224,7 +224,14 @@ class _RunningPlan extends ConsumerWidget {
                       tooltip: 'Meer',
                       onSelected: (_) => _finish(context, ref),
                       itemBuilder: (context) => const [
-                        PopupMenuItem(value: 'stop', child: Text('Stoppen')),
+                        PopupMenuItem(
+                          value: 'stop',
+                          child: ListTile(
+                            leading: Icon(Icons.stop_circle_outlined),
+                            title: Text('Stoppen'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
                       ],
                     ),
                   ],

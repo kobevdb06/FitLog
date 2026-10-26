@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -90,6 +91,44 @@ void main() {
     await tester.pumpWidget(wrapWithContainer(container, screen));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('terwijl het bezig is, blijft elke regel zichzelf', (
+    tester,
+  ) async {
+    // Busy, a progress bar came in above the rows of the list, and the rows
+    // - matched by place, not by name - moved down one: the row you had
+    // tapped lit up one higher. Tapping the CSV export lit the backup.
+    final waiting = Completer<File>();
+    container.dispose();
+    container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        secretStoreProvider.overrideWithValue(InMemorySecretStore()),
+        backupFolderProvider.overrideWithValue(folder),
+        backupMakerProvider.overrideWithValue(() => waiting.future),
+      ],
+    );
+    await pump(tester, const BackupScreen());
+    Element row(String title) => tester.element(
+      find.ancestor(of: find.text(title), matching: find.byType(ListTile)),
+    );
+    final before = [
+      row('Versleutelde back-up maken'),
+      row('CSV-export van workouts'),
+    ];
+
+    await tester.tap(find.text('Versleutelde back-up maken'));
+    await tester.pump();
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect([
+      row('Versleutelde back-up maken'),
+      row('CSV-export van workouts'),
+    ], before);
+
+    // Android's share sheet comes next, which a test does not have: the
+    // screen goes before it would.
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('wissen staat niet meer tussen de gewone keuzes', (tester) async {
     await pump(tester, const SettingsScreen());

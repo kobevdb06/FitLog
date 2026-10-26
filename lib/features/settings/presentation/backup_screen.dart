@@ -270,8 +270,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       appBar: AppBar(title: const Text('Back-up en export')),
       body: AbsorbPointer(
         absorbing: _busy,
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 32),
+        // Above the list, not in it: rows are matched by their place, and a
+        // bar coming in above them moved every row down one - the one you
+        // had tapped lit up one higher.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_busy) ...[
               const LinearProgressIndicator(),
@@ -291,81 +294,84 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                   ),
                 ),
             ],
-            const SectionHeader('Elke week'),
-            _AutomaticTile(onPick: _pickFolder, onStop: _stopAutomatic),
-            const SectionHeader('Back-up'),
-            const _LastBackupLine(),
-            ListTile(
-              leading: const Icon(Icons.enhanced_encryption_outlined),
-              title: const Text('Versleutelde back-up maken'),
-              subtitle: const Text(
-                'Database en foto\'s in een .fitlog-bestand, versleuteld met '
-                'je herstelzin.',
-              ),
-              onTap: _createBackup,
-            ),
-            ListTile(
-              leading: const Icon(Icons.table_chart_outlined),
-              title: const Text('CSV-export van workouts'),
-              subtitle: const Text(
-                'Leesbaar bestand met elke workout en elke set.',
-              ),
-              onTap: _exportCsv,
-            ),
-            const SectionHeader('Herstellen'),
-            ListTile(
-              leading: const Icon(Icons.settings_backup_restore),
-              title: const Text('Back-up terugzetten'),
-              subtitle: const Text(
-                'Overschrijft alles wat nu op dit toestel staat.',
-              ),
-              onTap: _restore,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                children: [
-                  const InfoBanner(
-                    icon: Icons.key_outlined,
-                    message:
-                        'De back-up is alleen te openen met je twaalf woorden. '
-                        'Bewaar ze apart van het bestand.',
-                  ),
-                  if (_message != null) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    InfoBanner(
-                      icon: Icons.info_outline,
-                      color: AppColors.accent,
-                      message: _message!,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            // At the very bottom, past everything you come here for: what
-            // cannot be undone does not sit between what you use often.
-            const SectionHeader('Gevarenzone'),
-            ListTile(
-              leading: const Icon(
-                Icons.delete_forever_outlined,
-                color: AppColors.danger,
-              ),
-              title: const Text(
-                'Alle gegevens wissen',
-                style: TextStyle(color: AppColors.danger),
-              ),
-              subtitle: const Text(
-                'Alles van dit toestel verwijderen. Maak eerst een back-up '
-                'als je iets wil houden.',
-              ),
-              onTap: _wipe,
-            ),
-            const SizedBox(height: AppSpacing.xl),
+            Expanded(child: _list(context)),
           ],
         ),
       ),
     );
   }
+
+  Widget _list(BuildContext context) => ListView(
+    padding: const EdgeInsets.only(bottom: 32),
+    children: [
+      const SectionHeader('Elke week'),
+      _AutomaticTile(onPick: _pickFolder, onStop: _stopAutomatic),
+      const SectionHeader('Back-up'),
+      const _LastBackupLine(),
+      ListTile(
+        leading: const Icon(Icons.enhanced_encryption_outlined),
+        title: const Text('Versleutelde back-up maken'),
+        subtitle: const Text(
+          'Database en foto\'s in een .fitlog-bestand, versleuteld met '
+          'je herstelzin.',
+        ),
+        onTap: _createBackup,
+      ),
+      ListTile(
+        leading: const Icon(Icons.table_chart_outlined),
+        title: const Text('CSV-export van workouts'),
+        subtitle: const Text('Leesbaar bestand met elke workout en elke set.'),
+        onTap: _exportCsv,
+      ),
+      const SectionHeader('Herstellen'),
+      ListTile(
+        leading: const Icon(Icons.settings_backup_restore),
+        title: const Text('Back-up terugzetten'),
+        subtitle: const Text('Overschrijft alles wat nu op dit toestel staat.'),
+        onTap: _restore,
+      ),
+      Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: [
+            const InfoBanner(
+              icon: Icons.key_outlined,
+              message:
+                  'De back-up is alleen te openen met je twaalf woorden. '
+                  'Bewaar ze apart van het bestand.',
+            ),
+            if (_message != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              InfoBanner(
+                icon: Icons.info_outline,
+                color: AppColors.accent,
+                message: _message!,
+              ),
+            ],
+          ],
+        ),
+      ),
+      // At the very bottom, past everything you come here for: what
+      // cannot be undone does not sit between what you use often.
+      const SectionHeader('Gevarenzone'),
+      ListTile(
+        leading: const Icon(
+          Icons.delete_forever_outlined,
+          color: AppColors.danger,
+        ),
+        title: const Text(
+          'Alle gegevens wissen',
+          style: TextStyle(color: AppColors.danger),
+        ),
+        subtitle: const Text(
+          'Alles van dit toestel verwijderen. Maak eerst een back-up '
+          'als je iets wil houden.',
+        ),
+        onTap: _wipe,
+      ),
+      const SizedBox(height: AppSpacing.xl),
+    ],
+  );
 }
 
 /// When the last backup was made, or that there has never been one.

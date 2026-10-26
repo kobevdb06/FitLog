@@ -4831,3 +4831,20 @@ de opzet.
 - **Een lopend schema** verandert één sessie of zijn opzet meteen als de
   gebruiker erom vraagt, met de sessie zoals ze was bewaard: daar is het al
   gekozen. Het voorstel van zondagavond blijft een heel schema op één kaart.
+
+## 223. De wissel van Trainen in het midden, met een lijntje
+
+De wissel tussen *Workouts* en *Schema's* (220) stond rechtsboven als een
+pil met twee icoontjes. Gevraagd: in het midden, zoeken en ⋮ rechts, en geen
+druppel. Na een mockup van drie opties (tekst zonder titel, icoontjes met
+titel, icoon en tekst) en daarna vier vormen voor de icoontjes, gekozen:
+icoontjes met de titel erbij, en een lijntje onder het gekozen icoon.
+
+- **Precies in het midden van het scherm**, niet van de ruimte tussen titel
+  en knoppen: de wissel ligt over de balk heen. Met grote letters op een
+  smalle gsm wordt de titel iets kleiner in plaats van eronder te lopen.
+- **Het lijntje schuift** naar het andere icoon, en de lijst eronder schuift
+  mee van dezelfde kant in: *Workouts* van links, *Schema's* van rechts.
+  Geen veeg: opzij vegen gaat al van tabblad naar tabblad.
+- **Zoeken en ⋮** horen bij je eigen routines en staan alleen bij Workouts.
+  *Stoppen* van een lopend schema kreeg een icoon.

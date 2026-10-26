@@ -139,6 +139,11 @@ void main() {
       (w) => w is Container && w.constraints?.maxWidth == 28,
     );
     expect(tester.getCenter(line()).dx, closeTo(workouts.dx, 1));
+    // Under the icon, at the bottom of the bar - not through it.
+    expect(
+      tester.getRect(line()).top,
+      greaterThan(tester.getRect(find.byTooltip('Workouts')).bottom - 4),
+    );
 
     await tester.tap(find.byTooltip("Schema's"));
     await tester.pump();

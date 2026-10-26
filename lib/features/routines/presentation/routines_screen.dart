@@ -876,8 +876,11 @@ class _ShelfTabs extends StatelessWidget {
                 alignment: shelf == TrainShelf.workouts
                     ? Alignment.bottomLeft
                     : Alignment.bottomRight,
+                // As high as the line itself: a box the height of the bar
+                // put it through the middle of the icon.
                 child: SizedBox(
                   width: _width,
+                  height: 3,
                   child: Center(
                     child: Container(
                       width: 28,

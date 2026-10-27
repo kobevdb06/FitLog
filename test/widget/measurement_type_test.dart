@@ -53,7 +53,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    await tester.tap(find.text('Meting'));
+    // Nothing measured yet: weight opens the sheet to take it.
+    await tester.tap(find.text('Gewicht'));
     await tester.pumpAndSettle();
   }
 

@@ -4929,3 +4929,26 @@ de compacte lijst.
 - **De andere schema's** - in voorbereiding en eerdere - zijn met een
   lopend schema één regel per soort die openklapt. Zonder lopend schema
   zijn zij wat er is, en staan ze als vroeger.
+
+## 226. Lichaamsmetingen: de maten op een figuur
+
+Het scherm was een lijst van twaalf uitklaprijen in een stijl die nergens
+anders in de app terugkomt: tien zeiden "Nog geen meting", rechts bij
+Gewicht stond "0 kg" zonder te zeggen waarvan, links en rechts waren twee
+losse rijen, en *+ Meting* zweefde erover. Gevraagd: beter en passend bij de
+rest. Vier mockups (tegels, een figuur, meetrondes als logboek, eerst de
+grafiek); gekozen: de figuur.
+
+- **Gewicht en vetpercentage** staan bovenaan als twee tegels: dat zijn
+  geen omtrekken en ze horen niet bij één plek op het lichaam.
+- **De omtrekken staan naast de figuur**, elk met een lijn naar waar je ze
+  meet, links en rechts zoals in een spiegel - zo meet je ze ook. Naast de
+  figuur staat "Arm L": "Arm links" past daar niet met grote letters.
+  Wat gemeten is, heeft een waarde en een gevulde stip; wat niet, *+ meten*.
+- **De rijen naast de figuur zijn even hoog**, twee regels tekst, en de
+  figuur is zo hoog als de rijen samen: grotere letters maken alles groter
+  in plaats van de ene maat over de andere te leggen.
+- **Een tik** op een maat zonder meting opent meteen de meting, met die maat
+  al gekozen; op een gemeten maat haar verloop, met het verschil en
+  *waarvan*: "gelijk sinds 4 okt", "+0,5 cm sinds 4 okt". Geen zwevende
+  knop meer: elke maat is haar eigen knop.

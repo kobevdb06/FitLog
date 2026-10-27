@@ -84,7 +84,7 @@ void main() {
         favouriteRoutinesProvider.overrideWith(
           (ref) => Stream.value(favourites),
         ),
-        suggestedRoutineProvider.overrideWith((ref) async => suggested),
+        suggestedRoutineProvider.overrideWith((ref) => Stream.value(suggested)),
       ],
     );
 
@@ -169,4 +169,83 @@ void main() {
     expect(find.text('Nog geen routine'), findsOneWidget);
     expect(find.text('Routine maken'), findsOneWidget);
   });
+
+  group('after a session', () {
+    // The cases above hand the card its routines. These let it read them from
+    // the database, so what they pin is that it hears a session end.
+    Future<void> pumpLive(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1100, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      container = ProviderContainer(
+        overrides: [databaseProvider.overrideWithValue(db)],
+      );
+      // While a session runs the card shows that instead and lets go of the
+      // plan, but Trainen sits next to Start in the pager and keeps watching
+      // it. Without this the plan would be read anew after every session.
+      container!.listen(todayPlanProvider, (_, _) {});
+      await tester.pumpWidget(
+        wrapWithContainer(container!, const DashboardScreen()),
+      );
+      await settle(tester);
+    }
+
+    // One write per runAsync, with frames in between: each write wakes the
+    // screen's streams, whose reads only run between frames, and a second
+    // write in the same go would wait behind them for good.
+    Future<void> finish(WidgetTester tester, String routineId) async {
+      final id = await tester.runAsync(
+        () => db.workoutsDao.startWorkout(
+          routineId: routineId,
+          defaultRestSeconds: 90,
+        ),
+      );
+      await settle(tester);
+      await tester.runAsync(
+        () => db.workoutsDao.finishWorkout(id!, discardPending: false),
+      );
+      await settle(tester);
+    }
+
+    testWidgets('the suggestion moves on to the next one', (tester) async {
+      final chest = await db.routinesDao.createRoutine(
+        const RoutineDraft(name: 'Chest day 2', exercises: []),
+      );
+      await db.routinesDao.createRoutine(
+        const RoutineDraft(name: 'Leg day', exercises: []),
+      );
+      await pumpLive(tester);
+      expect(
+        find.text('Hier was je het langst niet mee bezig'),
+        findsOneWidget,
+      );
+      expect(find.text('Chest day 2'), findsOneWidget);
+
+      await finish(tester, chest);
+
+      expect(find.text('Leg day'), findsOneWidget);
+      expect(find.text('Chest day 2'), findsNothing);
+    });
+
+    testWidgets('the only routine there is says it is done', (tester) async {
+      final chest = await db.routinesDao.createRoutine(
+        const RoutineDraft(name: 'Chest day 2', exercises: []),
+      );
+      await pumpLive(tester);
+      expect(find.text('Nog nooit gedaan'), findsOneWidget);
+
+      await finish(tester, chest);
+
+      expect(find.text('Vandaag al gedaan'), findsOneWidget);
+      expect(find.text('Nog nooit gedaan'), findsNothing);
+    });
+  });
+}
+
+/// Frames enough for the streams to answer and the card to follow.
+Future<void> settle(WidgetTester tester) async {
+  for (var i = 0; i < 6; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }

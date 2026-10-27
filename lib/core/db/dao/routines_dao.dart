@@ -697,18 +697,24 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
 
   /// The routine to suggest on the dashboard: the one that has not been done
   /// for the longest time, falling back to the first routine in the list.
-  Future<RoutineRow?> suggestedRoutine() async {
-    final never =
-        await (select(routinesTable)
-              ..where((t) => t.lastPerformedAt.isNull() & t.planId.isNull())
-              ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])
-              ..limit(1))
-            .getSingleOrNull();
-    if (never != null) return never;
-    return (select(routinesTable)
-          ..where((t) => t.planId.isNull())
-          ..orderBy([(t) => OrderingTerm.asc(t.lastPerformedAt)])
-          ..limit(1))
-        .getSingleOrNull();
-  }
+  Future<RoutineRow?> suggestedRoutine() => _suggested().getSingleOrNull();
+
+  /// The same, kept up to date.
+  ///
+  /// Watched rather than read once because every finished session moves it:
+  /// the routine you just did is the one you left alone least.
+  Stream<RoutineRow?> watchSuggestedRoutine() =>
+      _suggested().watchSingleOrNull();
+
+  // The ones never done first, in your own order; then the one done longest
+  // ago.
+  SimpleSelectStatement<$RoutinesTableTable, RoutineRow> _suggested() =>
+      select(routinesTable)
+        ..where((t) => t.planId.isNull())
+        ..orderBy([
+          (t) => OrderingTerm.asc(t.lastPerformedAt.isNotNull()),
+          (t) => OrderingTerm.asc(t.lastPerformedAt),
+          (t) => OrderingTerm.asc(t.sortOrder),
+        ])
+        ..limit(1);
 }

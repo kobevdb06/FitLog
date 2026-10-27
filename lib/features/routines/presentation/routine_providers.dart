@@ -26,8 +26,8 @@ Stream<List<RoutineVersionRow>> routineVersions(Ref ref, String routineId) =>
 
 /// The routine the dashboard offers to start.
 @riverpod
-Future<RoutineRow?> suggestedRoutine(Ref ref) =>
-    ref.watch(databaseProvider).routinesDao.suggestedRoutine();
+Stream<RoutineRow?> suggestedRoutine(Ref ref) =>
+    ref.watch(databaseProvider).routinesDao.watchSuggestedRoutine();
 
 // Kept alive on purpose. These objects hold a `Ref` and every one of their
 // callers uses them across an async gap: a confirmation dialog, the photo

@@ -66,7 +66,7 @@ void main() {
         favouriteRoutinesProvider.overrideWith(
           (ref) => Stream.value(favourites),
         ),
-        suggestedRoutineProvider.overrideWith((ref) async => null),
+        suggestedRoutineProvider.overrideWith((ref) => Stream.value(null)),
       ],
     );
 

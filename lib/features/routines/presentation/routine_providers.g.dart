@@ -264,9 +264,9 @@ final class SuggestedRoutineProvider
         $FunctionalProvider<
           AsyncValue<RoutineRow?>,
           RoutineRow?,
-          FutureOr<RoutineRow?>
+          Stream<RoutineRow?>
         >
-    with $FutureModifier<RoutineRow?>, $FutureProvider<RoutineRow?> {
+    with $FutureModifier<RoutineRow?>, $StreamProvider<RoutineRow?> {
   /// The routine the dashboard offers to start.
   SuggestedRoutineProvider._()
     : super(
@@ -284,17 +284,17 @@ final class SuggestedRoutineProvider
 
   @$internal
   @override
-  $FutureProviderElement<RoutineRow?> $createElement(
+  $StreamProviderElement<RoutineRow?> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<RoutineRow?> create(Ref ref) {
+  Stream<RoutineRow?> create(Ref ref) {
     return suggestedRoutine(ref);
   }
 }
 
-String _$suggestedRoutineHash() => r'bdf56a76bf213331cfd6de59a3321de05ef0b93a';
+String _$suggestedRoutineHash() => r'6001bf8fe970184f21fe2ac0da5bf22fe63593db';
 
 @ProviderFor(routineActions)
 final routineActionsProvider = RoutineActionsProvider._();

@@ -278,7 +278,7 @@ void main() {
         appPathsProvider.overrideWith((ref) => AppPaths(Directory.systemTemp)),
         scheduledRoutinesProvider.overrideWith((ref) => Stream.value([])),
         favouriteRoutinesProvider.overrideWith((ref) => Stream.value([])),
-        suggestedRoutineProvider.overrideWith((ref) async => null),
+        suggestedRoutineProvider.overrideWith((ref) => Stream.value(null)),
       ],
     );
     await tester.pumpWidget(

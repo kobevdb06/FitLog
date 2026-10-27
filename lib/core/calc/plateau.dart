@@ -54,6 +54,7 @@ class ProgressSet {
     this.durationSeconds,
     this.side,
     this.isDeload = false,
+    this.isLight = false,
   });
 
   final String workoutId;
@@ -71,6 +72,10 @@ class ProgressSet {
   /// Done in a deload: lighter on purpose. Not progress lost, nor a week
   /// short of sets - progress, plateaus and what is usual look past it.
   final bool isDeload;
+
+  /// Done in a session made lighter on its own: looked past like a deload,
+  /// but its week is no rest - its sets count.
+  final bool isLight;
 }
 
 /// What progress on an exercise is measured in.

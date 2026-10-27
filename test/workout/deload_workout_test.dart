@@ -148,6 +148,63 @@ void main() {
     expect(previous.map((s) => s.weightKg), isNot(contains(72.5)));
   });
 
+  group('één sessie lichter, zonder deload', () {
+    test('zoals je deload-instellingen, en gemarkeerd als lichter', () async {
+      final id = await controller.startFromRoutine(
+        await routine(),
+        lighter: true,
+      );
+      final workout = await detail(id);
+      final sets = workout.exercises.single.sets;
+
+      expect(workout.workout.isDeload, isTrue);
+      expect(workout.workout.isLight, isTrue);
+      expect(sets.map((s) => SetType.fromWire(s.setType)), [
+        SetType.warmup,
+        SetType.normal,
+        SetType.normal,
+      ]);
+      expect(sets[1].weightKg, 72.5);
+      expect(
+        await db.deloadDao.currentAt(DateTime.now()),
+        isNull,
+        reason: 'no deload was started for it',
+      );
+    });
+
+    test('daarna kijkt VORIGE erover heen, maar het is geen pauze', () async {
+      final routineId = await routine();
+      final normal = await controller.startFromRoutine(routineId);
+      for (final set in (await detail(normal)).exercises.single.sets) {
+        await controller.completeSet(setId: set.id);
+      }
+      await controller.finish(normal, discardPending: true);
+
+      final light = await controller.startFromRoutine(routineId, lighter: true);
+      for (final set in (await detail(light)).exercises.single.sets) {
+        await controller.completeSet(setId: set.id);
+      }
+      await controller.finish(light, discardPending: true);
+
+      final previous = await db.workoutsDao.previousSetsFor('ex-bench');
+      expect(previous.map((s) => s.weightKg), contains(80));
+      expect(previous.map((s) => s.weightKg), isNot(contains(72.5)));
+      expect(await db.workoutsDao.ordinarySessionStarts(), hasLength(2));
+    });
+
+    test('in een deload is het al lichter: niet nog eens', () async {
+      await deloadNow();
+      final id = await controller.startFromRoutine(
+        await routine(),
+        lighter: true,
+      );
+      final workout = await detail(id);
+
+      expect(workout.workout.isLight, isFalse);
+      expect(workout.exercises.single.sets[1].weightKg, 72.5);
+    });
+  });
+
   test(
     'een recordpoging en een lege workout worden alleen gemarkeerd',
     () async {
@@ -161,16 +218,40 @@ void main() {
   group('sets per spiergroep', () {
     final now = DateTime(2026, 10, 18, 12);
 
-    ProgressSet set(DateTime at, {bool deload = false}) => ProgressSet(
-      workoutId: '$at',
-      startedAt: at,
-      exerciseId: 'ex-bench',
-      primaryMuscle: 'borst',
-      category: ExerciseCategory.barbell,
-      weightKg: 80,
-      reps: 8,
-      isDeload: deload,
-    );
+    ProgressSet set(DateTime at, {bool deload = false, bool light = false}) =>
+        ProgressSet(
+          workoutId: '$at',
+          startedAt: at,
+          exerciseId: 'ex-bench',
+          primaryMuscle: 'borst',
+          category: ExerciseCategory.barbell,
+          weightKg: 80,
+          reps: 8,
+          isDeload: deload || light,
+          isLight: light,
+        );
+
+    test('één lichtere sessie is geen rustweek: haar sets tellen', () {
+      final sets = [
+        for (var w = 1; w <= 8; w++)
+          for (var i = 0; i < 10; i++)
+            set(
+              now.subtract(Duration(days: w * 7 - 1)),
+              light: w == 1 && i < 4,
+            ),
+      ];
+
+      final borst = muscleSetsPerWeek(
+        sets,
+        period: ProgressPeriod.fourWeeks,
+        now: now,
+      ).single;
+
+      // Ten sets every week, the lighter one too - not the ordinary weeks'
+      // sets spread over one week fewer.
+      expect(borst.perWeek, closeTo(borst.usualPerWeek, 0.5));
+      expect(borst.lagging, isFalse);
+    });
 
     test('een deloadweek maakt een spier niet achterop', () {
       final sets = [

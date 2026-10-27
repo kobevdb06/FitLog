@@ -9674,6 +9674,21 @@ class $WorkoutsTableTable extends WorkoutsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isLightMeta = const VerificationMeta(
+    'isLight',
+  );
+  @override
+  late final GeneratedColumn<bool> isLight = GeneratedColumn<bool>(
+    'is_light',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_light" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -9691,6 +9706,7 @@ class $WorkoutsTableTable extends WorkoutsTable
     avgHeartRate,
     maxHeartRate,
     isDeload,
+    isLight,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -9815,6 +9831,12 @@ class $WorkoutsTableTable extends WorkoutsTable
         isDeload.isAcceptableOrUnknown(data['is_deload']!, _isDeloadMeta),
       );
     }
+    if (data.containsKey('is_light')) {
+      context.handle(
+        _isLightMeta,
+        isLight.isAcceptableOrUnknown(data['is_light']!, _isLightMeta),
+      );
+    }
     return context;
   }
 
@@ -9884,6 +9906,10 @@ class $WorkoutsTableTable extends WorkoutsTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_deload'],
       )!,
+      isLight: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_light'],
+      )!,
     );
   }
 
@@ -9929,6 +9955,13 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
   /// that is stopped or forgotten later does not change what this session
   /// was. Progress, plateaus and what is usual look past it.
   final bool isDeload;
+
+  /// Started lighter on its own, outside a deload: one session made lighter
+  /// as a deload would, because you chose to - after the check before it,
+  /// mostly. Also [isDeload], so what you can do looks past it; this tells
+  /// it apart from a deload, whose week is a rest. One lighter session is
+  /// not: its week and its sets count as any other.
+  final bool isLight;
   const WorkoutRow({
     required this.id,
     this.routineId,
@@ -9945,6 +9978,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     this.avgHeartRate,
     this.maxHeartRate,
     required this.isDeload,
+    required this.isLight,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -9980,6 +10014,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       map['max_heart_rate'] = Variable<int>(maxHeartRate);
     }
     map['is_deload'] = Variable<bool>(isDeload);
+    map['is_light'] = Variable<bool>(isLight);
     return map;
   }
 
@@ -10016,6 +10051,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ? const Value.absent()
           : Value(maxHeartRate),
       isDeload: Value(isDeload),
+      isLight: Value(isLight),
     );
   }
 
@@ -10040,6 +10076,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       avgHeartRate: serializer.fromJson<int?>(json['avgHeartRate']),
       maxHeartRate: serializer.fromJson<int?>(json['maxHeartRate']),
       isDeload: serializer.fromJson<bool>(json['isDeload']),
+      isLight: serializer.fromJson<bool>(json['isLight']),
     );
   }
   @override
@@ -10061,6 +10098,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       'avgHeartRate': serializer.toJson<int?>(avgHeartRate),
       'maxHeartRate': serializer.toJson<int?>(maxHeartRate),
       'isDeload': serializer.toJson<bool>(isDeload),
+      'isLight': serializer.toJson<bool>(isLight),
     };
   }
 
@@ -10080,6 +10118,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     Value<int?> avgHeartRate = const Value.absent(),
     Value<int?> maxHeartRate = const Value.absent(),
     bool? isDeload,
+    bool? isLight,
   }) => WorkoutRow(
     id: id ?? this.id,
     routineId: routineId.present ? routineId.value : this.routineId,
@@ -10100,6 +10139,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     avgHeartRate: avgHeartRate.present ? avgHeartRate.value : this.avgHeartRate,
     maxHeartRate: maxHeartRate.present ? maxHeartRate.value : this.maxHeartRate,
     isDeload: isDeload ?? this.isDeload,
+    isLight: isLight ?? this.isLight,
   );
   WorkoutRow copyWithCompanion(WorkoutsTableCompanion data) {
     return WorkoutRow(
@@ -10132,6 +10172,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ? data.maxHeartRate.value
           : this.maxHeartRate,
       isDeload: data.isDeload.present ? data.isDeload.value : this.isDeload,
+      isLight: data.isLight.present ? data.isLight.value : this.isLight,
     );
   }
 
@@ -10152,7 +10193,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ..write('healthConnectId: $healthConnectId, ')
           ..write('avgHeartRate: $avgHeartRate, ')
           ..write('maxHeartRate: $maxHeartRate, ')
-          ..write('isDeload: $isDeload')
+          ..write('isDeload: $isDeload, ')
+          ..write('isLight: $isLight')
           ..write(')'))
         .toString();
   }
@@ -10174,6 +10216,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     avgHeartRate,
     maxHeartRate,
     isDeload,
+    isLight,
   );
   @override
   bool operator ==(Object other) =>
@@ -10193,7 +10236,8 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           other.healthConnectId == this.healthConnectId &&
           other.avgHeartRate == this.avgHeartRate &&
           other.maxHeartRate == this.maxHeartRate &&
-          other.isDeload == this.isDeload);
+          other.isDeload == this.isDeload &&
+          other.isLight == this.isLight);
 }
 
 class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
@@ -10212,6 +10256,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
   final Value<int?> avgHeartRate;
   final Value<int?> maxHeartRate;
   final Value<bool> isDeload;
+  final Value<bool> isLight;
   final Value<int> rowid;
   const WorkoutsTableCompanion({
     this.id = const Value.absent(),
@@ -10229,6 +10274,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.avgHeartRate = const Value.absent(),
     this.maxHeartRate = const Value.absent(),
     this.isDeload = const Value.absent(),
+    this.isLight = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkoutsTableCompanion.insert({
@@ -10247,6 +10293,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     this.avgHeartRate = const Value.absent(),
     this.maxHeartRate = const Value.absent(),
     this.isDeload = const Value.absent(),
+    this.isLight = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -10267,6 +10314,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Expression<int>? avgHeartRate,
     Expression<int>? maxHeartRate,
     Expression<bool>? isDeload,
+    Expression<bool>? isLight,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10285,6 +10333,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
       if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
       if (isDeload != null) 'is_deload': isDeload,
+      if (isLight != null) 'is_light': isLight,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10305,6 +10354,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     Value<int?>? avgHeartRate,
     Value<int?>? maxHeartRate,
     Value<bool>? isDeload,
+    Value<bool>? isLight,
     Value<int>? rowid,
   }) {
     return WorkoutsTableCompanion(
@@ -10323,6 +10373,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
       avgHeartRate: avgHeartRate ?? this.avgHeartRate,
       maxHeartRate: maxHeartRate ?? this.maxHeartRate,
       isDeload: isDeload ?? this.isDeload,
+      isLight: isLight ?? this.isLight,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -10375,6 +10426,9 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
     if (isDeload.present) {
       map['is_deload'] = Variable<bool>(isDeload.value);
     }
+    if (isLight.present) {
+      map['is_light'] = Variable<bool>(isLight.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -10399,6 +10453,7 @@ class WorkoutsTableCompanion extends UpdateCompanion<WorkoutRow> {
           ..write('avgHeartRate: $avgHeartRate, ')
           ..write('maxHeartRate: $maxHeartRate, ')
           ..write('isDeload: $isDeload, ')
+          ..write('isLight: $isLight, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -24691,6 +24746,7 @@ typedef $$WorkoutsTableTableCreateCompanionBuilder =
       Value<int?> avgHeartRate,
       Value<int?> maxHeartRate,
       Value<bool> isDeload,
+      Value<bool> isLight,
       Value<int> rowid,
     });
 typedef $$WorkoutsTableTableUpdateCompanionBuilder =
@@ -24710,6 +24766,7 @@ typedef $$WorkoutsTableTableUpdateCompanionBuilder =
       Value<int?> avgHeartRate,
       Value<int?> maxHeartRate,
       Value<bool> isDeload,
+      Value<bool> isLight,
       Value<int> rowid,
     });
 
@@ -24861,6 +24918,11 @@ class $$WorkoutsTableTableFilterComposer
 
   ColumnFilters<bool> get isDeload => $composableBuilder(
     column: $table.isDeload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isLight => $composableBuilder(
+    column: $table.isLight,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25018,6 +25080,11 @@ class $$WorkoutsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isLight => $composableBuilder(
+    column: $table.isLight,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutinesTableTableOrderingComposer get routineId {
     final $$RoutinesTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -25106,6 +25173,9 @@ class $$WorkoutsTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isDeload =>
       $composableBuilder(column: $table.isDeload, builder: (column) => column);
+
+  GeneratedColumn<bool> get isLight =>
+      $composableBuilder(column: $table.isLight, builder: (column) => column);
 
   $$RoutinesTableTableAnnotationComposer get routineId {
     final $$RoutinesTableTableAnnotationComposer composer = $composerBuilder(
@@ -25230,6 +25300,7 @@ class $$WorkoutsTableTableTableManager
                 Value<int?> avgHeartRate = const Value.absent(),
                 Value<int?> maxHeartRate = const Value.absent(),
                 Value<bool> isDeload = const Value.absent(),
+                Value<bool> isLight = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion(
                 id: id,
@@ -25247,6 +25318,7 @@ class $$WorkoutsTableTableTableManager
                 avgHeartRate: avgHeartRate,
                 maxHeartRate: maxHeartRate,
                 isDeload: isDeload,
+                isLight: isLight,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -25266,6 +25338,7 @@ class $$WorkoutsTableTableTableManager
                 Value<int?> avgHeartRate = const Value.absent(),
                 Value<int?> maxHeartRate = const Value.absent(),
                 Value<bool> isDeload = const Value.absent(),
+                Value<bool> isLight = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkoutsTableCompanion.insert(
                 id: id,
@@ -25283,6 +25356,7 @@ class $$WorkoutsTableTableTableManager
                 avgHeartRate: avgHeartRate,
                 maxHeartRate: maxHeartRate,
                 isDeload: isDeload,
+                isLight: isLight,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -759,6 +759,14 @@ class WorkoutsTable extends Table {
   BoolColumn get isDeload =>
       boolean().named('is_deload').withDefault(const Constant(false))();
 
+  /// Started lighter on its own, outside a deload: one session made lighter
+  /// as a deload would, because you chose to - after the check before it,
+  /// mostly. Also [isDeload], so what you can do looks past it; this tells
+  /// it apart from a deload, whose week is a rest. One lighter session is
+  /// not: its week and its sets count as any other.
+  BoolColumn get isLight =>
+      boolean().named('is_light').withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

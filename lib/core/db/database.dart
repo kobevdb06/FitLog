@@ -82,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 55;
+  int get schemaVersion => 56;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -539,6 +539,10 @@ class AppDatabase extends _$AppDatabase {
         if (from < 55) {
           await m.addColumn(routinesTable, routinesTable.planFocus);
           await m.addColumn(routinesTable, routinesTable.planState);
+        }
+        if (from < 56) {
+          // A session started lighter on its own: none was.
+          await m.addColumn(workoutsTable, workoutsTable.isLight);
         }
       });
 

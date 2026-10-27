@@ -48,7 +48,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
             ),
             if (detail.value?.workout.isDeload ?? false) ...[
               const SizedBox(width: 8),
-              const DeloadTag(),
+              DeloadTag(light: detail.value!.workout.isLight),
             ],
           ],
         ),

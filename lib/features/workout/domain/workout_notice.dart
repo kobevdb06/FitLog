@@ -194,7 +194,9 @@ WorkoutNotice? workoutNoticeFor(
   if (detail.workout.endedAt != null) return null;
 
   return WorkoutNotice(
-    title: detail.workout.isDeload
+    title: detail.workout.isLight
+        ? '${detail.workout.name} · lichter'
+        : detail.workout.isDeload
         ? '${detail.workout.name} · deload'
         : detail.workout.name,
     body: _whereYouAre(detail),

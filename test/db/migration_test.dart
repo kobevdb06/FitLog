@@ -143,6 +143,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 37');
@@ -199,6 +200,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 39');
@@ -253,6 +255,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 41');
@@ -304,6 +307,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 46');
@@ -353,6 +357,7 @@ void main() {
         ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
         ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
         ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+        ..execute('ALTER TABLE workouts DROP COLUMN is_light')
         ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute('PRAGMA user_version = 47');
@@ -411,6 +416,7 @@ void main() {
         ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
         ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
         ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+        ..execute('ALTER TABLE workouts DROP COLUMN is_light')
         ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute(
@@ -477,6 +483,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 49');
@@ -520,6 +527,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 50');
@@ -549,6 +557,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 52');
@@ -574,6 +583,7 @@ void main() {
       ..execute('ALTER TABLE training_plans DROP COLUMN outline_at')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute(
         "INSERT INTO training_plans (id, name, goal, split, days, progression, "
         "weeks, status, created_at, updated_at) "
@@ -596,6 +606,27 @@ void main() {
     await db.close();
   });
 
+  test('a database from v55 gets lighter sessions: none was one', () async {
+    final path = '${dir.path}/v55.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    final id = await fresh.workoutsDao.startWorkout(defaultRestSeconds: 90);
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
+      ..execute('UPDATE workouts SET is_deload = 1')
+      ..execute('PRAGMA user_version = 55');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final workout = (await db.workoutsDao.getWorkoutDetail(id))!.workout;
+    // A deload stays a deload: its week a rest, as it was.
+    expect(workout.isDeload, isTrue);
+    expect(workout.isLight, isFalse);
+    await db.close();
+  });
+
   test('a database from v53 gets no schemas, and no routine is a '
       'session of one', () async {
     final path = '${dir.path}/v53.db';
@@ -614,6 +645,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('PRAGMA user_version = 53');
     raw.close();
@@ -644,6 +676,7 @@ void main() {
         ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
         ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
         ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+        ..execute('ALTER TABLE workouts DROP COLUMN is_light')
         ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
         ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
         ..execute('PRAGMA user_version = 51');
@@ -698,6 +731,7 @@ void main() {
       ..execute('ALTER TABLE routines DROP COLUMN plan_weekday')
       ..execute('ALTER TABLE routines DROP COLUMN plan_focus')
       ..execute('ALTER TABLE routines DROP COLUMN plan_state')
+      ..execute('ALTER TABLE workouts DROP COLUMN is_light')
       ..execute('ALTER TABLE chat_threads DROP COLUMN plan_id')
       ..execute('ALTER TABLE app_settings DROP COLUMN coach_memory')
       ..execute('PRAGMA user_version = 43');
@@ -770,7 +804,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 55);
+    expect(raw.select('PRAGMA user_version').first.values.first, 56);
     raw.close();
   });
 
@@ -986,7 +1020,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 55);
+    expect(db.schemaVersion, 56);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

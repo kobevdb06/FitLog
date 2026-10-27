@@ -8,11 +8,13 @@ import '../../workout/presentation/workout_providers.dart';
 
 /// Starts a session - the routine's, or an empty one without [routineId] -
 /// and steps into it. With one already running it offers to go back to that
-/// one instead: one session at a time is all the log knows.
+/// one instead: one session at a time is all the log knows. [lighter] makes
+/// the routine's session lighter, as a deload would.
 Future<void> startSession(
   BuildContext context,
   WidgetRef ref, {
   String? routineId,
+  bool lighter = false,
 }) async {
   final active = ref.read(activeWorkoutProvider).value;
   if (active != null) {
@@ -32,7 +34,7 @@ Future<void> startSession(
   if (routineId == null) {
     await controller.startEmpty();
   } else {
-    await controller.startFromRoutine(routineId);
+    await controller.startFromRoutine(routineId, lighter: lighter);
   }
   if (context.mounted) context.push(Routes.workout);
 }

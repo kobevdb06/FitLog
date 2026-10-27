@@ -63,6 +63,7 @@ void main() {
         totalSets: 0,
         durationSeconds: 0,
         isDeload: false,
+        isLight: false,
       ),
       workoutExercise: WorkoutExerciseRow(
         id: 'we',

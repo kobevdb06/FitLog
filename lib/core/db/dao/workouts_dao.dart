@@ -611,7 +611,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   Selectable<QueryRow> _progressSetsQuery(DateTime since) {
     return customSelect(
       'SELECT w.id AS workout_id, w.started_at AS started_at, '
-      'w.is_deload AS is_deload, '
+      'w.is_deload AS is_deload, w.is_light AS is_light, '
       'we.exercise_id AS exercise_id, e.primary_muscle AS primary_muscle, '
       'e.category AS category, ws.weight_kg AS weight_kg, ws.reps AS reps, '
       'ws.duration_seconds AS duration_seconds, ws.side AS side '
@@ -651,6 +651,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
           durationSeconds: row.readNullable<int>('duration_seconds'),
           side: row.readNullable<String>('side'),
           isDeload: row.read<bool>('is_deload'),
+          isLight: row.read<bool>('is_light'),
         ),
     ];
   }
@@ -1068,13 +1069,18 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   /// before it is made lighter: a routine without targets would otherwise
   /// show - and store - the full weight greyed in from history. Weights land
   /// on the exercise's step, or on the smallest pair of [platesKg].
+  /// [light] marks a single session made lighter outside a deload.
   Future<void> makeDeload(
     String workoutId,
     DeloadPlan plan, {
     List<double> platesKg = const [],
+    bool light = false,
   }) async {
     await (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
-      const WorkoutsTableCompanion(isDeload: Value(true)),
+      WorkoutsTableCompanion(
+        isDeload: const Value(true),
+        isLight: light ? const Value(true) : const Value.absent(),
+      ),
     );
     final workout = await getWorkoutDetail(workoutId);
     if (workout == null) return;
@@ -1617,11 +1623,13 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// The start of every finished session that was not a deload, oldest
-  /// first: what "weeks of training without a break" is counted from.
+  /// first: what "weeks of training without a break" is counted from. One
+  /// session made lighter on its own is no break.
   Future<List<DateTime>> ordinarySessionStarts() async {
     final rows = await customSelect(
       'SELECT started_at FROM workouts '
-      'WHERE ended_at IS NOT NULL AND is_deload = 0 ORDER BY started_at',
+      'WHERE ended_at IS NOT NULL AND (is_deload = 0 OR is_light = 1) '
+      'ORDER BY started_at',
       readsFrom: {workoutsTable},
     ).get();
     return [

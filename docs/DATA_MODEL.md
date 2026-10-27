@@ -83,6 +83,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 53 | `coach_notes` en `app_settings.coach_memory`: het geheugen van de coach, leeg en aan. |
 | 54 | `training_plans`, `routines.plan_id` en `plan_weekday`, `chat_threads.plan_id`: schema's. Geen enkele bestaande routine of gesprek hoorde bij een schema. |
 | 55 | `training_plans.volume`, `outline_approved` en `outline_at`, `routines.plan_focus` en `plan_state`: een schema stap voor stap. Elk bestaand schema was heel: opzet en sessies goedgekeurd. |
+| 56 | `workouts.is_light`: één sessie lichter, buiten een deload. Geen enkele bestaande training was er een. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -340,6 +341,7 @@ routine, de oudste gaan eerst.
 | `health_connect_id` | TEXT? | het id in Health Connect, als FitLog ze daar schreef |
 | `avg_heart_rate`, `max_heart_rate` | INT? | van een horloge, via Health Connect |
 | `is_deload` | BOOL | gestart tijdens een deload; bij de start gezet en zo gebleven |
+| `is_light` | BOOL | op zich lichter gestart, buiten een deload; dan ook `is_deload`, zodat wat je kan erover heen kijkt, maar haar week is geen rustweek |
 
 Een routine verwijderen laat de gelogde workouts staan; alleen de verwijzing
 verdwijnt.

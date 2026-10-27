@@ -4,9 +4,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
 /// "Deload", on a session that was one: in the workout, the history and the
-/// island.
+/// island. "Lichter" on one made lighter on its own.
 class DeloadTag extends StatelessWidget {
-  const DeloadTag({super.key});
+  const DeloadTag({super.key, this.light = false});
+
+  final bool light;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +21,7 @@ class DeloadTag extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         child: Text(
-          'Deload',
+          light ? 'Lichter' : 'Deload',
           style: theme.textTheme.labelSmall?.copyWith(color: AppColors.record),
         ),
       ),

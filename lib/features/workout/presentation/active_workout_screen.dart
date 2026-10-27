@@ -541,7 +541,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (workout.workout.isDeload) ...[
-                          const DeloadTag(),
+                          DeloadTag(light: workout.workout.isLight),
                           const SizedBox(width: AppSpacing.xs),
                         ],
                         _ElapsedLabel(startedAt: workout.workout.startedAt),
@@ -1021,9 +1021,13 @@ class _ExerciseCard extends ConsumerWidget {
   }
 
   /// Whether a PR attempt may start here: always, except in a deload whose
-  /// plan says not.
+  /// plan says not - or a session made lighter, which your deload settings
+  /// answer for.
   bool _prAttemptsAllowed(WidgetRef ref) {
     if (!workout.workout.isDeload) return true;
+    if (workout.workout.isLight) {
+      return ref.watch(settingsProvider).value?.deloadPrAttempts ?? false;
+    }
     final deload = ref.watch(currentDeloadProvider).value;
     if (deload == null || !deload.isOnAt(DateTime.now())) return true;
     return deload.plan.prAttempts;

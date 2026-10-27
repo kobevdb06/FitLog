@@ -11,6 +11,7 @@ import '../../../core/db/models.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../core/util/notification_service.dart';
+import '../../deload/data/deload_standing.dart';
 import '../../health/presentation/health_providers.dart';
 import '../../plans/data/plan_deload.dart';
 import '../domain/pr_ramp.dart';
@@ -162,13 +163,20 @@ class WorkoutController {
   Future<int> get _defaultRest async =>
       (await _db.settingsDao.getSettings()).defaultRestSeconds;
 
-  Future<String> startFromRoutine(String routineId) async {
+  /// [lighter] makes this one session lighter as a deload would, without
+  /// starting one: what the check before it offers. In a deload it already
+  /// is.
+  Future<String> startFromRoutine(
+    String routineId, {
+    bool lighter = false,
+  }) async {
     final id = await _db.workoutsDao.startWorkout(
       routineId: routineId,
       defaultRestSeconds: await _defaultRest,
     );
     await _planWeek(id, routineId);
-    await _deloadIfOn(id);
+    final deload = await _deloadIfOn(id);
+    if (lighter && !deload) await _lighter(id);
     await _askAboutNotifications();
     return id;
   }
@@ -216,15 +224,27 @@ class WorkoutController {
 
   /// During a deload, every session started is one: lighter as the deload's
   /// own plan says, and marked so - an empty one only marked, there is
-  /// nothing in it to make lighter yet.
-  Future<void> _deloadIfOn(String workoutId) async {
+  /// nothing in it to make lighter yet. True when it was.
+  Future<bool> _deloadIfOn(String workoutId) async {
     final deload = await _db.deloadDao.onAt(DateTime.now());
-    if (deload == null) return;
+    if (deload == null) return false;
     final settings = await _db.settingsDao.getSettings();
     await _db.workoutsDao.makeDeload(
       workoutId,
       deload.plan,
       platesKg: decodePlates(settings.availablePlatesKg),
+    );
+    return true;
+  }
+
+  /// One session lighter, as your deload settings make a deload.
+  Future<void> _lighter(String workoutId) async {
+    final settings = await _db.settingsDao.getSettings();
+    await _db.workoutsDao.makeDeload(
+      workoutId,
+      deloadPlanOf(settings),
+      platesKg: decodePlates(settings.availablePlatesKg),
+      light: true,
     );
   }
 

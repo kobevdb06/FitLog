@@ -323,7 +323,7 @@ class _WorkoutTile extends ConsumerWidget {
         children: [
           Expanded(child: Text(workout.name)),
           if (workout.isDeload) ...[
-            const DeloadTag(),
+            DeloadTag(light: workout.isLight),
             const SizedBox(width: 6),
           ],
           if (summary.prCount > 0)

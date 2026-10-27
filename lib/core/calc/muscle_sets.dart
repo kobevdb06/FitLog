@@ -68,7 +68,8 @@ List<MuscleSets> muscleSetsPerWeek(
   for (final set in sets) {
     if (set.startedAt.isAfter(now) || set.startedAt.isBefore(before)) continue;
     final early = set.startedAt.isBefore(start);
-    if (set.isDeload) {
+    // One session made lighter on its own is no rest: it counts.
+    if (set.isDeload && !set.isLight) {
       (early ? restedEarlier : restedDuring).add(weekOf(set.startedAt));
       continue;
     }

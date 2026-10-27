@@ -66,9 +66,6 @@ bool homeBlockFilled(Ref ref, HomeBlock block) => switch (block) {
   HomeBlock.today || HomeBlock.week || HomeBlock.volume => true,
 };
 
-/// How many starred routines the card has room for.
-const int kHomeFavourites = 3;
-
 /// Every routine that is planned on at least one weekday.
 @riverpod
 Stream<List<RoutineRow>> scheduledRoutines(Ref ref) =>

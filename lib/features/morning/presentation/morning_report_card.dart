@@ -7,6 +7,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
+import '../../readiness/domain/training_check.dart';
+import '../../readiness/presentation/check_sheet.dart';
 import '../data/morning_reporter.dart';
 import 'morning_providers.dart';
 
@@ -187,6 +189,15 @@ class ReportBody extends ConsumerWidget {
               _Pill(
                 label: '${facts.ready.length} klaar',
                 color: theme.colorScheme.primary,
+              ),
+            if (facts.check case final check?)
+              _Pill(
+                label: switch (check.verdict) {
+                  CheckVerdict.ready => '${check.session}: klaar',
+                  CheckVerdict.note => '${check.session}: let op',
+                  CheckVerdict.wait => '${check.session}: beter wachten',
+                },
+                color: checkColor(check.verdict),
               ),
           ],
         ),

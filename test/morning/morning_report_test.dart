@@ -10,6 +10,7 @@ import 'package:fitlog/features/health/data/health_source.dart';
 import 'package:fitlog/features/morning/data/morning_reporter.dart';
 import 'package:fitlog/features/morning/data/morning_run.dart';
 import 'package:fitlog/features/morning/domain/morning_facts.dart';
+import 'package:fitlog/features/readiness/domain/training_check.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -142,6 +143,40 @@ void main() {
       expect(back.ready, ['borst']);
     });
 
+    test('de check overleeft de weg naar de database en terug', () {
+      final facts = MorningFacts(
+        day: DateTime(2026, 3, 3),
+        check: const MorningCheck(
+          session: 'Legs',
+          verdict: CheckVerdict.wait,
+          reasons: ['quadriceps nog 14 u', '5 u 10 geslapen, score 58'],
+          instead: 'Push',
+        ),
+      );
+
+      final back = MorningFacts.fromJson(
+        jsonDecode(jsonEncode(facts.toJson())) as Map<String, Object?>,
+      ).check!;
+      expect(back.session, 'Legs');
+      expect(back.verdict, CheckVerdict.wait);
+      expect(back.reasons, hasLength(2));
+      expect(back.instead, 'Push');
+      expect(back.noneReady, isFalse);
+      expect(
+        MorningFacts.fromJson(
+          jsonDecode(jsonEncode(MorningFacts(day: facts.day).toJson()))
+              as Map<String, Object?>,
+        ).check,
+        isNull,
+        reason: 'a report from before the check has none',
+      );
+
+      final coach = facts.forCoach()['check_voor_training']! as Map;
+      expect(coach['sessie'], 'Legs');
+      expect(coach['oordeel'], 'beter wachten');
+      expect(coach['in_de_plaats'], 'Push');
+    });
+
     test('de coach krijgt ze leesbaar', () {
       final coach = MorningFacts(
         day: DateTime(2026, 3, 3),
@@ -192,6 +227,52 @@ void main() {
       expect(text, isNot(contains('rusthartslag')));
       expect(text, contains('Nog in herstel: quadriceps (nog 20 u).'));
       expect(text, contains('Klaar: borst, triceps.'));
+    });
+
+    test('de check voor je training, in één zin', () {
+      String said(MorningCheck check) =>
+          morningSummary(MorningFacts(day: DateTime(2026, 3, 3), check: check));
+      const reasons = ['quadriceps nog 14 u', '5 u 10 geslapen, score 58'];
+
+      expect(
+        said(const MorningCheck(session: 'Legs', verdict: CheckVerdict.ready)),
+        contains('Voor Legs: klaar.'),
+      );
+      expect(
+        said(
+          const MorningCheck(
+            session: 'Legs',
+            verdict: CheckVerdict.note,
+            reasons: ['quadriceps nog 14 u'],
+          ),
+        ),
+        contains('Voor Legs: één sein, quadriceps nog 14 u. Je kan gaan.'),
+      );
+      expect(
+        said(
+          const MorningCheck(
+            session: 'Legs',
+            verdict: CheckVerdict.wait,
+            reasons: reasons,
+            instead: 'Push',
+          ),
+        ),
+        contains(
+          'Legs kan beter wachten: quadriceps nog 14 u, 5 u 10 geslapen, '
+          'score 58. Doe vandaag Push.',
+        ),
+      );
+      expect(
+        said(
+          const MorningCheck(
+            session: 'Legs',
+            verdict: CheckVerdict.wait,
+            reasons: reasons,
+            noneReady: true,
+          ),
+        ),
+        contains('Geen sessie van deze week is vandaag klaar'),
+      );
     });
 
     test('zonder nacht en zonder training', () {
@@ -258,6 +339,69 @@ void main() {
         ),
       );
     }
+
+    /// Legs, starred: what Vandaag offers without a schedule.
+    Future<void> legs() async {
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-squat',
+              name: 'Squat',
+              primaryMuscle: 'quadriceps',
+              category: 'barbell',
+              createdAt: 0,
+            ),
+          );
+      final id = await db.routinesDao.createRoutine(
+        RoutineDraft(
+          name: 'Legs',
+          exercises: [
+            RoutineExerciseDraft(
+              exerciseId: 'ex-squat',
+              sets: [
+                for (var i = 0; i < 4; i++)
+                  const RoutineSetDraft(targetWeightKg: 100, targetReps: 5),
+              ],
+            ),
+          ],
+        ),
+      );
+      await db.routinesDao.setFavourite(id, favourite: true);
+    }
+
+    test(
+      'met de check voor de sessie van vandaag, ook voor de coach',
+      () async {
+        await legs();
+        await db.recoveryDao.clearSleep(DateTime(2026, 3, 3));
+        await db.recoveryDao.setSleep(
+          fellAsleepAt: DateTime(2026, 3, 3, 1),
+          wokeAt: DateTime(2026, 3, 3, 6),
+        );
+        await withKey();
+        final coach = gemini('Korte nacht. Legs kan, rustig aan.');
+
+        final report = await MorningReporter(
+          db,
+          clientFactory: coach.factory,
+        ).write(now: morning);
+
+        final check = report.facts.check!;
+        expect(check.session, 'Legs');
+        expect(check.verdict, CheckVerdict.note);
+        expect(
+          morningSummary(report.facts),
+          contains('Voor Legs: één sein, 5 u geslapen, score'),
+        );
+        expect(jsonEncode(coach.sent.single), contains('check_voor_training'));
+        final row = (await db.reportsDao.reportFor(morning))!;
+        expect(
+          MorningReport.fromRow(row).facts.check?.verdict,
+          CheckVerdict.note,
+        );
+      },
+    );
 
     test('zonder coach: de app zegt het zelf, en er gaat niets weg', () async {
       final coach = gemini('Onmogelijk');

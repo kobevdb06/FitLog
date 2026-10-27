@@ -8,6 +8,7 @@ library;
 import '../../../core/calc/recovery.dart';
 import '../../../core/calc/sleep_score.dart';
 import '../../../core/db/database.dart';
+import '../../readiness/domain/training_check.dart';
 
 /// How long after its session a ready muscle is still worth naming: the same
 /// window the recovery screen asks about.
@@ -40,6 +41,85 @@ class MuscleLeft {
   final Duration left;
 }
 
+/// What the check before the session of the day said, that morning.
+class MorningCheck {
+  const MorningCheck({
+    required this.session,
+    required this.verdict,
+    this.reasons = const [],
+    this.instead,
+    this.noneReady = false,
+  });
+
+  factory MorningCheck.of(TodayCheck today) => MorningCheck(
+    session: today.lead.routineName,
+    verdict: today.lead.verdict,
+    reasons: today.lead.reasons,
+    instead: today.instead?.routineName,
+    noneReady: today.noneReady,
+  );
+
+  factory MorningCheck.fromJson(Map<String, Object?> json) => MorningCheck(
+    session: json['session']! as String,
+    verdict: CheckVerdict.values.firstWhere(
+      (v) => v.name == json['verdict'],
+      orElse: () => CheckVerdict.ready,
+    ),
+    reasons: [for (final r in (json['reasons'] as List? ?? const [])) '$r'],
+    instead: json['instead'] as String?,
+    noneReady: json['noneReady'] == true,
+  );
+
+  /// The session Vandaag led with.
+  final String session;
+  final CheckVerdict verdict;
+
+  /// What stood against it, in words.
+  final List<String> reasons;
+
+  /// The session of the week to do instead, when it had better wait.
+  final String? instead;
+
+  /// It had better wait, and so did every other session of the week.
+  final bool noneReady;
+
+  Map<String, Object?> toJson() => {
+    'session': session,
+    'verdict': verdict.name,
+    'reasons': reasons,
+    'instead': ?instead,
+    if (noneReady) 'noneReady': true,
+  };
+
+  Map<String, Object?> forCoach() => {
+    'sessie': session,
+    'oordeel': switch (verdict) {
+      CheckVerdict.ready => 'klaar',
+      CheckVerdict.note => 'gaan, met één sein',
+      CheckVerdict.wait => 'beter wachten',
+    },
+    if (reasons.isNotEmpty) 'seinen': reasons,
+    'in_de_plaats': ?instead,
+    if (noneReady) 'geen_sessie_van_de_week_klaar': true,
+  };
+
+  /// The report's sentence about it.
+  String get sentence {
+    final why = reasons.join(', ');
+    return switch (verdict) {
+      CheckVerdict.ready => 'Voor $session: klaar.',
+      CheckVerdict.note => 'Voor $session: één sein, $why. Je kan gaan.',
+      CheckVerdict.wait when instead != null =>
+        '$session kan beter wachten: $why. Doe vandaag $instead.',
+      CheckVerdict.wait when noneReady =>
+        '$session kan beter wachten: $why. Geen sessie van deze week is '
+            'vandaag klaar: een rustdag, of lichter.',
+      CheckVerdict.wait =>
+        '$session kan beter wachten: $why. Of doe het lichter.',
+    };
+  }
+}
+
 class MorningFacts {
   const MorningFacts({
     required this.day,
@@ -49,6 +129,7 @@ class MorningFacts {
     this.restingHrRise,
     this.recovering = const [],
     this.ready = const [],
+    this.check,
   });
 
   /// Midnight at the start of the morning this is about.
@@ -71,6 +152,9 @@ class MorningFacts {
   /// Trained in the last few days and ready again.
   final List<String> ready;
 
+  /// The check before the session of the day, when there was one.
+  final MorningCheck? check;
+
   Map<String, Object?> toJson() => {
     'day': day.millisecondsSinceEpoch,
     if (night case final n?)
@@ -90,6 +174,7 @@ class MorningFacts {
         {'muscle': m.muscle, 'minutes': m.left.inMinutes},
     ],
     'ready': ready,
+    if (check case final check?) 'check': check.toJson(),
   };
 
   factory MorningFacts.fromJson(Map<String, Object?> json) {
@@ -119,6 +204,10 @@ class MorningFacts {
           ),
       ],
       ready: [for (final m in (json['ready'] as List? ?? const [])) '$m'],
+      check: switch (json['check']) {
+        final Map<String, Object?> check => MorningCheck.fromJson(check),
+        _ => null,
+      },
     );
   }
 
@@ -153,6 +242,7 @@ class MorningFacts {
           {'spiergroep': m.muscle, 'uren': _hours(m.left)},
       ],
       'klaar': ready,
+      if (check case final check?) 'check_voor_training': check.forCoach(),
     };
   }
 }
@@ -165,6 +255,7 @@ MorningFacts buildMorningFacts({
   required List<SleepEntryRow> nights,
   required List<VitalsDay> vitals,
   required List<RecoveryEstimate> estimates,
+  TodayCheck? check,
 }) {
   final day = DateTime(now.year, now.month, now.day);
 
@@ -216,6 +307,7 @@ MorningFacts buildMorningFacts({
     restingHrRise: morning.restingHrRise,
     recovering: recovering,
     ready: ready,
+    check: check == null ? null : MorningCheck.of(check),
   );
 }
 
@@ -259,6 +351,7 @@ String morningSummary(MorningFacts facts) {
       lines.add('Klaar: ${facts.ready.join(', ')}.');
     }
   }
+  if (facts.check case final check?) lines.add(check.sentence);
   return lines.join(' ');
 }
 

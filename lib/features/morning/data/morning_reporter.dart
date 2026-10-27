@@ -5,6 +5,8 @@ import '../../../core/db/database.dart';
 import '../../chat/data/ai_client.dart';
 import '../../chat/domain/coach_budget.dart';
 import '../../progress/data/recovery_loader.dart';
+import '../../readiness/data/check_loader.dart';
+import '../../readiness/domain/training_check.dart';
 import '../domain/morning_facts.dart';
 
 /// The whole instruction for one job: turn this morning's facts into three
@@ -20,7 +22,8 @@ je-vorm, hoogstens drie korte zinnen en geen opsomming:
 - hoe de nacht was (duur en slaapscore), en wat HRV of rusthartslag zeggen
   als ze erbij staan;
 - welke spiergroepen nog herstellen en welke klaar zijn;
-- wat dat betekent voor vandaag trainen, in één zin.
+- wat dat betekent voor vandaag trainen, in één zin; staat er een
+  check_voor_training bij, volg dan haar oordeel en noem de sessie.
 Gebruik alleen wat in de feiten staat: verzin geen cijfers en geen
 spiergroepen. Je bent geen arts: geen diagnoses, geen supplementen.
 ''';
@@ -76,30 +79,42 @@ class MorningReporter {
   Future<MorningReport> write({DateTime? now, String? importError}) async {
     final at = now ?? DateTime.now();
 
-    Future<MorningFacts> build({required bool healthConnect}) async =>
-        buildMorningFacts(
+    Future<MorningFacts> build({required bool healthConnect}) async {
+      final nights = [
+        for (final row
+            in await db.recoveryDao
+                .watchSleepSince(at.subtract(const Duration(days: 2)))
+                .first)
+          if (healthConnect || row.source == null) row,
+      ];
+      final vitals = [
+        if (healthConnect)
+          for (final row
+              in await db.healthDao
+                  .watchVitalsSince(at.subtract(kVitalsBaselineWindow))
+                  .first)
+            vitalsDayOf(row),
+      ];
+      final estimates = await loadRecoveryEstimates(
+        db,
+        now: at,
+        healthConnect: healthConnect,
+      );
+      return buildMorningFacts(
+        now: at,
+        nights: nights,
+        vitals: vitals,
+        estimates: estimates,
+        // The check before today's session, from the same morning.
+        check: await loadTodayCheck(
+          db,
           now: at,
-          nights: [
-            for (final row
-                in await db.recoveryDao
-                    .watchSleepSince(at.subtract(const Duration(days: 2)))
-                    .first)
-              if (healthConnect || row.source == null) row,
-          ],
-          vitals: [
-            if (healthConnect)
-              for (final row
-                  in await db.healthDao
-                      .watchVitalsSince(at.subtract(kVitalsBaselineWindow))
-                      .first)
-                vitalsDayOf(row),
-          ],
-          estimates: await loadRecoveryEstimates(
-            db,
-            now: at,
-            healthConnect: healthConnect,
-          ),
-        );
+          estimates: estimates,
+          body: checkBody(now: at, nights: nights, vitals: vitals),
+        ),
+      );
+    }
+
     final facts = await build(healthConnect: true);
 
     String? text;

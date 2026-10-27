@@ -13,6 +13,9 @@ library;
 import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 
+/// How many starred routines the card has room for.
+const int kHomeFavourites = 3;
+
 enum TodayPlanKind {
   /// The schema being followed: its sessions not done yet this week, the
   /// next first.

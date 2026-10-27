@@ -4848,3 +4848,46 @@ icoontjes met de titel erbij, en een lijntje onder het gekozen icoon.
   Geen veeg: opzij vegen gaat al van tabblad naar tabblad.
 - **Zoeken en ⋮** horen bij je eigen routines en staan alleen bij Workouts.
   *Stoppen* van een lopend schema kreeg een icoon.
+
+## 224. De check voor je training
+
+Gevraagd als volgende stap na het schema: voor een sessie zeggen of ze
+vandaag kan. Na een mockup met vier vragen - ook zonder schema, wat
+*lichter* is, een regel in het ochtendrapport, en hoe streng - zei de
+gebruiker "maak het maar"; dus telkens het voorstel.
+
+- **FitLog rekent het zelf uit**, offline en gratis, uit wat het al weet:
+  de herstelschatting, je nacht en je horloge. De coach komt er pas bij op
+  *Waarom?*, en dan als een vraag die klaarstaat, niet verstuurd: een vraag
+  kost geld, dus de gebruiker verstuurt ze.
+- **Drie soorten seinen, elk één keer**: een spier met minstens drie
+  werksets in de sessie die nog meer dan twaalf uur nodig heeft (een paar
+  uur kan een schatting niet onderscheiden, en één set van iets is niet
+  waar een sessie om draait); een nacht korter dan zes uur of met een score
+  onder 60; een HRV of rusthartslag voorbij de grens waarvan de
+  herstelschatting ze meetelt - dezelfde lijn, zodat de twee elkaar niet
+  tegenspreken. Hoeveel spieren er ook wachten, het is één sein.
+- **Niet strenger**: één sein is gaan, met een regel; pas twee is *beter
+  wachten*. Eén korte nacht of één spier die nog wat nodig heeft, is een
+  gewone trainingsdag.
+- **Beter wachten** stelt met een schema de open sessie van de week voor
+  met de minste seinen, en bij gelijke stand de minste uren die haar spieren
+  nog nodig hebben: de dagen zijn een richtlijn, een sessie telt op welke
+  dag ook. Zonder schema is er geen andere sessie, alleen *lichter* of
+  *toch*. Wacht elke sessie, dan zegt de check dat: rust, of lichter.
+- **Lichter** is wat de deload-instellingen van een sessie maken, voor die
+  ene sessie, zonder deload. Ze is `is_deload`, zodat wat je kan erover heen
+  kijkt, en daarnaast `is_light` (v56, een kolom erbij): een deload is een
+  rustweek, één lichtere sessie niet. Haar sets tellen mee bij de sets per
+  spiergroep, en ze breekt de weken training niet. Recordpogingen volgen de
+  deload-instelling. In een deload is een sessie al lichter: niet nog eens.
+- **Waar het staat**: als regel onder de sessie op Vandaag, en bij beter
+  wachten is het blok erover; bij elke open sessie onder Schema's; en als
+  één zin in het ochtendrapport, ook voor de coach. Het kleine Vandaag-blok
+  heeft er geen plaats voor en blijft de naam en Start. Weet de check niets
+  - geen recente training van de spieren, geen nacht, geen horloge - dan
+  zegt hij niets.
+- **Vers**: de check wordt opnieuw uitgerekend als wat hij leest verandert,
+  en als je terugkomt in de app. Geen klok die elk kwartier tikt: die bleef
+  hangen in elke test die zijn eigen container houdt, en een scherm dat
+  open blijft liggen, toont tot er iets verandert de check van toen.

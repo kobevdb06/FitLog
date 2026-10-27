@@ -384,10 +384,21 @@ void main() {
       find.descendant(of: row('Legs'), matching: find.text('beter wachten')),
       findsOneWidget,
     );
+    // Push is open, with Start under its name.
+    final start = find.widgetWithText(FilledButton, 'Start');
+    expect(start, findsOneWidget);
     expect(
-      find.descendant(
-        of: row('Push'),
-        matching: find.widgetWithText(FilledButton, 'Start'),
+      tester.getTopLeft(start).dy,
+      greaterThan(tester.getTopLeft(find.text('Push')).dy),
+    );
+    expect(
+      tester.getTopLeft(start).dy,
+      lessThan(tester.getTopLeft(find.text('Pull')).dy),
+    );
+    expect(
+      find.byWidgetPredicate(
+        // Read as it shows: the spaces in it do not break.
+        (w) => w is Text && w.data?.replaceAll(' ', ' ') == 'Bench Press 4 × 8',
       ),
       findsOneWidget,
     );

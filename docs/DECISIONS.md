@@ -4895,3 +4895,37 @@ gebruiker "maak het maar"; dus telkens het voorstel.
   en als je terugkomt in de app. Geen klok die elk kwartier tikt: die bleef
   hangen in elke test die zijn eigen container houdt, en een scherm dat
   open blijft liggen, toont tot er iets verandert de check van toen.
+
+## 225. Schema's: een lijst van deze week, de sessie van nu open
+
+Het scherm van een lopend schema liep achter en zei alles twee keer: de week
+als label en als strook, de split in de naam en eronder, "deze week" boven
+de kaart en erin, "dagen zijn een richtlijn" telkens weer, en *+ Schema*
+zweefde over de laatste sessie terwijl er maar één schema tegelijk loopt.
+Gevraagd: beter, en eerst mockups die echt verschillen. Vier in schets (een
+agenda per dag, de volgende sessie centraal, het hele schema in een raster,
+een compacte lijst), drie uitgewerkt op 360dp met grote letters; gekozen:
+de compacte lijst.
+
+- **Elk ding één keer.** De weken zijn een ring naast de naam: tot nu
+  gevuld, de deloadweek in amber, de week in het midden. Waar deze week om
+  draait en hoeveel ervan gedaan is, is de regel onder de naam.
+- **Deze week als één lijst**, de sessie van nu open: haar oefeningen op een
+  regel, *Start* en *Lichter*. Welke dat is, beslist hetzelfde als Start en
+  Vandaag: de eerste die nog open is, of de sessie die het meest klaar is
+  als de check dat zegt (224). Een tik op een andere open sessie zet die open; een gedane,
+  of een sessie voor het schema begint, opent haar routine. De dag waarvoor
+  een sessie bedoeld is, staat er alleen waar de check niets zegt.
+- **In de balk**: het gesprek van het schema als icoon, met een stip als de
+  coach iets voorstelt - de kaart met het voorstel blijft er ook, het is
+  iets om op te antwoorden. Onder ⋮ *Nieuw schema*, *Over dit schema* (de
+  split, wie de cijfers bijstelt, wanneer het begon, elke week met waar ze
+  om draait) en *Stoppen*.
+- **Geen zwevende knop terwijl een schema loopt.** Dat wijkt af van de
+  vraag om *+ Schema* gelijk te maken aan *+ Routine* (220): toen was er
+  nog geen lijst van deze week waar hij overheen viel. Zonder lopend
+  schema staat hij er wel, pas als vaststaat dat er geen loopt - anders
+  verscheen hij even en ging hij weer.
+- **De andere schema's** - in voorbereiding en eerdere - zijn met een
+  lopend schema één regel per soort die openklapt. Zonder lopend schema
+  zijn zij wat er is, en staan ze als vroeger.

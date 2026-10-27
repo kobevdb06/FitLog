@@ -78,6 +78,7 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
     final shelf = ref.watch(trainShelfChoiceProvider);
 
     final workouts = shelf == TrainShelf.workouts;
+    final running = ref.watch(runningPlanProvider);
 
     return Scaffold(
       appBar: PreferredSize(
@@ -103,7 +104,9 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
                 ),
               ),
               // Search and the menu are about your own routines.
-              actions: workouts ? _workoutActions() : const [],
+              actions: workouts
+                  ? _workoutActions()
+                  : const [PlanShelfActions()],
             ),
             // Exactly in the middle of the screen, whatever stands left and
             // right of it.
@@ -159,6 +162,11 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
               icon: const Icon(Icons.add),
               label: const Text('Routine'),
             )
+          // While a schema is followed, a new one is under ⋮: a button
+          // floating over this week's sessions was in the way of the last.
+          // Nor while that is not known yet: it would come and go again.
+          : !running.hasValue || running.value != null
+          ? null
           : FloatingActionButton.extended(
               onPressed: () => context.push(Routes.planNew),
               icon: const Icon(Icons.add),

@@ -62,6 +62,28 @@ void main() {
     }
   }
 
+  Finder semantics(String label) => find.byWidgetPredicate(
+    (w) => w is Semantics && w.properties.label == label,
+  );
+
+  /// A draft called [name], not started.
+  Future<void> draft(String id, String name) async {
+    await db.plansDao.createDraft(
+      id: id,
+      goal: 'Sterker',
+      split: PlanSplit.upperLower,
+      days: 0x15,
+      progression: PlanProgression.app,
+      at: DateTime.now(),
+    );
+    await db.plansDao.layOut(
+      id,
+      name: name,
+      weeks: const [PlanWeek(), PlanWeek()],
+      at: DateTime.now(),
+    );
+  }
+
   /// A running schema of three weeks, from this Monday, with [sessions].
   Future<List<String>> runningPlan({int sessions = 3}) async {
     await db.plansDao.createDraft(
@@ -195,24 +217,86 @@ void main() {
     await toPlans(tester);
 
     expect(find.text('Kracht en massa'), findsOneWidget);
-    expect(find.text('Week 1 van 3'), findsOneWidget);
-    expect(find.text('Deze week: rustig beginnen'), findsOneWidget);
-    expect(find.text('DEZE WEEK · 1 VAN 3'), findsOneWidget);
-    expect(find.text('Gedaan'), findsOneWidget);
-    // The next is the first not done, whatever day it is meant for.
+    // The weeks are the ring, this week the line under the name.
+    expect(semantics('Week 1 van 3'), findsOneWidget);
+    expect(find.text('1/3'), findsOneWidget);
+    expect(find.text('Rustig beginnen · 1 van 3 gedaan'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) => w is Icon && w.semanticLabel == 'Gedaan'),
+      findsOneWidget,
+    );
+    // And each of them once.
+    expect(find.text('Week 1 van 3'), findsNothing);
+    expect(find.textContaining('DEZE WEEK'), findsNothing);
+    expect(find.textContaining('cijfers'), findsNothing);
+    expect(find.text('dagen zijn een richtlijn'), findsNothing);
+    // The next is the first not done, open with what is in it, whatever
+    // day it is meant for.
     final start = find.widgetWithText(FilledButton, 'Start');
     expect(start, findsOneWidget);
     expect(
-      find.ancestor(of: start, matching: find.byType(ListTile)),
-      findsOneWidget,
+      tester.getTopLeft(start).dy,
+      greaterThan(tester.getTopLeft(find.text('Sessie 2')).dy),
     );
     expect(
-      find.descendant(
-        of: find.ancestor(of: start, matching: find.byType(ListTile)),
-        matching: find.text('Sessie 2'),
-      ),
-      findsOneWidget,
+      tester.getTopLeft(start).dy,
+      lessThan(tester.getTopLeft(find.text('Sessie 3')).dy),
     );
+    expect(find.text('Nog geen oefeningen'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Lichter'), findsOneWidget);
+  });
+
+  testWidgets('een tik op een andere sessie zet die open', (tester) async {
+    await runningPlan();
+    await pump(tester);
+    await toPlans(tester);
+
+    await tester.tap(find.text('Sessie 3'));
+    await tester.pump();
+
+    final start = find.widgetWithText(FilledButton, 'Start');
+    expect(start, findsOneWidget);
+    expect(
+      tester.getTopLeft(start).dy,
+      greaterThan(tester.getTopLeft(find.text('Sessie 3')).dy),
+    );
+  });
+
+  testWidgets('onder ⋮: een nieuw schema, wat dit schema is, en stoppen', (
+    tester,
+  ) async {
+    await runningPlan();
+    await pump(tester);
+    await toPlans(tester);
+    // While one is followed, nothing floats over its sessions.
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await tester.tap(find.byTooltip('Meer'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nieuw schema'), findsOneWidget);
+    expect(find.text('Stoppen'), findsOneWidget);
+
+    await tester.tap(find.text('Over dit schema'));
+    await tester.pumpAndSettle();
+    expect(find.text('Push/pull/legs'), findsOneWidget);
+    expect(find.text('FitLog stelt ze bij'), findsOneWidget);
+    expect(find.text('Rustig beginnen'), findsOneWidget);
+    expect(find.text('Deload: elke sessie lichter'), findsOneWidget);
+  });
+
+  testWidgets('de andere schema\'s staan eronder, één regel per soort', (
+    tester,
+  ) async {
+    await runningPlan();
+    await draft('p-2', 'Volgende blok');
+    await pump(tester);
+    await toPlans(tester);
+
+    expect(find.text('In voorbereiding'), findsOneWidget);
+    expect(find.text('Volgende blok'), findsNothing);
+    await tester.tap(find.text('In voorbereiding'));
+    await tester.pumpAndSettle();
+    expect(find.text('Volgende blok'), findsOneWidget);
   });
 
   testWidgets('een voorstel van de coach staat bovenaan het schema', (
@@ -246,6 +330,11 @@ void main() {
 
     expect(find.text('De coach stelt iets voor'), findsOneWidget);
     expect(find.text('Aanvaarden of houden'), findsOneWidget);
+    // And a dot on the conversation in the bar.
+    expect(
+      find.byWidgetPredicate((w) => w is Badge && w.isLabelVisible),
+      findsOneWidget,
+    );
   });
 
   testWidgets('op Start biedt Vandaag de volgende sessie van het schema aan', (
@@ -308,11 +397,19 @@ void main() {
     await toPlans(tester);
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Week 1 van 3'), findsOneWidget);
+    expect(semantics('Week 1 van 3'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Lichter'), findsOneWidget);
+    // The conversation and ⋮ fit beside the switch.
+    expect(
+      tester.getRect(find.byTooltip('Gesprek met de coach')).left,
+      greaterThan(tester.getRect(find.byTooltip("Schema's")).right),
+    );
   });
 
-  testWidgets('wat onderaan staat, komt boven de knop uit', (tester) async {
+  testWidgets('een lopend schema: tot de laatste sessie in beeld', (
+    tester,
+  ) async {
     await runningPlan(sessions: 7);
     await pump(tester, size: const Size(360, 640));
     await toPlans(tester);
@@ -326,7 +423,32 @@ void main() {
     page.position.jumpTo(page.position.maxScrollExtent);
     await tester.pump();
 
-    final last = tester.getRect(find.text('Sessie 7'));
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(tester.getRect(find.text('Sessie 7')).bottom, lessThan(640));
+  });
+
+  testWidgets('zonder lopend schema komt wat onderaan staat boven de knop '
+      'uit', (tester) async {
+    for (var i = 1; i <= 9; i++) {
+      await draft('d-$i', 'Ontwerp $i');
+    }
+    await pump(tester, size: const Size(360, 640));
+    await toPlans(tester);
+
+    final page = tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    page.position.jumpTo(page.position.maxScrollExtent);
+    await tester.pump();
+
+    // Whichever of them comes last.
+    final last = tester
+        .widgetList<Text>(find.textContaining('Ontwerp '))
+        .map((text) => tester.getRect(find.byWidget(text)))
+        .reduce((a, b) => a.bottom > b.bottom ? a : b);
     final button = tester.getRect(find.byType(FloatingActionButton));
     expect(last.bottom, lessThan(button.top));
   });

@@ -36,6 +36,7 @@ import '../../plans/presentation/plan_providers.dart';
 import '../../readiness/domain/training_check.dart';
 import '../../readiness/presentation/check_providers.dart';
 import '../../readiness/presentation/check_sheet.dart';
+import '../../routines/presentation/routine_start.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
 ///
@@ -1337,12 +1338,7 @@ class _PlanCard extends ConsumerWidget {
     WidgetRef ref,
     String routineId, {
     bool lighter = false,
-  }) async {
-    await ref
-        .read(workoutControllerProvider)
-        .startFromRoutine(routineId, lighter: lighter);
-    if (context.mounted) context.push(Routes.workout);
-  }
+  }) => startSession(context, ref, routineId: routineId, lighter: lighter);
 }
 
 typedef _Starter = Future<void> Function(

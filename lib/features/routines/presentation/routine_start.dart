@@ -30,11 +30,16 @@ Future<void> startSession(
     return;
   }
 
+  // Taken before the start: the session shows up while it is still being
+  // set up - lighter takes a while - and the card that asked for it on
+  // Vandaag gives way to "Je workout loopt". Its context is gone by then,
+  // and the start would end on Start instead of in the session.
+  final router = GoRouter.of(context);
   final controller = ref.read(workoutControllerProvider);
   if (routineId == null) {
     await controller.startEmpty();
   } else {
     await controller.startFromRoutine(routineId, lighter: lighter);
   }
-  if (context.mounted) context.push(Routes.workout);
+  router.push(Routes.workout);
 }

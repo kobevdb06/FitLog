@@ -19,6 +19,7 @@ import 'features/chat/presentation/coach_session.dart';
 import 'features/health/presentation/health_providers.dart';
 import 'features/morning/data/morning_alarm.dart';
 import 'features/morning/presentation/morning_providers.dart';
+import 'features/readiness/presentation/check_providers.dart';
 import 'features/review/data/week_alarm.dart';
 import 'features/review/presentation/review_providers.dart';
 import 'features/routines/domain/quick_start.dart';
@@ -186,6 +187,9 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         // Back in the app: whatever the watch handed Health Connect since.
         // Does nothing while locked or when Health Connect is not connected.
         unawaited(ref.read(healthSyncProvider.notifier).sync());
+        // And the check before a session as it stands now, not as it stood
+        // when you left.
+        ref.invalidate(checkBodyTodayProvider);
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:

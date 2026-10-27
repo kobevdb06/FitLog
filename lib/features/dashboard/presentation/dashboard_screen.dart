@@ -33,6 +33,9 @@ import '../../health/presentation/health_providers.dart';
 import '../../../core/widgets/week_navigator.dart';
 import '../../deload/presentation/deload_banner.dart';
 import '../../plans/presentation/plan_providers.dart';
+import '../../readiness/domain/training_check.dart';
+import '../../readiness/presentation/check_providers.dart';
+import '../../readiness/presentation/check_sheet.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
 ///
@@ -1197,6 +1200,12 @@ class _PlanCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final lead = plan.lead!;
     final others = plan.rest;
+    // The check before the session: a line under its name, and when it had
+    // better wait, the card is about that.
+    final check = ref.watch(todayCheckProvider);
+    if (check != null && check.lead.verdict == CheckVerdict.wait) {
+      return _WaitCard(plan: plan, check: check, start: _start);
+    }
 
     return AppCard(
       child: Column(
@@ -1217,6 +1226,13 @@ class _PlanCard extends ConsumerWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          if (check != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            CheckLine(
+              check: check.lead,
+              onTap: () => showCheckSheet(context, ref, check),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xs),
           Text(
             _subtitle(lead),
@@ -1228,7 +1244,9 @@ class _PlanCard extends ConsumerWidget {
                   : theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: AppSpacing.lg),
+          // A little less room above the buttons with the check's line:
+          // three rows of the grid still hold the card.
+          SizedBox(height: check == null ? AppSpacing.lg : AppSpacing.md),
           // Side by side rather than under each other: three rows of the
           // grid hold the card that way, also with large text.
           SizedBox(
@@ -1314,14 +1332,153 @@ class _PlanCard extends ConsumerWidget {
     return 'Laatst gedaan ${Formatters.relativeDay(at).toLowerCase()}';
   }
 
-  Future<void> _start(
+  static Future<void> _start(
     BuildContext context,
     WidgetRef ref,
-    String routineId,
-  ) async {
-    await ref.read(workoutControllerProvider).startFromRoutine(routineId);
+    String routineId, {
+    bool lighter = false,
+  }) async {
+    await ref
+        .read(workoutControllerProvider)
+        .startFromRoutine(routineId, lighter: lighter);
     if (context.mounted) context.push(Routes.workout);
   }
+}
+
+typedef _Starter = Future<void> Function(
+  BuildContext context,
+  WidgetRef ref,
+  String routineId, {
+  bool lighter,
+});
+
+/// Vandaag when its session had better wait: why, and what instead - the
+/// readiest session of the week, or the same one lighter, or it anyway.
+class _WaitCard extends ConsumerWidget {
+  const _WaitCard({
+    required this.plan,
+    required this.check,
+    required this.start,
+  });
+
+  final TodayPlan plan;
+  final TodayCheck check;
+  final _Starter start;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final lead = check.lead;
+    final instead = check.instead;
+    void sheet() => showCheckSheet(context, ref, check);
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            plan.schema?.label ?? 'Vandaag',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${lead.routineName} kan beter wachten',
+            style: theme.textTheme.titleLarge,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          CheckLine(check: lead, onTap: sheet),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            height: 52,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => instead == null
+                        ? start(context, ref, lead.routineId, lighter: true)
+                        : start(context, ref, instead.routineId),
+                    icon: Icon(
+                      instead == null ? Icons.battery_3_bar : Icons.play_arrow,
+                    ),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        instead == null
+                            ? '${lead.routineName}, lichter'
+                            : 'Doe vandaag ${instead.routineName}',
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                IconButton.outlined(
+                  tooltip: 'Andere keuzes',
+                  constraints: const BoxConstraints.tightFor(
+                    width: 52,
+                    height: 52,
+                  ),
+                  onPressed: sheet,
+                  icon: const Icon(Icons.tune),
+                ),
+              ],
+            ),
+          ),
+          // The other choices, as far as the block has room; all of them
+          // are behind Andere keuzes too.
+          Expanded(
+            child: FitColumn(
+              children: [
+                const Divider(height: AppSpacing.lg),
+                Text(
+                  'Of',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (instead != null)
+                  _ChoiceRow(
+                    title: '${lead.routineName}, lichter',
+                    onStart: () =>
+                        start(context, ref, lead.routineId, lighter: true),
+                  ),
+                _ChoiceRow(
+                  title: 'Toch ${lead.routineName}',
+                  onStart: () => start(context, ref, lead.routineId),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({required this.title, required this.onStart});
+
+  final String title;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    dense: true,
+    contentPadding: EdgeInsets.zero,
+    onTap: onStart,
+    title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+    trailing: IconButton(
+      tooltip: 'Starten',
+      onPressed: onStart,
+      icon: const Icon(Icons.play_arrow),
+    ),
+  );
 }
 
 class _OtherRoutineRow extends StatelessWidget {

@@ -12,6 +12,9 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../chat/presentation/coach_session.dart';
+import '../../readiness/domain/training_check.dart';
+import '../../readiness/presentation/check_providers.dart';
+import '../../readiness/presentation/check_sheet.dart';
 import '../../routines/presentation/routine_start.dart';
 import '../data/plan_actions.dart';
 import 'plan_start_sheet.dart';
@@ -189,6 +192,10 @@ class _RunningPlan extends ConsumerWidget {
     final coach = ref.watch(coachEnabledProvider);
     final thisWeek = plan.weekPlan(week);
     final waiting = ref.watch(planOpenChangesProvider(plan.id)).value ?? 0;
+    // Start goes where the check before it says: the session that was next,
+    // or when that one had better wait, the readiest of the week.
+    final start =
+        ref.watch(todayCheckProvider)?.start.routineId ?? standing?.next;
 
     final where = switch (week) {
       _ when over => 'Alle weken voorbij',
@@ -345,7 +352,8 @@ class _RunningPlan extends ConsumerWidget {
               _SessionRow(
                 session: session,
                 done: standing?.done.contains(session.id) ?? false,
-                next: week >= 1 && standing?.next == session.id,
+                next: week >= 1 && start == session.id,
+                checked: week >= 1 && !over,
               ),
           ],
         ],
@@ -417,11 +425,15 @@ class _SessionRow extends ConsumerWidget {
     required this.session,
     required this.done,
     required this.next,
+    this.checked = false,
   });
 
   final RoutineRow session;
   final bool done;
   final bool next;
+
+  /// Whether the session is checked: in a week of the schema, not done yet.
+  final bool checked;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -430,6 +442,9 @@ class _SessionRow extends ConsumerWidget {
       final weekday? => Formatters.weekdayShort(weekday),
       null => null,
     };
+    final check = checked && !done && !next
+        ? ref.watch(trainingCheckProvider(session.id))
+        : null;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(
@@ -450,6 +465,20 @@ class _SessionRow extends ConsumerWidget {
                   startSession(context, ref, routineId: session.id),
               icon: const Icon(Icons.play_arrow),
               label: const Text('Start'),
+            )
+          : check != null && check.informed
+          ? InkWell(
+              onTap: () =>
+                  showCheckSheet(context, ref, TodayCheck(lead: check)),
+              borderRadius: BorderRadius.circular(8),
+              child: _Chip(
+                text: switch (check.verdict) {
+                  CheckVerdict.ready => 'klaar',
+                  CheckVerdict.note => 'let op',
+                  CheckVerdict.wait => 'beter wachten',
+                },
+                color: checkColor(check.verdict),
+              ),
             )
           : null,
     );

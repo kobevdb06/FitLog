@@ -209,10 +209,12 @@ void main() {
     testWidgets('zonder horloge: wat je zelf invult, en hoe je meer krijgt', (
       tester,
     ) async {
+      // Before the screen's noon, whatever the hour the test runs at.
+      final today = DateTime.now();
       await tester.runAsync(
         () => db.recoveryDao.setSleep(
-          fellAsleepAt: DateTime.now().subtract(const Duration(hours: 9)),
-          wokeAt: DateTime.now().subtract(const Duration(hours: 1)),
+          fellAsleepAt: DateTime(today.year, today.month, today.day - 1, 23),
+          wokeAt: DateTime(today.year, today.month, today.day, 7),
         ),
       );
       await pumpScreen(tester);

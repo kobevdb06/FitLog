@@ -1371,13 +1371,28 @@ class _WaitCard extends ConsumerWidget {
     final lead = check.lead;
     final instead = check.instead;
     void sheet() => showCheckSheet(context, ref, check);
+    final choices = [
+      if (instead != null)
+        _ChoiceRow(
+          title: '${lead.routineName}, lichter',
+          onStart: () => start(context, ref, lead.routineId, lighter: true),
+        ),
+      _ChoiceRow(
+        title: 'Toch ${lead.routineName}',
+        onStart: () => start(context, ref, lead.routineId),
+      ),
+    ];
 
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // The session on the small line, what the check says as the
+          // title: "Legs kan beter wachten" in one line was cut off after
+          // the name on a narrow phone with large text - and the name is
+          // the part that can be long.
           Text(
-            plan.schema?.label ?? 'Vandaag',
+            lead.routineName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelMedium?.copyWith(
@@ -1386,7 +1401,7 @@ class _WaitCard extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${lead.routineName} kan beter wachten',
+            'Kan beter wachten',
             style: theme.textTheme.titleLarge,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1431,27 +1446,26 @@ class _WaitCard extends ConsumerWidget {
             ),
           ),
           // The other choices, as far as the block has room; all of them
-          // are behind Andere keuzes too.
+          // are behind Andere keuzes too. "Of" comes with the first of
+          // them or not at all: on its own it was a heading over nothing.
           Expanded(
             child: FitColumn(
               children: [
-                const Divider(height: AppSpacing.lg),
-                Text(
-                  'Of',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Divider(height: AppSpacing.lg),
+                    Text(
+                      'Of',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    choices.first,
+                  ],
                 ),
-                if (instead != null)
-                  _ChoiceRow(
-                    title: '${lead.routineName}, lichter',
-                    onStart: () =>
-                        start(context, ref, lead.routineId, lighter: true),
-                  ),
-                _ChoiceRow(
-                  title: 'Toch ${lead.routineName}',
-                  onStart: () => start(context, ref, lead.routineId),
-                ),
+                ...choices.skip(1),
               ],
             ),
           ),

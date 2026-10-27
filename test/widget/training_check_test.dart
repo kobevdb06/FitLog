@@ -6,6 +6,7 @@ import 'package:fitlog/core/calc/recovery.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/core/util/paths.dart';
+import 'package:fitlog/core/widgets/common.dart';
 import 'package:fitlog/app.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
@@ -218,8 +219,8 @@ void main() {
         'start Push', (tester) async {
       await pump(tester, estimates: [sore()], nights: [night(shortNight)]);
 
-      expect(find.text('Kracht en massa · week 1 van 3'), findsOneWidget);
-      expect(find.text('Legs kan beter wachten'), findsOneWidget);
+      expect(find.text('Legs'), findsOneWidget);
+      expect(find.text('Kan beter wachten'), findsOneWidget);
       expect(
         find.textContaining('Quadriceps nog 40 u · 5 u 10 geslapen'),
         findsOneWidget,
@@ -263,6 +264,8 @@ void main() {
       expect(workout?.routineId, ids['Legs']);
       expect(workout?.isLight, isTrue);
       expect(workout?.isDeload, isTrue);
+      // And into it, as every Start does.
+      expect(find.text('de workout'), findsOneWidget);
     });
 
     testWidgets('Waarom? zet een vraag klaar voor de coach, niet verstuurd', (
@@ -328,8 +331,23 @@ void main() {
         size: const Size(360, 800),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('Legs kan beter wachten'), findsOneWidget);
+      expect(find.text('Kan beter wachten'), findsOneWidget);
       expect(find.byTooltip('Andere keuzes'), findsOneWidget);
+      // No room for the choices below: then no heading over nothing.
+      final card = tester.getRect(
+        find
+            .ancestor(
+              of: find.text('Kan beter wachten'),
+              matching: find.byType(AppCard),
+            )
+            .first,
+      );
+      if (tester.getRect(find.text('Of')).top < card.bottom) {
+        expect(
+          tester.getRect(find.text('Legs, lichter')).bottom,
+          lessThanOrEqualTo(card.bottom),
+        );
+      }
 
       await tester.tap(find.byTooltip('Andere keuzes'));
       await tester.pumpAndSettle();

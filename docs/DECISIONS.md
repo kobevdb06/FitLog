@@ -4882,7 +4882,11 @@ gebruiker "maak het maar"; dus telkens het voorstel.
   spiergroep, en ze breekt de weken training niet. Recordpogingen volgen de
   deload-instelling. In een deload is een sessie al lichter: niet nog eens.
 - **Waar het staat**: als regel onder de sessie op Vandaag, en bij beter
-  wachten is het blok erover; bij elke open sessie onder Schema's; en als
+  wachten is het blok erover - met *Kan beter wachten* als titel en de
+  sessie klein erboven, niet "Legs kan beter wachten" uit de mockup: op een
+  smalle gsm met grote letters viel na een lange naam net het oordeel weg.
+  *Of* met de andere keuzes staat er alleen als de eerste keuze eronder
+  past; bij elke open sessie onder Schema's; en als
   één zin in het ochtendrapport, ook voor de coach. Het kleine Vandaag-blok
   heeft er geen plaats voor en blijft de naam en Start. Weet de check niets
   - geen recente training van de spieren, geen nacht, geen horloge - dan

@@ -271,14 +271,18 @@ class _AboutPlan extends StatelessWidget {
     );
     final current = plan.weekAt(DateTime.now());
 
+    // The label as wide as it is, the value the rest and against the right
+    // edge: shared halves broke "De coach zet ze elke week" over two lines
+    // and left a short value standing in the middle.
     Widget fact(String label, String value) => Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
-          Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
-          const SizedBox(width: AppSpacing.sm),
-          Flexible(
+          Text(label, style: theme.textTheme.bodyLarge),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
@@ -295,10 +299,11 @@ class _AboutPlan extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // A value, not a sentence: no capital, as the split is said.
           fact('Split', switch (plan.splitKind) {
-            PlanSplit.custom => 'Eigen split',
-            PlanSplit.coach => 'Split van de coach',
-            final split => split.label,
+            PlanSplit.custom => 'eigen split',
+            PlanSplit.coach => 'gekozen door de coach',
+            final split => split.label.toLowerCase(),
           }),
           fact('Cijfers', switch (plan.progressionKind) {
             PlanProgression.app => 'FitLog stelt ze bij',

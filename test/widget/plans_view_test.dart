@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/calc/plan_weeks.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/formatting/formatters.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:fitlog/features/dashboard/presentation/today_providers.dart';
@@ -278,10 +279,46 @@ void main() {
 
     await tester.tap(find.text('Over dit schema'));
     await tester.pumpAndSettle();
-    expect(find.text('Push/pull/legs'), findsOneWidget);
+    expect(find.text('push/pull/legs'), findsOneWidget);
     expect(find.text('FitLog stelt ze bij'), findsOneWidget);
     expect(find.text('Rustig beginnen'), findsOneWidget);
     expect(find.text('Deload: elke sessie lichter'), findsOneWidget);
+  });
+
+  testWidgets('over dit schema op een smalle gsm: elke waarde rechts, op '
+      'één regel', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await runningPlan();
+    // The coach sets the numbers: the longest of the two.
+    await (db.update(db.trainingPlansTable)..where((t) => t.id.equals('p-1')))
+        .write(const TrainingPlansTableCompanion(progression: Value('coach')));
+    await pump(tester, size: const Size(360, 800));
+    await toPlans(tester);
+
+    await tester.tap(find.byTooltip('Meer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Over dit schema'));
+    await tester.pumpAndSettle();
+
+    final now = DateTime.now();
+    final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+    final split = tester.getRect(find.text('push/pull/legs'));
+    final numbers = tester.getRect(find.text('De coach zet ze elke week'));
+    final began = tester.getRect(
+      find.text(Formatters.weekdayDayMonthShort(monday)),
+    );
+    // All the room beside its label, not half the row: in half,
+    // "De coach zet ze elke week" broke over two lines on the phone. (The
+    // test font is wider than the phone's, so the line itself is not what
+    // to count here.)
+    expect(
+      numbers.left,
+      closeTo(tester.getRect(find.text('Cijfers')).right + 12, 1),
+    );
+    // And all three against the right edge.
+    expect(numbers.right, closeTo(split.right, 1));
+    expect(began.right, closeTo(split.right, 1));
   });
 
   testWidgets('de andere schema\'s staan eronder, één regel per soort', (

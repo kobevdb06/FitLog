@@ -11,7 +11,7 @@ class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   /// Kept in step with `version:` in pubspec.yaml.
-  static const String appVersion = '1.65.1';
+  static const String appVersion = '1.66.0';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

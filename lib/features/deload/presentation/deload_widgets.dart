@@ -30,9 +30,12 @@ class DeloadTag extends StatelessWidget {
 }
 
 /// Under an exercise in a deload session: what the set is now, that it may
-/// feel light, and what the last ordinary time was.
+/// feel light, and what the last ordinary time was. "Lichter" in a session
+/// made lighter on its own, which is no deload.
 class DeloadLine extends StatelessWidget {
-  const DeloadLine({super.key, this.now, this.before});
+  const DeloadLine({super.key, this.now, this.before, this.light = false});
+
+  final bool light;
 
   /// `72,5 kg × 8`, or null for a set with nothing in it.
   final String? now;
@@ -65,8 +68,9 @@ class DeloadLine extends StatelessWidget {
           children: [
             Text(
               now == null
-                  ? 'Deload: het mag licht voelen.'
-                  : 'Deload: $now, het mag licht voelen.',
+                  ? '${light ? 'Lichter' : 'Deload'}: het mag licht voelen.'
+                  : '${light ? 'Lichter' : 'Deload'}: $now, het mag licht '
+                        'voelen.',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),

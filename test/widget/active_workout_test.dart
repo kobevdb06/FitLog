@@ -767,6 +767,29 @@ void main() {
       expect(find.textContaining('Probeer'), findsNothing);
     });
 
+    testWidgets('één sessie lichter zegt lichter, niet deload', (tester) async {
+      await tester.runAsync(
+        () =>
+            (db.update(
+              db.workoutsTable,
+            )..where((t) => t.id.equals(workoutId))).write(
+              const WorkoutsTableCompanion(
+                isDeload: Value(true),
+                isLight: Value(true),
+              ),
+            ),
+      );
+      await pumpScreen(tester);
+      await settle(tester);
+
+      expect(find.text('Lichter'), findsOneWidget);
+      expect(
+        find.text('Lichter: 100 kg × 5, het mag licht voelen.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Deload'), findsNothing);
+    });
+
     testWidgets('geen recordpoging, tenzij de deload ze toelaat', (
       tester,
     ) async {

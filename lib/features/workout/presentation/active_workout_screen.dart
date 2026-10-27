@@ -1058,6 +1058,7 @@ class _ExerciseCard extends ConsumerWidget {
       distanceM: open.distanceM,
     );
     return DeloadLine(
+      light: workout.workout.isLight,
       now: now == '-' ? null : now,
       before: before.isEmpty
           ? null

@@ -108,7 +108,19 @@ class _MainLifts extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHeader('Hoofdoefeningen'),
+        // What the kilos are, once for all of them. Repetitions and a time
+        // say what they are by their unit.
+        SectionHeader(
+          'Hoofdoefeningen',
+          action: lifts.any((l) => l.trend.measure == ProgressMeasure.oneRm)
+              ? Text(
+                  'geschatte 1RM',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : null,
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: AppCard(
@@ -133,7 +145,8 @@ class _MainLifts extends ConsumerWidget {
   }
 }
 
-/// One exercise: where it stands, how far it came, and the line between.
+/// One exercise: where it stands, how far it came, and the line between -
+/// in two lines, the line beside how far it came.
 class _LiftRow extends ConsumerWidget {
   const _LiftRow({required this.lift});
 
@@ -165,11 +178,13 @@ class _LiftRow extends ConsumerWidget {
       final from? => latest - _shown(formatters, trend.measure, from),
       null => null,
     };
+    // Without two ends to compare, how often it was done.
     final moved = shownChange == null
-        ? null
+        ? sessions
         : '${_difference(formatters, trend.measure, shownChange)} sinds '
               '${Formatters.dayMonth(trend.since)}';
     final up = shownChange != null && shownChange > 0;
+    final value = _value(formatters, trend.measure, latest);
 
     return InkWell(
       onTap: () => context.push(Routes.exerciseCharts(lift.exercise.id)),
@@ -178,52 +193,61 @@ class _LiftRow extends ConsumerWidget {
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Only the value beside the name: the change has a date in it,
-            // and next to a long name on a narrow phone with a large font it
-            // ran off the card.
-            MergeSemantics(
-              child: Column(
+        child: MergeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Only the value beside the name: the change has a date in
+              // it, and next to a long name on a narrow phone with a large
+              // font it ran off the card.
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          lift.exercise.name,
-                          style: theme.textTheme.titleSmall,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Text(
-                        _value(formatters, trend.measure, latest),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: Text(
+                      lift.exercise.name,
+                      style: theme.textTheme.titleSmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  Text('$what · $sessions', style: muted),
-                  if (moved != null)
-                    Text(
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    value,
+                    // The header says it once for the eye; a screen reader
+                    // hears it with every number.
+                    semanticsLabel: '$what $value',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
                       moved,
                       style: muted?.copyWith(
                         color: up ? AppColors.success : null,
                       ),
                     ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  ExcludeSemantics(
+                    child: SizedBox(
+                      width: 96,
+                      child: Sparkline(
+                        values: [for (final p in trend.points) p.value],
+                        height: 28,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ExcludeSemantics(
-              child: Sparkline(values: [for (final p in trend.points) p.value]),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

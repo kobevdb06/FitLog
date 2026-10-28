@@ -272,7 +272,9 @@ void main() {
       // 107.5 for three, against 100 for three at the start: 118.25 and
       // 110, to the whole kilo - an estimate is not that precise.
       expect(find.text('118 kg'), findsOneWidget);
-      expect(find.text('Geschatte 1RM · 6 sessies'), findsOneWidget);
+      // What the number is, once above them all rather than under each.
+      expect(find.text('geschatte 1RM'), findsOneWidget);
+      expect(find.textContaining('Geschatte 1RM ·'), findsNothing);
       expect(
         find.text('+8 kg sinds ${Formatters.dayMonth(daysAgo(70))}'),
         findsOneWidget,
@@ -282,7 +284,7 @@ void main() {
         findsOneWidget,
       );
       // Two sessions: where it stands, nothing to compare yet.
-      expect(find.text('Geschatte 1RM · 2 sessies'), findsOneWidget);
+      expect(find.text('2 sessies'), findsOneWidget);
       expect(
         find.textContaining('sinds ${Formatters.dayMonth(daysAgo(30))}'),
         findsNothing,

@@ -247,7 +247,15 @@ void main() {
 
       expect(find.text('Check voor Legs'), findsOneWidget);
       expect(find.text('Beter wachten'), findsOneWidget);
-      expect(find.text('Quadriceps'), findsOneWidget);
+      // In the sheet: the recovery block on Start behind it names the
+      // muscle too.
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('Quadriceps'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('4 sets'), findsOneWidget);
       expect(find.textContaining('nog 40 u'), findsWidgets);
       expect(find.textContaining('5 u 10 · score'), findsOneWidget);

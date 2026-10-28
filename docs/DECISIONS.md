@@ -4952,3 +4952,34 @@ grafiek); gekozen: de figuur.
   al gekozen; op een gemeten maat haar verloop, met het verschil en
   *waarvan*: "gelijk sinds 4 okt", "+0,5 cm sinds 4 okt". Geen zwevende
   knop meer: elke maat is haar eigen knop.
+
+## 227. Herstel is vandaag, Gezondheid de laatste 30 dagen
+
+Na de schermronde (PLAN.md §2.1) stond op Herstel en Gezondheid veel dubbel:
+afgelopen nacht in het ochtendrapport, in het blok Slaap en nog eens op
+Gezondheid; je gewicht op Gezondheid, Lichaamsmetingen en Profiel; de vraag
+"kan ik vandaag trainen" in het rapport, terwijl de check (224) er niet
+stond. Na een rapport en mockups gekozen: de twee schermen apart houden, elk
+met één vraag.
+
+- **Herstel is vandaag.** Bovenaan de check van de volgende sessie, met het
+  ochtendrapport in dezelfde kaart, in woorden: de score en de pillen die
+  het rapport bovenaan had, zeiden wat de regel van de nacht eronder ook
+  zegt. Afgelopen nacht is één regel - wanneer, hoe lang, de score, de
+  fasen - met een tik om aan te passen. De spiergroepen zijn een lijst; Fris,
+  Stijf en Pijnlijk staan in een blad achter de spiergroep, met waarom de
+  schatting is wat ze is, in plaats van drie knoppen onder elke spier. De
+  vaste uitleg bovenaan en onderaan staat achter de ⓘ.
+- **Gezondheid is de laatste 30 dagen.** Slaap is je gemiddelde, je
+  gemiddelde score en een balkje per nacht, niet nog eens afgelopen nacht
+  met haar fasen. Gewicht is een regel naar Lichaamsmetingen (226), geen
+  tweede grafiek. Health Connect is één regel bovenaan, met wanneer het
+  laatst was, en ophalen is het pijltje in de balk; het tandwiel en het vak
+  met de knop gingen weg. De uitleg bij HRV en rusthartslag staat achter de
+  ⓘ van hun kaart.
+- **Je gewicht op één plek**: Profiel heeft onder Gegevens *Gewicht en
+  maten*, met je laatste weging, en leidt naar Lichaamsmetingen.
+- Mee opgelost in dezelfde ronde: de namen in de tabbalk op één regel met
+  grote letters, ronde getallen met een komma langs de grafieken, een
+  hoofdletter voor een spiergroep die op zich staat, en het balkje met
+  slaapfasen dat 0 hoog was.

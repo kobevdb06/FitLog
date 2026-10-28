@@ -72,11 +72,11 @@ String nightLength(Duration d) {
   return minutes == 0 ? '${d.inHours} u' : '${d.inHours} u $minutes';
 }
 
-/// Last night, the way to fill it in, and the way to the nights before.
+/// Last night in a line - when, how long, its score - and the way to fill
+/// it in or correct it.
 ///
-/// Only last night: the recovery screen asks about today. Every night is on
-/// the sleep screen, a week at a time, so this card stays one night long
-/// however long you have been keeping track.
+/// Only last night: Herstel is about today. The nights before are a tap
+/// away, a week at a time, and Gezondheid shows the last 30 together.
 class SleepSection extends ConsumerWidget {
   const SleepSection({super.key});
 
@@ -87,6 +87,9 @@ class SleepSection extends ConsumerWidget {
     final vitals = ref.watch(vitalsDaysProvider).value ?? const [];
     final today = DateTime.now();
     final todayKey = _dayKey(today);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
 
     SleepEntryRow? lastNight;
     for (final row in rows) {
@@ -95,62 +98,102 @@ class SleepSection extends ConsumerWidget {
         lastNight = row;
       }
     }
+    final night = lastNight;
 
+    final String title;
+    final String detail;
+    if (night == null) {
+      title = 'Afgelopen nacht invullen';
+      detail = rows.isEmpty
+          ? 'Korte nachten rekken je herstel; lange maken het niet korter.'
+          : 'Afgelopen nacht staat er nog niet bij.';
+    } else {
+      final asleep = DateTime.fromMillisecondsSinceEpoch(night.fellAsleepAt);
+      final woke = DateTime.fromMillisecondsSinceEpoch(night.wokeAt);
+      title =
+          '${Formatters.time(asleep)} – ${Formatters.time(woke)}  ·  '
+          '${nightLength(woke.difference(asleep))}';
+      detail = [
+        'afgelopen nacht',
+        'slaapscore ${nightScore(night, vitals).value}',
+        if (night.source != null) 'via Health Connect',
+        if (night.deepMinutes case final m?)
+          'diep ${nightLength(Duration(minutes: m))}',
+        if (night.remMinutes case final m?)
+          'REM ${nightLength(Duration(minutes: m))}',
+        if (night.lightMinutes case final m?)
+          'licht ${nightLength(Duration(minutes: m))}',
+      ].join(' · ');
+    }
+
+    final healthConnect = ref.watch(healthConnectEnabledProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: AppCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (lastNight case final night?)
-              NightRow(
-                row: night,
-                score: nightScore(night, vitals),
-                onTap: () => editNight(
-                  context,
-                  ref,
-                  wakeDay: DateTime.fromMillisecondsSinceEpoch(night.wokeAt),
-                  existing: night,
-                ),
-              )
-            else
-              Text(
-                rows.isEmpty
-                    ? 'Hoe laat viel je in slaap, en wanneer werd je wakker? '
-                          'Korte nachten rekken je herstel; lange maken het '
-                          'niet korter.'
-                    : 'Afgelopen nacht staat er nog niet bij.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+            InkWell(
+              onTap: () => editNight(
+                context,
+                ref,
+                wakeDay: night == null
+                    ? today
+                    : DateTime.fromMillisecondsSinceEpoch(night.wokeAt),
+                existing: night,
+                like: night == null && rows.isNotEmpty ? rows.last : null,
+              ),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.bedtime_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: theme.textTheme.bodyLarge),
+                          Text(detail, style: muted),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Icon(
+                      night == null ? Icons.add : Icons.edit_outlined,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
               ),
+            ),
             // With a watch, typing it in every morning is the long way round.
-            if (!ref.watch(healthConnectEnabledProvider))
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => context.push(Routes.healthConnect),
-                  icon: const Icon(Icons.watch_outlined, size: 18),
-                  label: const Text('Slaap van je horloge ophalen'),
-                ),
-              ),
-            if (lastNight == null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              OutlinedButton.icon(
-                onPressed: () => editNight(
-                  context,
-                  ref,
-                  wakeDay: today,
-                  like: rows.isEmpty ? null : rows.last,
-                ),
-                icon: const Icon(Icons.bedtime_outlined),
-                label: const Text('Afgelopen nacht invullen'),
-              ),
-            ],
-            if (rows.isNotEmpty)
-              MoreLink(
-                'Alle nachten',
-                onTap: () => context.push(Routes.sleepWeeks),
+            if (!healthConnect || rows.isNotEmpty)
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (!healthConnect)
+                    TextButton.icon(
+                      onPressed: () => context.push(Routes.healthConnect),
+                      icon: const Icon(Icons.watch_outlined, size: 18),
+                      label: const Text('Van je horloge'),
+                    ),
+                  if (rows.isNotEmpty)
+                    MoreLink(
+                      'Alle nachten',
+                      onTap: () => context.push(Routes.sleepWeeks),
+                    ),
+                ],
               ),
           ],
         ),

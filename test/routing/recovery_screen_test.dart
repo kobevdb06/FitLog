@@ -326,6 +326,11 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    Future<void> openMuscle(WidgetTester tester) async {
+      await tester.tap(find.text('Quadriceps'));
+      await tester.pumpAndSettle();
+    }
+
     testWidgets('zonder training is er niets om naar te vragen', (
       tester,
     ) async {
@@ -350,8 +355,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Nog geen rapport van vandaag'), findsNothing);
-      expect(find.text('slaapscore'), findsOneWidget);
-      expect(find.text('1 in herstel'), findsOneWidget);
+      // In words; the night and its score have their own line below.
+      expect(find.textContaining('Ochtendrapport om'), findsOneWidget);
       expect(find.textContaining('Nog in herstel: quadriceps'), findsOneWidget);
       expect(find.text('Opnieuw opstellen'), findsOneWidget);
       expect(await db.select(db.morningReportsTable).get(), hasLength(1));
@@ -364,6 +369,9 @@ void main() {
       await openRecovery(tester);
 
       expect(find.text('Quadriceps'), findsOneWidget);
+      // On the screen a line per muscle; how it feels, a tap away.
+      expect(find.byType(ChoiceChip), findsNothing);
+      await openMuscle(tester);
       expect(find.widgetWithText(ChoiceChip, 'Fris'), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'Stijf'), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'Pijnlijk'), findsOneWidget);
@@ -374,6 +382,7 @@ void main() {
     ) async {
       await trainedLegs();
       await openRecovery(tester);
+      await openMuscle(tester);
 
       await tester.tap(find.widgetWithText(ChoiceChip, 'Pijnlijk'));
       await tester.pumpAndSettle();
@@ -381,8 +390,9 @@ void main() {
       final rows = await db.select(db.sorenessChecksTable).get();
       expect(rows.single.muscle, 'quadriceps');
       expect(rows.single.level, SorenessLevel.sore.wire);
-      // En het scherm zegt waarom de schatting nu is wat ze is.
-      expect(find.textContaining('vandaag pijnlijk'), findsOneWidget);
+      // En het scherm zegt waarom de schatting nu is wat ze is: in het
+      // blad, en in de lijst eronder.
+      expect(find.textContaining('vandaag pijnlijk'), findsWidgets);
       expect(
         tester
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Pijnlijk'))
@@ -394,6 +404,7 @@ void main() {
     testWidgets('een ander antwoord vervangt het eerste', (tester) async {
       await trainedLegs();
       await openRecovery(tester);
+      await openMuscle(tester);
 
       await tester.tap(find.widgetWithText(ChoiceChip, 'Pijnlijk'));
       await tester.pumpAndSettle();
@@ -407,6 +418,7 @@ void main() {
     testWidgets('en nog eens tikken neemt het terug', (tester) async {
       await trainedLegs();
       await openRecovery(tester);
+      await openMuscle(tester);
 
       await tester.tap(find.widgetWithText(ChoiceChip, 'Stijf'));
       await tester.pumpAndSettle();
@@ -646,11 +658,16 @@ void main() {
     container!.read(routerProvider).push(Routes.muscleRecovery);
     await tester.pumpAndSettle();
 
-    // Het rapport staat bovenaan; de spiergroepen staan eronder.
-    final sore = find.widgetWithText(ChoiceChip, 'Pijnlijk');
-    await tester.ensureVisible(sore);
+    // Het rapport staat bovenaan; de spiergroepen staan eronder, en een
+    // tik op een ervan vraagt hoe ze voelt.
+    await tester.ensureVisible(find.text('Quadriceps'));
     await tester.pumpAndSettle();
-    await tester.tap(sore);
+    await tester.tap(find.text('Quadriceps'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Pijnlijk'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
 
     final button = find.text('Afgelopen nacht invullen');

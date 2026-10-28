@@ -4,24 +4,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/formatting/formatters.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../morning/presentation/morning_report_card.dart';
+import '../../readiness/presentation/check_providers.dart';
+import '../../readiness/presentation/check_sheet.dart';
 import 'alcohol_section.dart';
 import 'recovery_providers.dart';
 import 'recovery_view.dart';
 import 'sleep_section.dart';
 
-/// Herstel: this morning's report, how far each muscle is, and the place to
-/// say how it feels.
+/// Herstel: today. Whether the next session can go and this morning's
+/// report, last night in a line, and how far each muscle is - a tap on one
+/// says how it feels.
 ///
-/// The report comes first: it is the answer to "can I train today", and the
-/// rest of the screen is the detail behind it. Everything else in the
-/// estimate is a reason to expect soreness. This screen is where the user
-/// says whether there was any - the one thing the app can observe rather than
-/// work out - so it asks for it next to the estimate it changes, not tucked
-/// away in a setting.
+/// Gezondheid is the other half: the last 30 days. A night is said once
+/// here, its trend there. What this screen is and how far to trust it is
+/// behind the i in the bar, not in front of everything every time.
 class RecoveryScreen extends ConsumerWidget {
   const RecoveryScreen({super.key});
 
@@ -34,6 +36,9 @@ class RecoveryScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final estimates = ref.watch(recoveryEstimatesProvider).value ?? const [];
     final now = DateTime.now();
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
 
     final recent = [
       for (final estimate in estimates)
@@ -43,29 +48,23 @@ class RecoveryScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Herstel')),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 32),
-        children: [
-          const SectionHeader('Vandaag'),
-          const MorningReportCard(),
-          const SectionHeader('Per spiergroep'),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              AppSpacing.md,
-            ),
-            child: InfoBanner(
-              icon: Icons.touch_app_outlined,
-              message:
-                  'Hoe voelen je spieren vandaag? Tik het per spiergroep aan. '
-                  'Dat is het enige wat de app echt meet - de rest leidt ze af '
-                  'uit je logboek - en na een paar keer leert ze hoe snel jij '
-                  'herstelt.',
-            ),
+      appBar: AppBar(
+        title: const Text('Herstel'),
+        actions: [
+          IconButton(
+            tooltip: 'Over Herstel',
+            onPressed: () => _about(context),
+            icon: const Icon(Icons.info_outline),
           ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: 32),
+        children: [
+          const MorningReportCard(leading: _NextSession()),
+          const SizedBox(height: AppSpacing.md),
+          const SleepSection(),
+          const SectionHeader('Per spiergroep'),
           if (recent.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -79,76 +78,192 @@ class RecoveryScreen extends ConsumerWidget {
                 ),
               ),
             )
-          else
-            for (final estimate in recent)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  0,
-                  AppSpacing.lg,
-                  AppSpacing.md,
+          else ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: AppCard(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                child: Column(
+                  children: [
+                    for (final (i, estimate) in recent.indexed) ...[
+                      if (i > 0) const Divider(height: 1),
+                      _MuscleRow(estimate: estimate, now: now),
+                    ],
+                  ],
                 ),
-                child: _MuscleCard(estimate: estimate, now: now),
               ),
-          const SectionHeader('Slaap'),
-          const SleepSection(),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                0,
+              ),
+              child: Text(
+                'Tik op een spier om te zeggen hoe ze voelt.',
+                style: muted,
+              ),
+            ),
+          ],
           // Only for whoever asked for it: a drinks counter is not something
           // to put in front of everyone who opens a training log.
           if (ref.watch(settingsProvider).value?.trackAlcohol ?? false) ...[
             const SectionHeader('Alcohol'),
             const AlcoholSection(),
           ],
-          const Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
-              0,
-            ),
-            child: RecoveryDisclaimer(),
-          ),
         ],
+      ),
+    );
+  }
+
+  /// What Herstel is, and how far to trust it: said once, on request.
+  Future<void> _about(BuildContext context) => showAppSheet<void>(
+    context: context,
+    title: 'Over Herstel',
+    builder: (context) => const Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Hoe lang elke spiergroep nog nodig heeft, leidt FitLog af uit je '
+            'logboek: hoe zwaar een sessie was tegenover wat je gewoon bent, '
+            'en hoe je ze beoordeelde. Hoe je spieren voelen, is het enige '
+            'wat het echt meet: tik op een spier om het te zeggen, en na een '
+            'paar keer leert het hoe snel jij herstelt.',
+          ),
+          SizedBox(height: AppSpacing.md),
+          RecoveryDisclaimer(),
+        ],
+      ),
+    ),
+  );
+}
+
+/// The check of the session Vandaag leads with, at the top of the day's
+/// card: the answer to "can I train today". Nothing when there is nothing
+/// to check.
+class _NextSession extends ConsumerWidget {
+  const _NextSession();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final check = ref.watch(todayCheckProvider);
+    if (check == null) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'VOLGENDE SESSIE',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(check.lead.routineName, style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.xs),
+        CheckLine(
+          check: check.lead,
+          onTap: () => showCheckSheet(context, ref, check),
+        ),
+        const Divider(height: AppSpacing.xl),
+      ],
+    );
+  }
+}
+
+/// What you said about [estimate]'s muscle today, if anything.
+SorenessLevel? _saidToday(RecoveryEstimate estimate, DateTime now) {
+  final at = estimate.checkedAt;
+  return at != null &&
+          at.year == now.year &&
+          at.month == now.month &&
+          at.day == now.day
+      ? estimate.check
+      : null;
+}
+
+/// One muscle in a line: how far, how long still, and what you said about
+/// it today. A tap opens the rest.
+class _MuscleRow extends StatelessWidget {
+  const _MuscleRow({required this.estimate, required this.now});
+
+  final RecoveryEstimate estimate;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final said = _saidToday(estimate, now);
+    return InkWell(
+      onTap: () => _showMuscle(context, estimate.muscle),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RecoveryRow(estimate: estimate, now: now),
+            if (said != null)
+              Text(
+                'vandaag ${said.label.toLowerCase()}',
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppColors.forMuscle(estimate.muscle)),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// One muscle: the estimate, why it says what it says, and the three answers.
-class _MuscleCard extends ConsumerWidget {
-  const _MuscleCard({required this.estimate, required this.now});
+/// One muscle in full: why the estimate is what it is, and how it feels.
+Future<void> _showMuscle(BuildContext context, String muscle) =>
+    showAppSheet<void>(
+      context: context,
+      title: Formatters.muscle(muscle),
+      builder: (context) => _MuscleSheet(muscle: muscle),
+    );
 
-  final RecoveryEstimate estimate;
-  final DateTime now;
+class _MuscleSheet extends ConsumerWidget {
+  const _MuscleSheet({required this.muscle});
 
-  bool get _saidToday {
-    final at = estimate.checkedAt;
-    return at != null &&
-        at.year == now.year &&
-        at.month == now.month &&
-        at.day == now.day;
-  }
+  final String muscle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final today = _saidToday ? estimate.check : null;
-    final reasons = recoveryReasons(estimate, now: now);
+    final now = DateTime.now();
+    RecoveryEstimate? estimate;
+    for (final e in ref.watch(recoveryEstimatesProvider).value ?? const []) {
+      if (e.muscle == muscle) estimate = e;
+    }
+    final found = estimate;
+    if (found == null) return const SizedBox.shrink();
+    final said = _saidToday(found, now);
+    final reasons = recoveryReasons(found, now: now);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
 
-    return AppCard(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          RecoveryRow(estimate: estimate, now: now),
+          RecoveryRow(estimate: found, now: now),
           if (reasons.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
-              child: Text(
-                reasons.join(' · '),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+              child: Text(reasons.join(' · '), style: muted),
             ),
+          const SizedBox(height: AppSpacing.lg),
+          Text('Hoe voelt ze vandaag?', style: theme.textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,
@@ -156,18 +271,24 @@ class _MuscleCard extends ConsumerWidget {
               for (final level in SorenessLevel.values)
                 ChoiceChip(
                   label: Text(level.label),
-                  selected: today == level,
-                  onSelected: (selected) {
+                  selected: said == level,
+                  onSelected: (_) {
                     final actions = ref.read(recoveryActionsProvider);
                     // Tapping the answer you already gave takes it back.
-                    if (today == level) {
-                      actions.unfeel(estimate.muscle);
+                    if (said == level) {
+                      actions.unfeel(muscle);
                     } else {
-                      actions.feel(estimate.muscle, level);
+                      actions.feel(muscle, level);
                     }
                   },
                 ),
             ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Wat je voelt, is het enige wat FitLog echt meet. Na een paar '
+            'keer leert het hoe snel jij herstelt.',
+            style: muted,
           ),
         ],
       ),

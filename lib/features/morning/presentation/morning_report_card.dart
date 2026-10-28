@@ -13,12 +13,17 @@ import '../data/morning_reporter.dart';
 import 'morning_providers.dart';
 
 /// Today's report at the top of the recovery screen, or the button that makes
-/// one.
+/// one - in words: the night and its score have their own line on Herstel,
+/// and are not said twice.
 class MorningReportCard extends ConsumerWidget {
-  const MorningReportCard({super.key, this.now});
+  const MorningReportCard({super.key, this.now, this.leading});
 
   /// Fixed in tests; the real clock otherwise.
   final DateTime? now;
+
+  /// What stands above the report in the same card: on Herstel, the check
+  /// of the next session.
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -67,6 +72,7 @@ class MorningReportCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            ?leading,
             if (report == null) ...[
               Text(
                 'Nog geen rapport van vandaag',
@@ -84,7 +90,7 @@ class MorningReportCard extends ConsumerWidget {
               makeButton('Rapport opstellen', filled: true),
               if (reports.isNotEmpty) earlier,
             ] else ...[
-              ReportBody(report: report),
+              _TodayReport(report: report),
               // Side by side where they fit, the one under the other where
               // they do not: on a narrow phone with large text the row ran
               // off the screen.
@@ -255,4 +261,34 @@ class _Pill extends StatelessWidget {
 String _length(Duration d) {
   final minutes = d.inMinutes.remainder(60);
   return minutes == 0 ? '${d.inHours} u' : '${d.inHours} u $minutes';
+}
+
+/// Today's report on Herstel: what it says, and who wrote it when.
+class _TodayReport extends ConsumerWidget {
+  const _TodayReport({required this.report});
+
+  final MorningReport report;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(report.text, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Ochtendrapport om ${Formatters.time(report.createdAt)} · '
+          '${report.coachText != null ? 'door de coach' : 'door FitLog'}',
+          style: muted,
+        ),
+        if (report.coachError case final error?) Text(error, style: muted),
+        if (report.importError case final error?)
+          Text(error, style: muted?.copyWith(color: theme.colorScheme.error)),
+      ],
+    );
+  }
 }

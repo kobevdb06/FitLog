@@ -77,67 +77,76 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
+        // A column that is always built, not a list that builds what is in
+        // view: scrolled down past the blocks, the backup line let go of its
+        // numbers, came back empty while they loaded again, and the page
+        // jumped on the way back up. A heading, a few banners and one grid
+        // are no list to save work on.
+        child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 32),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                0,
-              ),
-              child: _editing
-                  ? _ArrangeBar(
-                      // No coach to open without a key: not something to add.
-                      hidden: [
-                        for (final block in layout.hidden)
-                          if (block != HomeBlock.coach ||
-                              ref.watch(coachEnabledProvider))
-                            block,
-                      ],
-                      onDone: () => setState(() => _editing = false),
-                      onShow: (block) => _save(layout.withShown(block)),
-                      onReset: () => _save(
-                        defaultHomeLayout(
-                          health: ref.read(healthConnectEnabledProvider),
-                          coach: ref.read(coachEnabledProvider),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: _editing
+                    ? _ArrangeBar(
+                        // No coach to open without a key: not something to
+                        // add.
+                        hidden: [
+                          for (final block in layout.hidden)
+                            if (block != HomeBlock.coach ||
+                                ref.watch(coachEnabledProvider))
+                              block,
+                        ],
+                        onDone: () => setState(() => _editing = false),
+                        onShow: (block) => _save(layout.withShown(block)),
+                        onReset: () => _save(
+                          defaultHomeLayout(
+                            health: ref.read(healthConnectEnabledProvider),
+                            coach: ref.read(coachEnabledProvider),
+                          ),
                         ),
-                      ),
-                    )
-                  : _Greeting(name: profile?.displayName, streak: streak),
-            ),
-            if (!_editing) ...[
-              const _BackupReminderBanner(),
-              const DeloadBanner(),
-              const DeloadSuggestionCard(),
+                      )
+                    : _Greeting(name: profile?.displayName, streak: streak),
+              ),
+              if (!_editing) ...[
+                const _BackupReminderBanner(),
+                const DeloadBanner(),
+                const DeloadSuggestionCard(),
+              ],
+              // Holding a block starts arranging with that block already in
+              // your hand, the way a launcher does. Holding the room beside
+              // the blocks starts it too.
+              GestureDetector(
+                // The greeting and the banners above change when arranging
+                // starts, and the column would hand the grid's place to
+                // whatever came first - dropping the block from your hand. A
+                // key keeps it the same grid.
+                key: const ValueKey('startscherm-raster'),
+                onLongPress: _editing
+                    ? null
+                    : () => setState(() => _editing = true),
+                child: HomeGrid(
+                  layout: layout,
+                  editing: _editing,
+                  blockBuilder: (block, spot) =>
+                      _HomeBlockView(block: block, spot: spot),
+                  onChanged: _save,
+                  onStartEditing: () => setState(() => _editing = true),
+                ),
+              ),
+              if (layout.visible.isEmpty && !_editing)
+                _EmptyHomeNotice(
+                  onArrange: () => setState(() => _editing = true),
+                ),
             ],
-            // Holding a block starts arranging with that block already in
-            // your hand, the way a launcher does. Holding the room beside the
-            // blocks starts it too.
-            GestureDetector(
-              // The greeting and the banners above change when arranging
-              // starts, and the list would hand the grid's place to whatever
-              // came first - dropping the block from your hand. A key keeps
-              // it the same grid.
-              key: const ValueKey('startscherm-raster'),
-              onLongPress: _editing
-                  ? null
-                  : () => setState(() => _editing = true),
-              child: HomeGrid(
-                layout: layout,
-                editing: _editing,
-                blockBuilder: (block, spot) =>
-                    _HomeBlockView(block: block, spot: spot),
-                onChanged: _save,
-                onStartEditing: () => setState(() => _editing = true),
-              ),
-            ),
-            if (layout.visible.isEmpty && !_editing)
-              _EmptyHomeNotice(
-                onArrange: () => setState(() => _editing = true),
-              ),
-          ],
+          ),
         ),
       ),
     );

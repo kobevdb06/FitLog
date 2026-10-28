@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/calc/schedule.dart';
 import 'package:fitlog/core/db/database.dart';
@@ -51,8 +52,9 @@ void main() {
     required HomeLayout layout,
     List<RoutineRow> scheduled = const [],
     List<RoutineRow> favourites = const [],
+    Size size = const Size(1100, 2400),
   }) async {
-    tester.view.physicalSize = const Size(1100, 2400);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
@@ -186,5 +188,47 @@ void main() {
         findsOneWidget,
       );
     });
+  });
+
+  testWidgets('scrolling back up does not jump to the top', (tester) async {
+    // One workout and no backup: the banner above the blocks has something
+    // to say, and only once its numbers have loaded.
+    await tester.runAsync(() async {
+      final at = DateTime.now().subtract(const Duration(days: 2));
+      await db
+          .into(db.workoutsTable)
+          .insert(
+            WorkoutsTableCompanion.insert(
+              id: 'w-1',
+              name: 'Training',
+              startedAt: at.millisecondsSinceEpoch,
+              endedAt: Value(
+                at.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+              ),
+            ),
+          );
+    });
+    await pump(tester, layout: defaultHomeLayout(), size: const Size(360, 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Nog geen back-up'), findsOneWidget);
+
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position;
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final bottom = position.pixels;
+    expect(bottom, greaterThan(600), reason: 'a page to scroll back up');
+
+    // Back up a hundred at a time: the banner came back empty while its
+    // numbers loaded again, and the page jumped to the top.
+    for (var to = bottom - 100; to > 0; to -= 100) {
+      position.jumpTo(to);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(position.pixels, closeTo(to, 1), reason: 'back up to $to');
+    }
+    expect(find.text('Nog geen back-up'), findsOneWidget);
   });
 }

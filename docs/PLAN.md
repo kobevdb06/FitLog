@@ -32,6 +32,8 @@ In de volgorde waarin ze het meest opleveren.
 Het Schema's-scherm en Lichaamsmetingen voelden verouderd tot ze naast de rest stonden
 (DECISIONS 225 en 226). Andere schermen kunnen dat ook hebben.
 
+Gedaan: Herstel en Gezondheid (227), Voortgang (228).
+
 - Elk scherm nalopen op de emulator, op 360dp met tekstgrootte 1,3 en 1,4, in licht en
   donker.
 - Per scherm noteren: wat dubbel staat, wat niet in de stijl van de rest past (kaarten,

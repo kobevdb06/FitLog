@@ -4983,3 +4983,38 @@ met één vraag.
   grote letters, ronde getallen met een komma langs de grafieken, een
   hoofdletter voor een spiergroep die op zich staat, en het balkje met
   slaapfasen dat 0 hoog was.
+
+## 228. Voortgang: minder regels, één grafiek, gewicht als regel
+
+De volgende in de schermronde (PLAN.md §2.1). Na een rapport en een mockup
+gekozen; voor Meer uit drie varianten de lijst zonder kaart (A).
+
+- **Een geschatte 1RM op een hele kilo of pond**, op Voortgang en bij Staat
+  stil: "118 kg", niet "118,25 kg". Het ging door dezelfde opmaak als een
+  gelogde set, die de kwart kilo toont die je op een stang kan leggen; een
+  schatting uit een set van drie is niet zo precies. De verandering is het
+  verschil tussen de twee afgeronde getallen, zodat ze optelt tot wat er
+  staat. Records en de grafieken van een oefening houden hun kwart kilo: een
+  record moet zichtbaar boven het vorige uitkomen.
+- **Staat stil** is per oefening één regel, "6 weken stil · beste 99 kg",
+  zonder het pijltje dat de kop herhaalde.
+- **Een hoofdoefening in twee regels**: de naam en waar ze staat, dan de
+  verandering met het lijntje ernaast. "geschatte 1RM" staat één keer in de
+  kop; een schermlezer hoort het bij elk getal.
+- **Training heeft één grafiek** met een keuze Volume, Workouts of Sets, in
+  plaats van een grafiek voor volume en een voor workouts. De keuze blijft
+  staan zolang de app open is, zoals de periode; de lopende week of maand
+  staat lichter.
+- **De uitleg bij Sets per spiergroep staat achter een ⓘ**, op de regel
+  "Werksets per week" in de kaart. In de kop maakte de knop die kop hoger
+  dan alle andere.
+- **Je gewicht is een regel onder Meer**, *Gewicht en maten*: je laatste
+  weging en hoeveel ze in de periode veranderde, naar Lichaamsmetingen. Het
+  blok Lichaamsgewicht met zijn eigen grafiek ging weg; die grafiek staat
+  op Lichaamsmetingen. Dat is een tweede ingang naast Profiel (227), maar
+  geen tweede plek: het gewicht zelf staat alleen op Lichaamsmetingen.
+- **Meer is een lijst op de pagina**, elke ingang met een icoon op een
+  tint. In een kaart leek het iets om te lezen in plaats van om op te
+  tikken. De volgorde: wat je deed, dan wat over je lijf gaat.
+- Een bedrag en een datum in zo'n regel breken niet meer middenin ("12 /
+  okt" met grote letters).

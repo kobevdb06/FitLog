@@ -32,19 +32,27 @@ class ProgressScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Voortgang')),
-      body: ListView(
+      // A column that is always built, not a list that builds what is in
+      // view: scrolled out of sight, a section let go of its numbers, came
+      // back empty while they loaded again, and the page jumped to the top
+      // on the way back up. Six sections are no list to save work on.
+      body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 32),
-        children: [
-          // First, because it is the one thing here to act on - and only
-          // there while something has stalled. Above the period, because it
-          // does not follow it: stalling is measured over weeks of its own.
-          const PlateauSection(),
-          const _PeriodPicker(),
-          _MainLifts(period: period),
-          _Training(period: period),
-          _MuscleSets(period: period),
-          _More(period: period),
-        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // First, because it is the one thing here to act on - and only
+            // there while something has stalled. Above the period, because
+            // it does not follow it: stalling is measured over weeks of its
+            // own.
+            const PlateauSection(),
+            const _PeriodPicker(),
+            _MainLifts(period: period),
+            _Training(period: period),
+            _MuscleSets(period: period),
+            _More(period: period),
+          ],
+        ),
       ),
     );
   }

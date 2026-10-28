@@ -586,6 +586,37 @@ void main() {
     expect(find.byType(Sparkline), findsNWidgets(3));
   });
 
+  testWidgets('terug naar boven scrollen springt niet', (tester) async {
+    await tester.runAsync(() async {
+      await exercise('bench', 'Bench Press');
+      await exercise('row', 'Barbell Row', muscle: 'lats');
+      for (var days = 3; days < 80; days += 7) {
+        await session('bench', daysAgo(days), 100 + days / 10);
+        await session('row', daysAgo(days + 1), 80);
+      }
+    });
+    await pump(tester, size: const Size(360, 400));
+
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position;
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final bottom = position.pixels;
+    expect(bottom, greaterThan(800), reason: 'a page to scroll back up');
+
+    // Back up a hundred at a time: the sections above came back empty
+    // while their numbers loaded again, and the page jumped to the top.
+    for (var to = bottom - 100; to > 0; to -= 100) {
+      position.jumpTo(to);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(position.pixels, closeTo(to, 1), reason: 'back up to $to');
+    }
+    expect(find.text('HOOFDOEFENINGEN'), findsOneWidget);
+  });
+
   testWidgets('Meer: eerst wat je deed, en bij elk hoe het ervoor staat', (
     tester,
   ) async {

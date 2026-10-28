@@ -256,7 +256,37 @@ class _MuscleSheet extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          RecoveryRow(estimate: found, now: now),
+          // The name is the sheet's title: here only how far, and how long.
+          Text(
+            [
+              if (found.isReadyAt(now))
+                'klaar'
+              else
+                Formatters.remainingWords(found.remainingAt(now)),
+              '${(found.progressAt(now) * 100).round()}% hersteld',
+            ].join(' · '),
+            style: theme.textTheme.bodyLarge,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            child: LinearProgressIndicator(
+              value: found.progressAt(now),
+              minHeight: 4,
+              backgroundColor: AppColors.forMuscle(muscle)
+                  .withValues(alpha: 0.18),
+              valueColor: AlwaysStoppedAnimation(AppColors.forMuscle(muscle)),
+            ),
+          ),
+          if (found.provisional)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                'Nog te weinig sessies voor deze spiergroep om met je eigen '
+                'gemiddelde te vergelijken.',
+                style: muted,
+              ),
+            ),
           if (reasons.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),

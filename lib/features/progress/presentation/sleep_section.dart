@@ -101,12 +101,13 @@ class SleepSection extends ConsumerWidget {
     final night = lastNight;
 
     final String title;
-    final String detail;
+    final String? detail;
     if (night == null) {
       title = 'Afgelopen nacht invullen';
+      // The first time, why; after that, the title says it.
       detail = rows.isEmpty
           ? 'Korte nachten rekken je herstel; lange maken het niet korter.'
-          : 'Afgelopen nacht staat er nog niet bij.';
+          : null;
     } else {
       final asleep = DateTime.fromMillisecondsSinceEpoch(night.fellAsleepAt);
       final woke = DateTime.fromMillisecondsSinceEpoch(night.wokeAt);
@@ -162,7 +163,7 @@ class SleepSection extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(title, style: theme.textTheme.bodyLarge),
-                          Text(detail, style: muted),
+                          if (detail != null) Text(detail, style: muted),
                         ],
                       ),
                     ),

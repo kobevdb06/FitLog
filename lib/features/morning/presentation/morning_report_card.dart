@@ -73,22 +73,23 @@ class MorningReportCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ?leading,
+            // A line and a button: on Herstel the check above it is what
+            // the day is about, and a big button under a title outshouted it.
             if (report == null) ...[
               Text(
                 'Nog geen rapport van vandaag',
-                style: theme.textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Je nacht, je slaapscore en welke spiergroepen nog herstellen, '
-                'in een paar zinnen.',
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              makeButton('Rapport opstellen', filled: true),
-              if (reports.isNotEmpty) earlier,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  makeButton('Rapport opstellen'),
+                  if (reports.isNotEmpty) earlier,
+                ],
+              ),
             ] else ...[
               _TodayReport(report: report),
               // Side by side where they fit, the one under the other where

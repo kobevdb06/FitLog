@@ -61,6 +61,10 @@ class SleepStagesBar extends StatelessWidget {
           child: SizedBox(
             height: 16,
             child: Row(
+              // An empty ColoredBox takes the least height it is allowed,
+              // and a row allows down to none: every stage was 0 high, and
+              // the bar an empty strip above its legend.
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (final (_, minutes, colour) in parts)
                   Expanded(

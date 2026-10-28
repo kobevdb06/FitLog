@@ -190,6 +190,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('50 bpm'), findsOneWidget);
+      // Where the number came from is behind the i of the card.
+      expect(find.textContaining('Berekend uit je hartslag'), findsNothing);
+      await tester.tap(find.byTooltip('Over Rusthartslag'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('Berekend uit je hartslag'), findsOneWidget);
     });
   });

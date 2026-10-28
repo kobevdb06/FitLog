@@ -10,22 +10,23 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/week_navigator.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/progress_providers.dart';
 import '../../progress/presentation/recovery_providers.dart';
-import '../../progress/presentation/sleep_stages_bar.dart';
 import '../domain/health_overview.dart';
 import 'health_providers.dart';
 import 'steps_week_screen.dart';
 import 'workout_heart_row.dart';
 
-/// Gezondheid: everything from the watch and everything you filled in about
-/// yourself, in one place - the nights with their score, HRV, resting heart
-/// rate, the heart rate during your sessions, weight, runs and rides.
+/// Gezondheid: the last 30 days - your nights, HRV, resting heart rate,
+/// steps, the heart rate during your sessions, runs and rides.
 ///
-/// Over the last month. What a watch alone can measure is only shown with
-/// Health Connect connected; without it, the screen says how to get it.
+/// Herstel is the other half, today: last night is said there, its trend
+/// here. Your weight has its own place, Lichaamsmetingen; this screen leads
+/// there. What a watch alone can measure is only shown with Health Connect
+/// connected; without it, the screen says how to get it.
 class HealthOverviewScreen extends ConsumerWidget {
   const HealthOverviewScreen({super.key, this.now});
 
@@ -69,10 +70,17 @@ class HealthOverviewScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Gezondheid'),
         actions: [
+          if (connected) const _FetchNow(),
           IconButton(
-            tooltip: 'Health Connect',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(Routes.healthConnect),
+            tooltip: 'Over Gezondheid',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _explain(
+              context,
+              'Over Gezondheid',
+              'De laatste 30 dagen. Wat van je horloge komt, haalt FitLog uit '
+                  'Health Connect; wat je zelf invult, staat er ook bij. Een '
+                  'aanwijzing over je lichaam, geen medische meting.',
+            ),
           ),
         ],
       ),
@@ -113,6 +121,7 @@ class HealthOverviewScreen extends ConsumerWidget {
             if (hrv.series.isNotEmpty) ...[
               const SectionHeader('HRV'),
               _ReadingCard(
+                title: 'HRV',
                 reading: hrv,
                 unit: 'ms',
                 usualLabel: 'gewoonlijk',
@@ -125,6 +134,7 @@ class HealthOverviewScreen extends ConsumerWidget {
             if (connected || resting.series.isNotEmpty) ...[
               const SectionHeader('Rusthartslag'),
               _ReadingCard(
+                title: 'Rusthartslag',
                 reading: resting,
                 unit: 'bpm',
                 usualLabel: 'gewoonlijk',
@@ -160,28 +170,12 @@ class HealthOverviewScreen extends ConsumerWidget {
               const SectionHeader('Hartslag tijdens trainingen'),
               _WorkoutHeartRates(workouts: thisWeek),
             ],
-            const SectionHeader('Gewicht'),
-            _WeightCard(points: weight),
             if (connected || cardio.isNotEmpty) ...[
               const SectionHeader('Lopen en fietsen'),
               _CardioCard(sessions: cardio),
             ],
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                0,
-              ),
-              child: Text(
-                'De laatste 30 dagen. Wat van je horloge komt, haalt FitLog '
-                'uit Health Connect; wat je zelf invult, staat er ook bij. '
-                'Een aanwijzing over je lichaam, geen medische meting.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
+            const SizedBox(height: AppSpacing.lg),
+            _WeightLink(points: weight),
           ],
         ),
       ),
@@ -201,47 +195,80 @@ String _length(Duration d) {
 String _number(double value) =>
     Formatters.number((value * 10).roundToDouble() / 10);
 
+/// Where the numbers come from and when they last came: a line that leads
+/// to Health Connect's own settings. Fetching now is the button in the bar.
 class _Synced extends ConsumerWidget {
   const _Synced();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final synced = ref.watch(settingsProvider).value?.healthConnectSyncedAt;
-    final busy = ref.watch(healthSyncProvider).busy;
     final at = synced == null
         ? null
         : DateTime.fromMillisecondsSinceEpoch(synced);
 
-    return Row(
-      children: [
-        const Icon(Icons.watch_outlined, size: 18),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text(
-            at == null
-                ? 'Verbonden met Health Connect.'
-                : 'Laatst opgehaald ${Formatters.weekdayDayMonth(at)} om '
-                      '${Formatters.time(at)}.',
-            style: _muted(context),
-          ),
+    return InkWell(
+      onTap: () => context.push(Routes.healthConnect),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                at == null
+                    ? 'Health Connect'
+                    : 'Health Connect · opgehaald '
+                          '${Formatters.weekdayDayMonthShort(at)} om '
+                          '${Formatters.time(at)}',
+                style: _muted(context),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ],
         ),
-        IconButton(
-          tooltip: 'Nu ophalen',
-          onPressed: busy
-              ? null
-              : () => ref.read(healthSyncProvider.notifier).sync(force: true),
-          icon: busy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.sync),
-        ),
-      ],
+      ),
     );
   }
 }
+
+/// Fetching from Health Connect now, in the bar.
+class _FetchNow extends ConsumerWidget {
+  const _FetchNow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final busy = ref.watch(healthSyncProvider).busy;
+    return IconButton(
+      tooltip: 'Nu ophalen',
+      onPressed: busy
+          ? null
+          : () => ref.read(healthSyncProvider.notifier).sync(force: true),
+      icon: busy
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.sync),
+    );
+  }
+}
+
+/// What a number means, said once, on request.
+Future<void> _explain(BuildContext context, String title, String text) =>
+    showAppSheet<void>(
+      context: context,
+      title: title,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+      ),
+    );
 
 class _NotConnected extends StatelessWidget {
   const _NotConnected();
@@ -268,17 +295,22 @@ class _NotConnected extends StatelessWidget {
   }
 }
 
+/// The last 30 nights: how long on average, the average score, and a bar
+/// per night. Last night itself is on Herstel.
 class _SleepCard extends StatelessWidget {
   const _SleepCard({required this.sleep, this.oxygen});
 
   final SleepOverview sleep;
 
-  /// The day of that night's morning, when it has the blood oxygen of it.
+  /// The day of the last night's morning, when it has the blood oxygen of
+  /// it.
   final DailyVitalsRow? oxygen;
 
   @override
   Widget build(BuildContext context) {
     final last = sleep.last;
+    final nights = sleep.nights;
+    final theme = Theme.of(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -294,47 +326,61 @@ class _SleepCard extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StatRow(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      StatTile(
-                        value: '${last.score}',
-                        label:
-                            'Slaapscore, '
-                            '${Formatters.weekday(last.morning)}',
-                        emphasis: true,
+                      Expanded(
+                        child: StatRow(
+                          children: [
+                            StatTile(
+                              value: _length(sleep.average!),
+                              label: 'Gemiddeld',
+                              emphasis: true,
+                            ),
+                            StatTile(
+                              value:
+                                  '${(nights.fold<int>(0, (sum, n) => sum + n.score) / nights.length).round()}',
+                              label: 'Gemiddelde score',
+                            ),
+                          ],
+                        ),
                       ),
-                      StatTile(value: _length(last.length), label: 'Geslapen'),
-                      StatTile(
-                        value: _length(sleep.average!),
-                        label: 'Gemiddeld, 30 dagen',
+                      IconButton(
+                        tooltip: 'Over de slaapscore',
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.info_outline, size: 20),
+                        onPressed: () => _explain(
+                          context,
+                          'Slaapscore',
+                          "FitLog's eigen getal van 0 tot 100, want Health "
+                              'Connect geeft de score van je horloge niet '
+                              'door. De helft gaat over hoe lang je sliep '
+                              '(niets onder vier uur, alles vanaf acht), een '
+                              'kwart over je diepe en REM-slaap als die '
+                              'gemeten zijn, en een kwart over je HRV en '
+                              'rusthartslag die ochtend tegenover je gewone.',
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    'Fasen van die nacht',
-                    style: Theme.of(context).textTheme.labelLarge,
+                  const SizedBox(height: AppSpacing.md),
+                  _NightBars(nights: nights),
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          Formatters.dayMonth(nights.first.morning),
+                          style: _muted(context),
+                        ),
+                      ),
+                      Text(
+                        'laatste nacht ${last.score}',
+                        style: _muted(context)
+                            ?.copyWith(color: theme.colorScheme.primary),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  if (SleepStagesBar.hasStages(
-                    light: last.lightMinutes,
-                    rem: last.remMinutes,
-                    deep: last.deepMinutes,
-                  ))
-                    SleepStagesBar(
-                      length: last.length,
-                      light: last.lightMinutes,
-                      rem: last.remMinutes,
-                      deep: last.deepMinutes,
-                    )
-                  else
-                    Text(
-                      last.fromWatch
-                          ? 'Je horloge gaf voor deze nacht geen fasen door.'
-                          : 'Geen fasen bij deze nacht. Een horloge geeft ze '
-                                'door, of je vult ze zelf in.',
-                      style: _muted(context),
-                    ),
                   if (oxygen case final day?) ...[
                     const SizedBox(height: AppSpacing.md),
                     Row(
@@ -346,7 +392,7 @@ class _SleepCard extends StatelessWidget {
                             'Zuurstof die nacht: gemiddeld '
                             '${_number(day.spo2Avg!)}% · laagste '
                             '${_number(day.spo2Min ?? day.spo2Avg!)}%',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: theme.textTheme.bodyMedium,
                           ),
                         ),
                       ],
@@ -356,6 +402,51 @@ class _SleepCard extends StatelessWidget {
                   const MoreLink('Alle nachten'),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+/// A bar per night, as high as its score; the last night in full colour.
+class _NightBars extends StatelessWidget {
+  const _NightBars({required this.nights});
+
+  final List<NightPoint> nights;
+
+  @override
+  Widget build(BuildContext context) {
+    final colour = Theme.of(context).colorScheme.primary;
+    return Semantics(
+      label:
+          '${nights.length} nachten, scores van '
+          '${nights.map((n) => n.score).reduce((a, b) => a < b ? a : b)} tot '
+          '${nights.map((n) => n.score).reduce((a, b) => a > b ? a : b)}',
+      excludeSemantics: true,
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (final (i, night) in nights.indexed) ...[
+              if (i > 0) const SizedBox(width: 2),
+              Expanded(
+                child: FractionallySizedBox(
+                  heightFactor: (night.score / 100).clamp(0.05, 1.0),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: i == nights.length - 1
+                          ? colour
+                          : colour.withValues(alpha: 0.35),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -415,6 +506,7 @@ class _StepsCard extends StatelessWidget {
 
 class _ReadingCard extends StatelessWidget {
   const _ReadingCard({
+    required this.title,
     required this.reading,
     required this.unit,
     required this.usualLabel,
@@ -423,6 +515,8 @@ class _ReadingCard extends StatelessWidget {
     this.note,
   });
 
+  /// What the card is about, for the title of its explanation.
+  final String title;
   final ReadingOverview reading;
   final String unit;
   final String usualLabel;
@@ -443,17 +537,36 @@ class _ReadingCard extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StatRow(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      StatTile(
-                        value: '${_number(latest)} $unit',
-                        label: Formatters.weekdayDayMonth(reading.latestDay!),
+                      Expanded(
+                        child: StatRow(
+                          children: [
+                            StatTile(
+                              value: '${_number(latest)} $unit',
+                              label: Formatters.weekdayDayMonth(
+                                reading.latestDay!,
+                              ),
+                            ),
+                            StatTile(
+                              value: '${_number(reading.usual!)} $unit',
+                              label:
+                                  usualLabel[0].toUpperCase() +
+                                  usualLabel.substring(1),
+                            ),
+                          ],
+                        ),
                       ),
-                      StatTile(
-                        value: '${_number(reading.usual!)} $unit',
-                        label:
-                            usualLabel[0].toUpperCase() +
-                            usualLabel.substring(1),
+                      IconButton(
+                        tooltip: 'Over $title',
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.info_outline, size: 20),
+                        onPressed: () => _explain(
+                          context,
+                          title,
+                          [?note, explanation].join('\n\n'),
+                        ),
                       ),
                     ],
                   ),
@@ -463,12 +576,6 @@ class _ReadingCard extends StatelessWidget {
                     height: 140,
                     valueLabel: _number,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  if (note case final note?) ...[
-                    Text(note, style: _muted(context)),
-                    const SizedBox(height: AppSpacing.xs),
-                  ],
-                  Text(explanation, style: _muted(context)),
                 ],
               ),
       ),
@@ -522,8 +629,10 @@ class _WorkoutHeartRates extends StatelessWidget {
   }
 }
 
-class _WeightCard extends ConsumerWidget {
-  const _WeightCard({required this.points});
+/// Your weight lives in Lichaamsmetingen: here only the latest, and the way
+/// there.
+class _WeightLink extends ConsumerWidget {
+  const _WeightLink({required this.points});
 
   final List<ChartPoint> points;
 
@@ -533,30 +642,19 @@ class _WeightCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: AppCard(
+        padding: EdgeInsets.zero,
         onTap: () => context.push(Routes.measurements),
-        child: points.isEmpty
-            ? Text(
-                'Geen weging in de laatste 30 dagen.',
-                style: _muted(context),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  StatTile(
-                    value: formatters.weight(points.last.value),
-                    label: Formatters.weekdayDayMonth(points.last.at),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  TrendLineChart(
-                    height: 140,
-                    points: [
-                      for (final p in points)
-                        ChartPoint(p.at, formatters.toDisplayWeight(p.value)),
-                    ],
-                    valueLabel: formatters.decimal,
-                  ),
-                ],
-              ),
+        child: ListTile(
+          leading: const Icon(Icons.monitor_weight_outlined),
+          title: const Text('Gewicht'),
+          subtitle: Text(
+            points.isEmpty
+                ? 'Bij je lichaamsmetingen'
+                : '${formatters.weight(points.last.value)} · '
+                      '${Formatters.weekdayDayMonthShort(points.last.at)}',
+          ),
+          trailing: const Icon(Icons.chevron_right),
+        ),
       ),
     );
   }

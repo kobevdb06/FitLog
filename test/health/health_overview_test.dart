@@ -175,8 +175,8 @@ void main() {
       expect(find.textContaining('gem. 115 · max. 150 bpm'), findsOneWidget);
       expect(find.text('42 min'), findsOneWidget);
       expect(find.textContaining('Verbind Health Connect'), findsNothing);
-      // De nacht van het horloge had geen fasen, en dat staat er.
-      expect(find.textContaining('geen fasen door'), findsOneWidget);
+      // De nachten van 30 dagen; de nacht zelf staat op Herstel.
+      expect(find.textContaining('laatste nacht'), findsOneWidget);
       expect(find.text('Alle trainingen'), findsOneWidget);
 
       // En op een smalle gsm past het ook.
@@ -185,9 +185,8 @@ void main() {
       expect(find.textContaining('gem. 115 · max. 150 bpm'), findsOneWidget);
     });
 
-    testWidgets('de fasen van afgelopen nacht, met wat elke kleur is', (
-      tester,
-    ) async {
+    testWidgets('slaap over 30 dagen: gemiddeld, een balkje per nacht, en de '
+        'fasen bij de nacht zelf, niet hier', (tester) async {
       final today = DateTime.now();
       await tester.runAsync(
         () => db.recoveryDao.setSleep(
@@ -200,10 +199,14 @@ void main() {
       );
       await pumpScreen(tester);
 
-      expect(find.text('Fasen van die nacht'), findsOneWidget);
-      expect(find.textContaining('Licht 4 u'), findsOneWidget);
-      expect(find.textContaining('REM 1 u 40'), findsOneWidget);
-      expect(find.textContaining('Diep 1 u 20'), findsOneWidget);
+      expect(find.text('Gemiddeld'), findsOneWidget);
+      expect(find.text('Gemiddelde score'), findsOneWidget);
+      expect(find.textContaining('laatste nacht'), findsOneWidget);
+      // Last night's stages are on Herstel and in Alle nachten.
+      expect(find.text('Fasen van die nacht'), findsNothing);
+      // And your weight is in Lichaamsmetingen: here only the way there.
+      expect(find.text('Gewicht'), findsOneWidget);
+      expect(find.text('Bij je lichaamsmetingen'), findsOneWidget);
     });
 
     testWidgets('zonder horloge: wat je zelf invult, en hoe je meer krijgt', (

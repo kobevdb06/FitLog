@@ -218,6 +218,14 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       }
       if (next.answer != previous.answer) _follow();
     });
+    // A held answer belongs to the conversation it was asked in. On another
+    // - a new one above all, which never stores it - it stayed on screen
+    // under nothing until the next question.
+    ref.listen<CoachSession>(coachSessionControllerProvider, (previous, next) {
+      if (previous?.threadId != next.threadId && _held != null) {
+        setState(() => _held = null);
+      }
+    });
     // Held only until the stored answer is in the list - which may already
     // be the case by the time the writing stops.
     final stored = messages.any(

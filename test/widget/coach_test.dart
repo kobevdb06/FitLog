@@ -1916,6 +1916,32 @@ void main() {
       expect(await db.chatDao.messages(threads.id), hasLength(2));
     });
 
+    testWidgets('een nieuw gesprek toont het laatste antwoord niet meer', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('Tussen 10 en 20 sets per week.')),
+      );
+      await tester.enterText(
+        find.byType(TextField),
+        'Hoeveel sets voor borst?',
+      );
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      await tester.pumpAndSettle();
+      expect(find.text('Tussen 10 en 20 sets per week.'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Nieuw gesprek'));
+      await tester.pumpAndSettle();
+
+      // The answer was held on screen until it was stored, and an empty
+      // conversation never stores it: it stayed under nothing.
+      expect(find.text('Tussen 10 en 20 sets per week.'), findsNothing);
+      expect(find.text('Vraag je coach'), findsOneWidget);
+    });
+
     testWidgets('versturen houdt het toetsenbord open, ernaast tikken niet', (
       tester,
     ) async {

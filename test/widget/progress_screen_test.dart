@@ -439,6 +439,19 @@ void main() {
         find.descendant(of: find.byType(MuscleBars), matching: find.text('0')),
         findsOneWidget,
       );
+
+      // What the bars are, in a word; how to read them, on request.
+      expect(find.text('Werksets per week'), findsOneWidget);
+      expect(find.textContaining('Het streepje'), findsNothing);
+      await tester.tap(find.byTooltip('Over sets per spiergroep'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.textContaining('Het streepje'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('zonder sets zegt het dat', (tester) async {

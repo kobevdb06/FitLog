@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/muscle_bars.dart';
 import '../../../routing/routes.dart';
 import '../../history/presentation/history_providers.dart';
@@ -437,7 +438,30 @@ class _MuscleSets extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHeader('Sets per spiergroep'),
+        SectionHeader(
+          'Sets per spiergroep',
+          action: IconButton(
+            tooltip: 'Over sets per spiergroep',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.info_outline, size: 20),
+            onPressed: () => showAppSheet<void>(
+              context: context,
+              title: 'Sets per spiergroep',
+              builder: (context) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Text(
+                  'Je werksets per week in deze periode, bij de spiergroep '
+                  'die de oefening vooral traint. Opwarmsets tellen niet '
+                  'mee, en een deloadweek ook niet. Het streepje is wat je '
+                  'per week deed in een even lange periode ervoor; wat daar '
+                  'duidelijk onder zakte, minder dan zeven tiende ervan, '
+                  'staat in het oranje.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: AppCard(
@@ -459,11 +483,9 @@ class _MuscleSets extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Werksets per week. Het streepje is de periode ervoor; '
-                        'wat daar duidelijk onder zakte, staat in het oranje.',
-                        style: muted,
-                      ),
+                      // What the numbers are; how to read the marks is
+                      // behind the i, for whoever wants it once.
+                      Text('Werksets per week', style: muted),
                     ],
                   ),
           ),

@@ -46,8 +46,40 @@ class MuscleBars extends StatelessWidget {
         .fold<double>(1, (a, b) => a > b ? a : b);
     // Room for "12,5" in a large font, without a wider column for a short
     // number in a small one.
-    final labelWidth = MediaQuery.textScalerOf(context).scale(36);
+    final scaler = MediaQuery.textScalerOf(context);
+    final labelWidth = scaler.scale(36);
+    // And the names as wide as the widest of them - a fixed 96 cut
+    // "Hamstrings" to "Hamstrin…" in a large font - but never more than
+    // two fifths of the line, so the bars keep their room.
+    final nameStyle = theme.textTheme.bodyMedium;
+    var widest = 0.0;
+    for (final m in bars) {
+      final painter = TextPainter(
+        text: TextSpan(text: Formatters.muscle(m.muscle), style: nameStyle),
+        textScaler: scaler,
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+      painter.dispose();
+    }
 
+    return LayoutBuilder(
+      builder: (context, constraints) => _bars(
+        theme,
+        scale,
+        labelWidth,
+        nameWidth: (widest + 8).clamp(0.0, constraints.maxWidth * 0.4),
+      ),
+    );
+  }
+
+  Widget _bars(
+    ThemeData theme,
+    double scale,
+    double labelWidth, {
+    required double nameWidth,
+  }) {
     return Column(
       children: [
         for (final m in bars)
@@ -56,7 +88,7 @@ class MuscleBars extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 96,
+                  width: nameWidth,
                   child: Text(
                     Formatters.muscle(m.muscle),
                     style: theme.textTheme.bodyMedium,

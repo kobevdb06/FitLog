@@ -287,7 +287,11 @@ class _LiftRow extends ConsumerWidget {
   }
 }
 
-/// What you did over the period: the totals, then the bars they add up from.
+/// What you did over the period: the totals, then the bars of the one you
+/// choose.
+///
+/// One chart with a choice rather than a chart for each: two charts of the
+/// same weeks were most of a screen, and the second was read less.
 class _Training extends ConsumerWidget {
   const _Training({required this.period});
 
@@ -297,10 +301,10 @@ class _Training extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final formatters = ref.watch(formattersProvider);
+    final measure = ref.watch(trainingMeasureChoiceProvider);
     final buckets = ref.watch(trainingBucketsProvider(period)).value;
     if (buckets == null) return const SizedBox.shrink();
 
-    final per = period.byMonth ? 'maand' : 'week';
     final labels = [
       for (final b in buckets)
         period.byMonth
@@ -313,9 +317,6 @@ class _Training extends ConsumerWidget {
       ProgressPeriod.threeMonths => 3,
       ProgressPeriod.year => 2,
     };
-    final caption = theme.textTheme.labelLarge?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
 
     var workouts = 0;
     var sets = 0;
@@ -326,6 +327,21 @@ class _Training extends ConsumerWidget {
       volume += b.volumeKg;
     }
 
+    final (values, valueLabel) = switch (measure) {
+      TrainingMeasure.volume => (
+        [for (final b in buckets) b.volumeKg],
+        formatters.volume,
+      ),
+      TrainingMeasure.workouts => (
+        [for (final b in buckets) b.workouts.toDouble()],
+        (double v) => '${v.round()}',
+      ),
+      TrainingMeasure.sets => (
+        [for (final b in buckets) b.sets.toDouble()],
+        (double v) => formatters.count(v.round()),
+      ),
+    };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -333,7 +349,7 @@ class _Training extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           // Without a workout in the period, one line instead of a row of
-          // noughts over two charts with no bars: that was most of a screen
+          // noughts over a chart with no bars: that was most of a screen
           // of nothing.
           child: AppCard(
             child: workouts == 0
@@ -346,42 +362,49 @@ class _Training extends ConsumerWidget {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // The number of the chart below in colour, so the
+                      // two read as one.
                       StatRow(
                         children: [
                           StatTile(
                             value: formatters.count(workouts),
                             label: 'Workouts',
+                            emphasis: measure == TrainingMeasure.workouts,
                           ),
                           StatTile(
                             value: formatters.count(sets),
                             label: 'Sets',
+                            emphasis: measure == TrainingMeasure.sets,
                           ),
                           StatTile(
                             value: formatters.volume(volume),
                             label: 'Volume',
+                            emphasis: measure == TrainingMeasure.volume,
                           ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      Text('Volume per $per', style: caption),
-                      const SizedBox(height: AppSpacing.sm),
-                      SimpleBarChart(
-                        values: [for (final b in buckets) b.volumeKg],
-                        labels: labels,
-                        labelEvery: labelEvery,
-                        valueLabel: formatters.volume,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Text('Workouts per $per', style: caption),
-                      const SizedBox(height: AppSpacing.sm),
-                      SimpleBarChart(
-                        values: [
-                          for (final b in buckets) b.workouts.toDouble(),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: [
+                          for (final option in TrainingMeasure.values)
+                            ChoiceChip(
+                              label: Text(option.label),
+                              selected: measure == option,
+                              onSelected: (_) => ref
+                                  .read(trainingMeasureChoiceProvider.notifier)
+                                  .choose(option),
+                            ),
                         ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      SimpleBarChart(
+                        values: values,
                         labels: labels,
                         labelEvery: labelEvery,
-                        height: 110,
-                        valueLabel: (v) => '${v.round()}',
+                        valueLabel: valueLabel,
+                        lastUnfinished: true,
                       ),
                     ],
                   ),

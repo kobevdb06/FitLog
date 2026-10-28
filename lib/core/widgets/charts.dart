@@ -178,6 +178,7 @@ class SimpleBarChart extends StatelessWidget {
     this.color = AppColors.accent,
     this.valueLabel,
     this.labelEvery = 1,
+    this.lastUnfinished = false,
   });
 
   final List<double> values;
@@ -185,6 +186,10 @@ class SimpleBarChart extends StatelessWidget {
   final double height;
   final Color color;
   final String Function(double value)? valueLabel;
+
+  /// Whether the newest bar is a week or month still going. Drawn lighter,
+  /// so half a week does not read as a dip.
+  final bool lastUnfinished;
 
   /// A label under every so many bars, counted back from the newest so the
   /// newest always has one. Thirteen dates in a row do not fit on a phone.
@@ -263,9 +268,11 @@ class SimpleBarChart extends StatelessWidget {
                 barRods: [
                   BarChartRodData(
                     toY: values[i],
-                    color: values[i] > 0
-                        ? color
-                        : theme.colorScheme.surfaceContainerHighest,
+                    color: values[i] <= 0
+                        ? theme.colorScheme.surfaceContainerHighest
+                        : lastUnfinished && i == values.length - 1
+                        ? color.withValues(alpha: 0.4)
+                        : color,
                     width: 14,
                     borderRadius: BorderRadius.circular(4),
                   ),

@@ -87,6 +87,27 @@ class ProgressPeriodChoice extends _$ProgressPeriodChoice {
   void choose(ProgressPeriod period) => state = period;
 }
 
+/// What the training chart on Voortgang shows.
+enum TrainingMeasure {
+  volume('Volume'),
+  workouts('Workouts'),
+  sets('Sets');
+
+  const TrainingMeasure(this.label);
+
+  final String label;
+}
+
+/// Which [TrainingMeasure] the chart shows. Held like the period, while the
+/// app is open: still what you chose after scrolling away and back.
+@Riverpod(keepAlive: true)
+class TrainingMeasureChoice extends _$TrainingMeasureChoice {
+  @override
+  TrainingMeasure build() => TrainingMeasure.volume;
+
+  void choose(TrainingMeasure measure) => state = measure;
+}
+
 /// Volume, workouts and sets per bar of [period], oldest first.
 @riverpod
 Stream<List<TrainingBucket>> trainingBuckets(Ref ref, ProgressPeriod period) {

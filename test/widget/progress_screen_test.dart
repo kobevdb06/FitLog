@@ -152,9 +152,8 @@ void main() {
       for (final label in ['4 weken', '3 maanden', '1 jaar']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
-      expect(find.text('Volume per week'), findsOneWidget);
       expect(
-        tester.widget<SimpleBarChart>(find.byType(SimpleBarChart).first).values,
+        tester.widget<SimpleBarChart>(find.byType(SimpleBarChart)).values,
         hasLength(13),
         reason: 'thirteen weeks',
       );
@@ -183,8 +182,6 @@ void main() {
 
       await choose(tester, '1 jaar');
       expect(stat(tester, 'Workouts'), '4');
-      expect(find.text('Volume per maand'), findsOneWidget);
-      expect(find.text('Workouts per maand'), findsOneWidget);
       final bars = tester.widget<SimpleBarChart>(
         find.byType(SimpleBarChart).first,
       );
@@ -197,12 +194,12 @@ void main() {
     ) async {
       await tester.runAsync(() => workout(daysAgo(60)));
       await pump(tester);
-      expect(find.byType(SimpleBarChart), findsNWidgets(2));
+      expect(find.byType(SimpleBarChart), findsOneWidget);
 
       await choose(tester, '4 weken');
       expect(find.text('Nog geen workouts in deze periode.'), findsOneWidget);
       expect(find.byType(SimpleBarChart), findsNothing);
-      expect(find.text('Volume per week'), findsNothing);
+      expect(find.byType(ChoiceChip), findsNothing);
     });
 
     testWidgets('de keuze blijft staan als je terugkomt', (tester) async {
@@ -213,7 +210,85 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await pump(tester);
 
-      expect(find.text('Volume per maand'), findsOneWidget);
+      expect(
+        tester.widget<SimpleBarChart>(find.byType(SimpleBarChart)).values,
+        hasLength(12),
+        reason: 'a bar per month',
+      );
+    });
+  });
+
+  group('training', () {
+    Finder chip(String label) => find.widgetWithText(ChoiceChip, label);
+    List<double> bars(WidgetTester tester) =>
+        tester.widget<SimpleBarChart>(find.byType(SimpleBarChart)).values;
+
+    testWidgets('één grafiek, met wat je kiest', (tester) async {
+      // Two on the Wednesday of last week: one bar.
+      final week = startOfWeek(now);
+      final wednesday = DateTime(week.year, week.month, week.day - 5, 10);
+      await tester.runAsync(() async {
+        await workout(wednesday, sets: 8, volume: 1500);
+        await workout(
+          wednesday.add(const Duration(hours: 3)),
+          sets: 6,
+          volume: 1000,
+        );
+      });
+      await pump(tester);
+      await choose(tester, '4 weken');
+
+      // Volume first, its number in colour with it.
+      expect(find.byType(SimpleBarChart), findsOneWidget);
+      expect(bars(tester).reduce((a, b) => a + b), 2500);
+      expect(
+        tester
+            .widget<StatTile>(
+              find.ancestor(
+                of: find.text('Volume'),
+                matching: find.byType(StatTile),
+              ),
+            )
+            .emphasis,
+        isTrue,
+      );
+
+      await tester.tap(chip('Sets'));
+      await tester.pumpAndSettle();
+      expect(bars(tester).reduce((a, b) => a + b), 14);
+      expect(bars(tester).where((v) => v > 0), [14]);
+
+      await tester.tap(chip('Workouts'));
+      await tester.pumpAndSettle();
+      expect(bars(tester).where((v) => v > 0), [2]);
+      expect(
+        tester
+            .widget<StatTile>(
+              find.ancestor(
+                of: find.text('Workouts'),
+                matching: find.byType(StatTile),
+              ),
+            )
+            .emphasis,
+        isTrue,
+      );
+
+      // Still what you chose when you come back.
+      await tester.pumpWidget(const SizedBox());
+      await pump(tester);
+      expect(tester.widget<ChoiceChip>(chip('Workouts')).selected, isTrue);
+    });
+
+    testWidgets('de lopende week is nog niet af', (tester) async {
+      await tester.runAsync(() => workout(daysAgo(3)));
+      await pump(tester);
+
+      expect(
+        tester
+            .widget<SimpleBarChart>(find.byType(SimpleBarChart))
+            .lastUnfinished,
+        isTrue,
+      );
     });
   });
 

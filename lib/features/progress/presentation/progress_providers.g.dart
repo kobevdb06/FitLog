@@ -169,6 +169,69 @@ abstract class _$ProgressPeriodChoice extends $Notifier<ProgressPeriod> {
   }
 }
 
+/// Which [TrainingMeasure] the chart shows. Held like the period, while the
+/// app is open: still what you chose after scrolling away and back.
+
+@ProviderFor(TrainingMeasureChoice)
+final trainingMeasureChoiceProvider = TrainingMeasureChoiceProvider._();
+
+/// Which [TrainingMeasure] the chart shows. Held like the period, while the
+/// app is open: still what you chose after scrolling away and back.
+final class TrainingMeasureChoiceProvider
+    extends $NotifierProvider<TrainingMeasureChoice, TrainingMeasure> {
+  /// Which [TrainingMeasure] the chart shows. Held like the period, while the
+  /// app is open: still what you chose after scrolling away and back.
+  TrainingMeasureChoiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'trainingMeasureChoiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$trainingMeasureChoiceHash();
+
+  @$internal
+  @override
+  TrainingMeasureChoice create() => TrainingMeasureChoice();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(TrainingMeasure value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<TrainingMeasure>(value),
+    );
+  }
+}
+
+String _$trainingMeasureChoiceHash() =>
+    r'fcde6990190f9b761a1e4893b69e6366f9027c3b';
+
+/// Which [TrainingMeasure] the chart shows. Held like the period, while the
+/// app is open: still what you chose after scrolling away and back.
+
+abstract class _$TrainingMeasureChoice extends $Notifier<TrainingMeasure> {
+  TrainingMeasure build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<TrainingMeasure, TrainingMeasure>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<TrainingMeasure, TrainingMeasure>,
+              TrainingMeasure,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// Volume, workouts and sets per bar of [period], oldest first.
 
 @ProviderFor(trainingBuckets)

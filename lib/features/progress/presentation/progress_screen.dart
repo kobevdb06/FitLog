@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/calc/plateau.dart';
 import '../../../core/calc/progress_period.dart';
+import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
@@ -20,8 +21,8 @@ import 'progress_providers.dart';
 import 'recovery_providers.dart';
 
 /// The Voortgang tab: what has stalled, then over the period you choose
-/// whether your main exercises went up and what you did, your body weight,
-/// and the way in to everything else that tracks progress.
+/// whether your main exercises went up and what you did, and the way in to
+/// everything else that tracks progress - your weight among it.
 class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key});
 
@@ -42,8 +43,7 @@ class ProgressScreen extends ConsumerWidget {
           _MainLifts(period: period),
           _Training(period: period),
           _MuscleSets(period: period),
-          _BodyWeight(period: period),
-          const _More(),
+          _More(period: period),
         ],
       ),
     );
@@ -495,97 +495,17 @@ class _MuscleSets extends ConsumerWidget {
   }
 }
 
-/// Your weight over the period, and the latest whenever it was.
-class _BodyWeight extends ConsumerWidget {
-  const _BodyWeight({required this.period});
-
-  final ProgressPeriod period;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final formatters = ref.watch(formattersProvider);
-    final all = ref.watch(bodyWeightSeriesProvider).value ?? const [];
-    final from = period.start(DateTime.now());
-    final inPeriod = [
-      for (final point in all)
-        if (!point.at.isBefore(from)) point,
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SectionHeader('Lichaamsgewicht'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: AppCard(
-            onTap: () => context.push(Routes.measurements),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (all.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.xl,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Nog geen metingen',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  )
-                else ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: StatTile(
-                          value: formatters.weight(all.last.value),
-                          label: 'Laatste meting',
-                        ),
-                      ),
-                      if (inPeriod.length > 1)
-                        Expanded(
-                          child: StatTile(
-                            value: _change(
-                              formatters,
-                              inPeriod.last.value - inPeriod.first.value,
-                            ),
-                            label:
-                                'Sinds ${Formatters.dayMonth(inPeriod.first.at)}',
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  TrendLineChart(
-                    points: inPeriod,
-                    valueLabel: formatters.weightValue,
-                    emptyMessage: 'Geen metingen in deze periode',
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  static String _change(Formatters formatters, double kg) =>
-      '${kg > 0 ? '+' : ''}${formatters.weight(kg)}';
-}
-
 /// The way in to everything else that tracks progress, each saying in
 /// passing how it stands, the way Herstel always did.
 ///
-/// What you did comes first - every workout, then this week - and what is
-/// about your body after it. Your records and measurements are on Profiel,
-/// with the rest of what is about you; one place for each.
+/// What you did comes first - every workout, then this week - then what is
+/// about your body. A list on the page rather than in a card: these are ways
+/// in, and a card made them look like something to read. Your records are
+/// on Profiel, with the rest of what is about you.
 class _More extends ConsumerWidget {
-  const _More();
+  const _More({required this.period});
+
+  final ProgressPeriod period;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -622,36 +542,68 @@ class _More extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SectionHeader('Meer'),
-        ListTile(
-          leading: const Icon(Icons.history),
-          title: const Text('Geschiedenis'),
-          subtitle: Text(history),
-          trailing: const Icon(Icons.chevron_right),
+        _MoreTile(
+          icon: Icons.history,
+          title: 'Geschiedenis',
+          subtitle: history,
           onTap: () => context.push(Routes.history),
         ),
-        ListTile(
-          leading: const Icon(Icons.calendar_view_week_outlined),
-          title: const Text('Weekoverzicht'),
-          subtitle: Text(thisWeek),
-          trailing: const Icon(Icons.chevron_right),
+        _MoreTile(
+          icon: Icons.calendar_view_week_outlined,
+          title: 'Weekoverzicht',
+          subtitle: thisWeek,
           onTap: () => context.push(Routes.weekReview),
         ),
         const _RecoveryTile(),
-        ListTile(
-          leading: const Icon(Icons.photo_library_outlined),
-          title: const Text("Voortgangsfoto's"),
-          subtitle: Text(pictures),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => context.push(Routes.photos),
-        ),
-        ListTile(
-          leading: const Icon(Icons.favorite_border),
-          title: const Text('Gezondheid'),
-          subtitle: const Text('Slaap, HRV, hartslag, gewicht en lopen'),
-          trailing: const Icon(Icons.chevron_right),
+        _MoreTile(
+          icon: Icons.favorite_border,
+          title: 'Gezondheid',
+          subtitle: 'Slaap, HRV, hartslag en lopen',
           onTap: () => context.push(Routes.health),
         ),
+        _WeightTile(period: period),
+        _MoreTile(
+          icon: Icons.photo_library_outlined,
+          title: "Voortgangsfoto's",
+          subtitle: pictures,
+          onTap: () => context.push(Routes.photos),
+        ),
       ],
+    );
+  }
+}
+
+/// One way in under Meer: an icon on a tint, what it is, and how it stands.
+class _MoreTile extends StatelessWidget {
+  const _MoreTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colours = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colours.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+        child: Icon(icon, size: 22, color: colours.primary),
+      ),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }
@@ -666,18 +618,65 @@ class _RecoveryTile extends ConsumerWidget {
     final now = DateTime.now();
     final recovering = estimates.where((e) => !e.isReadyAt(now)).length;
 
-    return ListTile(
-      leading: const Icon(Icons.healing_outlined),
-      title: const Text('Herstel'),
-      subtitle: Text(
-        recovering == 0
-            ? 'Alles hersteld'
-            : recovering == 1
-            ? '1 spiergroep herstelt nog'
-            : '$recovering spiergroepen herstellen nog',
-      ),
-      trailing: const Icon(Icons.chevron_right),
+    return _MoreTile(
+      icon: Icons.healing_outlined,
+      title: 'Herstel',
+      subtitle: recovering == 0
+          ? 'Alles hersteld'
+          : recovering == 1
+          ? '1 spiergroep herstelt nog'
+          : '$recovering spiergroepen herstellen nog',
       onTap: () => context.push(Routes.muscleRecovery),
+    );
+  }
+}
+
+/// The way into Lichaamsmetingen, with your latest weight and how far it
+/// moved over the period - where a chart of it used to stand. The chart is
+/// on Lichaamsmetingen, with the rest of your measurements.
+class _WeightTile extends ConsumerWidget {
+  const _WeightTile({required this.period});
+
+  final ProgressPeriod period;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formatters = ref.watch(formattersProvider);
+    final all = ref.watch(bodyWeightSeriesProvider).value;
+    final from = period.start(DateTime.now());
+
+    String line(List<ChartPoint> all) {
+      final latest = all.last;
+      final inPeriod = [
+        for (final point in all)
+          if (!point.at.isBefore(from)) point,
+      ];
+      // With one weighing in the period there is nothing to compare; when it
+      // was says how much the number still means.
+      if (inPeriod.length < 2) {
+        return '${formatters.weight(latest.value)} · '
+            '${Formatters.relativeDay(latest.at).toLowerCase()}';
+      }
+      final moved = formatters.toDisplayWeight(
+        inPeriod.last.value - inPeriod.first.value,
+      );
+      final since = Formatters.dayMonth(inPeriod.first.at);
+      final change = moved == 0
+          ? 'gelijk'
+          : '${moved > 0 ? '+' : '-'}'
+                '${formatters.weight(formatters.fromDisplayWeight(moved.abs()))}';
+      return '${formatters.weight(latest.value)} · $change sinds $since';
+    }
+
+    return _MoreTile(
+      icon: Icons.monitor_weight_outlined,
+      title: 'Gewicht en maten',
+      subtitle: switch (all) {
+        null => '',
+        [] => 'Nog niets gemeten',
+        _ => line(all),
+      },
+      onTap: () => context.push(Routes.measurements),
     );
   }
 }

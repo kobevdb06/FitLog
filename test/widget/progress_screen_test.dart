@@ -462,14 +462,14 @@ void main() {
     });
   });
 
-  group('lichaamsgewicht', () {
+  group('gewicht en maten', () {
     Future<void> weigh(double kg, DateTime at) => db.recordsDao.addMeasurement(
       type: MeasurementType.weight,
       value: kg,
       measuredAt: at,
     );
 
-    testWidgets('de lijn en het verschil over de gekozen periode', (
+    testWidgets('een regel onder Meer, met het verschil over de periode', (
       tester,
     ) async {
       await tester.runAsync(() async {
@@ -479,35 +479,50 @@ void main() {
       });
       await pump(tester);
 
-      expect(stat(tester, 'Laatste meting'), '77,5 kg');
+      // A line that leads to Lichaamsmetingen, not a chart of its own.
+      expect(find.text('LICHAAMSGEWICHT'), findsNothing);
+      expect(find.byType(TrendLineChart), findsNothing);
       expect(
-        stat(tester, 'Sinds ${Formatters.dayMonth(daysAgo(20))}'),
-        '-0,5 kg',
-      );
-      expect(
-        tester.widget<TrendLineChart>(find.byType(TrendLineChart)).points,
-        hasLength(2),
+        find.text(
+          '77,5 kg · -0,5 kg sinds ${Formatters.dayMonth(daysAgo(20))}',
+        ),
+        findsOneWidget,
       );
 
       await choose(tester, '1 jaar');
       expect(
-        stat(tester, 'Sinds ${Formatters.dayMonth(daysAgo(200))}'),
-        '-2,5 kg',
+        find.text(
+          '77,5 kg · -2,5 kg sinds ${Formatters.dayMonth(daysAgo(200))}',
+        ),
+        findsOneWidget,
       );
     });
 
-    testWidgets('zonder meting in de periode: de laatste, en dat zegt het', (
+    testWidgets('zonder twee metingen in de periode: de laatste, en wanneer', (
       tester,
     ) async {
       await tester.runAsync(() => weigh(80, daysAgo(200)));
       await pump(tester);
 
-      expect(stat(tester, 'Laatste meting'), '80 kg');
-      expect(find.text('Geen metingen in deze periode'), findsOneWidget);
+      expect(
+        find.text(
+          '80 kg · ${Formatters.relativeDay(daysAgo(200)).toLowerCase()}',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('zonder meting zegt het dat', (tester) async {
+      await pump(tester);
+
+      expect(
+        find.widgetWithText(ListTile, 'Nog niets gemeten'),
+        findsOneWidget,
+      );
     });
   });
 
-  testWidgets("onder Meer je foto's; records en metingen staan op Profiel", (
+  testWidgets("onder Meer je foto's en je gewicht; records staan op Profiel", (
     tester,
   ) async {
     await pump(tester);
@@ -516,8 +531,16 @@ void main() {
     await tester.ensureVisible(more);
     expect(more, findsOneWidget);
     expect(find.widgetWithText(ListTile, "Voortgangsfoto's"), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Gewicht en maten'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Persoonlijke records'), findsNothing);
-    expect(find.widgetWithText(ListTile, 'Lichaamsmetingen'), findsNothing);
+    // Ways in, not something to look at: no card around them.
+    expect(
+      find.ancestor(
+        of: find.widgetWithText(ListTile, 'Geschiedenis'),
+        matching: find.byType(AppCard),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('past op een smalle telefoon met grote letters', (tester) async {
@@ -578,8 +601,9 @@ void main() {
       'Geschiedenis',
       'Weekoverzicht',
       'Herstel',
-      "Voortgangsfoto's",
       'Gezondheid',
+      'Gewicht en maten',
+      "Voortgangsfoto's",
     ];
     for (var i = 1; i < order.length; i++) {
       expect(

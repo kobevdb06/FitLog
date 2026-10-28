@@ -54,9 +54,8 @@ void main() {
     return texts.first!;
   }
 
-  testWidgets('je gewicht: de laatste meting, en een tik voor een nieuwe', (
-    tester,
-  ) async {
+  testWidgets('je gewicht en maten: de laatste weging, en de weg naar '
+      'Lichaamsmetingen', (tester) async {
     await tester.runAsync(
       () => db.recordsDao.addMeasurement(
         type: MeasurementType.weight,
@@ -66,12 +65,19 @@ void main() {
     );
     await pump(tester);
 
-    expect(find.text('Lichaamsgewicht'), findsOneWidget);
-    expect(find.textContaining('82,5 kg · vandaag'), findsOneWidget);
-
-    await tester.tap(find.text('Lichaamsgewicht'));
-    await tester.pumpAndSettle();
-    expect(find.text('Meting toevoegen'), findsOneWidget);
+    // One place for your weight: Lichaamsmetingen. Here only the latest,
+    // and the way there.
+    final tile = find.widgetWithText(ListTile, 'Gewicht en maten');
+    expect(tile, findsOneWidget);
+    expect(find.text('Lichaamsgewicht'), findsNothing);
+    expect(
+      find.descendant(of: tile, matching: find.text('82,5 kg · vandaag')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: tile, matching: find.byIcon(Icons.chevron_right)),
+      findsOneWidget,
+    );
   });
 
   testWidgets('waar je traint schrijf je hier, en het blijft bewaard', (
@@ -97,14 +103,14 @@ void main() {
     expect(find.text('Basic-Fit Gent, geen smith machine'), findsOneWidget);
   });
 
-  testWidgets('onderaan: je records en metingen, geen tweede weg naar de '
-      'instellingen', (tester) async {
+  testWidgets('onderaan: je records, geen tweede weg naar de '
+      'instellingen of je metingen', (tester) async {
     await pump(tester);
 
-    for (final title in ['Persoonlijke records', 'Lichaamsmetingen']) {
-      await tester.ensureVisible(find.text(title));
-      expect(find.text(title), findsOneWidget, reason: title);
-    }
+    await tester.ensureVisible(find.text('Persoonlijke records'));
+    expect(find.text('Persoonlijke records'), findsOneWidget);
+    // Your measurements are reached from Gegevens, with your weight.
+    expect(find.text('Lichaamsmetingen'), findsNothing);
     // The photos are under Voortgang, and only there.
     expect(find.text("Voortgangsfoto's"), findsNothing);
     // The gear at the top is the way in; a list tile saying the same was

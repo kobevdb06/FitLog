@@ -268,22 +268,16 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const _WeightTile(),
           const _GymTile(),
-          // What else is about you: your records and your measurements -
-          // here and nowhere else. The photos are under Voortgang. The
-          // settings are the gear at the top; a second way to them was all
-          // this section used to hold.
+          // What else is about you: your records, here and nowhere else.
+          // Your measurements are under Gegevens, with your weight. The
+          // photos are under Voortgang. The settings are the gear at the
+          // top; a second way to them was all this section used to hold.
           const SectionHeader('Meer van jou'),
           ListTile(
             leading: const Icon(Icons.emoji_events_outlined),
             title: const Text('Persoonlijke records'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.records),
-          ),
-          ListTile(
-            leading: const Icon(Icons.straighten),
-            title: const Text('Lichaamsmetingen'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Routes.measurements),
           ),
         ],
       ),
@@ -417,10 +411,11 @@ class _MilestoneRow extends StatelessWidget {
   }
 }
 
-/// Your body weight as you last measured it, and the way to a new one.
+/// Your weight as you last measured it, and the way to Lichaamsmetingen.
 ///
-/// A measurement like any other - this is the latest of them, not a second
-/// place where a weight is kept.
+/// Your weight has one place, with your other measurements: this row only
+/// says the latest and leads there. It used to add a weight itself, a
+/// second way in beside the one under Meer van jou.
 class _WeightTile extends ConsumerWidget {
   const _WeightTile();
 
@@ -432,16 +427,15 @@ class _WeightTile extends ConsumerWidget {
     final formatters = ref.watch(formattersProvider);
 
     return ListTile(
-      title: const Text('Lichaamsgewicht'),
+      title: const Text('Gewicht en maten'),
       subtitle: Text(
         latest == null
-            ? 'Nog geen meting'
+            ? 'Nog niets gemeten'
             : '${formatters.measurement(MeasurementType.weight, latest.value)}'
                   ' · ${Formatters.relativeDay(DateTime.fromMillisecondsSinceEpoch(latest.measuredAt)).toLowerCase()}',
       ),
-      trailing: const Icon(Icons.add),
-      onTap: () =>
-          showAddMeasurementSheet(context, ref, type: MeasurementType.weight),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(Routes.measurements),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,27 +57,71 @@ class AppShell extends ConsumerWidget {
           // the position jumps, and the bar plays its own short animation.
           ValueListenableBuilder<double>(
             valueListenable: ref.watch(tabPositionProvider),
-            builder: (context, position, _) => NavigationBar(
-              selectedIndex: position.round().clamp(0, visible.length - 1),
-              onDestinationSelected: (index) {
-                final branch = visible[index];
-                shell.goBranch(
-                  branch,
-                  initialLocation: branch == shell.currentIndex,
-                );
-              },
-              destinations: [
-                for (final branch in visible)
-                  NavigationDestination(
-                    icon: Icon(_tabs[branch].icon),
-                    selectedIcon: Icon(_tabs[branch].selected),
-                    label: _tabs[branch].label,
-                  ),
-              ],
+            builder: (context, position, _) => _OneLineLabels(
+              labels: [for (final branch in visible) _tabs[branch].label],
+              child: NavigationBar(
+                selectedIndex: position.round().clamp(0, visible.length - 1),
+                onDestinationSelected: (index) {
+                  final branch = visible[index];
+                  shell.goBranch(
+                    branch,
+                    initialLocation: branch == shell.currentIndex,
+                  );
+                },
+                destinations: [
+                  for (final branch in visible)
+                    NavigationDestination(
+                      icon: Icon(_tabs[branch].icon),
+                      selectedIcon: Icon(_tabs[branch].selected),
+                      label: _tabs[branch].label,
+                    ),
+                ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The names under the tabs on one line each: as large as the text size
+/// asks, but never so large that one breaks. With large text on a narrow
+/// phone, "Voortgang" read "Voortga" with "ng" on a line below it.
+class _OneLineLabels extends StatelessWidget {
+  const _OneLineLabels({required this.labels, required this.child});
+
+  final List<String> labels;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // The bold one, which is the widest a name gets.
+    final style =
+        theme.navigationBarTheme.labelTextStyle?.resolve({
+          WidgetState.selected,
+        }) ??
+        theme.textTheme.labelMedium;
+    final room =
+        MediaQuery.sizeOf(context).width / labels.length - 2 * AppSpacing.xs;
+    var widest = 0.0;
+    for (final label in labels) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      widest = math.max(widest, painter.width);
+      painter.dispose();
+    }
+    if (widest <= 0 || room <= 0) return child;
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: math.min(
+        MediaQuery.textScalerOf(context).scale(1),
+        room / widest,
+      ),
+      child: child,
     );
   }
 }

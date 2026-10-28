@@ -650,7 +650,7 @@ void main() {
         contains(line),
       );
       expect(plain, isNot(contains('deload')));
-      expect(plain.length, lessThan(4300));
+      expect(plain.length, lessThan(4700));
     });
 
     test('en de coach kan het opvragen en voorstellen', () {

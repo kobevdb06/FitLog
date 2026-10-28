@@ -5018,3 +5018,23 @@ gekozen; voor Meer uit drie varianten de lijst zonder kaart (A).
   tikken. De volgorde: wat je deed, dan wat over je lijf gaat.
 - Een bedrag en een datum in zo'n regel breken niet meer middenin ("12 /
   okt" met grote letters).
+
+## 229. De coach leest weekdagen af; het promptbudget gaat naar 4700 tekens
+
+De coach had elke datum juist en elke weekdag één dag te vroeg: een leg day
+van woensdag 28 oktober werd "dinsdag", de rows van de dag ervoor
+"maandag". De opzoekingen geven datums zonder weekdag (2026-10-27), en het
+model rekende die zelf uit alsof het een jaar eerder was - in 2025 viel 28
+oktober op een dinsdag. "Gisteren" en "vandaag" klopten wel.
+
+De systeemprompt heeft nu onder "Vandaag is het ..." vorige, deze en
+volgende week, elke dag met zijn weekdag ("di 27/10"), en de regel dat een
+weekdag daar wordt afgelezen en nooit zelf uitgerekend; buiten die weken
+noemt de coach er geen. Dag en maand zonder jaar, om de prompt kort te
+houden: in drie weken komt geen dag twee keer voor. De datums in de
+opzoekingen bleven zoals ze waren, omdat de coach ze ook teruggeeft, zoals
+het begin van een deload.
+
+Dat kost zo'n 330 tekens per vraag, en de prompt zat al tegen zijn budget
+van 4300 (139). Het budget gaat naar 4700: een coach die je trainingen op de
+verkeerde dag zet, is erger dan 80 tokens per vraag.

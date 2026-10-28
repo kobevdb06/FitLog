@@ -203,7 +203,7 @@ String buildCoachPrompt({
   String? situation,
   String? plan,
 }) {
-  final today = '${now.year}-${_two(now.month)}-${_two(now.day)}';
+  final today = _iso(now);
   final weekday = const [
     'maandag',
     'dinsdag',
@@ -218,8 +218,35 @@ String buildCoachPrompt({
 $_coachRules
 $_appFacts
 Vandaag is het $weekday $today.
+${_calendar(now)}
 De gebruiker ziet gewichten in $weightUnit.${displayName == null ? '' : '\nDe gebruiker heet $displayName.'}${aboutUser == null ? '' : '\nOver de gebruiker: $aboutUser.'}${notes == null ? '' : '\n$notes'}${exerciseCount == null ? '' : '\nDe catalogus bevat $exerciseCount oefeningen; zoek erin met search_exercises.'}${seesHealth ? '' : '\n$_noHealth'}${deload == null ? '' : '\n$deload'}${situation == null ? '' : '\nNu: $situation'}${plan == null ? '' : '\n\n$plan'}
 ''';
+}
+
+/// `2026-10-28`, the way every date reaches the coach.
+String _iso(DateTime day) => '${day.year}-${_two(day.month)}-${_two(day.day)}';
+
+/// Last week, this week and next, a line each, every day with its weekday.
+///
+/// The dates the coach is given carry no weekday, and it worked them out
+/// itself - one day early, every time, counting as if it were the year
+/// before. Read off a list, it cannot. Day and month only, to keep the
+/// prompt short: three weeks never hold the same day twice.
+String _calendar(DateTime now) {
+  const names = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
+  const weeks = {-1: 'vorige week', 0: 'deze week', 1: 'volgende week'};
+  final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+  String day(int offset) {
+    final at = DateTime(monday.year, monday.month, monday.day + offset);
+    return '${names[at.weekday - 1]} ${at.day}/${at.month}';
+  }
+
+  return [
+    'Weekdagen lees je hier af en reken je nooit zelf uit; noem er geen '
+        'buiten deze weken.',
+    for (final MapEntry(key: week, value: label) in weeks.entries)
+      '$label: ${[for (var i = 0; i < 7; i++) day(7 * week + i)].join(', ')}',
+  ].join('\n');
 }
 
 /// What the coach remembers about the user, as it goes along with every

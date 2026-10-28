@@ -497,7 +497,7 @@ void main() {
       expect(prompt(seesHealth: true), isNot(contains('Health Connect')));
       expect(prompt(seesHealth: false), contains('deelt Health Connect niet'));
       // Within the budget below, with the line in it.
-      expect(prompt(seesHealth: false).length, lessThan(4300));
+      expect(prompt(seesHealth: false).length, lessThan(4700));
     });
 
     test('says where a question comes from, without storing it', () {
@@ -527,7 +527,7 @@ void main() {
       // Een budget, geen toevalligheid: dit gaat mee met elke vraag en de
       // gebruiker betaalt het per keer. Groeit het hierlangs, dan is dat een
       // beslissing en geen ongeluk.
-      expect(prompt.length, lessThan(4300));
+      expect(prompt.length, lessThan(4700));
     });
   });
 }

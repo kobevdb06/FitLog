@@ -199,6 +199,9 @@ class Formatters {
 
   String decimal(double value) => _decimal.format(value);
 
+  /// `52,5`, `60`: a number with no unit, as on the axis of a chart.
+  static String number(double value) => _decimal.format(value);
+
   // --- Time -----------------------------------------------------------------
 
   /// `12:34` below an hour, `1:02:03` above it.

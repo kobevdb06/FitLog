@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -53,6 +55,14 @@ class TrendLineChart extends StatelessWidget {
     final maxValue = values.reduce((a, b) => a > b ? a : b);
     final padding = ((maxValue - minValue) * 0.15).clamp(1.0, double.infinity);
     final step = ((last - first) / 3).clamp(1, double.infinity).toDouble();
+    // The numbers on the left are round and evenly apart, and the top and
+    // bottom of the chart are on them. Left to the chart, the lowest and
+    // highest value were labels too: "62.4" over "52.0", or "58" over a
+    // "57.5" just below it.
+    final tick = _niceStep(maxValue + padding - (minValue - padding));
+    final lowest = ((minValue - padding) / tick).floorToDouble() * tick;
+    final minY = lowest < 0 ? 0.0 : lowest;
+    final maxY = ((maxValue + padding) / tick).ceilToDouble() * tick;
 
     return SizedBox(
       height: height,
@@ -64,11 +74,12 @@ class TrendLineChart extends StatelessWidget {
           // there, a step could land two days after the first date and print
           // over it ("29 aug" on "31 aug").
           baselineX: first,
-          minY: (minValue - padding).clamp(0, double.infinity),
-          maxY: maxValue + padding,
+          minY: minY,
+          maxY: maxY,
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
+            horizontalInterval: tick,
             getDrawingHorizontalLine: (_) =>
                 FlLine(color: theme.colorScheme.outline, strokeWidth: 1),
           ),
@@ -80,8 +91,9 @@ class TrendLineChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 44,
+                interval: tick,
                 getTitlesWidget: (value, meta) => Text(
-                  valueLabel?.call(value) ?? value.round().toString(),
+                  valueLabel?.call(value) ?? Formatters.number(value),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 10,
@@ -389,4 +401,18 @@ class MiniBarChart extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A round step for about three lines across [range]: 1, 2, 2,5 or 5 times
+/// a power of ten.
+double _niceStep(double range) {
+  if (range <= 0) return 1;
+  final raw = range / 3;
+  final magnitude = math
+      .pow(10, (math.log(raw) / math.ln10).floor())
+      .toDouble();
+  for (final nice in const [1.0, 2.0, 2.5, 5.0, 10.0]) {
+    if (raw <= nice * magnitude) return nice * magnitude;
+  }
+  return 10 * magnitude;
 }

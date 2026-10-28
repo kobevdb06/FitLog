@@ -566,7 +566,7 @@ class _History extends ConsumerWidget {
                     formatters.toDisplayMeasurement(type, row.value),
                   ),
               ],
-              valueLabel: (v) => v.toStringAsFixed(0),
+              valueLabel: formatters.decimal,
             ),
           ],
           const SizedBox(height: AppSpacing.sm),

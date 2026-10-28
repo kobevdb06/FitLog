@@ -207,7 +207,7 @@ void main() {
 
       expect(find.text('4.321'), findsWidgets);
       expect(
-        find.text('Zuurstof die nacht: gemiddeld 95.5% · laagste 91%'),
+        find.text('Zuurstof die nacht: gemiddeld 95,5% · laagste 91%'),
         findsOneWidget,
       );
     });

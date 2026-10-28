@@ -198,9 +198,8 @@ String _length(Duration d) {
   return minutes == 0 ? '${d.inHours} u' : '${d.inHours} u $minutes';
 }
 
-String _number(double value) => value == value.roundToDouble()
-    ? '${value.round()}'
-    : value.toStringAsFixed(1);
+String _number(double value) =>
+    Formatters.number((value * 10).roundToDouble() / 10);
 
 class _Synced extends ConsumerWidget {
   const _Synced();
@@ -554,7 +553,7 @@ class _WeightCard extends ConsumerWidget {
                       for (final p in points)
                         ChartPoint(p.at, formatters.toDisplayWeight(p.value)),
                     ],
-                    valueLabel: (v) => v.toStringAsFixed(1),
+                    valueLabel: formatters.decimal,
                   ),
                 ],
               ),

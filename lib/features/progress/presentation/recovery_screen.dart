@@ -58,61 +58,69 @@ class RecoveryScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
+      // A column that is always built, not a list that builds what is in
+      // view: scrolled down the muscles, the card at the top let go of
+      // today's report, came back without it while it loaded again, and the
+      // page jumped on the way back up. A few cards are no list to save work
+      // on.
+      body: SingleChildScrollView(
         padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: 32),
-        children: [
-          const MorningReportCard(leading: _NextSession()),
-          const SizedBox(height: AppSpacing.md),
-          const SleepSection(),
-          const SectionHeader('Per spiergroep'),
-          if (recent.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Text(
-                estimates.isEmpty
-                    ? 'Nog niets om te herstellen. Na je eerste workout staat '
-                          'hier per spiergroep hoe ver je bent.'
-                    : 'Alles hersteld volgens je logboek.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const MorningReportCard(leading: _NextSession()),
+            const SizedBox(height: AppSpacing.md),
+            const SleepSection(),
+            const SectionHeader('Per spiergroep'),
+            if (recent.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Text(
+                  estimates.isEmpty
+                      ? 'Nog niets om te herstellen. Na je eerste workout '
+                            'staat hier per spiergroep hoe ver je bent.'
+                      : 'Alles hersteld volgens je logboek.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-            )
-          else ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: AppCard(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                child: Column(
-                  children: [
-                    for (final (i, estimate) in recent.indexed) ...[
-                      if (i > 0) const Divider(height: 1),
-                      _MuscleRow(estimate: estimate, now: now),
+              )
+            else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: AppCard(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                  child: Column(
+                    children: [
+                      for (final (i, estimate) in recent.indexed) ...[
+                        if (i > 0) const Divider(height: 1),
+                        _MuscleRow(estimate: estimate, now: now),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.sm,
-                AppSpacing.lg,
-                0,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: Text(
+                  'Tik op een spier om te zeggen hoe ze voelt.',
+                  style: muted,
+                ),
               ),
-              child: Text(
-                'Tik op een spier om te zeggen hoe ze voelt.',
-                style: muted,
-              ),
-            ),
+            ],
+            // Only for whoever asked for it: a drinks counter is not
+            // something to put in front of everyone who opens a training log.
+            if (ref.watch(settingsProvider).value?.trackAlcohol ?? false) ...[
+              const SectionHeader('Alcohol'),
+              const AlcoholSection(),
+            ],
           ],
-          // Only for whoever asked for it: a drinks counter is not something
-          // to put in front of everyone who opens a training log.
-          if (ref.watch(settingsProvider).value?.trackAlcohol ?? false) ...[
-            const SectionHeader('Alcohol'),
-            const AlcoholSection(),
-          ],
-        ],
+        ),
       ),
     );
   }

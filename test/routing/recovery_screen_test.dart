@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/app/app_state.dart';
+import 'package:fitlog/core/calc/recovery.dart' show kBaseRecoveryHours;
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/security/key_manager.dart';
 import 'package:fitlog/core/theme/app_theme.dart';
@@ -688,6 +689,100 @@ void main() {
 
     expect(find.text('Diep'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('terug naar boven scrollen springt niet', (tester) async {
+    // Elke spiergroep een oefening: een lijst die langer is dan het scherm.
+    final at = DateTime.now().subtract(const Duration(hours: 3));
+    await db
+        .into(db.workoutsTable)
+        .insert(
+          WorkoutsTableCompanion.insert(
+            id: 'w-all',
+            name: 'Alles',
+            startedAt: at.millisecondsSinceEpoch,
+            endedAt: Value(
+              at.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+            ),
+          ),
+        );
+    for (final (i, muscle) in kBaseRecoveryHours.keys.indexed) {
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-$muscle',
+              name: 'Oefening $i',
+              primaryMuscle: muscle,
+              category: 'barbell',
+              createdAt: 0,
+            ),
+          );
+      await db
+          .into(db.workoutExercisesTable)
+          .insert(
+            WorkoutExercisesTableCompanion.insert(
+              id: 'we-$muscle',
+              workoutId: 'w-all',
+              exerciseId: 'ex-$muscle',
+              sortOrder: i,
+            ),
+          );
+      await db
+          .into(db.workoutSetsTable)
+          .insert(
+            WorkoutSetsTableCompanion.insert(
+              id: 's-$muscle',
+              workoutExerciseId: 'we-$muscle',
+              sortOrder: 0,
+              weightKg: const Value(60),
+              reps: const Value(8),
+              isCompleted: const Value(true),
+            ),
+          );
+    }
+    final now = DateTime.now();
+    await db.recoveryDao.setSleep(
+      fellAsleepAt: now.subtract(const Duration(hours: 8)),
+      wokeAt: now.subtract(const Duration(minutes: 30)),
+    );
+    await pumpApp(tester, size: const Size(360, 400));
+    container!.read(routerProvider).push(Routes.muscleRecovery);
+    await tester.pumpAndSettle();
+    // Het rapport van vandaag bovenaan: een kaart die er pas staat als het
+    // geladen is.
+    await tester.runAsync(
+      () => container!.read(morningControllerProvider.notifier).makeNow(),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ochtendrapport om'), findsOneWidget);
+
+    final position = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(RecoveryScreen),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    // Settled: a list only guesses how long it is until it has been down
+    // there, and springs back from a guess that was too long.
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pumpAndSettle();
+    final bottom = position.pixels;
+    expect(bottom, greaterThan(800), reason: 'a page to scroll back up');
+
+    // Back up a hundred at a time: the card at the top came back without
+    // its report while that loaded again, and the page jumped.
+    for (var to = bottom - 100; to > 0; to -= 100) {
+      position.jumpTo(to);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(position.pixels, closeTo(to, 1), reason: 'back up to $to');
+    }
+    expect(find.textContaining('Ochtendrapport om'), findsOneWidget);
   });
 }
 

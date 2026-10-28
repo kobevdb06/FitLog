@@ -209,6 +209,11 @@ class Formatters {
 
   String decimal(double value) => _decimal.format(value);
 
+  /// [text] with its spaces made non-breaking: `12 okt` or `-1,5 kg` in a
+  /// line that wraps stays on one line, rather than leaving `okt` or `kg`
+  /// alone at the start of the next.
+  static String unbroken(String text) => text.replaceAll(' ', ' ');
+
   /// `Buik`: a muscle group's name where it stands on its own - a label, a
   /// chip, a row. Stored as `buik`, which is how it reads inside a sentence
   /// ("borst en triceps herstellen nog").

@@ -24,6 +24,9 @@ void main() {
   final now = DateTime.now();
   DateTime daysAgo(int days) => now.subtract(Duration(days: days, hours: 1));
 
+  /// A date as it stands in a line: day and month never on two lines.
+  String on(DateTime at) => Formatters.dayMonth(at).replaceAll(' ', ' ');
+
   setUp(() async {
     db = createTestDatabase();
     await db.settingsDao.ensureInitialized();
@@ -350,20 +353,11 @@ void main() {
       // What the number is, once above them all rather than under each.
       expect(find.text('geschatte 1RM'), findsOneWidget);
       expect(find.textContaining('Geschatte 1RM ·'), findsNothing);
-      expect(
-        find.text('+8 kg sinds ${Formatters.dayMonth(daysAgo(70))}'),
-        findsOneWidget,
-      );
-      expect(
-        find.text('Gelijk sinds ${Formatters.dayMonth(daysAgo(60))}'),
-        findsOneWidget,
-      );
+      expect(find.text('+8 kg sinds ${on(daysAgo(70))}'), findsOneWidget);
+      expect(find.text('Gelijk sinds ${on(daysAgo(60))}'), findsOneWidget);
       // Two sessions: where it stands, nothing to compare yet.
       expect(find.text('2 sessies'), findsOneWidget);
-      expect(
-        find.textContaining('sinds ${Formatters.dayMonth(daysAgo(30))}'),
-        findsNothing,
-      );
+      expect(find.textContaining('sinds ${on(daysAgo(30))}'), findsNothing);
       expect(find.byType(Sparkline), findsNWidgets(3));
     });
 
@@ -483,17 +477,13 @@ void main() {
       expect(find.text('LICHAAMSGEWICHT'), findsNothing);
       expect(find.byType(TrendLineChart), findsNothing);
       expect(
-        find.text(
-          '77,5 kg · -0,5 kg sinds ${Formatters.dayMonth(daysAgo(20))}',
-        ),
+        find.text('77,5 kg · -0,5 kg sinds ${on(daysAgo(20))}'),
         findsOneWidget,
       );
 
       await choose(tester, '1 jaar');
       expect(
-        find.text(
-          '77,5 kg · -2,5 kg sinds ${Formatters.dayMonth(daysAgo(200))}',
-        ),
+        find.text('77,5 kg · -2,5 kg sinds ${on(daysAgo(200))}'),
         findsOneWidget,
       );
     });
@@ -506,7 +496,7 @@ void main() {
 
       expect(
         find.text(
-          '80 kg · ${Formatters.relativeDay(daysAgo(200)).toLowerCase()}',
+          '80 kg · ${Formatters.relativeDay(daysAgo(200)).toLowerCase()}',
         ),
         findsOneWidget,
       );
@@ -576,6 +566,16 @@ void main() {
     final line = tester.getSize(find.text('4 weken')).height;
     for (final period in ['3 maanden', '1 jaar']) {
       expect(tester.getSize(find.text(period)).height, line, reason: period);
+    }
+
+    // What the chart shows, on one line: "Sets" fell to a second.
+    final chips = find.byType(ChoiceChip);
+    expect(chips, findsNWidgets(3));
+    for (var i = 1; i < 3; i++) {
+      expect(
+        tester.getTopLeft(chips.at(i)).dy,
+        tester.getTopLeft(chips.at(0)).dy,
+      );
     }
 
     // An overflow anywhere fails the test on its own.

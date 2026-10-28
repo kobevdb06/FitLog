@@ -182,8 +182,8 @@ class _LiftRow extends ConsumerWidget {
     // Without two ends to compare, how often it was done.
     final moved = shownChange == null
         ? sessions
-        : '${_difference(formatters, trend.measure, shownChange)} sinds '
-              '${Formatters.dayMonth(trend.since)}';
+        : '${Formatters.unbroken(_difference(formatters, trend.measure, shownChange))} '
+              'sinds ${Formatters.unbroken(Formatters.dayMonth(trend.since))}';
     final up = shownChange != null && shownChange > 0;
     final value = _value(formatters, trend.measure, latest);
 
@@ -385,19 +385,33 @@ class _Training extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: [
-                          for (final option in TrainingMeasure.values)
-                            ChoiceChip(
-                              label: Text(option.label),
-                              selected: measure == option,
-                              onSelected: (_) => ref
-                                  .read(trainingMeasureChoiceProvider.notifier)
-                                  .choose(option),
-                            ),
-                        ],
+                      // On one line, a little smaller where it has to be:
+                      // on a narrow phone with a large font "Sets" fell to
+                      // a line of its own. No check mark - the filled chip
+                      // says what is chosen.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final option in TrainingMeasure.values) ...[
+                              if (option != TrainingMeasure.values.first)
+                                const SizedBox(width: AppSpacing.sm),
+                              ChoiceChip(
+                                label: Text(option.label),
+                                showCheckmark: false,
+                                visualDensity: VisualDensity.compact,
+                                selected: measure == option,
+                                onSelected: (_) => ref
+                                    .read(
+                                      trainingMeasureChoiceProvider.notifier,
+                                    )
+                                    .choose(option),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       SimpleBarChart(
@@ -438,30 +452,7 @@ class _MuscleSets extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          'Sets per spiergroep',
-          action: IconButton(
-            tooltip: 'Over sets per spiergroep',
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.info_outline, size: 20),
-            onPressed: () => showAppSheet<void>(
-              context: context,
-              title: 'Sets per spiergroep',
-              builder: (context) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text(
-                  'Je werksets per week in deze periode, bij de spiergroep '
-                  'die de oefening vooral traint. Opwarmsets tellen niet '
-                  'mee, en een deloadweek ook niet. Het streepje is wat je '
-                  'per week deed in een even lange periode ervoor; wat daar '
-                  'duidelijk onder zakte, minder dan zeven tiende ervan, '
-                  'staat in het oranje.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ),
-          ),
-        ),
+        const SectionHeader('Sets per spiergroep'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: AppCard(
@@ -482,10 +473,23 @@ class _MuscleSets extends ConsumerWidget {
                             ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.sm),
                       // What the numbers are; how to read the marks is
-                      // behind the i, for whoever wants it once.
-                      Text('Werksets per week', style: muted),
+                      // behind the i, for whoever wants it once. In the
+                      // card rather than beside the header, where the
+                      // button made that header taller than the others.
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text('Werksets per week', style: muted),
+                          ),
+                          IconButton(
+                            tooltip: 'Over sets per spiergroep',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.info_outline, size: 20),
+                            onPressed: () => _explainMuscleSets(context),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
           ),
@@ -494,6 +498,23 @@ class _MuscleSets extends ConsumerWidget {
     );
   }
 }
+
+/// How to read the bars of [_MuscleSets], on request.
+Future<void> _explainMuscleSets(BuildContext context) => showAppSheet<void>(
+  context: context,
+  title: 'Sets per spiergroep',
+  builder: (context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+    child: Text(
+      'Je werksets per week in deze periode, bij de spiergroep die de '
+      'oefening vooral traint. Opwarmsets tellen niet mee, en een deloadweek '
+      'ook niet. Het streepje is wat je per week deed in een even lange '
+      'periode ervoor; wat daar duidelijk onder zakte, minder dan zeven '
+      'tiende ervan, staat in het oranje.',
+      style: Theme.of(context).textTheme.bodyMedium,
+    ),
+  ),
+);
 
 /// The way in to everything else that tracks progress, each saying in
 /// passing how it stands, the way Herstel always did.
@@ -653,19 +674,21 @@ class _WeightTile extends ConsumerWidget {
       ];
       // With one weighing in the period there is nothing to compare; when it
       // was says how much the number still means.
+      final weight = Formatters.unbroken(formatters.weight(latest.value));
       if (inPeriod.length < 2) {
-        return '${formatters.weight(latest.value)} · '
-            '${Formatters.relativeDay(latest.at).toLowerCase()}';
+        return '$weight · ${Formatters.relativeDay(latest.at).toLowerCase()}';
       }
       final moved = formatters.toDisplayWeight(
         inPeriod.last.value - inPeriod.first.value,
       );
-      final since = Formatters.dayMonth(inPeriod.first.at);
+      final since = Formatters.unbroken(Formatters.dayMonth(inPeriod.first.at));
       final change = moved == 0
           ? 'gelijk'
-          : '${moved > 0 ? '+' : '-'}'
-                '${formatters.weight(formatters.fromDisplayWeight(moved.abs()))}';
-      return '${formatters.weight(latest.value)} · $change sinds $since';
+          : Formatters.unbroken(
+              '${moved > 0 ? '+' : '-'}'
+              '${formatters.weight(formatters.fromDisplayWeight(moved.abs()))}',
+            );
+      return '$weight · $change sinds $since';
     }
 
     return _MoreTile(

@@ -10,6 +10,7 @@ import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../routines/presentation/routine_start.dart';
 import '../domain/training_check.dart';
+import '../../../core/formatting/formatters.dart';
 
 /// The colour of a verdict: green when ready, amber otherwise.
 Color checkColor(CheckVerdict verdict) =>
@@ -171,7 +172,7 @@ class _CheckSheet extends ConsumerWidget {
           else
             for (final muscle in check.muscles)
               _CheckRow(
-                label: _capital(muscle.muscle),
+                label: Formatters.muscle(muscle.muscle),
                 detail: '${muscle.sets} sets',
                 value: muscle.left == Duration.zero
                     ? 'hersteld'
@@ -274,9 +275,6 @@ class _CheckSheet extends ConsumerWidget {
     );
   }
 }
-
-String _capital(String text) =>
-    text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
 
 /// One line of the check: what, a word under it, and how it stands.
 class _CheckRow extends StatelessWidget {

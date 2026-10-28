@@ -14,6 +14,7 @@ import '../../../routing/routes.dart';
 import 'custom_exercise_screen.dart';
 import 'exercise_preview_sheet.dart';
 import 'exercise_providers.dart';
+import '../../../core/formatting/formatters.dart';
 
 /// The exercise catalogue.
 ///
@@ -335,7 +336,7 @@ class _FilterChips extends ConsumerWidget {
               children: [
                 for (final muscle in muscles) ...[
                   FilterChip(
-                    label: Text(muscle),
+                    label: Text(Formatters.muscle(muscle)),
                     selected: filter.muscles.contains(muscle),
                     onSelected: (_) => notifier.toggleMuscle(muscle),
                   ),

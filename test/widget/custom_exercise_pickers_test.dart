@@ -206,7 +206,7 @@ void main() {
       await tester.enterText(find.byType(TextField).first, 'Sledepush');
       await tester.tap(field('Primaire spiergroep'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('borst').last);
+      await tester.tap(find.text('Borst').last);
       await tester.pumpAndSettle();
 
       await openFrameSheet(tester);
@@ -278,7 +278,7 @@ void main() {
 
       await tester.tap(field('Primaire spiergroep'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('borst').last);
+      await tester.tap(find.text('Borst').last);
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Opslaan'));
@@ -398,7 +398,7 @@ void main() {
       expect(find.text('Welke spier werkt het hardst?'), findsOneWidget);
       expect(
         find.descendant(
-          of: find.widgetWithText(ListTile, 'biceps'),
+          of: find.widgetWithText(ListTile, 'Biceps'),
           matching: find.byType(MuscleAvatar),
         ),
         findsOneWidget,
@@ -412,13 +412,13 @@ void main() {
 
       await tester.tap(field('Primaire spiergroep'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('biceps').last);
+      await tester.tap(find.text('Biceps').last);
       await tester.pumpAndSettle();
 
       expect(
         find.descendant(
           of: field('Primaire spiergroep'),
-          matching: find.text('biceps'),
+          matching: find.text('Biceps'),
         ),
         findsOneWidget,
       );

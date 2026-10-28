@@ -198,7 +198,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                               backgroundColor: AppColors.forMuscle(muscle),
                               radius: 6,
                             ),
-                            label: Text(muscle),
+                            label: Text(Formatters.muscle(muscle)),
                           ),
                       ],
                     ),

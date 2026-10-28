@@ -96,8 +96,8 @@ void main() {
 
     expect(find.text('Zet de stang op je schouders.'), findsOneWidget);
     expect(find.text('Barbell · halterstang'), findsOneWidget);
-    expect(find.text('quadriceps (primair)'), findsOneWidget);
-    expect(find.text('bilspieren'), findsOneWidget);
+    expect(find.text('Quadriceps (primair)'), findsOneWidget);
+    expect(find.text('Bilspieren'), findsOneWidget);
   });
 
   testWidgets('and nothing you did not come for', (tester) async {

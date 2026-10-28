@@ -271,7 +271,9 @@ class _InfoTab extends ConsumerWidget {
                 backgroundColor: AppColors.forMuscle(exercise.primaryMuscle),
                 radius: 6,
               ),
-              label: Text('${exercise.primaryMuscle} (primair)'),
+              label: Text(
+                '${Formatters.muscle(exercise.primaryMuscle)} (primair)',
+              ),
             ),
             for (final muscle in secondary)
               Chip(
@@ -279,7 +281,7 @@ class _InfoTab extends ConsumerWidget {
                   backgroundColor: AppColors.forMuscle(muscle),
                   radius: 6,
                 ),
-                label: Text(muscle),
+                label: Text(Formatters.muscle(muscle)),
               ),
           ],
         ),

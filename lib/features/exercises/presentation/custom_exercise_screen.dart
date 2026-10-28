@@ -11,6 +11,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../chat/data/ai_client.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../photos/data/photo_store.dart';
@@ -435,7 +436,9 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
             leading: _primaryMuscle == null
                 ? null
                 : MuscleAvatar(muscle: _primaryMuscle, size: 28),
-            text: _primaryMuscle ?? 'Kies een spiergroep',
+            text: _primaryMuscle == null
+                ? 'Kies een spiergroep'
+                : Formatters.muscle(_primaryMuscle!),
             muted: _primaryMuscle == null,
             onTap: () async {
               final picked = await pickMuscle(
@@ -457,7 +460,7 @@ class _CustomExerciseScreenState extends ConsumerState<CustomExerciseScreen> {
             children: [
               for (final m in muscles)
                 FilterChip(
-                  label: Text(m),
+                  label: Text(Formatters.muscle(m)),
                   selected: _secondaryMuscles.contains(m),
                   onSelected: (selected) => setState(() {
                     selected

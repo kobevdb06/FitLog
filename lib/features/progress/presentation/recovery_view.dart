@@ -30,7 +30,7 @@ class RecoveryRow extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  estimate.muscle,
+                  Formatters.muscle(estimate.muscle),
                   style: theme.textTheme.bodyMedium,
                 ),
               ),

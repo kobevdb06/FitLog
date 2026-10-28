@@ -363,7 +363,7 @@ void main() {
       await trainedLegs();
       await openRecovery(tester);
 
-      expect(find.text('quadriceps'), findsOneWidget);
+      expect(find.text('Quadriceps'), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'Fris'), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'Stijf'), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'Pijnlijk'), findsOneWidget);

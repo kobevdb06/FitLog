@@ -199,6 +199,12 @@ class Formatters {
 
   String decimal(double value) => _decimal.format(value);
 
+  /// `Buik`: a muscle group's name where it stands on its own - a label, a
+  /// chip, a row. Stored as `buik`, which is how it reads inside a sentence
+  /// ("borst en triceps herstellen nog").
+  static String muscle(String name) =>
+      name.isEmpty ? name : '${name[0].toUpperCase()}${name.substring(1)}';
+
   /// `52,5`, `60`: a number with no unit, as on the axis of a chart.
   static String number(double value) => _decimal.format(value);
 

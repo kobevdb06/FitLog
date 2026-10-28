@@ -17,6 +17,7 @@ import '../../../core/util/paths.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/exercise_image.dart';
 import 'exercise_providers.dart';
+import '../../../core/formatting/formatters.dart';
 
 Future<void> showExercisePreview(
   BuildContext context, {
@@ -140,7 +141,11 @@ class _MuscleChip extends StatelessWidget {
         backgroundColor: AppColors.forMuscle(muscle),
         radius: 6,
       ),
-      label: Text(primary ? '$muscle (primair)' : muscle),
+      label: Text(
+        primary
+            ? '${Formatters.muscle(muscle)} (primair)'
+            : Formatters.muscle(muscle),
+      ),
     );
   }
 }

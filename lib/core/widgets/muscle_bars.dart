@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../formatting/formatters.dart';
 
 /// One muscle's line in [MuscleBars].
 class MuscleBar {
@@ -57,9 +58,7 @@ class MuscleBars extends StatelessWidget {
                 SizedBox(
                   width: 96,
                   child: Text(
-                    m.muscle.isEmpty
-                        ? m.muscle
-                        : m.muscle[0].toUpperCase() + m.muscle.substring(1),
+                    Formatters.muscle(m.muscle),
                     style: theme.textTheme.bodyMedium,
                     overflow: TextOverflow.ellipsis,
                   ),

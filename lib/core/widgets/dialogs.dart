@@ -630,7 +630,7 @@ Future<String?> pickMuscle(
         for (final muscle in muscles)
           ListTile(
             leading: MuscleAvatar(muscle: muscle, size: 32),
-            title: Text(muscle),
+            title: Text(Formatters.muscle(muscle)),
             selected: muscle == current,
             onTap: () => Navigator.of(context).pop(muscle),
           ),

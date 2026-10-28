@@ -144,7 +144,6 @@ class _LiftRow extends ConsumerWidget {
     final theme = Theme.of(context);
     final formatters = ref.watch(formattersProvider);
     final trend = lift.trend;
-    final change = trend.change;
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
@@ -159,11 +158,18 @@ class _LiftRow extends ConsumerWidget {
       'sessie',
       'sessies',
     );
-    final moved = change == null
+    final latest = _shown(formatters, trend.measure, trend.latest);
+    // Between the two ends as they are shown, so the change is what the
+    // numbers on screen add up to.
+    final shownChange = switch (trend.earliest) {
+      final from? => latest - _shown(formatters, trend.measure, from),
+      null => null,
+    };
+    final moved = shownChange == null
         ? null
-        : '${_difference(formatters, trend.measure, change)} sinds '
+        : '${_difference(formatters, trend.measure, shownChange)} sinds '
               '${Formatters.dayMonth(trend.since)}';
-    final up = change != null && _shown(formatters, trend.measure, change) > 0;
+    final up = shownChange != null && shownChange > 0;
 
     return InkWell(
       onTap: () => context.push(Routes.exerciseCharts(lift.exercise.id)),
@@ -195,7 +201,7 @@ class _LiftRow extends ConsumerWidget {
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Text(
-                        _value(formatters, trend.measure, trend.latest),
+                        _value(formatters, trend.measure, latest),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
@@ -223,36 +229,36 @@ class _LiftRow extends ConsumerWidget {
     );
   }
 
-  static String _value(
+  /// [value] as it is shown, in the unit it is shown in: an estimate to the
+  /// whole kilo or pound, repetitions and seconds whole.
+  static int _shown(
     Formatters formatters,
     ProgressMeasure measure,
     double value,
   ) => switch (measure) {
-    ProgressMeasure.oneRm => formatters.weight(value),
-    ProgressMeasure.reps => '${value.round()} reps',
-    ProgressMeasure.hold => Formatters.minutesSeconds(value.round()),
+    ProgressMeasure.oneRm => formatters.estimateValue(value),
+    _ => value.round(),
   };
 
-  /// The change as it will be shown: rounded the way the value is, so a
-  /// tenth of a kilo does not count as going up.
-  static double _shown(
+  /// A number from [_shown], with its unit.
+  static String _value(
     Formatters formatters,
     ProgressMeasure measure,
-    double change,
+    int shown,
   ) => switch (measure) {
     ProgressMeasure.oneRm =>
-      formatters.toDisplayWeight(change.abs()) * change.sign,
-    _ => change.roundToDouble(),
+      '${formatters.count(shown)} ${formatters.weightUnitLabel}',
+    ProgressMeasure.reps => '$shown reps',
+    ProgressMeasure.hold => Formatters.minutesSeconds(shown),
   };
 
   static String _difference(
     Formatters formatters,
     ProgressMeasure measure,
-    double change,
+    int change,
   ) {
-    final shown = _shown(formatters, measure, change);
-    if (shown == 0) return 'Gelijk';
-    final sign = shown > 0 ? '+' : '-';
+    if (change == 0) return 'Gelijk';
+    final sign = change > 0 ? '+' : '-';
     return '$sign${_value(formatters, measure, change.abs())}';
   }
 }

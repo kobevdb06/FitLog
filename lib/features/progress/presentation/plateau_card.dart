@@ -23,7 +23,7 @@ String _weeks(int weeks) => weeks == 1 ? '1 week' : '$weeks weken';
 /// The number a plateau is about, in its own unit.
 String plateauValue(Plateau plateau, double value, Formatters formatters) =>
     switch (plateau.measure) {
-      ProgressMeasure.oneRm => formatters.weight(value),
+      ProgressMeasure.oneRm => formatters.estimate(value),
       ProgressMeasure.reps => Formatters.amount(
         value.round(),
         'herhaling',

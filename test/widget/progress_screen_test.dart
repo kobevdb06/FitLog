@@ -269,11 +269,12 @@ void main() {
       expect(find.text('Barbell Curl'), findsNothing);
       expect(find.text('Lunge'), findsNothing);
 
-      // 107.5 for three, against 100 for three at the start.
-      expect(find.text('118,25 kg'), findsOneWidget);
+      // 107.5 for three, against 100 for three at the start: 118.25 and
+      // 110, to the whole kilo - an estimate is not that precise.
+      expect(find.text('118 kg'), findsOneWidget);
       expect(find.text('Geschatte 1RM · 6 sessies'), findsOneWidget);
       expect(
-        find.text('+8,25 kg sinds ${Formatters.dayMonth(daysAgo(70))}'),
+        find.text('+8 kg sinds ${Formatters.dayMonth(daysAgo(70))}'),
         findsOneWidget,
       );
       expect(

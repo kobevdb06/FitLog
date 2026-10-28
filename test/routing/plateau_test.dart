@@ -168,7 +168,7 @@ void main() {
     expect(
       find.descendant(
         of: stalled,
-        matching: find.text('6 weken geen vooruitgang · beste 99,25 kg'),
+        matching: find.text('6 weken geen vooruitgang · beste 99 kg'),
       ),
       findsOneWidget,
     );
@@ -186,9 +186,7 @@ void main() {
     expect(find.byType(ExerciseDetailScreen), findsOneWidget);
     expect(find.textContaining('Staat stil sinds'), findsOneWidget);
     expect(
-      find.textContaining(
-        'Je geschatte 1RM kwam in 6 weken niet boven 99,25 kg',
-      ),
+      find.textContaining('Je geschatte 1RM kwam in 6 weken niet boven 99 kg'),
       findsOneWidget,
     );
     expect(find.text('Keer per week'), findsOneWidget);

@@ -53,6 +53,16 @@ class Formatters {
     return '${weightValue(kg)} $weightUnitLabel';
   }
 
+  /// An estimate in the display unit, to the whole kilo or pound: a quarter
+  /// of a kilo on a number that is itself a guess claims more than it knows.
+  /// Rounded from the number itself, not from the quarter kilo it shows as.
+  int estimateValue(double kg) =>
+      (weightUnit == WeightUnit.kg ? kg : kgToLb(kg)).round();
+
+  /// `118 kg`, see [estimateValue].
+  String estimate(double kg) =>
+      '${_integer.format(estimateValue(kg))} $weightUnitLabel';
+
   /// `80 kg x 8`, the shape used in the "previous" column and in exports.
   ///
   /// Not every exercise is weight times reps: a plank is a time, a run is a

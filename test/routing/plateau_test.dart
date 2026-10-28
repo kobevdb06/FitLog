@@ -168,9 +168,14 @@ void main() {
     expect(
       find.descendant(
         of: stalled,
-        matching: find.text('6 weken geen vooruitgang · beste 99 kg'),
+        matching: find.text('6 weken stil · beste 99 kg'),
       ),
       findsOneWidget,
+    );
+    // The header says it has stalled; an arrow on every row said it again.
+    expect(
+      find.descendant(of: stalled, matching: find.byIcon(Icons.trending_flat)),
+      findsNothing,
     );
     // Wat vooruitgaat, staat er niet.
     expect(

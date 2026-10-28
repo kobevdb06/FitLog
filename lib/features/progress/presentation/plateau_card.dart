@@ -32,9 +32,9 @@ String plateauValue(Plateau plateau, double value, Formatters formatters) =>
       ProgressMeasure.hold => Formatters.duration(value.round()),
     };
 
-/// `4 weken geen vooruitgang · beste 110 kg`, for a list.
+/// `4 weken stil · beste 110 kg`, for a list under Staat stil.
 String plateauLine(Plateau plateau, Formatters formatters, {DateTime? now}) =>
-    '${_weeks(plateau.weeksAt(now ?? DateTime.now()))} geen vooruitgang · '
+    '${_weeks(plateau.weeksAt(now ?? DateTime.now()))} stil · '
     'beste ${plateauValue(plateau, plateau.best, formatters)}';
 
 /// What the coach is asked about a stalled exercise. Put in the field, never
@@ -219,7 +219,6 @@ class PlateauSection extends ConsumerWidget {
               children: [
                 for (final item in found)
                   ListTile(
-                    leading: const Icon(Icons.trending_flat),
                     title: Text(item.exercise.name),
                     subtitle: Text(
                       plateauLine(item.plateau, formatters, now: now),

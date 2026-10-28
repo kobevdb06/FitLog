@@ -103,6 +103,7 @@ class HealthOverviewScreen extends ConsumerWidget {
             const SectionHeader('Slaap'),
             _SleepCard(
               sleep: sleep,
+              now: moment,
               oxygen: [
                 for (final day in days)
                   if (sleep.last != null &&
@@ -298,9 +299,10 @@ class _NotConnected extends StatelessWidget {
 /// The last 30 nights: how long on average, the average score, and a bar
 /// per night. Last night itself is on Herstel.
 class _SleepCard extends StatelessWidget {
-  const _SleepCard({required this.sleep, this.oxygen});
+  const _SleepCard({required this.sleep, required this.now, this.oxygen});
 
   final SleepOverview sleep;
+  final DateTime now;
 
   /// The day of the last night's morning, when it has the blood oxygen of
   /// it.
@@ -364,13 +366,13 @@ class _SleepCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  _NightBars(nights: nights),
+                  _NightBars(nights: nights, now: now),
                   const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          Formatters.dayMonth(nights.first.morning),
+                          Formatters.dayMonth(_windowStart(now)),
                           style: _muted(context),
                         ),
                       ),
@@ -408,14 +410,26 @@ class _SleepCard extends StatelessWidget {
 }
 
 /// A bar per night, as high as its score; the last night in full colour.
+/// The first morning of the window the screen looks at.
+DateTime _windowStart(DateTime now) =>
+    DateTime(now.year, now.month, now.day - kHealthWindow.inDays + 1);
+
+/// A slot per day of the window, a bar where there was a night - as high
+/// as its score, the last in full colour. A slot per day rather than a bar
+/// per night: one night filled the whole width, and a week without nights
+/// did not show as a gap.
 class _NightBars extends StatelessWidget {
-  const _NightBars({required this.nights});
+  const _NightBars({required this.nights, required this.now});
 
   final List<NightPoint> nights;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final colour = Theme.of(context).colorScheme.primary;
+    final start = _windowStart(now);
+    final byMorning = {for (final night in nights) night.morning: night};
+    final last = nights.isEmpty ? null : nights.last.morning;
     return Semantics(
       label:
           '${nights.length} nachten, scores van '
@@ -427,22 +441,29 @@ class _NightBars extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            for (final (i, night) in nights.indexed) ...[
+            for (var i = 0; i < kHealthWindow.inDays; i++) ...[
               if (i > 0) const SizedBox(width: 2),
               Expanded(
-                child: FractionallySizedBox(
-                  heightFactor: (night.score / 100).clamp(0.05, 1.0),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: i == nights.length - 1
-                          ? colour
-                          : colour.withValues(alpha: 0.35),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(2),
+                child: switch (byMorning[DateTime(
+                  start.year,
+                  start.month,
+                  start.day + i,
+                )]) {
+                  final night? => FractionallySizedBox(
+                    heightFactor: (night.score / 100).clamp(0.05, 1.0),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: night.morning == last
+                            ? colour
+                            : colour.withValues(alpha: 0.35),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(2),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  null => const SizedBox.shrink(),
+                },
               ),
             ],
           ],

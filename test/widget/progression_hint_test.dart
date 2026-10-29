@@ -200,6 +200,24 @@ void main() {
     expect(find.text('Probeer 82,5 kg × 8'), findsOneWidget);
   });
 
+  testWidgets(
+    'invullen staat onder de titel, zodat die de hele breedte heeft',
+    (tester) async {
+      // Naast "Invullen" brak "Probeer 26 herhalingen" op een smalle gsm met
+      // grote tekst over twee regels.
+      await tester.runAsync(() => logBench(7, 80, [8, 8, 8], rpe: 8));
+      await pumpWorkout(tester, size: const Size(360, 800), textScale: 1.3);
+
+      final title = tester.getRect(find.text('Probeer 82,5 kg × 8'));
+      final basis = tester.getRect(
+        find.text('Vorige keer 3 × 8 met 80 kg, RPE 8'),
+      );
+      final button = tester.getRect(find.text('Invullen'));
+      expect(button.top, greaterThanOrEqualTo(title.bottom));
+      expect(button.left, greaterThan(basis.left), reason: 'naast de basis');
+    },
+  );
+
   testWidgets('de eerste keer ook niet', (tester) async {
     await tester.runAsync(() async {
       await db.customStatement('DELETE FROM workout_sets');

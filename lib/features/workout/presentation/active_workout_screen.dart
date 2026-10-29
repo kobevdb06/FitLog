@@ -1714,34 +1714,53 @@ class _HintLine extends StatelessWidget {
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
+        // "Invullen" sits beside what it is based on, not beside the title:
+        // there it took the width the title needed, and on a narrow phone
+        // with large text "Probeer 26 herhalingen" broke over two lines.
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              _forward ? Icons.trending_up : Icons.repeat,
-              size: 20,
-              color: colour,
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Icon(
+                _forward ? Icons.trending_up : Icons.repeat,
+                size: 20,
+                color: colour,
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: _forward ? colour : null,
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    child: Text(
+                      _title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: _forward ? colour : null,
+                      ),
                     ),
                   ),
-                  Text(
-                    _basis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _basis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: onApply,
+                        child: const Text('Invullen'),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            TextButton(onPressed: onApply, child: const Text('Invullen')),
           ],
         ),
       ),

@@ -8,6 +8,8 @@ import 'package:fitlog/features/workout/presentation/active_workout_screen.dart'
 import 'package:fitlog/features/workout/presentation/rest_timer_bar.dart';
 import 'package:fitlog/features/workout/presentation/workout_summary_screen.dart';
 import 'package:fitlog/core/widgets/numeric_keypad.dart';
+import 'package:fitlog/core/widgets/exercise_avatar.dart';
+import 'package:fitlog/core/theme/app_colors.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -122,6 +124,19 @@ void main() {
     // Column headers of the set table.
     expect(find.text('VORIGE'), findsOneWidget);
     expect(find.text('REPS'), findsOneWidget);
+  });
+
+  testWidgets('the card has the picture before the name, in plain text', (
+    tester,
+  ) async {
+    // As in the routine editor. The name was in the accent colour, which made
+    // every card start with what looked like a link.
+    await pumpScreen(tester);
+
+    final avatar = tester.getRect(find.byType(ExerciseAvatar));
+    final name = find.text('Barbell Bench Press');
+    expect(avatar.right, lessThan(tester.getRect(name).left));
+    expect(tester.widget<Text>(name).style?.color, isNot(AppColors.accent));
   });
 
   testWidgets('checking a set off writes it and starts the rest timer', (

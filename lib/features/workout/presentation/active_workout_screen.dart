@@ -1381,17 +1381,20 @@ class _CardHeader extends ConsumerWidget {
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                // The picture and the name, as in the routine editor. The
+                // name used to be in the accent colour, which made every card
+                // start with what looked like a link.
                 child: Row(
                   children: [
+                    ExerciseAvatar(exercise: detail.exercise, size: 32),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             detail.exercise.name,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: AppColors.accent,
-                            ),
+                            style: theme.textTheme.titleSmall,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),

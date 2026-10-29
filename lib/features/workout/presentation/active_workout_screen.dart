@@ -914,8 +914,6 @@ class _ExerciseCard extends ConsumerWidget {
         (SetType.fromWire(s.setType), SetSide.fromWire(s.side)),
     ]);
 
-    // The body of the card. Pulled out so that the stripe down the left of a
-    // superset can be wrapped around it without everything else paying for it.
     final inhoud = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1000,32 +998,14 @@ class _ExerciseCard extends ConsumerWidget {
       ],
     );
 
-    // IntrinsicHeight lays the whole card out a second time - the header, the
-    // note, every set row - and it is only needed so the superset stripe has a
-    // height to stretch to. A card without a stripe has nothing to stretch and
-    // does not need the Row either, so it gets neither.
+    // A superset is its border and "Superset A" under the name, as in the
+    // routine editor. It also had a stripe down the left and a letter before
+    // the name: three marks for one fact, and the stripe stuck out past the
+    // rounded corner.
     return AppCard(
       padding: EdgeInsets.zero,
       borderColor: groupColor,
-      child: groupColor == null
-          ? inhoud
-          : IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: 4,
-                    decoration: BoxDecoration(
-                      color: groupColor,
-                      borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(AppSpacing.radiusLg),
-                      ),
-                    ),
-                  ),
-                  Expanded(child: inhoud),
-                ],
-              ),
-            ),
+      child: inhoud,
     );
   }
 
@@ -1403,33 +1383,26 @@ class _CardHeader extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Row(
                   children: [
-                    if (group != null) ...[
-                      Container(
-                        width: 22,
-                        height: 22,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: groupColor?.withValues(alpha: 0.20),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          String.fromCharCode(65 + group!),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: groupColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
                     Expanded(
-                      child: Text(
-                        detail.exercise.name,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: AppColors.accent,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            detail.exercise.name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: AppColors.accent,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (group != null)
+                            Text(
+                              'Superset ${String.fromCharCode(65 + group!)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: groupColor,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],

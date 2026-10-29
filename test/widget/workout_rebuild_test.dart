@@ -114,7 +114,7 @@ void main() {
       expect(find.byType(IntrinsicHeight), findsNothing);
     });
 
-    testWidgets('and is done for the stripe down a superset', (tester) async {
+    testWidgets('nor for a superset', (tester) async {
       final detail = (await db.workoutsDao.getWorkoutDetail(workoutId))!;
       for (final exercise in detail.exercises.take(2)) {
         await db.workoutsDao.updateWorkoutExercise(
@@ -125,9 +125,11 @@ void main() {
 
       await pump(tester);
 
-      // The stripe has to reach from top to bottom, and a stretching Row in a
-      // scroll view has no height of its own to reach across.
-      expect(find.byType(IntrinsicHeight), findsNWidgets(2));
+      // Its border and its name say it, as in the routine editor. The stripe
+      // down the side needed the card laid out twice to know how long to be.
+      expect(find.text('Superset A'), findsNWidgets(2));
+      expect(find.text('A'), findsNothing);
+      expect(find.byType(IntrinsicHeight), findsNothing);
     });
   });
 

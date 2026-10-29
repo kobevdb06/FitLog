@@ -201,10 +201,13 @@ class _Header extends StatelessWidget {
             onPressed: onPlates,
             icon: const Icon(Icons.donut_large_outlined),
           ),
+        // A cross, not the backspace icon: this empties the field, the key
+        // in the grid takes off one digit, and with the same icon they read
+        // as the same key twice.
         IconButton(
           tooltip: 'Leegmaken',
           onPressed: onClear,
-          icon: const Icon(Icons.backspace_outlined),
+          icon: const Icon(Icons.close),
         ),
       ],
     );
@@ -350,73 +353,86 @@ class _Digits extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (final row in const [
-          ['1', '2', '3'],
-          ['4', '5', '6'],
-          ['7', '8', '9'],
-        ])
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-            child: Row(
-              children: [
-                for (final d in row) ...[
-                  Expanded(
-                    child: _Key(label: d, onTap: () => onDigit(d)),
-                  ),
-                  if (d != row.last) const SizedBox(width: AppSpacing.xs),
-                ],
-                const SizedBox(width: AppSpacing.xs),
-                if (row.first == '1')
-                  Expanded(
-                    child: _Key(
-                      icon: Icons.backspace_outlined,
-                      onTap: onBackspace,
-                      semanticLabel: 'Wis cijfer',
-                    ),
-                  )
-                else if (row.first == '4')
-                  Expanded(
-                    child: _Key(
-                      icon: Icons.keyboard_tab,
-                      onTap: onNext,
-                      semanticLabel: 'Volgend veld',
-                      tone: _KeyTone.neutral,
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: _Key(
-                      icon: Icons.check,
-                      onTap: onDone,
-                      semanticLabel: 'Klaar',
-                      tone: _KeyTone.accent,
-                      tall: true,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        Row(
+    // Three columns of digits and a fourth of what you do with them. The tick
+    // runs down the last two rows: it is the key you end on, and the corner
+    // beside the 0 had nothing in it.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final column = (constraints.maxWidth - 3 * AppSpacing.xs) / 4;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _Key(
-                label: kind.allowsDecimal ? kDecimalSeparator : '',
-                onTap: kind.allowsDecimal ? onDecimal : null,
+              child: Column(
+                children: [
+                  for (final row in const [
+                    ['1', '2', '3'],
+                    ['4', '5', '6'],
+                    ['7', '8', '9'],
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                      child: Row(
+                        children: [
+                          for (final d in row) ...[
+                            Expanded(
+                              child: _Key(label: d, onTap: () => onDigit(d)),
+                            ),
+                            if (d != row.last)
+                              const SizedBox(width: AppSpacing.xs),
+                          ],
+                        ],
+                      ),
+                    ),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: column,
+                        child: _Key(
+                          label: kind.allowsDecimal ? kDecimalSeparator : '',
+                          onTap: kind.allowsDecimal ? onDecimal : null,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: _Key(label: '0', onTap: () => onDigit('0')),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              flex: 2,
-              child: _Key(label: '0', onTap: () => onDigit('0')),
+            SizedBox(
+              width: column,
+              child: Column(
+                children: [
+                  _Key(
+                    icon: Icons.backspace_outlined,
+                    onTap: onBackspace,
+                    semanticLabel: 'Wis cijfer',
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _Key(
+                    icon: Icons.keyboard_tab,
+                    onTap: onNext,
+                    semanticLabel: 'Volgend veld',
+                    tone: _KeyTone.neutral,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _Key(
+                    icon: Icons.check,
+                    onTap: onDone,
+                    semanticLabel: 'Klaar',
+                    tone: _KeyTone.accent,
+                    height: 2 * _Key.rowHeight + AppSpacing.xs,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(width: AppSpacing.xs),
-            // Keeps the grid aligned with the fourth column above.
-            const Expanded(child: SizedBox()),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -430,15 +446,18 @@ class _Key extends StatelessWidget {
     required this.onTap,
     this.tone = _KeyTone.normal,
     this.semanticLabel,
-    this.tall = false,
+    this.height = rowHeight,
   });
+
+  /// One row of the grid: a thumb, with a little to spare.
+  static const double rowHeight = 52;
 
   final String? label;
   final IconData? icon;
   final VoidCallback? onTap;
   final _KeyTone tone;
   final String? semanticLabel;
-  final bool tall;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -458,7 +477,7 @@ class _Key extends StatelessWidget {
       label: semanticLabel ?? label,
       button: true,
       child: SizedBox(
-        height: tall ? 56 : 52,
+        height: height,
         child: Material(
           color: onTap == null ? Colors.transparent : background,
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),

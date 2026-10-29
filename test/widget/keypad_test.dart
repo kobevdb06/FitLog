@@ -148,6 +148,43 @@ void main() {
     expect(headerValue(tester), '-');
   });
 
+  testWidgets('clearing is a cross, so it does not look like the backspace', (
+    tester,
+  ) async {
+    // One empties the field, the other takes off a digit; with the same icon
+    // they read as the same key twice.
+    await pumpKeypad(tester);
+
+    expect(
+      find.descendant(
+        of: find.byTooltip('Leegmaken'),
+        matching: find.byIcon(Icons.close),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
+  });
+
+  testWidgets('the tick runs down the last two rows', (tester) async {
+    await pumpKeypad(tester, onNext: () {});
+
+    Rect key(Finder inside) => tester.getRect(
+      find.ancestor(of: inside, matching: find.byType(Material)).first,
+    );
+    final tick = key(find.byIcon(Icons.check));
+    final seven = key(find.text('7'));
+    final zero = key(find.text('0'));
+    final backspace = key(find.byIcon(Icons.backspace_outlined));
+    final three = key(find.text('3'));
+
+    expect(tick.top, moreOrLessEquals(seven.top));
+    expect(tick.bottom, moreOrLessEquals(zero.bottom));
+    // Still the fourth column, as wide as the others.
+    expect(tick.left, moreOrLessEquals(backspace.left));
+    expect(tick.width, moreOrLessEquals(three.width));
+    expect(seven.height, moreOrLessEquals(zero.height));
+  });
+
   testWidgets('the next key is only shown when there is somewhere to go', (
     tester,
   ) async {

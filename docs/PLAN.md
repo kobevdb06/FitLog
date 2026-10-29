@@ -63,6 +63,14 @@ beslissingen die alleen de maker kan nemen: een ontwikkelaarsaccount bij Google 
 inschrijving als zelfstandige en btw, een betaalaccount bij Google. Niet beginnen voor die
 keuze gemaakt is. Meertaligheid (§4) hoort bij dezelfde beslissing.
 
+Eerst gaat FitLog naar testers via de website (DECISIONS 231). Vóór 2027 moet daarvoor de
+ontwikkelaar bij Google geregistreerd zijn, ook buiten de Play Store: sinds 30 september
+2026 in vier landen, in 2027 wereldwijd, voor Europa nog zonder datum. Voor een kleine
+groep volstaat een gratis account voor beperkte verspreiding in de Android Developer
+Console (tot 20 toestellen, zonder identiteitsbewijs); voor meer testers of de Play Store
+de volledige verificatie. Bronnen: developer.android.com/developer-verification, en de
+blog van juni 2026 op android-developers.googleblog.com.
+
 ---
 
 ## 3. Bekeken en niet gekozen

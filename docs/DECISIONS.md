@@ -5093,3 +5093,63 @@ koos de gebruiker de fout (1) en een mockup voor 2 tot 6, en daarna ook 7 tot
 - **"Machine · machine" staat er één keer**, in de uitleg en op de pagina van
   een oefening: het materiaal valt weg als het hetzelfde woord is als het
   type.
+
+## 231. Eerst testers via de website, niet meteen de Play Store
+
+De maker wil dat meer Android-gebruikers FitLog proberen voor het in de Play
+Store komt. De downloadpagina (`docs/index.html`, GitHub Pages) en de
+releases op GitHub bestonden al, maar de knop gaf 1.66.1: 1.67 tot 1.68.1
+waren nooit op GitHub gezet, want die stap zat niet in de vaste gang van een
+release. Na een rapport en een mockup koos de maker A1, B, C en D.
+
+- **Elke release ook op GitHub (A1).** Met de GitHub CLI: `gh release create`
+  hangt de bestanden aan een release, na de push. De maker logt één keer zelf
+  in met `gh auth login`; de sleutel blijft in zijn aanmelding op zijn pc, en
+  wie de release maakt krijgt hem nooit te zien. Zo biedt de site altijd wat
+  er op de gsm van de maker staat.
+- **Twee bestanden in plaats van één (B).** `fitlog.apk` is voor 64-bit-gsm's,
+  ongeveer 62 MB; `fitlog-32bit.apk` voor de enkele oudere. De APK voor
+  allebei was 102 MB, waarvan 33 MB voor 32-bit-gsm's en 6 MB voor emulators:
+  Flutter laat zijn eigen code voor andere processoren weg, maar niet die van
+  andere pakketten (de QR-scanner, sqlcipher). De build laat die nu weg voor
+  elke processor die `--target-platform` niet noemt. Beide bestanden hebben
+  hetzelfde versienummer, zonder de 1000-tallen die `--split-per-abi` erbij
+  zou tellen: een gsm installeert er maar één, en zo kan de maker later weer
+  terug naar één bestand zonder dat iemand een "oudere" versie krijgt.
+- **De pagina is er een voor testers (C).** Bovenaan "Testversie voor
+  Android", de versie, de datum en de grootte; daaronder wat je krijgt, wat
+  er nieuw is, installeren in vier stappen, "Je test mee", vragen met de
+  vingerafdruk van de sleutel, en dan de coach en de privacy zoals ze waren.
+  Alles staat vast in de pagina en wordt bij elke release bijgewerkt: ze
+  laadt nog steeds niets van buitenaf, ook niet de nieuwste versie van GitHub.
+  Een test houdt de knop gelijk met `pubspec.yaml`. Geen schermafbeeldingen:
+  daar is (nog) niet voor gekozen.
+- **De naam is Kobe Vandenberk**, zoals op de site. In de handtekening van de
+  app staat "Kobe Van den Berk"; die blijft zo, want een andere sleutel
+  betekent dat geen enkele gsm de app nog kan bijwerken. Alleen wie de
+  handtekening met een technisch hulpmiddel bekijkt, ziet hem.
+- **Wat Google van plan is.** Sinds 30 september 2026 moeten apps buiten de
+  Play Store in vier landen van een geregistreerde ontwikkelaar komen; in 2027
+  wereldwijd, voor Europa zonder datum. Voor een kleine groep is er een gratis
+  account voor beperkte verspreiding, tot 20 toestellen, zonder
+  identiteitsbewijs. Nu niets te doen; het staat in PLAN.md §2.4.
+
+## 232. Iets melden en een nieuwe versie zoeken, zonder verbinding
+
+Wie FitLog test, moet de maker iets kunnen laten weten en kunnen zien of er
+een nieuwere versie is. Allebei staan in de instellingen onder Over, en geen
+van beide maakt een verbinding: alleen de coach mag dat (124).
+
+- **Iets melden** geeft de mail-app een e-mail aan de maker, met twee vragen
+  en onderaan de versie, het merk en model van de gsm en de Android-versie. De
+  gebruiker ziet alles en beslist of het vertrekt; zonder mail-app gaat de
+  tekst naar het klembord, met het adres erbij. Hetzelfde pad als een
+  coachantwoord melden (211). Het model vraagt de app aan Android, via een
+  eigen kanaaltje.
+- **Nieuwe versie zoeken** zegt welke versie je hebt en opent de
+  downloadpagina in de browser, niet over de app: daar komt de download
+  binnen en start de installatie. De app vraagt nergens na welke versie de
+  nieuwste is.
+- **Onder Instellingen → Over**, niet rechtstreeks op Profiel zoals de mockup
+  zei: daar staat ook Over FitLog, en Profiel gaat over jou. De site zegt
+  "Profiel → Instellingen → Iets melden".

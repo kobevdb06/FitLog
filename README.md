@@ -107,29 +107,54 @@ Staat daar `CN=Android Debug`, dan ontbrak de sleutel.
 
 De downloadpagina staat in `docs/index.html` en wordt door GitHub Pages
 geserveerd vanaf de `main`-branch, map `/docs`. Ze leidt de links naar de
-release af uit haar eigen adres, dus er hoeft niets in aangepast te worden.
+release af uit haar eigen adres. Wat er wel in aangepast wordt, bij elke
+versie: de knop ("Download FitLog 1.69.0"), de datum en grootte eronder, en
+"Nieuw in 1.69". `test/security/download_page_test.dart` houdt de knop gelijk
+met `pubspec.yaml`.
+
+Een release zijn twee bestanden: `fitlog.apk` voor 64-bit-gsm's, en
+`fitlog-32bit.apk` voor de enkele oudere. Een APK voor allebei samen was
+twee keer zo groot (zie DECISIONS 231).
 
 Een nieuwe versie de deur uit:
 
-1. Versie ophogen in `pubspec.yaml` en in `about_screen.dart`.
+1. Versie ophogen in `pubspec.yaml`, `about_screen.dart` en op de
+   downloadpagina.
 2. `flutter analyze` en `flutter test` groen.
-3. `flutter build apk --release --target-platform android-arm,android-arm64`
-4. Controleren wie ondertekend heeft (zie hierboven).
-5. Het bestand hernoemen naar **`fitlog.apk`** en als asset aan een nieuwe
-   GitHub-release hangen, met de versie als tag.
-6. Voor je uploadt: controleren dat het bestand ook echt de nieuwe versie is.
+3. Beide builds, elk meteen onder zijn eigen naam gezet:
 
    ```bash
-   aapt2 dump badging build/app/outputs/flutter-apk/fitlog.apk | head -1
+   flutter build apk --release --target-platform android-arm64
+   cp build/app/outputs/flutter-apk/app-release.apk fitlog.apk
+   flutter build apk --release --target-platform android-arm
+   cp build/app/outputs/flutter-apk/app-release.apk fitlog-32bit.apk
    ```
 
-   Die `fitlog.apk` blijft na een build staan en wordt door de volgende build
-   niet overschreven - alleen `app-release.apk` wel. Wie stap 5 overslaat
-   uploadt dus de vorige versie, en daar merk je niets van: de release krijgt
-   de juiste tag en de verkeerde inhoud.
+4. Van allebei controleren wie ondertekend heeft (zie hierboven), en dat het
+   de nieuwe versie is:
 
-Die naam moet elke keer dezelfde zijn: de downloadknop wijst naar
-`releases/latest/download/fitlog.apk`, en Obtainium herkent de app eraan.
+   ```bash
+   aapt2 dump badging fitlog.apk | head -1
+   ```
+
+   Die bestanden blijven na een build staan en worden door de volgende niet
+   overschreven - alleen `app-release.apk` wel. Wie de `cp` overslaat
+   uploadt de vorige versie, en daar merk je niets van: de release krijgt de
+   juiste tag en de verkeerde inhoud. Klopt de grootte niet meer met
+   "ongeveer ... MB" op de pagina, pas die dan aan.
+5. Pushen, en dan de release:
+
+   ```bash
+   git push origin main
+   gh release create v1.69.0 fitlog.apk fitlog-32bit.apk --title "FitLog 1.69.0" --notes-file notes.md
+   ```
+
+   `gh` is de GitHub CLI. Hij logt één keer in, met `gh auth login`, door de
+   maker zelf: de sleutel blijft in zijn eigen aanmelding op deze pc.
+
+De namen moeten elke keer dezelfde zijn: de knoppen wijzen naar
+`releases/latest/download/fitlog.apk` en `fitlog-32bit.apk`, en Obtainium
+herkent de app eraan.
 
 
 De oefeningencatalogus opnieuw genereren (samen met de tool hieronder het enige

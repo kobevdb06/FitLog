@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/security/key_manager.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../chat/data/links.dart';
+import '../../chat/domain/answer_report.dart' show kReportAddress;
 import '../../chat/presentation/chat_providers.dart';
 import '../../dashboard/presentation/today_providers.dart';
 import '../../health/presentation/health_providers.dart';
+import '../data/feedback_mail.dart';
+import 'about_screen.dart';
+import 'feedback_providers.dart';
 
 /// The settings hub.
 class SettingsScreen extends ConsumerWidget {
@@ -105,6 +112,30 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push(Routes.settingsBackup),
           ),
           const SectionHeader('Over'),
+          // What someone trying FitLog needs: a way to tell the maker, and a
+          // way to find a newer version. Neither makes a connection: one
+          // hands an e-mail to the mail app, the other the download page to
+          // the browser.
+          if (ref.watch(linkOpenerProvider) case final opener?) ...[
+            ListTile(
+              leading: const Icon(Icons.feedback_outlined),
+              title: const Text('Iets melden'),
+              subtitle: const Text(
+                'Een e-mail aan de maker, met je versie en je gsm erin',
+              ),
+              onTap: () => _report(context, ref, opener),
+            ),
+            ListTile(
+              leading: const Icon(Icons.system_update_outlined),
+              title: const Text('Nieuwe versie zoeken'),
+              subtitle: const Text(
+                'Je hebt ${AboutScreen.appVersion}. Opent de downloadpagina.',
+              ),
+              // In the browser, not over the app: that is where the download
+              // lands and the installer starts.
+              onTap: () => opener.open(kSiteUrl),
+            ),
+          ],
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Over FitLog'),
@@ -115,6 +146,29 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Hands the mail app an e-mail to the maker, or puts it on the clipboard
+/// when there is no mail app to take it.
+Future<void> _report(
+  BuildContext context,
+  WidgetRef ref,
+  LinkOpener opener,
+) async {
+  final mail = FeedbackMail(
+    version: AboutScreen.appVersion,
+    phone: await ref.read(phoneDescriptionProvider.future),
+  );
+  if (await opener.open(mail.mailto)) return;
+  await Clipboard.setData(
+    ClipboardData(text: '${mail.subject}\n\n${mail.body}'),
+  );
+  if (!context.mounted) return;
+  showSnack(
+    context,
+    'Geen mail-app gevonden. De tekst staat op je klembord; stuur hem naar '
+    '$kReportAddress.',
+  );
 }
 
 /// One way into a part of the settings.

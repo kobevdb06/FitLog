@@ -93,6 +93,8 @@ class FitLogActivity : FlutterFragmentActivity() {
             .setMethodCallHandler(::onLinkCall)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/gestures")
             .setMethodCallHandler(::onGestureCall)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/phone")
+            .setMethodCallHandler(::onPhoneCall)
         val workout = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/workout")
         workout.setMethodCallHandler(::onWorkoutCall)
         WorkoutLiveNotice.dart = workout
@@ -180,6 +182,25 @@ class FitLogActivity : FlutterFragmentActivity() {
                 } catch (error: ActivityNotFoundException) {
                     result.success(view(uri))
                 }
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    /**
+     * Which phone this is, for the end of an e-mail to the maker: "Google
+     * Pixel 7 · Android 15". The user sees it in the mail before it goes, and
+     * nothing is sent from here.
+     */
+    private fun onPhoneCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "describe" -> {
+                val model = if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) {
+                    Build.MODEL
+                } else {
+                    "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
+                }
+                result.success("$model · Android ${Build.VERSION.RELEASE}")
             }
             else -> result.notImplemented()
         }

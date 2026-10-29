@@ -18,6 +18,11 @@ const String kAiStudioKeyUrl = 'https://aistudio.google.com/apikey';
 /// `PrivacyPolicyActivity`, which has the same address.
 const String kPrivacyUrl = 'https://kobevdb06.github.io/FitLog/privacy.html';
 
+/// FitLog's download page: the newest version, what changed in it, and how
+/// to install it. Where "Nieuwe versie zoeken" goes; the app itself never asks
+/// anyone which version is the newest.
+const String kSiteUrl = 'https://kobevdb06.github.io/FitLog/';
+
 /// Opens an address in whatever the phone opens it with.
 abstract interface class LinkOpener {
   /// False when nothing on the phone could open it.

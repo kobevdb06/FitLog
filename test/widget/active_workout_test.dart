@@ -915,8 +915,82 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Schijvenberekening'), findsOneWidget);
-      // Not the heaviest set of the exercise, which is what the menu guessed.
+      // The number you typed, not a guess from the heaviest set.
       expect(find.textContaining('60'), findsWidgets);
+    });
+  });
+
+  group("the exercise's menu", () {
+    Future<void> openMenu(WidgetTester tester) async {
+      // Tall enough for every item without the menu scrolling.
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpScreen(tester);
+
+      // The exercise's menu, not the workout's in the app bar.
+      final cardMenu = find
+          .byTooltip('Menu tonen')
+          .evaluate()
+          .firstWhere(
+            (element) =>
+                element.findAncestorWidgetOfExactType<AppBar>() == null,
+          );
+      await tester.tap(find.byElementPredicate((e) => e == cardMenu));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('has no plate calculator: the pad offers it', (tester) async {
+      await openMenu(tester);
+
+      expect(find.text('Rusttimer instellen'), findsOneWidget);
+      expect(find.text('Schijvenberekening'), findsNothing);
+    });
+
+    testWidgets('offers a warm-up only where there is a weight to warm up to', (
+      tester,
+    ) async {
+      await db.exercisesDao.setCategory(
+        'ex-bench',
+        const CategoryChoice(ExerciseCategory.bodyweight),
+      );
+      await openMenu(tester);
+
+      expect(find.text('Warming-up berekenen'), findsNothing);
+    });
+
+    testWidgets('sets first, then the exercise, then removing it', (
+      tester,
+    ) async {
+      await openMenu(tester);
+
+      final order = [
+        'Rusttimer instellen',
+        'Volgende sets invullen als de afgevinkte',
+        'Warming-up berekenen',
+        'Notitie',
+        'Oefening vervangen',
+        'Superset maken',
+        'Eén arm per keer',
+        'Oefening overslaan',
+        'Omzetten naar PR-poging',
+        'Verwijderen',
+      ];
+      final tops = [
+        for (final label in order) tester.getRect(find.text(label)).top,
+      ];
+      expect(tops, orderedEquals([...tops]..sort()));
+      expect(find.byType(PopupMenuDivider), findsNWidgets(2));
+
+      // The dividers sit after the warm-up and before removing.
+      final dividers = [
+        for (final e in find.byType(PopupMenuDivider).evaluate())
+          tester.getRect(find.byElementPredicate((x) => x == e)).top,
+      ]..sort();
+      expect(dividers.first, greaterThan(tops[2]));
+      expect(dividers.first, lessThan(tops[3]));
+      expect(dividers.last, greaterThan(tops[8]));
+      expect(dividers.last, lessThan(tops[9]));
     });
   });
 

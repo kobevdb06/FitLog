@@ -925,6 +925,11 @@ class _ExerciseCard extends ConsumerWidget {
           groupColor: groupColor,
           group: group,
           prAttempts: _prAttemptsAllowed(ref),
+          // Assisted is a weight taken off, and warming up to less help
+          // than you will use is not a warm-up.
+          warmup:
+              detail.category.hasWeight &&
+              detail.category != ExerciseCategory.assistedBodyweight,
           onMenu: (value) => _onMenu(context, ref, value),
         ),
         _NoteField(
@@ -1262,17 +1267,6 @@ class _ExerciseCard extends ConsumerWidget {
             .read(prAttemptActionsProvider)
             .revertToNormalExercise(detail.workoutExercise.id);
 
-      case 'plates':
-        final heaviest = detail.sets
-            .map((s) => s.weightKg ?? 0)
-            .fold<double>(0, (a, b) => a > b ? a : b);
-        if (context.mounted) {
-          await PlateCalculatorSheet.show(
-            context,
-            targetKg: heaviest > 0 ? heaviest : null,
-          );
-        }
-
       case 'warmup':
         final working = detail.sets
             .where((s) => SetType.fromWire(s.setType) != SetType.warmup)
@@ -1337,6 +1331,7 @@ class _CardHeader extends ConsumerWidget {
     required this.groupColor,
     required this.group,
     this.prAttempts = true,
+    this.warmup = true,
     required this.onMenu,
   });
 
@@ -1347,6 +1342,9 @@ class _CardHeader extends ConsumerWidget {
 
   /// False in a deload that leaves records alone.
   final bool prAttempts;
+
+  /// Whether there is a working weight to warm up to.
+  final bool warmup;
   final ValueChanged<String> onMenu;
 
   bool get isPrAttempt => detail.workoutExercise.isPrAttempt;
@@ -1415,6 +1413,9 @@ class _CardHeader extends ConsumerWidget {
           ),
           PopupMenuButton<String>(
             onSelected: onMenu,
+            // What you do with the sets, then with the exercise, then
+            // removing it. The plate calculator is not here: the pad offers
+            // it on the weight of a bar, with the number you are typing.
             itemBuilder: (context) => [
               menuItem(
                 value: 'rest',
@@ -1422,38 +1423,21 @@ class _CardHeader extends ConsumerWidget {
                 label: 'Rusttimer instellen',
               ),
               menuItem(
-                value: 'skip',
-                icon: Icons.next_plan_outlined,
-                label: detail.sets.any((s) => !s.isCompleted && !s.isSkipped)
-                    ? 'Oefening overslaan'
-                    : 'Oefening toch doen',
-              ),
-              menuItem(
-                value: 'unilateral',
-                icon: Icons.back_hand_outlined,
-                label: detail.workoutExercise.isUnilateral
-                    ? 'Terug naar twee handen'
-                    : 'Eén arm per keer',
-              ),
-              menuItem(
                 value: 'fill',
                 icon: Icons.content_copy_outlined,
-                label: 'Rest invullen als deze set',
+                label: 'Volgende sets invullen als de afgevinkte',
               ),
+              if (warmup)
+                menuItem(
+                  value: 'warmup',
+                  icon: Icons.stairs_outlined,
+                  label: 'Warming-up berekenen',
+                ),
+              const PopupMenuDivider(),
               menuItem(
                 value: 'note',
                 icon: Icons.sticky_note_2_outlined,
                 label: 'Notitie',
-              ),
-              menuItem(
-                value: 'plates',
-                icon: Icons.donut_large_outlined,
-                label: 'Schijvenberekening',
-              ),
-              menuItem(
-                value: 'warmup',
-                icon: Icons.stairs_outlined,
-                label: 'Warming-up berekenen',
               ),
               menuItem(
                 value: 'replace',
@@ -1464,6 +1448,20 @@ class _CardHeader extends ConsumerWidget {
                 value: 'superset',
                 icon: Icons.link,
                 label: group == null ? 'Superset maken' : 'Superset opheffen',
+              ),
+              menuItem(
+                value: 'unilateral',
+                icon: Icons.back_hand_outlined,
+                label: detail.workoutExercise.isUnilateral
+                    ? 'Terug naar twee handen'
+                    : 'Eén arm per keer',
+              ),
+              menuItem(
+                value: 'skip',
+                icon: Icons.next_plan_outlined,
+                label: detail.sets.any((s) => !s.isCompleted && !s.isSkipped)
+                    ? 'Oefening overslaan'
+                    : 'Oefening toch doen',
               ),
               if (isPrAttempt) ...[
                 menuItem(

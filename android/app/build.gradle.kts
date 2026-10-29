@@ -8,6 +8,25 @@ val keystoreProperties = Properties().apply {
 }
 val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
 
+// The processors an APK is built for, from Flutter's --target-platform. Flutter
+// leaves its own code for the others out, but the libraries other packages
+// bring - the QR scanner's model, sqlcipher - came along for every processor:
+// 33 MB for 32-bit phones and 6 MB for emulators in an APK for 64-bit phones.
+// Without a --target-platform Flutter passes all three, and nothing is left out.
+// Left out when packing rather than with abiFilters: the Flutter plugin resets
+// those to all three after this file has set them.
+val allAbis = listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+val targetAbis = (project.findProperty("target-platform") as String?)
+    .orEmpty()
+    .split(",")
+    .mapNotNull {
+        mapOf(
+            "android-arm" to "armeabi-v7a",
+            "android-arm64" to "arm64-v8a",
+            "android-x64" to "x86_64",
+        )[it.trim()]
+    }
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -81,6 +100,9 @@ android {
         jniLibs {
             // sqlcipher_flutter_libs ships prebuilt .so files that must not be stripped.
             useLegacyPackaging = false
+            if (targetAbis.isNotEmpty()) {
+                excludes += allAbis.filterNot { it in targetAbis }.map { "lib/$it/**" }
+            }
         }
     }
 }

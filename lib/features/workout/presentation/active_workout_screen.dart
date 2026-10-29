@@ -1635,7 +1635,8 @@ const double kRpeColumnWidth = 46;
 
 /// What to try today on this exercise, and what that is based on.
 ///
-/// One line, under the name: there to glance at between sets, not to read.
+/// Two short lines under the name: there to glance at between sets, not to
+/// read.
 /// Filling it in is a tap; ticking the sets off stays yours.
 class _HintLine extends StatelessWidget {
   const _HintLine({
@@ -1653,14 +1654,18 @@ class _HintLine extends StatelessWidget {
     HintKind.sameWeight || HintKind.repeat || HintKind.evenReps => false,
   };
 
+  /// Short, and naming the weight where there is one: it shares its line
+  /// with "Invullen", and on a 360 dp phone with large text that leaves room
+  /// for about twenty characters.
   String get _title => switch (hint.kind) {
     HintKind.heavier =>
       'Probeer ${formatters.weight(hint.weightKg)} × ${hint.reps}',
-    HintKind.sameWeight => 'Zelfde gewicht, mik op ${hint.reps}',
+    HintKind.sameWeight =>
+      '${formatters.weight(hint.weightKg)}, mik op ${hint.reps}',
     HintKind.repeat =>
       'Nog eens ${formatters.weight(hint.weightKg)} × ${hint.reps}',
-    HintKind.moreReps => 'Probeer ${hint.reps} herhalingen',
-    HintKind.evenReps => 'Mik op ${hint.reps} in elke set',
+    HintKind.moreReps => 'Mik op ${hint.reps} reps',
+    HintKind.evenReps => 'Mik op ${hint.reps} per set',
     HintKind.longer => 'Probeer ${Formatters.duration(hint.seconds!)}',
   };
 
@@ -1710,7 +1715,7 @@ class _HintLine extends StatelessWidget {
           AppSpacing.md,
           AppSpacing.xs,
           AppSpacing.xs,
-          AppSpacing.xs,
+          AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           color: _forward
@@ -1718,51 +1723,49 @@ class _HintLine extends StatelessWidget {
               : theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
-        // "Invullen" sits beside what it is based on, not beside the title:
-        // there it took the width the title needed, and on a narrow phone
-        // with large text "Probeer 26 herhalingen" broke over two lines.
-        child: Row(
+        // "Invullen" beside the title, and what the hint is based on under
+        // both, the whole width. Beside the basis it broke that over two
+        // lines with "RPE 10" alone on the second; beside a long title it
+        // broke the title. The titles are short now, so they keep the line.
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xs),
-              child: Icon(
-                _forward ? Icons.trending_up : Icons.repeat,
-                size: 20,
-                color: colour,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.xs),
-                    child: Text(
-                      _title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: _forward ? colour : null,
-                      ),
+            Row(
+              children: [
+                Icon(
+                  _forward ? Icons.trending_up : Icons.repeat,
+                  size: _iconSize,
+                  color: colour,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    _title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: _forward ? colour : null,
                     ),
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _basis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: onApply,
-                        child: const Text('Invullen'),
-                      ),
-                    ],
+                ),
+                TextButton(
+                  onPressed: onApply,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                ],
+                  child: const Text('Invullen'),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(
+                left: _iconSize + AppSpacing.sm,
+                right: AppSpacing.sm,
+              ),
+              child: Text(
+                _basis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -1770,6 +1773,8 @@ class _HintLine extends StatelessWidget {
       ),
     );
   }
+
+  static const double _iconSize = 20;
 }
 
 class _ColumnHeaders extends StatelessWidget {

@@ -171,7 +171,9 @@ void main() {
     await tester.runAsync(() => logBench(7, 80, [8, 7, 6]));
     await pumpWorkout(tester);
 
-    expect(find.text('Zelfde gewicht, mik op 8'), findsOneWidget);
+    // The weight named, not "Zelfde gewicht": short enough to stay on one
+    // line beside "Invullen".
+    expect(find.text('80 kg, mik op 8'), findsOneWidget);
     expect(find.text('Vorige keer 8, 7, 6 met 80 kg'), findsOneWidget);
   });
 
@@ -201,10 +203,10 @@ void main() {
   });
 
   testWidgets(
-    'invullen staat onder de titel, zodat die de hele breedte heeft',
+    'invullen staat naast de titel, de uitleg eronder over de hele breedte',
     (tester) async {
-      // Naast "Invullen" brak "Probeer 26 herhalingen" op een smalle gsm met
-      // grote tekst over twee regels.
+      // Beside the basis line, "Invullen" broke it over two lines with
+      // "RPE 10" alone on the second, and the hint was four lines high.
       await tester.runAsync(() => logBench(7, 80, [8, 8, 8], rpe: 8));
       await pumpWorkout(tester, size: const Size(360, 800), textScale: 1.3);
 
@@ -213,8 +215,14 @@ void main() {
         find.text('Vorige keer 3 × 8 met 80 kg, RPE 8'),
       );
       final button = tester.getRect(find.text('Invullen'));
-      expect(button.top, greaterThanOrEqualTo(title.bottom));
-      expect(button.left, greaterThan(basis.left), reason: 'naast de basis');
+      expect(button.top, lessThan(title.bottom), reason: 'op de titelregel');
+      expect(button.bottom, greaterThan(title.top));
+      expect(basis.top, greaterThanOrEqualTo(title.bottom));
+      expect(
+        basis.right,
+        greaterThan(button.left),
+        reason: 'de uitleg loopt onder de knop door',
+      );
     },
   );
 

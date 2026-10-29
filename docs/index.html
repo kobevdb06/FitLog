@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FitLog — je trainingslogboek, op je toestel</title>
-<meta name="description" content="Een logboek voor krachttraining dat op je telefoon blijft. Geen account, geen server, geen synchronisatie. Alleen de optionele AI-coach praat met het internet, met jouw eigen sleutel.">
+<meta name="description" content="Een logboek voor krachttraining dat op je telefoon blijft. Geen account, geen server, geen synchronisatie. Testversie voor Android, gratis te downloaden.">
 <meta name="color-scheme" content="dark light">
 <style>
   :root {
@@ -15,11 +15,14 @@
     --muted: #9aa1ad;
     --accent: #3d7dff;
     --accent-dim: #2a5cbf;
+    --accent-soft: #1d2a45;
+    --accent-text: #9cbcff;
     --mark-bar: #7ba9ff;
     --mark-spark: #f5a623;
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   body {
     margin: 0;
     background: var(--bg);
@@ -32,8 +35,8 @@
   .mark-plate { fill: var(--accent); }
   .mark-spark { fill: var(--mark-spark); }
   h1 { font-size: 2.25rem; margin: 1rem 0 .25rem; letter-spacing: -.02em; }
-  .tagline { color: var(--muted); margin: 0 0 2rem; }
-  h2 { font-size: 1.15rem; margin: 2.5rem 0 .75rem; }
+  .tagline { color: var(--muted); margin: 0 0 1rem; text-wrap: balance; }
+  h2 { font-size: 1.15rem; margin: 2.75rem 0 .75rem; text-wrap: balance; }
   h3 { font-size: 1rem; margin: 1.75rem 0 .5rem; color: var(--muted); }
   code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -45,6 +48,17 @@
   }
   p { margin: 0 0 1rem; }
   a { color: var(--accent); }
+  a:focus-visible, .download:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+
+  .pill {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    border-radius: 999px;
+    padding: .2rem .8rem;
+    font-size: .85rem;
+    margin-bottom: 1.5rem;
+  }
 
   .download {
     display: block;
@@ -62,7 +76,28 @@
   .download small { display: block; font-weight: 400; opacity: .85; font-size: .85rem; margin-top: .15rem; }
 
   .note { color: var(--muted); font-size: .875rem; text-align: center; margin-top: .75rem; }
+  .aside { color: var(--muted); font-size: .875rem; }
 
+  .points { list-style: none; padding: 0; margin: 0; display: grid; gap: .9rem; }
+  .points li { display: grid; grid-template-columns: 1.5rem 1fr; gap: .75rem; margin: 0; }
+  .points svg { width: 1.5rem; height: 1.5rem; stroke: var(--mark-bar); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; margin-top: .1rem; }
+  .points strong { display: block; }
+  .points span { color: var(--muted); }
+
+  .new { padding-left: 1.25rem; margin: 0 0 .75rem; }
+  .new li { margin-bottom: .35rem; }
+
+  ol.steps { list-style: none; counter-reset: step; padding: 0; margin: 0 0 1rem; display: grid; gap: .6rem; }
+  ol.steps li { counter-increment: step; display: grid; grid-template-columns: 1.75rem 1fr; gap: .6rem; margin: 0; }
+  ol.steps li::before {
+    content: counter(step);
+    width: 1.75rem; height: 1.75rem;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-size: .85rem;
+    display: grid; place-items: center;
+  }
   ol { padding-left: 1.25rem; }
   li { margin-bottom: .5rem; }
 
@@ -73,6 +108,17 @@
     padding: 1.25rem 1.25rem .25rem;
   }
   .card p:last-child { margin-bottom: 1rem; }
+
+  details { border-top: 1px solid var(--line); padding: .75rem 0; }
+  details:last-of-type { border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { color: var(--muted); margin: .6rem 0 0; }
+  .fingerprint {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .8rem;
+    word-break: break-all;
+    color: var(--text);
+  }
 
   footer {
     margin-top: 3.5rem;
@@ -87,6 +133,7 @@
     :root {
       --bg: #ffffff; --surface: #f5f6f8; --line: #e2e5ea;
       --text: #14161a; --muted: #5c6470;
+      --accent-soft: #e6eeff; --accent-text: #2a5bd7;
       --mark-bar: #2a5bd7; --mark-spark: #e8940a;
     }
   }
@@ -105,84 +152,132 @@
     </svg>
     <h1>FitLog</h1>
     <p class="tagline">Je trainingslogboek. Op je toestel, en nergens anders.</p>
+    <span class="pill">Testversie voor Android</span>
 
-    <a class="download" id="download" href="#" rel="noopener">
-      Download voor Android
-      <small id="meta">APK · ongeveer 88 MB</small>
+    <a class="download" data-repo="/releases/latest/download/fitlog.apk" href="#" rel="noopener">
+      Download FitLog 1.69.0
+      <small class="meta">APK · ongeveer 62 MB · 29 oktober 2026</small>
     </a>
-    <p class="note">Gratis. Geen account, geen advertenties, geen synchronisatie.</p>
+    <p class="note">
+      Gratis. Geen account, geen advertenties.
+      <a href="#installeren">Hoe installeer ik dit?</a>
+    </p>
   </header>
 
-  <h2>Wat het is</h2>
+  <h2>Wat je krijgt</h2>
+  <ul class="points">
+    <li>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
+      <div><strong>Een set in twee tikken</strong>
+        <span>Met een eigen toetsenblok, en wat je vorige keer deed ernaast.</span></div>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+      <div><strong>Zien of je sterker wordt</strong>
+        <span>Records, je geschatte 1RM, sets per spiergroep en wat stilstaat.
+        876 oefeningen zitten er al in, met een animatie van de uitvoering.</span></div>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <div><strong>Alles blijft op je gsm</strong>
+        <span>Versleuteld, achter je pincode. Geen account, geen server. De
+        AI-coach praat met het internet, maar alleen als je hem zelf aanzet
+        met je eigen sleutel. <a href="#privacy">Meer over privacy</a></span></div>
+    </li>
+  </ul>
+
+  <h2>Nieuw in 1.69</h2>
+  <ul class="new">
+    <li>Het toetsenblok bedekt de set niet meer waarin je typt, en zegt welke set het is.</li>
+    <li>Een rustiger workout: de foto bij elke oefening, een korter menu, en een notitieregel alleen als er een notitie is.</li>
+    <li>Na je rust gaat de timer vanzelf weg.</li>
+    <li>In de instellingen: <em>Iets melden</em> en <em>Nieuwe versie zoeken</em>.</li>
+    <li>Het bestand is 40 MB kleiner.</li>
+  </ul>
+  <p class="aside"><a data-repo="/releases" href="#" rel="noopener">Alle versies, met wat er in elk veranderde</a></p>
+
+  <h2 id="installeren">Installeren in vier stappen</h2>
   <p>
-    Een logboek voor krachttraining: routines, sets, gewichten, records,
-    voortgangsfoto's en een schatting van hoe lang elke spiergroep nodig heeft.
-    876 oefeningen zitten er al in, met een animatie van de uitvoering, en je
-    kunt er zelf oefeningen bij maken met je eigen foto's.
+    De app staat niet in de Play Store, dus Android vraagt eenmalig om
+    toestemming.
+  </p>
+  <ol class="steps">
+    <li><div>Tik bovenaan op <strong>Download</strong> en wacht tot het bestand binnen is.</div></li>
+    <li><div>Open het gedownloade bestand. Android zegt dat installeren van deze bron uitstaat.</div></li>
+    <li><div>Tik op <strong>Instellingen</strong> en zet het schuifje aan voor de app waarmee je downloadde, meestal Chrome of Bestanden.</div></li>
+    <li><div>Ga terug en tik op <strong>Installeren</strong>. Waarschuwt Play Protect, kies dan <strong>Toch installeren</strong>.</div></li>
+  </ol>
+  <p class="aside">
+    Die waarschuwing hoort erbij: Google kent de app niet, omdat ze niet uit de
+    Play Store komt. Lees daarna in de app het stuk over je herstelzin, voor
+    je begint te loggen: je database is versleuteld en er is geen kopie
+    ergens anders. Alles over hoe de app werkt staat op de
+    <a href="handleiding.html">uitlegpagina</a>.
   </p>
 
-  <h2>Wat het niet doet</h2>
+  <h2>Je test mee</h2>
   <div class="card">
     <p>
-      Er is geen account en geen server. Alles staat in één versleutelde
-      database op je telefoon, achter een pincode of je vingerafdruk.
+      Dit is een testversie: ze wordt nog volop bijgewerkt. Bij elke nieuwe
+      versie blijven je gegevens staan. Ze staan wel alleen op je gsm, dus maak
+      af en toe een back-up, in <strong>Profiel → Instellingen → Back-up en
+      export</strong>, en bewaar je herstelzin.
     </p>
     <p>
-      Er is <strong>één</strong> ding dat het internet gebruikt: de AI-coach,
-      en die staat uit. Wil je hem, dan maak je zelf een API-sleutel aan bij
-      Google AI Studio en vul je die in. Vanaf dan gaat je vraag naar
-      Google,
-      samen met wat de coach in je logboek opvraagt om te antwoorden — onder
-      elk antwoord staat wat dat was. Met een gratis sleutel mag Google dat
-      volgens zijn <a href="https://ai.google.dev/gemini-api/terms"
-      rel="noopener">voorwaarden</a> gebruiken om zijn producten te
-      verbeteren, en kunnen mensen het daarvoor lezen. Vul je geen sleutel
-      in, dan opent de app geen enkele verbinding. In de code kan precies één bestand dat, en een
-      test laat de build mislukken zodra er een tweede bijkomt.
-    </p>
-    <p>
-      Verder: geen analytics, geen crashrapporten, geen advertenties, geen
-      back-up in de cloud. Een routine deel je met een vriend door een
-      QR-code te scannen, niet via een dienst.
+      Iets vreemds gezien, of een idee? In de app:
+      <strong>Profiel → Instellingen → Iets melden</strong>. Dat opent een
+      e-mail met je versie en je toestel erin, en jij beslist of je hem
+      verstuurt. Een <a data-repo="/issues" href="#" rel="noopener">melding op
+      GitHub</a> kan ook; dan zien anderen het antwoord.
     </p>
   </div>
 
-  <h2>Hoe het werkt</h2>
-  <p>
-    Het meeste wijst zichzelf, maar een paar dingen niet: wat er met je
-    gegevens gebeurt, en de handelingen die achter een gebaar zitten in plaats
-    van achter een knop. Dat staat op de
-    <a href="handleiding.html">uitlegpagina</a>.
-  </p>
-  <p class="note" style="text-align:left">
-    Lees in elk geval het stuk over je herstelzin voordat je begint te loggen.
-    Je database is versleuteld en er is geen kopie ergens anders.
-  </p>
-
-  <h2>Installeren</h2>
-  <p>
-    De app staat niet in de Play Store, dus Android vraagt eenmalig om
-    toestemming. Dat gaat zo:
-  </p>
-  <ol>
-    <li>Tik hierboven op <strong>Download</strong> en wacht tot het bestand binnen is.</li>
-    <li>Open het gedownloade bestand. Android zegt dat installeren van deze bron uitstaat.</li>
-    <li>Tik op <strong>Instellingen</strong> en zet het schuifje aan voor de app waarmee je downloadde (meestal Chrome of Bestanden).</li>
-    <li>Ga terug en tik op <strong>Installeren</strong>. Verschijnt er een waarschuwing van Play Protect, kies dan <strong>Toch installeren</strong>.</li>
-  </ol>
-  <p class="note" style="text-align:left">
-    Die waarschuwing hoort erbij: Google kent de app niet omdat ze niet uit de
-    Play Store komt. Wil je zelf nakijken wat erin zit, dan staat de volledige
-    broncode hieronder.
-  </p>
-
-  <h2>Bijwerken</h2>
-  <p>
-    Een nieuwe versie installeer je er gewoon overheen; je gegevens blijven
-    staan. Wil je bericht krijgen wanneer er een is, dan kun je
-    <a href="https://github.com/ImranR98/Obtainium" rel="noopener">Obtainium</a>
-    de releasepagina laten volgen — die werkt de app dan zelf bij.
-  </p>
+  <h2>Vragen</h2>
+  <details>
+    <summary>Is dit veilig?</summary>
+    <p>
+      Play Protect waarschuwt omdat Google de app niet kent, niet omdat er iets
+      mis mee is. De volledige broncode staat open op GitHub, en elke versie is
+      met dezelfde sleutel ondertekend. Wil je dat nakijken, dan is dit de
+      vingerafdruk van die sleutel (SHA-256):
+    </p>
+    <p class="fingerprint">4E:C3:48:CB:89:3F:7D:C9:E0:91:D8:F4:50:21:CF:B5:66:BD:DC:F8:35:F1:1D:91:D7:5F:B9:CD:DB:BD:0D:DA</p>
+  </details>
+  <details>
+    <summary>Hoe krijg ik een nieuwe versie?</summary>
+    <p>
+      In de app: <strong>Profiel → Instellingen → Nieuwe versie zoeken</strong>.
+      Dat opent deze pagina, waar de nieuwste versie staat; de app zelf maakt
+      daarvoor geen verbinding. Je installeert ze over de oude heen. Wil je dat
+      het vanzelf gaat, laat dan
+      <a href="https://github.com/ImranR98/Obtainium" rel="noopener">Obtainium</a>
+      de releasepagina volgen.
+    </p>
+  </details>
+  <details>
+    <summary>Blijven mijn gegevens staan?</summary>
+    <p>
+      Ja, als je een nieuwe versie over de oude installeert. Verwijder de app
+      niet: dan is alles weg, behalve wat in een back-up staat.
+    </p>
+  </details>
+  <details>
+    <summary>Werkt het op mijn gsm?</summary>
+    <p>
+      Op Android 8 of nieuwer, met een 64-bit processor: elke gsm van de
+      laatste jaren. Heb je een oudere 32-bit gsm, neem dan
+      <a data-repo="/releases/latest/download/fitlog-32bit.apk" href="#" rel="noopener">deze versie</a>.
+      Weet je het niet, neem dan de gewone: past ze niet, dan zegt Android dat
+      bij het installeren.
+    </p>
+  </details>
+  <details>
+    <summary>Waarom niet in de Play Store?</summary>
+    <p>
+      Eerst wil ik weten hoe FitLog het doet bij anderen dan mij, met een
+      kleine groep die meetest. De Play Store komt later.
+    </p>
+  </details>
 
   <h2>De AI-coach aanzetten</h2>
   <p>
@@ -204,7 +299,7 @@
     <li>Kopieer de sleutel. Hij begint met <code>AIza</code> of met
       <code>AQ.</code>.</li>
   </ol>
-  <p class="note" style="text-align:left">
+  <p class="aside">
     Zo'n sleutel is een wachtwoord: wie hem heeft, kan op jouw rekening
     vragen stellen. Deel hem met niemand, en zet hem niet in een screenshot.
     Denk je dat hij is gaan rondzwerven, verwijder hem dan in AI Studio en maak
@@ -247,23 +342,27 @@
     elk moment weer uit halen; dan maakt de app opnieuw geen enkele verbinding.
   </p>
 
-  <h2>Privacy</h2>
+  <h2 id="privacy">Privacy</h2>
   <div class="card">
     <p>
       <strong>De app verzamelt niets.</strong> Je routines, gewichten, foto's
       en metingen staan versleuteld op je eigen toestel. Er is geen account en
       geen server om ze naartoe te sturen, en ik zie niets van wat je logt —
       niet omdat ik het niet wil bekijken, maar omdat het nergens naartoe kan.
+      Geen analytics, geen crashrapporten, geen back-up in de cloud. Een
+      routine deel je met een vriend door een QR-code te scannen, niet via een
+      dienst.
     </p>
     <p>
       <strong>De AI-coach is de uitzondering, en hij is van jou.</strong> Hij
       werkt alleen met een API-sleutel die jij zelf aanmaakt bij Google AI
-      Studio, je betaalt per vraag rechtstreeks aan Google, en wat er van je
-      toestel vertrekt is je vraag plus wat de coach opvraagt om te
-      antwoorden. Dat gaat naar Google, niet naar mij: ik heb geen server in
-      dit verhaal. De app
-      toont per antwoord wat er is opgezocht, en je kan de sleutel er op elk
-      moment weer uit halen.
+      Studio, en wat er van je toestel vertrekt is je vraag plus wat de coach
+      opvraagt om te antwoorden. Dat gaat naar Google, niet naar mij. Met een
+      gratis sleutel mag Google dat volgens zijn
+      <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">voorwaarden</a>
+      gebruiken om zijn producten te verbeteren. Vul je geen sleutel in, dan
+      opent de app geen enkele verbinding. In de code kan precies één bestand
+      dat, en een test laat de build mislukken zodra er een tweede bijkomt.
     </p>
     <p>
       <strong>Deze pagina zet geen cookies</strong> en laadt niets van
@@ -279,9 +378,10 @@
       daarmee doet staat in hun eigen privacyverklaring.
     </p>
     <p>
-      Stuur je me een e-mail of open je een melding op GitHub, dan heb ik
-      uiteraard wél wat je me stuurt. Ik gebruik dat alleen om te antwoorden en
-      om de app te verbeteren, en geef het aan niemand door.
+      Stuur je me een e-mail, ook met <em>Iets melden</em>, of open je een
+      melding op GitHub, dan heb ik uiteraard wél wat je me stuurt. Ik gebruik
+      dat alleen om te antwoorden en om de app te verbeteren, en geef het aan
+      niemand door.
     </p>
     <p>
       Alles, ook wat FitLog uit Health Connect leest en welke toestemmingen het
@@ -289,20 +389,12 @@
     </p>
   </div>
 
-  <h2>Iets gevonden, of een idee?</h2>
-  <p>
-    Meld het als <a id="issues" href="#" rel="noopener">melding op GitHub</a> —
-    dat is de snelste weg en anderen zien het antwoord ook. Liever niet in het
-    openbaar? Mail dan naar
-    <a href="mailto:kobe.vandenberk@gmail.com">kobe.vandenberk@gmail.com</a>.
-  </p>
-
   <footer>
     <p>
       <a href="handleiding.html">Hoe het werkt</a> ·
       <a href="privacy.html">Privacy</a> ·
-      <a id="source" href="#" rel="noopener">Broncode</a> ·
-      <a id="releases" href="#" rel="noopener">Alle versies</a> ·
+      <a data-repo="" href="#" rel="noopener">Broncode</a> ·
+      <a data-repo="/releases" href="#" rel="noopener">Alle versies</a> ·
       MIT-licentie
     </p>
     <p>Gemaakt voor eigen gebruik, en daarna weggegeven.</p>
@@ -329,25 +421,23 @@
     return null;
   })();
 
+  // Every link into the repository says where in it with data-repo.
   const base = REPO ? "https://github.com/" + REPO : null;
-  const set = function (id, href) {
-    const el = document.getElementById(id);
-    if (href) { el.href = href; } else { el.removeAttribute("href"); }
-  };
+  for (const link of document.querySelectorAll("[data-repo]")) {
+    if (base) {
+      link.href = base + link.dataset.repo;
+    } else {
+      link.removeAttribute("href");
+    }
+  }
 
-  if (base) {
-    set("download", base + "/releases/latest/download/fitlog.apk");
-    set("source", base);
-    set("releases", base + "/releases");
-    set("issues", base + "/issues");
-  } else {
+  if (!base) {
     // Opened somewhere other than GitHub Pages - a local preview, most likely.
     // Say so instead of offering a button that does nothing.
-    const button = document.getElementById("download");
-    document.getElementById("issues").removeAttribute("href");
+    const button = document.querySelector(".download");
     button.style.opacity = ".55";
     button.style.pointerEvents = "none";
-    document.getElementById("meta").textContent =
+    button.querySelector(".meta").textContent =
       "beschikbaar op de gepubliceerde pagina";
   }
 </script>

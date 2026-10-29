@@ -230,6 +230,25 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
+  /// "Set 4 · Bench Press": which set the keypad is filling in.
+  ///
+  /// The row itself is in view above the pad, but the name of its exercise
+  /// often is not: that sits at the top of a card that has scrolled away.
+  String? _targetName(WorkoutDetail workout) {
+    final target = _target;
+    if (target == null) return null;
+    final owner = _ownerOf(workout, target.setId);
+    if (owner == null) return null;
+
+    final labels = labelSetsWithSides([
+      for (final s in owner.sets)
+        (SetType.fromWire(s.setType), SetSide.fromWire(s.side)),
+    ]);
+    final label = labels[owner.sets.indexWhere((s) => s.id == target.setId)];
+    final set = label.isWarmup ? 'Warming-up' : 'Set ${label.text}';
+    return '$set · ${owner.exercise.name}';
+  }
+
   WorkoutExerciseDetail? _ownerOf(WorkoutDetail workout, String setId) {
     for (final exercise in workout.exercises) {
       if (exercise.sets.any((s) => s.id == setId)) return exercise;
@@ -671,6 +690,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         key: const ValueKey('keypad'),
                         value: _keypadValue,
                         kind: _target!.kind,
+                        subtitle: _targetName(workout),
                         unitLabel: switch (_target!.kind) {
                           KeypadFieldKind.weight => formatters.weightUnitLabel,
                           KeypadFieldKind.distance =>
@@ -931,35 +951,38 @@ class _ExerciseCard extends ConsumerWidget {
             children: [
               _ColumnHeaders(formatters: formatters, columns: columns),
               for (var i = 0; i < detail.sets.length; i++)
-                SetRow(
+                _InView(
                   key: ValueKey(detail.sets[i].id),
-                  row: detail.sets[i],
-                  label: labels[i],
-                  previous: _previousFor(
-                    previousBySide[labels[i].side],
-                    labels[i],
+                  active: activeTarget?.setId == detail.sets[i].id,
+                  child: SetRow(
+                    row: detail.sets[i],
+                    label: labels[i],
+                    previous: _previousFor(
+                      previousBySide[labels[i].side],
+                      labels[i],
+                    ),
+                    columns: columns,
+                    formatters: formatters,
+                    isRecord: recordSetIds.contains(detail.sets[i].id),
+                    activeKind: activeTarget?.setId == detail.sets[i].id
+                        ? activeTarget!.kind
+                        : null,
+                    onFocus: (kind) => onFocus(detail.sets[i], kind),
+                    onToggle: () => onToggle(detail.sets[i]),
+                    onReset: () => onReset(detail.sets[i]),
+                    onCopyPrevious: _copyPreviousAction(
+                      ref,
+                      detail.sets[i],
+                      _previousFor(previousBySide[labels[i].side], labels[i]),
+                      columns,
+                    ),
+                    onDelete: () => ref
+                        .read(workoutControllerProvider)
+                        .deleteSet(detail.sets[i].id),
+                    onSetType: (type) => ref
+                        .read(workoutControllerProvider)
+                        .setSetType(detail.sets[i].id, type),
                   ),
-                  columns: columns,
-                  formatters: formatters,
-                  isRecord: recordSetIds.contains(detail.sets[i].id),
-                  activeKind: activeTarget?.setId == detail.sets[i].id
-                      ? activeTarget!.kind
-                      : null,
-                  onFocus: (kind) => onFocus(detail.sets[i], kind),
-                  onToggle: () => onToggle(detail.sets[i]),
-                  onReset: () => onReset(detail.sets[i]),
-                  onCopyPrevious: _copyPreviousAction(
-                    ref,
-                    detail.sets[i],
-                    _previousFor(previousBySide[labels[i].side], labels[i]),
-                    columns,
-                  ),
-                  onDelete: () => ref
-                      .read(workoutControllerProvider)
-                      .deleteSet(detail.sets[i].id),
-                  onSetType: (type) => ref
-                      .read(workoutControllerProvider)
-                      .setSetType(detail.sets[i].id, type),
                 ),
               Align(
                 alignment: Alignment.centerLeft,
@@ -1777,6 +1800,72 @@ class _ColumnHeaders extends StatelessWidget {
 /// How long the keypad takes to rise or sink. Short enough not to be in the
 /// way between two sets, long enough to read as a movement.
 const Duration kKeypadSlide = Duration(milliseconds: 220);
+
+/// Keeps the set you are typing in where you can see it.
+///
+/// The pad comes up over the bottom half of the screen. A set tapped down
+/// there, or reached with the next key, ended up behind it: you typed into a
+/// row you could not see. So when a row becomes the one being typed in, the
+/// list moves just far enough to show it - straight away, for a row that is
+/// already out of sight, and again once the pad has finished rising, for one
+/// it has just covered.
+class _InView extends StatefulWidget {
+  const _InView({super.key, required this.active, required this.child});
+
+  final bool active;
+  final Widget child;
+
+  @override
+  State<_InView> createState() => _InViewState();
+}
+
+class _InViewState extends State<_InView> {
+  Timer? _onceRisen;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.active) _reveal();
+  }
+
+  @override
+  void didUpdateWidget(_InView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) _reveal();
+  }
+
+  void _reveal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _show());
+    _onceRisen?.cancel();
+    _onceRisen = Timer(kKeypadSlide, _show);
+  }
+
+  void _show() {
+    if (!mounted || !widget.active) return;
+    // Below the pad, it comes up to sit on it; above the top, it comes down
+    // to the top. Already in view, neither moves anything.
+    for (final policy in const [
+      ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+    ]) {
+      Scrollable.ensureVisible(
+        context,
+        duration: kKeypadSlide,
+        curve: Curves.easeOutCubic,
+        alignmentPolicy: policy,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _onceRisen?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
 
 /// One row of the set table. Exported so the widget test can drive it.
 class SetRow extends StatelessWidget {

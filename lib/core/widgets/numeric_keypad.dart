@@ -42,6 +42,7 @@ class NumericKeypad extends StatelessWidget {
     this.onNext,
     this.unitLabel,
     this.title,
+    this.subtitle,
     this.steps,
     this.onPlates,
     this.feedback = const FeedbackService(),
@@ -57,6 +58,9 @@ class NumericKeypad extends StatelessWidget {
 
   final String? unitLabel;
   final String? title;
+
+  /// Where the number goes, under what it is: "Set 4 · Bench Press".
+  final String? subtitle;
 
   /// Overrides the default steps, so pounds can use 5/10 instead of 2.5/5.
   final List<double>? steps;
@@ -97,6 +101,7 @@ class NumericKeypad extends StatelessWidget {
               _DragHandle(onDismiss: onDone),
               _Header(
                 title: title ?? kind.label,
+                subtitle: subtitle,
                 value: value,
                 unitLabel: unitLabel,
                 onClear: () => _emit(value.clear()),
@@ -131,6 +136,7 @@ class NumericKeypad extends StatelessWidget {
 class _Header extends StatelessWidget {
   const _Header({
     required this.title,
+    required this.subtitle,
     required this.value,
     required this.unitLabel,
     required this.onClear,
@@ -138,6 +144,7 @@ class _Header extends StatelessWidget {
   });
 
   final String title;
+  final String? subtitle;
   final KeypadValue value;
   final String? unitLabel;
   final VoidCallback onClear;
@@ -152,13 +159,25 @@ class _Header extends StatelessWidget {
         // beside it are what the pad is for, and a long title on a narrow
         // phone with large text pushed them over the edge.
         Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (subtitle != null)
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
+            ],
           ),
         ),
         const SizedBox(width: AppSpacing.sm),

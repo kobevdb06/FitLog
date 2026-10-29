@@ -484,6 +484,119 @@ void main() {
     });
   });
 
+  group('the set you are typing in', () {
+    /// Ten sets of 100 to 109 kg on a phone-sized view: most of them start
+    /// out where the pad is about to come up.
+    Future<void> tenSets(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      final detail = await db.workoutsDao.getWorkoutDetail(workoutId);
+      final exercise = detail!.exercises.single.workoutExercise.id;
+      for (var kg = 101; kg <= 109; kg++) {
+        await db.workoutsDao.addSet(exercise, weightKg: kg.toDouble(), reps: 5);
+      }
+      await pumpScreen(tester);
+    }
+
+    Finder weightCell(int kg) =>
+        find.descendant(of: find.byType(SetRow), matching: find.text('$kg'));
+
+    /// The heaviest set whose weight is on screen before the pad arrives.
+    int lowestOnScreen(WidgetTester tester) => [
+      for (var kg = 100; kg <= 109; kg++)
+        if (weightCell(kg).evaluate().isNotEmpty &&
+            tester.getRect(weightCell(kg)).bottom <= 640)
+          kg,
+    ].last;
+
+    double padTop(WidgetTester tester) =>
+        tester.getRect(find.byType(NumericKeypad)).top;
+
+    testWidgets('comes up above the pad when you tap it low on the screen', (
+      tester,
+    ) async {
+      await tenSets(tester);
+      final kg = lowestOnScreen(tester);
+      expect(
+        kg,
+        greaterThan(102),
+        reason: 'onderaan het scherm, niet bovenaan',
+      );
+
+      await tester.tap(weightCell(kg));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getRect(weightCell(kg)).bottom,
+        lessThanOrEqualTo(padTop(tester) + 0.5),
+      );
+    });
+
+    testWidgets('and so does the next one, reached with the next key', (
+      tester,
+    ) async {
+      await tenSets(tester);
+      final kg = lowestOnScreen(tester);
+      await tester.tap(weightCell(kg));
+      await tester.pumpAndSettle();
+
+      // Weight, reps, then the weight of the set below.
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.bySemanticsLabel('Volgend veld'));
+        await tester.pumpAndSettle();
+      }
+
+      expect(
+        tester.getRect(weightCell(kg + 1)).bottom,
+        lessThanOrEqualTo(padTop(tester) + 0.5),
+      );
+    });
+
+    testWidgets('and the pad says which set and which exercise it is', (
+      tester,
+    ) async {
+      await tenSets(tester);
+      await tester.tap(weightCell(103));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(NumericKeypad),
+          matching: find.text('Set 4 · Barbell Bench Press'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NumericKeypad),
+          matching: find.text('Gewicht'),
+        ),
+        findsOneWidget,
+        reason: 'wat je typt, staat er nog',
+      );
+    });
+
+    testWidgets('a warm-up is called one', (tester) async {
+      await db.workoutsDao.updateSet(
+        setId,
+        setType: Value(SetType.warmup.wire),
+      );
+      await pumpScreen(tester);
+      await tester.tap(find.text('100').first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(NumericKeypad),
+          matching: find.text('Warming-up · Barbell Bench Press'),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('scoring a set', () {
     Future<void> withRpeOn(WidgetTester tester) async {
       await db.settingsDao.updateSettings(

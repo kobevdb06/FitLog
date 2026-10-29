@@ -5,7 +5,6 @@ import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/settings/presentation/about_screen.dart';
 import 'package:fitlog/features/settings/presentation/feedback_providers.dart';
 import 'package:fitlog/features/settings/presentation/settings_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

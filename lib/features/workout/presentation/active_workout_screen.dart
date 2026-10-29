@@ -392,9 +392,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Workout afronden?'),
+          // Not ticked off, which is not the same as empty: a set can hold
+          // numbers you never got to. The buttons say what happens to them,
+          // and that the session ends either way.
           content: Text(
             '$pending ${pending == 1 ? 'set is' : 'sets zijn'} niet '
-            'ingevuld. Wil je die verwijderen of bewaren?',
+            'afgevinkt. Laat je ${pending == 1 ? 'hem' : 'ze'} weg, of bewaar '
+            'je ${pending == 1 ? 'hem' : 'ze'} als niet gedaan?',
           ),
           actions: [
             TextButton(
@@ -403,11 +407,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop('keep'),
-              child: const Text('Bewaren'),
+              child: const Text('Bewaren en afronden'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop('discard'),
-              child: const Text('Verwijderen'),
+              child: const Text('Weglaten en afronden'),
             ),
           ],
         ),

@@ -50,14 +50,14 @@ void main() {
       name: 'Push',
       defaultRestSeconds: 90,
     );
-    await db.workoutsDao.addExercises(
-      workoutId,
-      ['ex-bench'],
-      defaultRestSeconds: 90,
-    );
-    final set = (await db.workoutsDao.getWorkoutDetail(
-      workoutId,
-    ))!.exercises.single.sets.single;
+    await db.workoutsDao.addExercises(workoutId, [
+      'ex-bench',
+    ], defaultRestSeconds: 90);
+    final set = (await db.workoutsDao.getWorkoutDetail(workoutId))!
+        .exercises
+        .single
+        .sets
+        .single;
     await db.workoutsDao.updateSet(
       set.id,
       weightKg: const Value(100),
@@ -77,6 +77,11 @@ void main() {
         GoRoute(
           path: '/thuis',
           builder: (context, state) => const Scaffold(body: Text('Thuis')),
+        ),
+        GoRoute(
+          path: '/workout/:id/samenvatting',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Samenvatting')),
         ),
         GoRoute(
           path: '/workout',
@@ -156,5 +161,60 @@ void main() {
       isNull,
       reason: 'weggooien gooit hem echt weg',
     );
+  });
+
+  group('finishing with a set that was not ticked off', () {
+    Future<void> openFinish(WidgetTester tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.text('Klaar'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<List<WorkoutSetRow>> sets() async => [
+      for (final exercise in (await db.workoutsDao.getWorkoutDetail(
+        workoutId,
+      ))!.exercises)
+        ...exercise.sets,
+    ];
+
+    testWidgets('the buttons say what happens to it', (tester) async {
+      // "Bewaren" and "Verwijderen" did not say what was kept or removed, nor
+      // that the session finished either way.
+      await openFinish(tester);
+
+      expect(find.textContaining('1 set is niet afgevinkt'), findsOneWidget);
+      expect(find.text('Weglaten en afronden'), findsOneWidget);
+      expect(find.text('Bewaren en afronden'), findsOneWidget);
+      expect(find.text('Terug'), findsOneWidget);
+    });
+
+    testWidgets('leaving it out removes it', (tester) async {
+      await openFinish(tester);
+      await tester.tap(find.text('Weglaten en afronden'));
+      await tester.pumpAndSettle();
+
+      expect(await sets(), isEmpty);
+      expect(find.text('Samenvatting'), findsOneWidget);
+    });
+
+    testWidgets('keeping it stores it as not done', (tester) async {
+      await openFinish(tester);
+      await tester.tap(find.text('Bewaren en afronden'));
+      await tester.pumpAndSettle();
+
+      final kept = await sets();
+      expect(kept, hasLength(1));
+      expect(kept.single.isCompleted, isFalse);
+      expect(find.text('Samenvatting'), findsOneWidget);
+    });
+
+    testWidgets('going back finishes nothing', (tester) async {
+      await openFinish(tester);
+      await tester.tap(find.text('Terug'));
+      await tester.pumpAndSettle();
+
+      expect(await db.workoutsDao.getActiveWorkoutRow(), isNotNull);
+      expect(find.text('Bankdrukken'), findsOneWidget);
+    });
   });
 }

@@ -277,6 +277,108 @@ void main() {
     expect(find.text('Geskipt'), findsOneWidget);
   });
 
+  group('the note line', () {
+    Future<String> exerciseRow() async =>
+        (await db.workoutsDao.getWorkoutDetail(workoutId))!
+            .exercises
+            .single
+            .workoutExercise
+            .id;
+
+    testWidgets('is not there without a note', (tester) async {
+      await pumpScreen(tester);
+
+      expect(find.text('Notitie toevoegen'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+    });
+
+    testWidgets('shows the note of this session', (tester) async {
+      await db.workoutsDao.updateWorkoutExercise(
+        await exerciseRow(),
+        notes: const Value('Stang laag'),
+      );
+      await pumpScreen(tester);
+
+      expect(find.text('Stang laag'), findsOneWidget);
+    });
+
+    testWidgets("and last time's, as a hint", (tester) async {
+      await db
+          .into(db.workoutsTable)
+          .insert(
+            WorkoutsTableCompanion.insert(
+              id: 'w-old',
+              name: 'Push',
+              startedAt: 1000,
+              endedAt: const Value(2000),
+            ),
+          );
+      await db
+          .into(db.workoutExercisesTable)
+          .insert(
+            WorkoutExercisesTableCompanion.insert(
+              id: 'we-old',
+              workoutId: 'w-old',
+              exerciseId: 'ex-bench',
+              sortOrder: 0,
+              notes: const Value('Smalle greep'),
+            ),
+          );
+      await pumpScreen(tester);
+
+      expect(find.text('Smalle greep'), findsOneWidget);
+    });
+
+    testWidgets('one written from the menu shows up on the card', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+
+      // The exercise's menu, not the workout's in the app bar.
+      final cardMenu = find
+          .byTooltip('Menu tonen')
+          .evaluate()
+          .firstWhere(
+            (element) =>
+                element.findAncestorWidgetOfExactType<AppBar>() == null,
+          );
+      await tester.tap(find.byElementPredicate((e) => e == cardMenu));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Notitie'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Diep zakken');
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      // The dialog is gone; this is the card.
+      expect(find.text('Diep zakken'), findsOneWidget);
+    });
+
+    testWidgets('emptied while typing, it stays until you leave it', (
+      tester,
+    ) async {
+      await db.workoutsDao.updateWorkoutExercise(
+        await exerciseRow(),
+        notes: const Value('Stang laag'),
+      );
+      await pumpScreen(tester);
+
+      await tester.tap(find.text('Stang laag'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '');
+      await settle(tester);
+      expect(
+        find.byType(TextField),
+        findsOneWidget,
+        reason: 'nog aan het typen',
+      );
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await settle(tester);
+      expect(find.byType(TextField), findsNothing);
+    });
+  });
+
   testWidgets('a timed exercise asks for a time instead of kilograms', (
     tester,
   ) async {
@@ -842,8 +944,8 @@ void main() {
       'system keyboard', (tester) async {
     await pumpScreen(tester);
 
-    // Only the note field is a real text field before the cell is tapped.
-    expect(find.byType(EditableText), findsOneWidget);
+    // No text field at all: without a note there is no note line either.
+    expect(find.byType(EditableText), findsNothing);
 
     // The weight cell shows the stored value.
     await tester.tap(find.text('100').first);
@@ -852,7 +954,7 @@ void main() {
     // The custom pad appears, and no extra text field is focused for it.
     expect(find.byType(NumericKeypad), findsOneWidget);
     expect(find.text('+2,5'), findsOneWidget);
-    expect(find.byType(EditableText), findsOneWidget);
+    expect(find.byType(EditableText), findsNothing);
   });
 
   group('in een deload', () {

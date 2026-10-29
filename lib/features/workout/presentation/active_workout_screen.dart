@@ -1526,6 +1526,11 @@ class _CardHeader extends ConsumerWidget {
   }
 }
 
+/// The note on an exercise, there only when there is one: this session's, or
+/// last time's as a hint.
+///
+/// An empty "Notitie toevoegen" on every card took a line from each of them
+/// for something most exercises never get. A new note starts from the menu.
 class _NoteField extends StatefulWidget {
   const _NoteField({
     required this.detail,
@@ -1546,14 +1551,40 @@ class _NoteFieldState extends State<_NoteField> {
     text: widget.detail.workoutExercise.notes ?? '',
   );
 
+  /// Emptying the note while typing must not pull the field away from under
+  /// your thumb. It goes once you leave it.
+  late final FocusNode _focus = FocusNode()..addListener(_onFocus);
+
+  void _onFocus() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(_NoteField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A note written from the menu arrives here. One being typed is already
+    // in the field, and overwriting it would move the cursor.
+    final stored = widget.detail.workoutExercise.notes ?? '';
+    if (!_focus.hasFocus && stored != _controller.text) {
+      _controller.text = stored;
+    }
+  }
+
   @override
   void dispose() {
+    _focus.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final shown =
+        _controller.text.isNotEmpty ||
+        widget.previousNote != null ||
+        _focus.hasFocus;
+    if (!shown) return const SizedBox.shrink();
+
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -1564,6 +1595,7 @@ class _NoteFieldState extends State<_NoteField> {
       ),
       child: TextField(
         controller: _controller,
+        focusNode: _focus,
         maxLines: 2,
         minLines: 1,
         style: theme.textTheme.bodySmall,

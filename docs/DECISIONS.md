@@ -5038,3 +5038,41 @@ het begin van een deload.
 Dat kost zo'n 330 tekens per vraag, en de prompt zat al tegen zijn budget
 van 4300 (139). Het budget gaat naar 4700: een coach die je trainingen op de
 verkeerde dag zet, is erger dan 80 tokens per vraag.
+
+## 230. De workout: de set waarin je typt in beeld, een rustiger kaart
+
+De volgende in de schermronde (PLAN.md §2.1). Na een rapport van tien punten
+koos de gebruiker de fout (1) en een mockup voor 2 tot 6; 7 tot 10 (de
+rusttimer na de rust, de hint over twee regels, de knoppen bij afronden,
+"Machine · machine") liggen nog open.
+
+- **Het toetsenblok bedekt de set niet meer.** Een set onderaan het scherm,
+  aangetikt of bereikt met "volgende", schuift net boven het blok, meteen en
+  nog eens als het blok helemaal boven is. Het blok zegt onder wat het
+  vraagt welke set het is: "Set 4 · Bankdrukken", of "Warming-up · ..." bij
+  een warming-up. De naam van de oefening staat bovenaan haar kaart, en die
+  is vaak al uit beeld.
+- **De notitieregel staat er alleen als er een notitie is**, van nu of van
+  vorige keer als hint. Een nieuwe begint in het menu. Een notitie uit het
+  menu kwam vroeger niet op de kaart tot die opnieuw gebouwd werd; dat doet
+  ze nu wel. Maak je de notitie leeg terwijl je typt, dan blijft de regel tot
+  je hem verlaat.
+- **Leegmaken is een kruis.** Het had het icoon van de wistoets in het
+  raster, die één cijfer wist; het leken twee keer dezelfde knop. Het vinkje
+  loopt door over de laatste twee rijen, waar naast de 0 een leeg vak stond.
+- **Een superset is zijn rand en "Superset A" onder de naam**, zoals in de
+  routine-editor. De streep links en de letter voor de naam gingen weg; de
+  streep stak uit voorbij de ronde hoek, en had de kaart twee keer opgemeten.
+- **De foto voor de naam, de naam in tekstkleur**, zoals in de
+  routine-editor. In de accentkleur leek elke kaart met een link te
+  beginnen.
+- **Het menu per oefening in twee groepen**: wat je met de sets doet, dan
+  wat je met de oefening doet, dan verwijderen. De schijvenberekening ging
+  eruit; het toetsenblok biedt ze al aan bij een halterstang, met het getal
+  dat je typt. Warming-up staat er alleen bij een oefening met een gewicht
+  om naar toe te werken, dus niet bij lichaamsgewicht, tijd, cardio of
+  geassisteerd.
+- **"Volgende sets invullen als de afgevinkte"**, niet "Lege sets invullen
+  zoals de laatste" uit de mockup: het vult elke niet-afgevinkte set na de
+  laatst afgevinkte, ook een die al iets bevat. "Lege" zou beloven dat een
+  ingevulde set blijft staan.

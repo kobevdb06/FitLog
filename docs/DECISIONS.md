@@ -5108,7 +5108,7 @@ release. Na een rapport en een mockup koos de maker A1, B, C en D.
   wie de release maakt krijgt hem nooit te zien. Zo biedt de site altijd wat
   er op de gsm van de maker staat.
 - **Twee bestanden in plaats van één (B).** `fitlog.apk` is voor 64-bit-gsm's,
-  ongeveer 62 MB; `fitlog-32bit.apk` voor de enkele oudere. De APK voor
+  ongeveer 63 MB; `fitlog-32bit.apk` voor de enkele oudere. De APK voor
   allebei was 102 MB, waarvan 33 MB voor 32-bit-gsm's en 6 MB voor emulators:
   Flutter laat zijn eigen code voor andere processoren weg, maar niet die van
   andere pakketten (de QR-scanner, sqlcipher). De build laat die nu weg voor

@@ -5042,9 +5042,8 @@ verkeerde dag zet, is erger dan 80 tokens per vraag.
 ## 230. De workout: de set waarin je typt in beeld, een rustiger kaart
 
 De volgende in de schermronde (PLAN.md §2.1). Na een rapport van tien punten
-koos de gebruiker de fout (1) en een mockup voor 2 tot 6; 7 tot 10 (de
-rusttimer na de rust, de hint over twee regels, de knoppen bij afronden,
-"Machine · machine") liggen nog open.
+koos de gebruiker de fout (1) en een mockup voor 2 tot 6, en daarna ook 7 tot
+10 zoals het rapport ze voorstelde.
 
 - **Het toetsenblok bedekt de set niet meer.** Een set onderaan het scherm,
   aangetikt of bereikt met "volgende", schuift net boven het blok, meteen en
@@ -5076,3 +5075,21 @@ rusttimer na de rust, de hint over twee regels, de knoppen bij afronden,
   zoals de laatste" uit de mockup: het vult elke niet-afgevinkte set na de
   laatst afgevinkte, ook een die al iets bevat. "Lege" zou beloven dat een
   ingevulde set blijft staan.
+- **Een rust die voorbij is, biedt alleen nog sluiten**, en gaat een halve
+  minuut later vanzelf weg: lang genoeg om te zien als je opkijkt tussen twee
+  sets, kort genoeg om niet de hele volgende set te blijven staan. Kom je pas
+  later terug in de app, dan gaat ze zonder geluid weg; de melding heeft het
+  al gezegd, en die melding blijft staan. Het volle scherm van de rust deed
+  hetzelfde onder "Klaar": daar staat dan alleen "Terug naar je workout", en
+  het sluit zichzelf als de timer weggaat in plaats van "Geen rusttimer" te
+  tonen. "Wat volgt" in de balk, dat het rapport als extra noemde, is niet
+  gebouwd.
+- **"Invullen" staat naast "Vorige keer"**, niet naast de titel, zodat die op
+  één regel blijft. Met grote tekst is de hint even hoog als voorheen; met
+  gewone tekst iets hoger, omdat de knop zijn eigen regel nodig heeft.
+- **Afronden zegt wat er met de sets gebeurt**: "Weglaten en afronden" en
+  "Bewaren en afronden", niet "Lege sets weglaten" uit het rapport. Het gaat
+  om sets die niet afgevinkt zijn, en daar kan al iets in staan.
+- **"Machine · machine" staat er één keer**, in de uitleg en op de pagina van
+  een oefening: het materiaal valt weg als het hetzelfde woord is als het
+  type.

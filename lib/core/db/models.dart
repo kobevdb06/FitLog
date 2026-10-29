@@ -48,6 +48,19 @@ extension ExerciseCategoryLabel on ExerciseRow {
       CategoryChoice.of(category, customCategory);
 
   String get categoryLabel => categoryChoice.label;
+
+  /// "Barbell · halterstang": the category, and the equipment where it says
+  /// something the category does not. A machine exercise's equipment is
+  /// "machine", and "Machine · machine" said the same thing twice.
+  String get categoryAndEquipment {
+    final equipment = this.equipment?.trim();
+    if (equipment == null ||
+        equipment.isEmpty ||
+        equipment.toLowerCase() == categoryLabel.toLowerCase()) {
+      return categoryLabel;
+    }
+    return '$categoryLabel · $equipment';
+  }
 }
 
 class RoutineSummary {

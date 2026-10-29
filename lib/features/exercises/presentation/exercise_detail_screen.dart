@@ -220,8 +220,7 @@ class _InfoTab extends ConsumerWidget {
                   Text(exercise.name, style: theme.textTheme.titleMedium),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    '${exercise.categoryLabel}'
-                    '${exercise.equipment == null ? '' : ' · ${exercise.equipment}'}',
+                    exercise.categoryAndEquipment,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

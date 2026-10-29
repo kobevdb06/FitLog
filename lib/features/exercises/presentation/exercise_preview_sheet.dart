@@ -81,10 +81,7 @@ class _Preview extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            [
-              exercise.categoryLabel,
-              if (exercise.equipment != null) exercise.equipment!,
-            ].join(' · '),
+            exercise.categoryAndEquipment,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

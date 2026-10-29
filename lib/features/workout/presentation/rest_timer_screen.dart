@@ -40,6 +40,16 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     final state = ref.watch(restTimerProvider);
     final notifier = ref.read(restTimerProvider.notifier);
 
+    // Skipped here, or put away by the bar half a minute after the rest was
+    // over: either way there is no rest left to show, and "Geen rusttimer"
+    // would be the wrong thing to be looking at. Back to the workout. This is
+    // the one place that closes the screen, so skipping cannot close it twice.
+    ref.listen(restTimerProvider, (previous, next) {
+      if ((previous?.isActive ?? false) && !next.isActive) {
+        unawaited(Navigator.of(context).maybePop());
+      }
+    });
+
     if (!state.isActive) {
       return Scaffold(
         appBar: AppBar(),
@@ -91,9 +101,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            done
-                                ? 'Klaar'
-                                : Formatters.duration(remaining),
+                            done ? 'Klaar' : Formatters.duration(remaining),
                             style: theme.textTheme.displaySmall?.copyWith(
                               color: done ? AppColors.success : null,
                             ),
@@ -130,30 +138,31 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
                   ],
                 ),
               const Spacer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => notifier.adjust(-15),
-                      child: const Text('-15 s'),
+              // Once it is over there is nothing to shorten, lengthen or
+              // skip: only going back.
+              if (!done) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => notifier.adjust(-15),
+                        child: const Text('-15 s'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => notifier.adjust(15),
-                      child: const Text('+15 s'),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => notifier.adjust(15),
+                        child: const Text('+15 s'),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               FilledButton(
-                onPressed: () async {
-                  await notifier.skip();
-                  if (context.mounted) Navigator.of(context).pop();
-                },
-                child: const Text('Overslaan'),
+                onPressed: notifier.skip,
+                child: Text(done ? 'Terug naar je workout' : 'Overslaan'),
               ),
             ],
           ),

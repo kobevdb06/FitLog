@@ -12,6 +12,11 @@ import '../../../core/util/feedback_service.dart';
 import '../../../routing/routes.dart';
 import 'workout_providers.dart';
 
+/// How long "Rust voorbij" stays once the rest is over. Long enough to see
+/// when you look up between sets, short enough not to sit there through the
+/// next one.
+const Duration kRestOverShown = Duration(seconds: 30);
+
 /// The compact rest bar under the set list.
 ///
 /// The countdown is recomputed from the stored end timestamp on every tick, so
@@ -42,14 +47,21 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
 
   void _checkFinished() {
     final state = ref.read(restTimerProvider);
-    if (!state.isActive || state.finishedHandled) return;
-    if (!state.hasElapsed()) return;
+    if (!state.isActive || !state.hasElapsed()) return;
+    final notifier = ref.read(restTimerProvider.notifier);
 
-    ref.read(restTimerProvider.notifier).markFinishedHandled();
+    // Over for a while: the bar has said so, and goes. Coming back to the app
+    // long after, the notification has already said it, so no sound either.
+    if (DateTime.now().isAfter(state.endsAt!.add(kRestOverShown))) {
+      notifier.dismiss();
+      return;
+    }
+
+    if (state.finishedHandled) return;
+    notifier.markFinishedHandled();
     final settings = ref.read(settingsProvider).value;
-    FeedbackService(
-      setCheckSoundEnabled: settings?.restSoundEnabled ?? true,
-    ).restFinished();
+    FeedbackService(setCheckSoundEnabled: settings?.restSoundEnabled ?? true)
+        .restFinished();
   }
 
   @override
@@ -98,19 +110,29 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
                       ),
                     ),
                     const Spacer(),
-                    TextButton(
-                      onPressed: () => notifier.adjust(-15),
-                      child: const Text('-15'),
-                    ),
-                    TextButton(
-                      onPressed: () => notifier.adjust(15),
-                      child: const Text('+15'),
-                    ),
-                    IconButton(
-                      tooltip: 'Overslaan',
-                      onPressed: notifier.skip,
-                      icon: const Icon(Icons.skip_next),
-                    ),
+                    // Once it is over there is nothing to shorten or
+                    // lengthen, and nothing to skip: only closing it.
+                    if (done)
+                      IconButton(
+                        tooltip: 'Sluiten',
+                        onPressed: notifier.skip,
+                        icon: const Icon(Icons.close),
+                      )
+                    else ...[
+                      TextButton(
+                        onPressed: () => notifier.adjust(-15),
+                        child: const Text('-15'),
+                      ),
+                      TextButton(
+                        onPressed: () => notifier.adjust(15),
+                        child: const Text('+15'),
+                      ),
+                      IconButton(
+                        tooltip: 'Overslaan',
+                        onPressed: notifier.skip,
+                        icon: const Icon(Icons.skip_next),
+                      ),
+                    ],
                   ],
                 ),
               ),

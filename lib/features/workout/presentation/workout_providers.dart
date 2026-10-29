@@ -117,6 +117,10 @@ class RestTimer extends _$RestTimer {
     await NotificationService.instance.cancelRestFinished();
   }
 
+  /// Puts a rest that is over away, and leaves the notification that said
+  /// so where it is: it is not wrong, only old.
+  void dismiss() => state = const RestTimerState.idle();
+
   /// Marks the "rest is over" feedback as played so it only fires once.
   void markFinishedHandled() {
     if (state.finishedHandled) return;

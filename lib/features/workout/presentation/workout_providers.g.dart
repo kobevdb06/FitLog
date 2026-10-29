@@ -398,7 +398,7 @@ final class RestTimerProvider
   }
 }
 
-String _$restTimerHash() => r'105ce169229ed5008f8ad038c3ef1802796870f4';
+String _$restTimerHash() => r'ef9c8a2f4388f107b884cb1b2bcb6cea37ed9ac7';
 
 /// Drives the rest timer. Kept alive so it survives navigation between the
 /// workout screen and the full screen countdown.

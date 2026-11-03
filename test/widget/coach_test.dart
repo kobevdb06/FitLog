@@ -272,6 +272,141 @@ void main() {
       expect(find.textContaining('Push A · loopt'), findsOneWidget);
       expect(find.text('Hetzelfde gesprek als in het eiland'), findsOneWidget);
     });
+
+    /// A conversation of [count] messages, "[word] 1" the oldest, asked and
+    /// answered in turn.
+    Future<void> conversation(String id, String word, {int count = 30}) async {
+      await db.chatDao.createThread(id, 'Een gesprek');
+      for (var i = 1; i <= count; i++) {
+        await db
+            .into(db.chatMessagesTable)
+            .insert(
+              ChatMessagesTableCompanion.insert(
+                id: '$id-$i',
+                threadId: id,
+                role: i.isOdd ? 'user' : 'assistant',
+                content: '$word $i',
+                createdAt: i,
+              ),
+            );
+      }
+    }
+
+    testWidgets('een eerder gesprek opent op het laatste bericht', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await conversation('t-1', 'Bericht');
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+        size: const Size(400, 800),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bericht 30'), findsOneWidget);
+      expect(find.text('Bericht 29'), findsOneWidget);
+      expect(find.text('Bericht 1'), findsNothing);
+    });
+
+    testWidgets('ook als je van het ene gesprek naar het andere gaat', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await conversation('t-1', 'Bericht');
+      await conversation('t-2', 'Ander');
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+        size: const Size(400, 800),
+      );
+      await tester.pumpAndSettle();
+      // Wie eerst in het ene gesprek naar boven scrolde,
+      await tester.drag(find.text('Bericht 29'), const Offset(0, 600));
+      await tester.pumpAndSettle();
+      expect(find.text('Bericht 28'), findsNothing);
+
+      // komt in het andere toch onderaan binnen.
+      container!.read(coachSessionControllerProvider.notifier).show('t-2');
+      await tester.pumpAndSettle();
+      expect(find.text('Ander 30'), findsOneWidget);
+      expect(find.text('Ander 28'), findsOneWidget);
+      expect(find.text('Ander 1'), findsNothing);
+    });
+
+    testWidgets('een kort gesprek staat bovenaan, niet onderaan bij het veld', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await conversation('t-1', 'Bericht', count: 2);
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+        size: const Size(400, 800),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Bericht 1')).dy, lessThan(120));
+      expect(
+        tester.getTopLeft(find.text('Bericht 2')).dy,
+        greaterThan(tester.getTopLeft(find.text('Bericht 1')).dy),
+      );
+    });
+
+    testWidgets('wie terugscrolt terwijl de coach schrijft, ziet niets '
+        'wegschuiven', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNtest');
+      await conversation('t-1', 'Bericht');
+      final pieces = StreamController<List<int>>();
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        size: const Size(400, 800),
+        api: (String apiKey, CoachProvider provider) => AiClient(
+          apiKey: apiKey,
+          provider: provider,
+          client: MockClient.streaming(
+            (request, _) async => http.StreamedResponse(
+              pieces.stream,
+              200,
+              headers: {'content-type': 'text/event-stream'},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Hoeveel sets?');
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      await tester.pump();
+      pieces.add(utf8.encode('data: ${jsonEncode(says('Tussen tien '))}\n\n'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tussen tien '), findsOneWidget);
+
+      // Naar boven, om iets terug te lezen.
+      await tester.drag(find.text('Hoeveel sets?'), const Offset(0, 300));
+      await tester.pumpAndSettle();
+      final reading = find.text('Bericht 26');
+      final before = tester.getTopLeft(reading);
+
+      // Het antwoord groeit met regels erbij; wat je leest blijft staan.
+      pieces.add(utf8.encode('data: ${jsonEncode(says('sets ' * 80))}\n\n'));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(reading), before);
+
+      await pieces.close();
+      await tester.pumpAndSettle();
+    });
   });
 
   group('het geheugen', () {

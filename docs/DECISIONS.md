@@ -5271,3 +5271,28 @@ momenten uit het rapport, elk met een eigen prompt, standaard uit.
 - **Uitproberen** kan bij elk moment, op het nieuwste waar het over kan
   gaan; in de chat is een probeersel een gesprek van zichzelf, dat het echte
   moment niet in de weg zit.
+
+## 235. Een gesprek opent op het laatste bericht
+
+Gemeld: open je een gesprek van eerder, dan stond het bovenaan, en moest je
+helemaal naar beneden scrollen om verder te typen. De coach zelf start nog
+altijd op een leeg gesprek (217); dit gaat over een gesprek dat je opent,
+uit het paneel, een melding, *Open het gesprek* of *Verder vragen*.
+
+- **De lijst staat omgekeerd**: ze begint bij het nieuwste bericht, onderaan.
+  Er is geen sprong naar beneden na het openen, ook niet als foto's nog
+  laden: de lijst begint daar. Een kort gesprek staat zoals voordien
+  bovenaan, onder de balk.
+- **Elk gesprek opent onderaan**, ook als je van het ene naar het andere gaat
+  terwijl je in het eerste naar boven scrolde: waar je in het ene was, neemt
+  het andere niet over.
+- **Terwijl de coach schrijft**, groeit het antwoord onderaan en schuift de
+  rest omhoog. Sta je onderaan, dan blijft de nieuwste regel in beeld, zonder
+  dat de lijst er telkens achteraan springt. Scrolde je een stukje (tot 160
+  pixels), dan ga je mee naar beneden, zoals voordien. Scrolde je verder
+  omhoog om iets te lezen, dan schuift de lijst in dezelfde beweging mee, en
+  blijft wat je leest staan. Een omgekeerde lijst doet dat niet vanzelf: het
+  nieuwste bericht staat daarom in een stuk van zichzelf onderaan, dat de
+  plek bijstelt als het groeit.
+- **Een vraag sturen** brengt je onderaan, bij je vraag. Voordien bleef de
+  lijst staan waar je was.

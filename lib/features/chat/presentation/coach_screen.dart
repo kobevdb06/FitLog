@@ -10,6 +10,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,7 +50,10 @@ class CoachScreen extends ConsumerStatefulWidget {
 
 class _CoachScreenState extends ConsumerState<CoachScreen> {
   final _controller = TextEditingController();
-  final _scroll = ScrollController();
+
+  /// Every conversation opens on its newest line, not where another one was
+  /// left: nothing is kept to put back.
+  final _scroll = ScrollController(keepScrollOffset: false);
 
   CoachSessionController get _session =>
       ref.read(coachSessionControllerProvider.notifier);
@@ -114,6 +118,8 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       _held = null;
       _askedAt = DateTime.now().millisecondsSinceEpoch;
     });
+    // Your question is at the bottom, so that is where you go.
+    _toBottom();
     await controller.ask(
       threadId: thread,
       question: question,
@@ -174,25 +180,13 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     if (mounted) setState(() => _photos.addAll(stored));
   }
 
-  /// Keeps the newest line in sight while the answer grows - unless the user
-  /// scrolled up to read something, which this does not take away from them.
-  void _follow() {
-    if (!_scroll.hasClients) return;
-    final position = _scroll.position;
-    if (position.maxScrollExtent - position.pixels > 160) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients) {
-        _scroll.jumpTo(_scroll.position.maxScrollExtent);
-      }
-    });
-  }
-
+  /// To the newest line: the list is reversed, so that is where it starts.
   void _toBottom() {
     if (!_scroll.hasClients) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scroll.hasClients) return;
       _scroll.animateTo(
-        _scroll.position.maxScrollExtent,
+        0,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
       );
@@ -217,7 +211,6 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           previous.answer.isNotEmpty) {
         setState(() => _held = previous.answer);
       }
-      if (next.answer != previous.answer) _follow();
     });
     // A held answer belongs to the conversation it was asked in. On another
     // - a new one above all, which never stores it - it stayed on screen
@@ -234,6 +227,23 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     );
     final held = stored ? null : _held;
     final writing = state.sending || held != null;
+
+    // Counted from the newest: the answer being written, then the messages
+    // back to the first.
+    final count = messages.length + (writing ? 1 : 0);
+    Widget item(int fromNewest) {
+      if (writing && fromNewest == 0) {
+        return _Writing(
+          answer: state.sending ? state.answer : held!,
+          looking: state.sending ? state.looking : null,
+        );
+      }
+      final index = messages.length - 1 - fromNewest + (writing ? 1 : 0);
+      return _Bubble(
+        message: messages[index],
+        question: _questionBefore(messages, index),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -258,23 +268,42 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
             Expanded(
               child: messages.isEmpty && !writing
                   ? _Opening(onPick: _send)
-                  : ListView.builder(
-                      controller: _scroll,
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      itemCount: messages.length + (writing ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == messages.length) {
-                          return _Writing(
-                            answer: state.sending ? state.answer : held!,
-                            looking: state.sending ? state.looking : null,
-                            onGrow: _follow,
-                          );
-                        }
-                        return _Bubble(
-                          message: messages[index],
-                          question: _questionBefore(messages, index),
-                        );
-                      },
+                  // Reversed, so it starts at the newest line - also in a
+                  // conversation from earlier - and shrink-wrapped at the
+                  // top, so a short one still reads from the top down.
+                  : Align(
+                      alignment: Alignment.topCenter,
+                      child: CustomScrollView(
+                        key: ValueKey(threadId),
+                        controller: _scroll,
+                        reverse: true,
+                        shrinkWrap: true,
+                        slivers: [
+                          _Newest(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                0,
+                                AppSpacing.lg,
+                                AppSpacing.lg,
+                              ),
+                              child: item(0),
+                            ),
+                          ),
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.lg,
+                              AppSpacing.lg,
+                              AppSpacing.lg,
+                              0,
+                            ),
+                            sliver: SliverList.builder(
+                              itemCount: count - 1,
+                              itemBuilder: (context, i) => item(i + 1),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
             ),
             if (state.error != null)
@@ -314,6 +343,43 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       if (messages[i].role == 'user') return messages[i].content;
     }
     return null;
+  }
+}
+
+/// The newest line of the conversation, where the reversed list starts: at
+/// the bottom.
+///
+/// What grows there, like the answer being written, pushes everything above
+/// it up the screen. At the newest line that is right, because it stays in
+/// sight. Close to it, the user is taken the last bit down. Further up,
+/// reading something, the position moves along in the same layout, so the
+/// text being read stays where it is.
+class _Newest extends SingleChildRenderObjectWidget {
+  const _Newest({required Widget super.child});
+
+  /// How far up the user may have scrolled and still be following along.
+  static const double following = 160;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderNewest();
+}
+
+class _RenderNewest extends RenderSliverToBoxAdapter {
+  /// How tall the newest line was the last time round.
+  double? _height;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final height = geometry!.scrollExtent;
+    final before = _height;
+    _height = height;
+    // The first sliver, so its scroll offset is how far up the user is.
+    final up = constraints.scrollOffset;
+    if (before == null || height == before || up <= 0) return;
+    geometry = SliverGeometry(
+      scrollOffsetCorrection: up > _Newest.following ? height - before : -up,
+    );
   }
 }
 
@@ -1490,11 +1556,10 @@ class _SentPhoto extends ConsumerWidget {
 /// The answer while it is being written: what the coach is looking up
 /// first, then the text as it comes in.
 class _Writing extends StatelessWidget {
-  const _Writing({required this.answer, this.looking, required this.onGrow});
+  const _Writing({required this.answer, this.looking});
 
   final String answer;
   final String? looking;
-  final VoidCallback onGrow;
 
   @override
   Widget build(BuildContext context) {
@@ -1543,11 +1608,7 @@ class _Writing extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           ),
-          child: _Typing(
-            text: text,
-            style: theme.textTheme.bodyMedium,
-            onGrow: onGrow,
-          ),
+          child: _Typing(text: text, style: theme.textTheme.bodyMedium),
         ),
       ),
     );
@@ -1562,13 +1623,10 @@ class _Writing extends StatelessWidget {
 /// when a big piece came in, so it never falls far behind. With reduced
 /// motion switched on, everything that arrived is there at once.
 class _Typing extends StatefulWidget {
-  const _Typing({required this.text, this.style, required this.onGrow});
+  const _Typing({required this.text, this.style});
 
   final String text;
   final TextStyle? style;
-
-  /// Called each time more is shown, so the list can keep it in sight.
-  final VoidCallback onGrow;
 
   @override
   State<_Typing> createState() => _TypingState();
@@ -1621,7 +1679,6 @@ class _TypingState extends State<_Typing> with SingleTickerProviderStateMixin {
       next++;
     }
     setState(() => _shown = next);
-    widget.onGrow();
   }
 
   static bool _isHighSurrogate(int unit) => unit >= 0xD800 && unit <= 0xDBFF;

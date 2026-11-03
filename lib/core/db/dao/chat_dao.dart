@@ -17,6 +17,7 @@ part 'chat_dao.drift.dart';
     ChatMessagesTable,
     MorningReportsTable,
     WeekReviewsTable,
+    WorkoutAnswersTable,
   ],
 )
 class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
@@ -254,9 +255,9 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     await delete(chatThreadsTable).go();
   }
 
-  /// Every answer since a moment, from the chat and from the morning
-  /// reports alike: a report the coach wrote is a request on the same key,
-  /// and the daily bar has to count it.
+  /// Every answer since a moment, from the chat, the morning reports, the
+  /// weeks and the workouts alike: a report the coach wrote is a request on
+  /// the same key, and the daily bar has to count it.
   static const String _usageSql =
       'SELECT COUNT(*) AS answers, '
       'COALESCE(SUM(requests), 0) AS requests, '
@@ -271,8 +272,23 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
       'FROM morning_reports WHERE requests IS NOT NULL AND created_at >= ? '
       'UNION ALL '
       'SELECT requests, COALESCE(input_tokens, 0), COALESCE(output_tokens, 0) '
-      'FROM week_reviews WHERE requests IS NOT NULL AND created_at >= ?'
+      'FROM week_reviews WHERE requests IS NOT NULL AND created_at >= ? '
+      'UNION ALL '
+      'SELECT requests, COALESCE(input_tokens, 0), COALESCE(output_tokens, 0) '
+      'FROM workout_answers WHERE requests IS NOT NULL AND created_at >= ?'
       ')';
+
+  /// One [since] for each part of [_usageSql].
+  static List<Variable<int>> _usageVariables(DateTime since) => [
+    for (var i = 0; i < 4; i++) Variable.withInt(since.millisecondsSinceEpoch),
+  ];
+
+  Set<TableInfo> get _usageTables => {
+    chatMessagesTable,
+    morningReportsTable,
+    weekReviewsTable,
+    workoutAnswersTable,
+  };
 
   /// What was spent since [since]: calls, answers and tokens.
   ///
@@ -282,12 +298,8 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   usageSince(DateTime since) async {
     final row = await customSelect(
       _usageSql,
-      variables: [
-        Variable.withInt(since.millisecondsSinceEpoch),
-        Variable.withInt(since.millisecondsSinceEpoch),
-        Variable.withInt(since.millisecondsSinceEpoch),
-      ],
-      readsFrom: {chatMessagesTable, morningReportsTable, weekReviewsTable},
+      variables: _usageVariables(since),
+      readsFrom: _usageTables,
     ).getSingle();
 
     return (
@@ -304,12 +316,8 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   watchUsageSince(DateTime since) =>
       customSelect(
         _usageSql,
-        variables: [
-          Variable.withInt(since.millisecondsSinceEpoch),
-          Variable.withInt(since.millisecondsSinceEpoch),
-          Variable.withInt(since.millisecondsSinceEpoch),
-        ],
-        readsFrom: {chatMessagesTable, morningReportsTable, weekReviewsTable},
+        variables: _usageVariables(since),
+        readsFrom: _usageTables,
       ).watchSingle().map(
         (row) => (
           requests: row.read<int>('requests'),

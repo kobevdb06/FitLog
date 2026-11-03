@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_colors.dart';
@@ -13,6 +14,7 @@ import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../health/presentation/steps_week_screen.dart';
 import '../../progress/presentation/sleep_section.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 import '../data/week_reviewer.dart';
 import '../domain/week_facts.dart';
 import 'review_providers.dart';
@@ -370,7 +372,8 @@ bool weekReadyForCoach(DateTime start, DateTime now) =>
 /// What the coach wrote about the week, the way to have it written, and the
 /// way to hand its suggestion to the coach in the chat.
 ///
-/// Nothing at all without a coach: the numbers are the review then.
+/// Nothing at all without a coach, or with the question switched off and
+/// nothing written: the numbers are the review then.
 class _CoachCard extends ConsumerWidget {
   const _CoachCard({required this.start, required this.now});
 
@@ -383,6 +386,9 @@ class _CoachCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final review = ref.watch(weekReviewProvider(start)).value;
     final state = ref.watch(weekReviewControllerProvider);
+    final on =
+        ref.watch(momentPromptProvider(CoachMoment.week))?.enabled ?? true;
+    if (!on && review?.coachText == null) return const SizedBox.shrink();
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
@@ -424,10 +430,11 @@ class _CoachCard extends ConsumerWidget {
                 icon: const Icon(Icons.smart_toy_outlined, size: 18),
                 label: const Text('Laat de coach het aanpassen'),
               ),
-              TextButton(
-                onPressed: write,
-                child: const Text('Opnieuw laten schrijven'),
-              ),
+              if (on)
+                TextButton(
+                  onPressed: write,
+                  child: const Text('Opnieuw laten schrijven'),
+                ),
             ],
           ),
         ],

@@ -1302,3 +1302,58 @@ class TrainingPlansTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// What the user asks the coach at a moment, one row per moment that was
+/// ever changed. A moment without a row is as it comes: see `MomentPrompt`.
+@DataClassName('CoachPromptRow')
+class CoachPromptsTable extends Table {
+  @override
+  String get tableName => 'coach_prompts';
+
+  /// One of `CoachMoment`.
+  TextColumn get moment => text()();
+  BoolColumn get enabled => boolean()();
+
+  /// The user's words. Null is the moment's own, which can change with a
+  /// new version of the app.
+  TextColumn get prompt => text().nullable()();
+
+  /// One of `AnswerLength`; null is the moment's own.
+  TextColumn get length => text().nullable()();
+  IntColumn get updatedAt => integer().named('updated_at')();
+
+  @override
+  Set<Column> get primaryKey => {moment};
+}
+
+/// What the coach said about a workout, asked in the user's words: one per
+/// workout, going with it when it is deleted.
+@DataClassName('WorkoutAnswerRow')
+class WorkoutAnswersTable extends Table {
+  @override
+  String get tableName => 'workout_answers';
+
+  TextColumn get workoutId => text()
+      .named('workout_id')
+      .references(WorkoutsTable, #id, onDelete: KeyAction.cascade)();
+  IntColumn get createdAt => integer().named('created_at')();
+
+  /// The words it was asked in, as they were then.
+  TextColumn get prompt => text()();
+
+  /// The facts the coach was given, as JSON.
+  TextColumn get facts => text()();
+
+  TextColumn get coachText => text().named('coach_text').nullable()();
+
+  /// Why there is no text.
+  TextColumn get coachError => text().named('coach_error').nullable()();
+
+  /// What it cost, for the daily bar.
+  IntColumn get requests => integer().nullable()();
+  IntColumn get inputTokens => integer().named('input_tokens').nullable()();
+  IntColumn get outputTokens => integer().named('output_tokens').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {workoutId};
+}

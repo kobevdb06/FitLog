@@ -18363,6 +18363,968 @@ class TrainingPlansTableCompanion extends UpdateCompanion<TrainingPlanRow> {
   }
 }
 
+class $CoachPromptsTableTable extends CoachPromptsTable
+    with TableInfo<$CoachPromptsTableTable, CoachPromptRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CoachPromptsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _momentMeta = const VerificationMeta('moment');
+  @override
+  late final GeneratedColumn<String> moment = GeneratedColumn<String>(
+    'moment',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _promptMeta = const VerificationMeta('prompt');
+  @override
+  late final GeneratedColumn<String> prompt = GeneratedColumn<String>(
+    'prompt',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lengthMeta = const VerificationMeta('length');
+  @override
+  late final GeneratedColumn<String> length = GeneratedColumn<String>(
+    'length',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    moment,
+    enabled,
+    prompt,
+    length,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'coach_prompts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CoachPromptRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('moment')) {
+      context.handle(
+        _momentMeta,
+        moment.isAcceptableOrUnknown(data['moment']!, _momentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_momentMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_enabledMeta);
+    }
+    if (data.containsKey('prompt')) {
+      context.handle(
+        _promptMeta,
+        prompt.isAcceptableOrUnknown(data['prompt']!, _promptMeta),
+      );
+    }
+    if (data.containsKey('length')) {
+      context.handle(
+        _lengthMeta,
+        length.isAcceptableOrUnknown(data['length']!, _lengthMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {moment};
+  @override
+  CoachPromptRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CoachPromptRow(
+      moment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}moment'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      prompt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt'],
+      ),
+      length: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}length'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CoachPromptsTableTable createAlias(String alias) {
+    return $CoachPromptsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
+  /// One of `CoachMoment`.
+  final String moment;
+  final bool enabled;
+
+  /// The user's words. Null is the moment's own, which can change with a
+  /// new version of the app.
+  final String? prompt;
+
+  /// One of `AnswerLength`; null is the moment's own.
+  final String? length;
+  final int updatedAt;
+  const CoachPromptRow({
+    required this.moment,
+    required this.enabled,
+    this.prompt,
+    this.length,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['moment'] = Variable<String>(moment);
+    map['enabled'] = Variable<bool>(enabled);
+    if (!nullToAbsent || prompt != null) {
+      map['prompt'] = Variable<String>(prompt);
+    }
+    if (!nullToAbsent || length != null) {
+      map['length'] = Variable<String>(length);
+    }
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  CoachPromptsTableCompanion toCompanion(bool nullToAbsent) {
+    return CoachPromptsTableCompanion(
+      moment: Value(moment),
+      enabled: Value(enabled),
+      prompt: prompt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prompt),
+      length: length == null && nullToAbsent
+          ? const Value.absent()
+          : Value(length),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CoachPromptRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CoachPromptRow(
+      moment: serializer.fromJson<String>(json['moment']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      prompt: serializer.fromJson<String?>(json['prompt']),
+      length: serializer.fromJson<String?>(json['length']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'moment': serializer.toJson<String>(moment),
+      'enabled': serializer.toJson<bool>(enabled),
+      'prompt': serializer.toJson<String?>(prompt),
+      'length': serializer.toJson<String?>(length),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  CoachPromptRow copyWith({
+    String? moment,
+    bool? enabled,
+    Value<String?> prompt = const Value.absent(),
+    Value<String?> length = const Value.absent(),
+    int? updatedAt,
+  }) => CoachPromptRow(
+    moment: moment ?? this.moment,
+    enabled: enabled ?? this.enabled,
+    prompt: prompt.present ? prompt.value : this.prompt,
+    length: length.present ? length.value : this.length,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CoachPromptRow copyWithCompanion(CoachPromptsTableCompanion data) {
+    return CoachPromptRow(
+      moment: data.moment.present ? data.moment.value : this.moment,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      prompt: data.prompt.present ? data.prompt.value : this.prompt,
+      length: data.length.present ? data.length.value : this.length,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoachPromptRow(')
+          ..write('moment: $moment, ')
+          ..write('enabled: $enabled, ')
+          ..write('prompt: $prompt, ')
+          ..write('length: $length, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(moment, enabled, prompt, length, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CoachPromptRow &&
+          other.moment == this.moment &&
+          other.enabled == this.enabled &&
+          other.prompt == this.prompt &&
+          other.length == this.length &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
+  final Value<String> moment;
+  final Value<bool> enabled;
+  final Value<String?> prompt;
+  final Value<String?> length;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const CoachPromptsTableCompanion({
+    this.moment = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.prompt = const Value.absent(),
+    this.length = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CoachPromptsTableCompanion.insert({
+    required String moment,
+    required bool enabled,
+    this.prompt = const Value.absent(),
+    this.length = const Value.absent(),
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : moment = Value(moment),
+       enabled = Value(enabled),
+       updatedAt = Value(updatedAt);
+  static Insertable<CoachPromptRow> custom({
+    Expression<String>? moment,
+    Expression<bool>? enabled,
+    Expression<String>? prompt,
+    Expression<String>? length,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (moment != null) 'moment': moment,
+      if (enabled != null) 'enabled': enabled,
+      if (prompt != null) 'prompt': prompt,
+      if (length != null) 'length': length,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CoachPromptsTableCompanion copyWith({
+    Value<String>? moment,
+    Value<bool>? enabled,
+    Value<String?>? prompt,
+    Value<String?>? length,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return CoachPromptsTableCompanion(
+      moment: moment ?? this.moment,
+      enabled: enabled ?? this.enabled,
+      prompt: prompt ?? this.prompt,
+      length: length ?? this.length,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (moment.present) {
+      map['moment'] = Variable<String>(moment.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (prompt.present) {
+      map['prompt'] = Variable<String>(prompt.value);
+    }
+    if (length.present) {
+      map['length'] = Variable<String>(length.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoachPromptsTableCompanion(')
+          ..write('moment: $moment, ')
+          ..write('enabled: $enabled, ')
+          ..write('prompt: $prompt, ')
+          ..write('length: $length, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkoutAnswersTableTable extends WorkoutAnswersTable
+    with TableInfo<$WorkoutAnswersTableTable, WorkoutAnswerRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkoutAnswersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workoutIdMeta = const VerificationMeta(
+    'workoutId',
+  );
+  @override
+  late final GeneratedColumn<String> workoutId = GeneratedColumn<String>(
+    'workout_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workouts (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _promptMeta = const VerificationMeta('prompt');
+  @override
+  late final GeneratedColumn<String> prompt = GeneratedColumn<String>(
+    'prompt',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _factsMeta = const VerificationMeta('facts');
+  @override
+  late final GeneratedColumn<String> facts = GeneratedColumn<String>(
+    'facts',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _coachTextMeta = const VerificationMeta(
+    'coachText',
+  );
+  @override
+  late final GeneratedColumn<String> coachText = GeneratedColumn<String>(
+    'coach_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coachErrorMeta = const VerificationMeta(
+    'coachError',
+  );
+  @override
+  late final GeneratedColumn<String> coachError = GeneratedColumn<String>(
+    'coach_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsMeta = const VerificationMeta(
+    'requests',
+  );
+  @override
+  late final GeneratedColumn<int> requests = GeneratedColumn<int>(
+    'requests',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _inputTokensMeta = const VerificationMeta(
+    'inputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> inputTokens = GeneratedColumn<int>(
+    'input_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outputTokensMeta = const VerificationMeta(
+    'outputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> outputTokens = GeneratedColumn<int>(
+    'output_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    workoutId,
+    createdAt,
+    prompt,
+    facts,
+    coachText,
+    coachError,
+    requests,
+    inputTokens,
+    outputTokens,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workout_answers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkoutAnswerRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workout_id')) {
+      context.handle(
+        _workoutIdMeta,
+        workoutId.isAcceptableOrUnknown(data['workout_id']!, _workoutIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_workoutIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('prompt')) {
+      context.handle(
+        _promptMeta,
+        prompt.isAcceptableOrUnknown(data['prompt']!, _promptMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_promptMeta);
+    }
+    if (data.containsKey('facts')) {
+      context.handle(
+        _factsMeta,
+        facts.isAcceptableOrUnknown(data['facts']!, _factsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_factsMeta);
+    }
+    if (data.containsKey('coach_text')) {
+      context.handle(
+        _coachTextMeta,
+        coachText.isAcceptableOrUnknown(data['coach_text']!, _coachTextMeta),
+      );
+    }
+    if (data.containsKey('coach_error')) {
+      context.handle(
+        _coachErrorMeta,
+        coachError.isAcceptableOrUnknown(data['coach_error']!, _coachErrorMeta),
+      );
+    }
+    if (data.containsKey('requests')) {
+      context.handle(
+        _requestsMeta,
+        requests.isAcceptableOrUnknown(data['requests']!, _requestsMeta),
+      );
+    }
+    if (data.containsKey('input_tokens')) {
+      context.handle(
+        _inputTokensMeta,
+        inputTokens.isAcceptableOrUnknown(
+          data['input_tokens']!,
+          _inputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('output_tokens')) {
+      context.handle(
+        _outputTokensMeta,
+        outputTokens.isAcceptableOrUnknown(
+          data['output_tokens']!,
+          _outputTokensMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workoutId};
+  @override
+  WorkoutAnswerRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkoutAnswerRow(
+      workoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workout_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      prompt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt'],
+      )!,
+      facts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}facts'],
+      )!,
+      coachText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_text'],
+      ),
+      coachError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_error'],
+      ),
+      requests: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests'],
+      ),
+      inputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}input_tokens'],
+      ),
+      outputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}output_tokens'],
+      ),
+    );
+  }
+
+  @override
+  $WorkoutAnswersTableTable createAlias(String alias) {
+    return $WorkoutAnswersTableTable(attachedDatabase, alias);
+  }
+}
+
+class WorkoutAnswerRow extends DataClass
+    implements Insertable<WorkoutAnswerRow> {
+  final String workoutId;
+  final int createdAt;
+
+  /// The words it was asked in, as they were then.
+  final String prompt;
+
+  /// The facts the coach was given, as JSON.
+  final String facts;
+  final String? coachText;
+
+  /// Why there is no text.
+  final String? coachError;
+
+  /// What it cost, for the daily bar.
+  final int? requests;
+  final int? inputTokens;
+  final int? outputTokens;
+  const WorkoutAnswerRow({
+    required this.workoutId,
+    required this.createdAt,
+    required this.prompt,
+    required this.facts,
+    this.coachText,
+    this.coachError,
+    this.requests,
+    this.inputTokens,
+    this.outputTokens,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workout_id'] = Variable<String>(workoutId);
+    map['created_at'] = Variable<int>(createdAt);
+    map['prompt'] = Variable<String>(prompt);
+    map['facts'] = Variable<String>(facts);
+    if (!nullToAbsent || coachText != null) {
+      map['coach_text'] = Variable<String>(coachText);
+    }
+    if (!nullToAbsent || coachError != null) {
+      map['coach_error'] = Variable<String>(coachError);
+    }
+    if (!nullToAbsent || requests != null) {
+      map['requests'] = Variable<int>(requests);
+    }
+    if (!nullToAbsent || inputTokens != null) {
+      map['input_tokens'] = Variable<int>(inputTokens);
+    }
+    if (!nullToAbsent || outputTokens != null) {
+      map['output_tokens'] = Variable<int>(outputTokens);
+    }
+    return map;
+  }
+
+  WorkoutAnswersTableCompanion toCompanion(bool nullToAbsent) {
+    return WorkoutAnswersTableCompanion(
+      workoutId: Value(workoutId),
+      createdAt: Value(createdAt),
+      prompt: Value(prompt),
+      facts: Value(facts),
+      coachText: coachText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachText),
+      coachError: coachError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachError),
+      requests: requests == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requests),
+      inputTokens: inputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputTokens),
+      outputTokens: outputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputTokens),
+    );
+  }
+
+  factory WorkoutAnswerRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkoutAnswerRow(
+      workoutId: serializer.fromJson<String>(json['workoutId']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      prompt: serializer.fromJson<String>(json['prompt']),
+      facts: serializer.fromJson<String>(json['facts']),
+      coachText: serializer.fromJson<String?>(json['coachText']),
+      coachError: serializer.fromJson<String?>(json['coachError']),
+      requests: serializer.fromJson<int?>(json['requests']),
+      inputTokens: serializer.fromJson<int?>(json['inputTokens']),
+      outputTokens: serializer.fromJson<int?>(json['outputTokens']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workoutId': serializer.toJson<String>(workoutId),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'prompt': serializer.toJson<String>(prompt),
+      'facts': serializer.toJson<String>(facts),
+      'coachText': serializer.toJson<String?>(coachText),
+      'coachError': serializer.toJson<String?>(coachError),
+      'requests': serializer.toJson<int?>(requests),
+      'inputTokens': serializer.toJson<int?>(inputTokens),
+      'outputTokens': serializer.toJson<int?>(outputTokens),
+    };
+  }
+
+  WorkoutAnswerRow copyWith({
+    String? workoutId,
+    int? createdAt,
+    String? prompt,
+    String? facts,
+    Value<String?> coachText = const Value.absent(),
+    Value<String?> coachError = const Value.absent(),
+    Value<int?> requests = const Value.absent(),
+    Value<int?> inputTokens = const Value.absent(),
+    Value<int?> outputTokens = const Value.absent(),
+  }) => WorkoutAnswerRow(
+    workoutId: workoutId ?? this.workoutId,
+    createdAt: createdAt ?? this.createdAt,
+    prompt: prompt ?? this.prompt,
+    facts: facts ?? this.facts,
+    coachText: coachText.present ? coachText.value : this.coachText,
+    coachError: coachError.present ? coachError.value : this.coachError,
+    requests: requests.present ? requests.value : this.requests,
+    inputTokens: inputTokens.present ? inputTokens.value : this.inputTokens,
+    outputTokens: outputTokens.present ? outputTokens.value : this.outputTokens,
+  );
+  WorkoutAnswerRow copyWithCompanion(WorkoutAnswersTableCompanion data) {
+    return WorkoutAnswerRow(
+      workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      prompt: data.prompt.present ? data.prompt.value : this.prompt,
+      facts: data.facts.present ? data.facts.value : this.facts,
+      coachText: data.coachText.present ? data.coachText.value : this.coachText,
+      coachError: data.coachError.present
+          ? data.coachError.value
+          : this.coachError,
+      requests: data.requests.present ? data.requests.value : this.requests,
+      inputTokens: data.inputTokens.present
+          ? data.inputTokens.value
+          : this.inputTokens,
+      outputTokens: data.outputTokens.present
+          ? data.outputTokens.value
+          : this.outputTokens,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkoutAnswerRow(')
+          ..write('workoutId: $workoutId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('prompt: $prompt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    workoutId,
+    createdAt,
+    prompt,
+    facts,
+    coachText,
+    coachError,
+    requests,
+    inputTokens,
+    outputTokens,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkoutAnswerRow &&
+          other.workoutId == this.workoutId &&
+          other.createdAt == this.createdAt &&
+          other.prompt == this.prompt &&
+          other.facts == this.facts &&
+          other.coachText == this.coachText &&
+          other.coachError == this.coachError &&
+          other.requests == this.requests &&
+          other.inputTokens == this.inputTokens &&
+          other.outputTokens == this.outputTokens);
+}
+
+class WorkoutAnswersTableCompanion extends UpdateCompanion<WorkoutAnswerRow> {
+  final Value<String> workoutId;
+  final Value<int> createdAt;
+  final Value<String> prompt;
+  final Value<String> facts;
+  final Value<String?> coachText;
+  final Value<String?> coachError;
+  final Value<int?> requests;
+  final Value<int?> inputTokens;
+  final Value<int?> outputTokens;
+  final Value<int> rowid;
+  const WorkoutAnswersTableCompanion({
+    this.workoutId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.prompt = const Value.absent(),
+    this.facts = const Value.absent(),
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkoutAnswersTableCompanion.insert({
+    required String workoutId,
+    required int createdAt,
+    required String prompt,
+    required String facts,
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workoutId = Value(workoutId),
+       createdAt = Value(createdAt),
+       prompt = Value(prompt),
+       facts = Value(facts);
+  static Insertable<WorkoutAnswerRow> custom({
+    Expression<String>? workoutId,
+    Expression<int>? createdAt,
+    Expression<String>? prompt,
+    Expression<String>? facts,
+    Expression<String>? coachText,
+    Expression<String>? coachError,
+    Expression<int>? requests,
+    Expression<int>? inputTokens,
+    Expression<int>? outputTokens,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workoutId != null) 'workout_id': workoutId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (prompt != null) 'prompt': prompt,
+      if (facts != null) 'facts': facts,
+      if (coachText != null) 'coach_text': coachText,
+      if (coachError != null) 'coach_error': coachError,
+      if (requests != null) 'requests': requests,
+      if (inputTokens != null) 'input_tokens': inputTokens,
+      if (outputTokens != null) 'output_tokens': outputTokens,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkoutAnswersTableCompanion copyWith({
+    Value<String>? workoutId,
+    Value<int>? createdAt,
+    Value<String>? prompt,
+    Value<String>? facts,
+    Value<String?>? coachText,
+    Value<String?>? coachError,
+    Value<int?>? requests,
+    Value<int?>? inputTokens,
+    Value<int?>? outputTokens,
+    Value<int>? rowid,
+  }) {
+    return WorkoutAnswersTableCompanion(
+      workoutId: workoutId ?? this.workoutId,
+      createdAt: createdAt ?? this.createdAt,
+      prompt: prompt ?? this.prompt,
+      facts: facts ?? this.facts,
+      coachText: coachText ?? this.coachText,
+      coachError: coachError ?? this.coachError,
+      requests: requests ?? this.requests,
+      inputTokens: inputTokens ?? this.inputTokens,
+      outputTokens: outputTokens ?? this.outputTokens,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workoutId.present) {
+      map['workout_id'] = Variable<String>(workoutId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (prompt.present) {
+      map['prompt'] = Variable<String>(prompt.value);
+    }
+    if (facts.present) {
+      map['facts'] = Variable<String>(facts.value);
+    }
+    if (coachText.present) {
+      map['coach_text'] = Variable<String>(coachText.value);
+    }
+    if (coachError.present) {
+      map['coach_error'] = Variable<String>(coachError.value);
+    }
+    if (requests.present) {
+      map['requests'] = Variable<int>(requests.value);
+    }
+    if (inputTokens.present) {
+      map['input_tokens'] = Variable<int>(inputTokens.value);
+    }
+    if (outputTokens.present) {
+      map['output_tokens'] = Variable<int>(outputTokens.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkoutAnswersTableCompanion(')
+          ..write('workoutId: $workoutId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('prompt: $prompt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -18429,6 +19391,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $TrainingPlansTableTable trainingPlansTable =
       $TrainingPlansTableTable(this);
+  late final $CoachPromptsTableTable coachPromptsTable =
+      $CoachPromptsTableTable(this);
+  late final $WorkoutAnswersTableTable workoutAnswersTable =
+      $WorkoutAnswersTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -18493,6 +19459,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final DeloadDao deloadDao = DeloadDao(this as AppDatabase);
   late final CoachNotesDao coachNotesDao = CoachNotesDao(this as AppDatabase);
   late final PlansDao plansDao = PlansDao(this as AppDatabase);
+  late final CoachPromptsDao coachPromptsDao = CoachPromptsDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -18527,6 +19496,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     deloadWeeksTable,
     coachNotesTable,
     trainingPlansTable,
+    coachPromptsTable,
+    workoutAnswersTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -18619,6 +19590,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('progress_photos', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workouts',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('workout_answers', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -24840,6 +25818,27 @@ final class $$WorkoutsTableTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$WorkoutAnswersTableTable, List<WorkoutAnswerRow>>
+  _workoutAnswersTableRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workoutAnswersTable,
+        aliasName: 'workouts__id__workout_answers__workout_id',
+      );
+
+  $$WorkoutAnswersTableTableProcessedTableManager get workoutAnswersTableRefs {
+    final manager = $$WorkoutAnswersTableTableTableManager(
+      $_db,
+      $_db.workoutAnswersTable,
+    ).filter((f) => f.workoutId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workoutAnswersTableRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$WorkoutsTableTableFilterComposer
@@ -24991,6 +25990,31 @@ class $$WorkoutsTableTableFilterComposer
           }) => $$ProgressPhotosTableTableFilterComposer(
             $db: $db,
             $table: $db.progressPhotosTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> workoutAnswersTableRefs(
+    Expression<bool> Function($$WorkoutAnswersTableTableFilterComposer f) f,
+  ) {
+    final $$WorkoutAnswersTableTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workoutAnswersTable,
+      getReferencedColumn: (t) => t.workoutId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutAnswersTableTableFilterComposer(
+            $db: $db,
+            $table: $db.workoutAnswersTable,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -25251,6 +26275,32 @@ class $$WorkoutsTableTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> workoutAnswersTableRefs<T extends Object>(
+    Expression<T> Function($$WorkoutAnswersTableTableAnnotationComposer a) f,
+  ) {
+    final $$WorkoutAnswersTableTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workoutAnswersTable,
+          getReferencedColumn: (t) => t.workoutId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkoutAnswersTableTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workoutAnswersTable,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkoutsTableTableTableManager
@@ -25270,6 +26320,7 @@ class $$WorkoutsTableTableTableManager
             bool routineId,
             bool workoutExercisesTableRefs,
             bool progressPhotosTableRefs,
+            bool workoutAnswersTableRefs,
           })
         > {
   $$WorkoutsTableTableTableManager(_$AppDatabase db, $WorkoutsTableTable table)
@@ -25372,12 +26423,14 @@ class $$WorkoutsTableTableTableManager
                 routineId = false,
                 workoutExercisesTableRefs = false,
                 progressPhotosTableRefs = false,
+                workoutAnswersTableRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (workoutExercisesTableRefs) db.workoutExercisesTable,
                     if (progressPhotosTableRefs) db.progressPhotosTable,
+                    if (workoutAnswersTableRefs) db.workoutAnswersTable,
                   ],
                   addJoins:
                       <
@@ -25453,6 +26506,27 @@ class $$WorkoutsTableTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workoutAnswersTableRefs)
+                        await $_getPrefetchedData<
+                          WorkoutRow,
+                          $WorkoutsTableTable,
+                          WorkoutAnswerRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkoutsTableTableReferences
+                              ._workoutAnswersTableRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkoutsTableTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workoutAnswersTableRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -25477,6 +26551,7 @@ typedef $$WorkoutsTableTableProcessedTableManager =
         bool routineId,
         bool workoutExercisesTableRefs,
         bool progressPhotosTableRefs,
+        bool workoutAnswersTableRefs,
       })
     >;
 typedef $$WorkoutExercisesTableTableCreateCompanionBuilder =
@@ -30417,6 +31492,629 @@ typedef $$TrainingPlansTableTableProcessedTableManager =
       TrainingPlanRow,
       PrefetchHooks Function()
     >;
+typedef $$CoachPromptsTableTableCreateCompanionBuilder =
+    CoachPromptsTableCompanion Function({
+      required String moment,
+      required bool enabled,
+      Value<String?> prompt,
+      Value<String?> length,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$CoachPromptsTableTableUpdateCompanionBuilder =
+    CoachPromptsTableCompanion Function({
+      Value<String> moment,
+      Value<bool> enabled,
+      Value<String?> prompt,
+      Value<String?> length,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$CoachPromptsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CoachPromptsTableTable> {
+  $$CoachPromptsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get moment => $composableBuilder(
+    column: $table.moment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get length => $composableBuilder(
+    column: $table.length,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CoachPromptsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CoachPromptsTableTable> {
+  $$CoachPromptsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get moment => $composableBuilder(
+    column: $table.moment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get length => $composableBuilder(
+    column: $table.length,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CoachPromptsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CoachPromptsTableTable> {
+  $$CoachPromptsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get moment =>
+      $composableBuilder(column: $table.moment, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<String> get prompt =>
+      $composableBuilder(column: $table.prompt, builder: (column) => column);
+
+  GeneratedColumn<String> get length =>
+      $composableBuilder(column: $table.length, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$CoachPromptsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CoachPromptsTableTable,
+          CoachPromptRow,
+          $$CoachPromptsTableTableFilterComposer,
+          $$CoachPromptsTableTableOrderingComposer,
+          $$CoachPromptsTableTableAnnotationComposer,
+          $$CoachPromptsTableTableCreateCompanionBuilder,
+          $$CoachPromptsTableTableUpdateCompanionBuilder,
+          (
+            CoachPromptRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CoachPromptsTableTable,
+              CoachPromptRow
+            >,
+          ),
+          CoachPromptRow,
+          PrefetchHooks Function()
+        > {
+  $$CoachPromptsTableTableTableManager(
+    _$AppDatabase db,
+    $CoachPromptsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CoachPromptsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CoachPromptsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CoachPromptsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> moment = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<String?> prompt = const Value.absent(),
+                Value<String?> length = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CoachPromptsTableCompanion(
+                moment: moment,
+                enabled: enabled,
+                prompt: prompt,
+                length: length,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String moment,
+                required bool enabled,
+                Value<String?> prompt = const Value.absent(),
+                Value<String?> length = const Value.absent(),
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CoachPromptsTableCompanion.insert(
+                moment: moment,
+                enabled: enabled,
+                prompt: prompt,
+                length: length,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CoachPromptsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CoachPromptsTableTable,
+      CoachPromptRow,
+      $$CoachPromptsTableTableFilterComposer,
+      $$CoachPromptsTableTableOrderingComposer,
+      $$CoachPromptsTableTableAnnotationComposer,
+      $$CoachPromptsTableTableCreateCompanionBuilder,
+      $$CoachPromptsTableTableUpdateCompanionBuilder,
+      (
+        CoachPromptRow,
+        BaseReferences<_$AppDatabase, $CoachPromptsTableTable, CoachPromptRow>,
+      ),
+      CoachPromptRow,
+      PrefetchHooks Function()
+    >;
+typedef $$WorkoutAnswersTableTableCreateCompanionBuilder =
+    WorkoutAnswersTableCompanion Function({
+      required String workoutId,
+      required int createdAt,
+      required String prompt,
+      required String facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+typedef $$WorkoutAnswersTableTableUpdateCompanionBuilder =
+    WorkoutAnswersTableCompanion Function({
+      Value<String> workoutId,
+      Value<int> createdAt,
+      Value<String> prompt,
+      Value<String> facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+
+final class $$WorkoutAnswersTableTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkoutAnswersTableTable,
+          WorkoutAnswerRow
+        > {
+  $$WorkoutAnswersTableTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkoutsTableTable _workoutIdTable(_$AppDatabase db) =>
+      db.workoutsTable.createAlias('workout_answers__workout_id__workouts__id');
+
+  $$WorkoutsTableTableProcessedTableManager get workoutId {
+    final $_column = $_itemColumn<String>('workout_id')!;
+
+    final manager = $$WorkoutsTableTableTableManager(
+      $_db,
+      $_db.workoutsTable,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workoutIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkoutAnswersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkoutAnswersTableTable> {
+  $$WorkoutAnswersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkoutsTableTableFilterComposer get workoutId {
+    final $$WorkoutsTableTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workoutsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableTableFilterComposer(
+            $db: $db,
+            $table: $db.workoutsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkoutAnswersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkoutAnswersTableTable> {
+  $$WorkoutAnswersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkoutsTableTableOrderingComposer get workoutId {
+    final $$WorkoutsTableTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workoutsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableTableOrderingComposer(
+            $db: $db,
+            $table: $db.workoutsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkoutAnswersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkoutAnswersTableTable> {
+  $$WorkoutAnswersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get prompt =>
+      $composableBuilder(column: $table.prompt, builder: (column) => column);
+
+  GeneratedColumn<String> get facts =>
+      $composableBuilder(column: $table.facts, builder: (column) => column);
+
+  GeneratedColumn<String> get coachText =>
+      $composableBuilder(column: $table.coachText, builder: (column) => column);
+
+  GeneratedColumn<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get requests =>
+      $composableBuilder(column: $table.requests, builder: (column) => column);
+
+  GeneratedColumn<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => column,
+  );
+
+  $$WorkoutsTableTableAnnotationComposer get workoutId {
+    final $$WorkoutsTableTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workoutsTable,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workoutsTable,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkoutAnswersTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkoutAnswersTableTable,
+          WorkoutAnswerRow,
+          $$WorkoutAnswersTableTableFilterComposer,
+          $$WorkoutAnswersTableTableOrderingComposer,
+          $$WorkoutAnswersTableTableAnnotationComposer,
+          $$WorkoutAnswersTableTableCreateCompanionBuilder,
+          $$WorkoutAnswersTableTableUpdateCompanionBuilder,
+          (WorkoutAnswerRow, $$WorkoutAnswersTableTableReferences),
+          WorkoutAnswerRow,
+          PrefetchHooks Function({bool workoutId})
+        > {
+  $$WorkoutAnswersTableTableTableManager(
+    _$AppDatabase db,
+    $WorkoutAnswersTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkoutAnswersTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkoutAnswersTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkoutAnswersTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workoutId = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<String> prompt = const Value.absent(),
+                Value<String> facts = const Value.absent(),
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkoutAnswersTableCompanion(
+                workoutId: workoutId,
+                createdAt: createdAt,
+                prompt: prompt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workoutId,
+                required int createdAt,
+                required String prompt,
+                required String facts,
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkoutAnswersTableCompanion.insert(
+                workoutId: workoutId,
+                createdAt: createdAt,
+                prompt: prompt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkoutAnswersTableTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workoutId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workoutId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workoutId,
+                        referencedTable: $$WorkoutAnswersTableTableReferences
+                            ._workoutIdTable(db),
+                        referencedColumn: $$WorkoutAnswersTableTableReferences
+                            ._workoutIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkoutAnswersTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkoutAnswersTableTable,
+      WorkoutAnswerRow,
+      $$WorkoutAnswersTableTableFilterComposer,
+      $$WorkoutAnswersTableTableOrderingComposer,
+      $$WorkoutAnswersTableTableAnnotationComposer,
+      $$WorkoutAnswersTableTableCreateCompanionBuilder,
+      $$WorkoutAnswersTableTableUpdateCompanionBuilder,
+      (WorkoutAnswerRow, $$WorkoutAnswersTableTableReferences),
+      WorkoutAnswerRow,
+      PrefetchHooks Function({bool workoutId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -30479,4 +32177,8 @@ class $AppDatabaseManager {
       $$CoachNotesTableTableTableManager(_db, _db.coachNotesTable);
   $$TrainingPlansTableTableTableManager get trainingPlansTable =>
       $$TrainingPlansTableTableTableManager(_db, _db.trainingPlansTable);
+  $$CoachPromptsTableTableTableManager get coachPromptsTable =>
+      $$CoachPromptsTableTableTableManager(_db, _db.coachPromptsTable);
+  $$WorkoutAnswersTableTableTableManager get workoutAnswersTable =>
+      $$WorkoutAnswersTableTableTableManager(_db, _db.workoutAnswersTable);
 }

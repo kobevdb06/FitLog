@@ -21,6 +21,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/muscle_map.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/recovery_providers.dart';
+import '../../prompts/presentation/workout_answer_card.dart';
 import '../../progress/presentation/recovery_view.dart';
 import 'workout_providers.dart';
 
@@ -151,6 +152,13 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+              // Right under the numbers: it is what this screen is read for
+              // when it is on.
+              WorkoutAnswerCard(
+                workoutId: workoutId,
+                askNow: true,
+                padding: const EdgeInsets.only(top: AppSpacing.xl),
               ),
               if (records.isNotEmpty) ...[
                 const SectionHeader(

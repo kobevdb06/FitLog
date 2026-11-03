@@ -17,6 +17,7 @@ import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
 import '../../../routing/routes.dart';
 import '../../deload/presentation/deload_widgets.dart';
+import '../../prompts/presentation/workout_answer_card.dart';
 import '../../workout/domain/set_columns.dart';
 import '../../workout/presentation/workout_providers.dart';
 import 'history_providers.dart';
@@ -163,6 +164,10 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
+              WorkoutAnswerCard(
+                workoutId: workoutId,
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              ),
               for (final exercise in workout.exercises)
                 _ExerciseBlock(
                   workoutId: workoutId,

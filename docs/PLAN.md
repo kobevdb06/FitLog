@@ -57,6 +57,13 @@ FitLog een tijdje gebruiken zoals het is, en verbeteren wat in de zaal opvalt. D
 
 ### 2.4 De volgende stap uit het coachplan
 
+**Geplande prompts** (DECISIONS 233): de eerste ronde is er - *Na je workout*, en eigen woorden
+voor het ochtendrapport en het weekoverzicht. Volgende ronde, als gevraagd: *Voor je workout*,
+*Een oefening staat stil* en *Je schema is af*; daarna een maandoverzicht, een mijlpaal, een tijd
+niet getraind, na een weging, en eigen snelle vragen als knopjes in de coach. Bekeken en niet
+gekozen: na elke oefening tijdens de workout (zes vragen per workout, de hint doet het al), bij een
+progressfoto (een foto van je lichaam die vertrekt zonder tik), bij elke wijziging van een routine.
+
 `AI-COACH-PLAN.md` §12: na Health Connect komt Google Play, dan de coach zonder eigen
 sleutel (tussenstation, vragenpakketten). Dat stelt FitLog open voor anderen, en vraagt
 beslissingen die alleen de maker kan nemen: een ontwikkelaarsaccount bij Google Play, een

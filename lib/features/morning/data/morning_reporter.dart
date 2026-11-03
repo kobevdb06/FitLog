@@ -3,30 +3,12 @@ import 'dart:convert';
 import '../../../core/calc/recovery.dart';
 import '../../../core/db/database.dart';
 import '../../chat/data/ai_client.dart';
-import '../../chat/domain/coach_budget.dart';
 import '../../progress/data/recovery_loader.dart';
+import '../../prompts/data/moment_asker.dart';
+import '../../prompts/domain/coach_moments.dart';
 import '../../readiness/data/check_loader.dart';
 import '../../readiness/domain/training_check.dart';
 import '../domain/morning_facts.dart';
-
-/// The whole instruction for one job: turn this morning's facts into three
-/// sentences.
-///
-/// Its own prompt, not the chat's: it has no tools and nothing to look up -
-/// everything it may say is in the message - and it is short on purpose, as
-/// it is paid for every morning.
-const String kMorningReportSystem = '''
-Je schrijft het ochtendrapport in FitLog, een logboek voor krachttraining. Je
-krijgt de feiten van vanochtend als JSON. Schrijf in het Nederlands, in de
-je-vorm, hoogstens drie korte zinnen en geen opsomming:
-- hoe de nacht was (duur en slaapscore), en wat HRV of rusthartslag zeggen
-  als ze erbij staan;
-- welke spiergroepen nog herstellen en welke klaar zijn;
-- wat dat betekent voor vandaag trainen, in één zin; staat er een
-  check_voor_training bij, volg dan haar oordeel en noem de sessie.
-Gebruik alleen wat in de feiten staat: verzin geen cijfers en geen
-spiergroepen. Je bent geen arts: geen diagnoses, geen supplementen.
-''';
 
 /// How a client is made, so a test can hand over one that answers from
 /// memory. The same shape as the chat's own factory.
@@ -121,7 +103,10 @@ class MorningReporter {
     String? error;
     CoachUsage? usage;
     final settings = await db.settingsDao.getSettings();
-    final key = settings.anthropicApiKey;
+    // What the coach is asked, in the user's words; switched off, the report
+    // is FitLog's own and nothing is asked.
+    final prompt = await MomentPrompt.load(db, CoachMoment.morning);
+    final key = prompt.enabled ? settings.anthropicApiKey : null;
     // A morning that holds something from Health Connect is not the coach's
     // to see unless that is shared. Leaving it out would not do either: the
     // coach's words replace the app's on the report, and words about a
@@ -139,38 +124,19 @@ class MorningReporter {
           'Je deelt Health Connect niet met de coach, dus dit rapport staat '
           'er zonder zijn woorden.';
     } else if (key != null && key.isNotEmpty) {
-      final chosen = CoachProvider.fromWire(settings.chatProvider);
-      final provider = chosen != null && kOfferedProviders.contains(chosen)
-          ? chosen
-          : kOfferedProviders.first;
-      final spent = await db.chatDao.usageSince(coachDayStart(at, provider));
-      final limit = settings.coachDailyLimit ?? kDefaultDailyLimit;
-
-      if (limit > 0 && spent.requests >= limit) {
-        error =
+      final answer = await askMoment(
+        db,
+        prompt: prompt,
+        facts: facts.forCoach(),
+        atLimit:
             'De coach zit aan je daglimiet, dus dit rapport staat er zonder '
-            'zijn woorden.';
-      } else {
-        final client = _clientFactory(key, provider);
-        try {
-          final reply = await client.send(
-            system: kMorningReportSystem,
-            messages: [CoachMessage.user(jsonEncode(facts.forCoach()))],
-            tools: const [],
-            model: CoachModel.resolveWire(settings.chatModel, provider),
-            maxTokens: 512,
-          );
-          usage = reply.usage;
-          text = reply.text.trim().isEmpty ? null : reply.text.trim();
-          if (text == null) error = 'De coach gaf een leeg antwoord.';
-        } on CoachException catch (e) {
-          error = e.message;
-        } on Object catch (e) {
-          error = 'De coach was niet bereikbaar: $e';
-        } finally {
-          client.close();
-        }
-      }
+            'zijn woorden.',
+        now: at,
+        clientFactory: _clientFactory,
+      );
+      text = answer?.text;
+      error = answer?.error;
+      usage = answer?.usage;
     }
 
     await db.reportsDao.saveReport(

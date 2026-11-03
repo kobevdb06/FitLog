@@ -159,6 +159,42 @@ void main() {
       });
     });
 
+    test(
+      'met de prompt uit vraagt het niets: de week is haar cijfers',
+      () async {
+        await db.coachPromptsDao.savePrompt(
+          moment: CoachMoment.week,
+          enabled: false,
+        );
+
+        final review = await WeekReviewer(
+          db,
+          clientFactory: client,
+        ).write(monday, now: sundayEvening);
+
+        expect(review, isNull);
+        expect(sent, isEmpty);
+      },
+    );
+
+    test('met je eigen prompt: jouw woorden, zo lang als je koos', () async {
+      await db.coachPromptsDao.savePrompt(
+        moment: CoachMoment.week,
+        enabled: true,
+        prompt: 'Wees kritisch over mijn week.',
+        length: AnswerLength.long,
+      );
+
+      await WeekReviewer(
+        db,
+        clientFactory: client,
+      ).write(monday, now: sundayEvening);
+
+      expect(sent.single, contains('Wees kritisch over mijn week.'));
+      expect(sent.single, contains('hoogstens tien zinnen'));
+      expect(sent.single, contains('"maxOutputTokens":1280'));
+    });
+
     test('aan de daglimiet vraagt het niets, en zegt waarom', () async {
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(coachDailyLimit: Value(1)),

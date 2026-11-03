@@ -11,6 +11,12 @@ mixin _$ChatDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.morningReportsTable;
   $WeekReviewsTableTable get weekReviewsTable =>
       attachedDatabase.weekReviewsTable;
+  $RoutineFoldersTableTable get routineFoldersTable =>
+      attachedDatabase.routineFoldersTable;
+  $RoutinesTableTable get routinesTable => attachedDatabase.routinesTable;
+  $WorkoutsTableTable get workoutsTable => attachedDatabase.workoutsTable;
+  $WorkoutAnswersTableTable get workoutAnswersTable =>
+      attachedDatabase.workoutAnswersTable;
   ChatDaoManager get managers => ChatDaoManager(this);
 }
 
@@ -36,5 +42,19 @@ class ChatDaoManager {
       $$WeekReviewsTableTableTableManager(
         _db.attachedDatabase,
         _db.weekReviewsTable,
+      );
+  $$RoutineFoldersTableTableTableManager get routineFoldersTable =>
+      $$RoutineFoldersTableTableTableManager(
+        _db.attachedDatabase,
+        _db.routineFoldersTable,
+      );
+  $$RoutinesTableTableTableManager get routinesTable =>
+      $$RoutinesTableTableTableManager(_db.attachedDatabase, _db.routinesTable);
+  $$WorkoutsTableTableTableManager get workoutsTable =>
+      $$WorkoutsTableTableTableManager(_db.attachedDatabase, _db.workoutsTable);
+  $$WorkoutAnswersTableTableTableManager get workoutAnswersTable =>
+      $$WorkoutAnswersTableTableTableManager(
+        _db.attachedDatabase,
+        _db.workoutAnswersTable,
       );
 }

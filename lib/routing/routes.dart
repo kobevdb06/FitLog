@@ -98,6 +98,11 @@ abstract final class Routes {
   /// in the chat has a way to it.
   static const coachMemory = '/coach/geheugen';
 
+  /// Geplande prompts: what the coach is asked at a moment, and one of them.
+  /// At the root for the same reason as the coach's settings.
+  static const coachPrompts = '/coach/prompts';
+  static String coachPrompt(String moment) => '/coach/prompts/$moment';
+
   /// Switching the coach on: what it is, fetching a key, pasting it. At the
   /// root for the same reason as the coach's settings; the chat sends a
   /// refused key here too, straight to the paste step.

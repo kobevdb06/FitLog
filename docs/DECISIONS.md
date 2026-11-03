@@ -5153,3 +5153,62 @@ van beide maakt een verbinding: alleen de coach mag dat (124).
 - **Onder Instellingen → Over**, niet rechtstreeks op Profiel zoals de mockup
   zei: daar staat ook Over FitLog, en Profiel gaat over jou. De site zegt
   "Profiel → Instellingen → Iets melden".
+
+## 233. Geplande prompts: na je workout, en je eigen woorden voor het ochtendrapport en het weekoverzicht
+
+Gevraagd: meer van de coach, met een eigen prompt in de instellingen. Na elke
+workout zegt de coach iets over de samenvatting, op een vraag die de
+gebruiker zelf instelt ("geef een kritische mening over mijn workout"), en
+zo op meer plaatsen. Na een rapport met elf momenten en een mockup koos de
+maker de eerste ronde: het scherm, *Na je workout*, en eigen woorden voor de
+twee momenten waar de coach al schreef.
+
+- **Waar.** *Instellingen → AI-coach → Geplande prompts*, onder een kopje
+  *Vanzelf*. Per moment een schakelaar, de prompt, voorbeelden om aan te
+  tikken, de lengte (kort, normaal, lang: hoogstens drie, vijf of tien
+  zinnen), wat de coach krijgt, en uitproberen. De lijst toont alleen de
+  momenten die er zijn; de andere uit het rapport (voor je workout,
+  stilstand, een schema dat af is, ...) komen er pas bij als ze gebouwd zijn.
+- **De app rekent, de coach verwoordt**, zoals bij het ochtendrapport (164):
+  één vraag zonder tools, met de feiten die FitLog uitrekende. Een vaste
+  prijs per moment, en de coach kan niets opzoeken wat niet bedoeld was. Wie
+  verder wil, tikt *Verder vragen*: dat zet het antwoord klaar in een nieuw
+  gesprek, waar de coach wel opzoekt. Versturen doet de gebruiker.
+- **Jouw woorden, onder vaste regels.** De prompt zegt wat de coach schrijft,
+  niet wat hij mag: Nederlands, alleen wat in de feiten staat, geen arts, en
+  hoe de feiten te lezen (wat `open` of `deload` betekent) blijven van de app
+  en staan boven de prompt. Woorden gelijk aan die van de app worden als
+  "de gewone" bewaard (null), zodat een volgende versie ze nog kan verbeteren.
+- **Na je workout** staat standaard uit: het is een vraag per workout, op de
+  sleutel van de gebruiker. Aan vraagt de samenvatting het één keer, meteen
+  bij het openen; de coach krijgt de workout set per set met type en status,
+  wat de routine vraagt, elke oefening de vorige keer (de laatste keer
+  *ervoor*, zonder deload, op dezelfde manier: met één arm of twee), de
+  records, de duur, het volume, de notities en, met Health Connect gedeeld,
+  de hartslag. Hoe zwaar het voelde, staat er alleen in als dat al ingevuld
+  was: de vraag gaat bij het openen, de keuze komt daarna. *Opnieuw* vraagt
+  het nog eens. Het antwoord blijft bij de workout (schema v57,
+  `workout_answers`, één rij per workout, met de prompt en de feiten van
+  toen) en gaat mee als de workout verwijderd wordt; *Ongedaan maken* houdt
+  het, want dan was er nog niets verwijderd. Ook een fout blijft bewaard,
+  zodat een samenvatting die opnieuw opent niet opnieuw vraagt. In
+  Geschiedenis staat het antwoord bij de workout; zonder antwoord en met de
+  prompt aan staat er *Vraag de coach*.
+- **Het ochtendrapport en het weekoverzicht** gebruiken de prompt van de
+  gebruiker in plaats van hun vaste opdracht. Wat er stond, is nu "de
+  gewone", zodat er niets verandert zolang niemand iets aanpast - op één
+  ding na: het weekoverzicht mocht vier zinnen, *Normaal* is er vijf. Een
+  vierde lengte voor één zin verschil was het niet waard. Uit schrijft FitLog
+  het rapport zelf en is het weekoverzicht zijn cijfers, zonder vraag; de
+  kaart van de coach op het weekoverzicht verdwijnt dan, tenzij er al iets
+  geschreven was.
+- **Profiel en geheugen gaan mee** bij alle drie, zoals bij een gewone vraag
+  in de chat: wie "wees kritisch" vraagt, wil dat de coach zijn knie kent.
+  Voor het ochtendrapport en het weekoverzicht is dat nieuw; de
+  privacyverklaring zegt het.
+- **Eén plek om te vragen** (`askMoment`): sleutel, daglimiet, profiel,
+  geheugen en fouten, voor alle drie. De twee reporters hadden elk hun kopie.
+  De antwoorden na een workout tellen mee in de dagbalk.
+- **Uitproberen** gebruikt wat er in het veld staat, ook als de laatste toets
+  net gevallen is, en vervangt wat er was: het antwoord bij je laatste
+  workout, het rapport van vanochtend, het overzicht van je laatste week.

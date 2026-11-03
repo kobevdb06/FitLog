@@ -418,6 +418,48 @@ void main() {
       expect(row.requests, isNull);
     });
 
+    test('met je eigen prompt: jouw woorden, onder de vaste regels', () async {
+      await withKey();
+      await db.coachPromptsDao.savePrompt(
+        moment: CoachMoment.morning,
+        enabled: true,
+        prompt: 'Eén zin: trainen of rusten.',
+      );
+      final coach = gemini('Trainen.');
+
+      await MorningReporter(
+        db,
+        clientFactory: coach.factory,
+      ).write(now: morning);
+
+      final system = jsonEncode(coach.sent.single['systemInstruction']);
+      expect(system, contains('Eén zin: trainen of rusten.'));
+      expect(system, contains('Je schrijft het ochtendrapport'));
+      expect(system, contains('check_voor_training'));
+    });
+
+    test(
+      'met de prompt uit: de app zegt het zelf, en er gaat niets weg',
+      () async {
+        await withKey();
+        await db.coachPromptsDao.savePrompt(
+          moment: CoachMoment.morning,
+          enabled: false,
+        );
+        final coach = gemini('Onmogelijk');
+
+        final report = await MorningReporter(
+          db,
+          clientFactory: coach.factory,
+        ).write(now: morning);
+
+        expect(coach.sent, isEmpty);
+        expect(report.coachText, isNull);
+        expect(report.coachError, isNull);
+        expect(report.text, contains('Je sliep 7 u, slaapscore 75.'));
+      },
+    );
+
     test('met coach: zijn woorden, en ze tellen mee in de dagbalk', () async {
       await withKey();
       final coach = gemini('Korte nacht, maar je benen zijn klaar.');

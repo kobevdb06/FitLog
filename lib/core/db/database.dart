@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import 'dao/chat_dao.dart';
 import 'dao/coach_notes_dao.dart';
+import 'dao/coach_prompts_dao.dart';
 import 'dao/deload_dao.dart';
 import 'dao/exercises_dao.dart';
 import 'dao/health_dao.dart';
@@ -62,6 +63,8 @@ part 'database.drift.dart';
     DeloadWeeksTable,
     CoachNotesTable,
     TrainingPlansTable,
+    CoachPromptsTable,
+    WorkoutAnswersTable,
   ],
   daos: [
     SettingsDao,
@@ -76,13 +79,14 @@ part 'database.drift.dart';
     DeloadDao,
     CoachNotesDao,
     PlansDao,
+    CoachPromptsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 56;
+  int get schemaVersion => 57;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -543,6 +547,11 @@ class AppDatabase extends _$AppDatabase {
         if (from < 56) {
           // A session started lighter on its own: none was.
           await m.addColumn(workoutsTable, workoutsTable.isLight);
+        }
+        if (from < 57) {
+          // Geplande prompts: every moment as it comes, no answer yet.
+          await m.createTable(coachPromptsTable);
+          await m.createTable(workoutAnswersTable);
         }
       });
 

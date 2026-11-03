@@ -412,3 +412,45 @@ enum PlanSessionState {
     orElse: () => PlanSessionState.approved,
   );
 }
+
+/// A moment at which the coach is asked something in the user's own words:
+/// a geplande prompt (Instellingen → AI-coach → Geplande prompts).
+enum CoachMoment {
+  /// Right after a workout, on its summary.
+  workout('workout'),
+
+  /// The morning report, under Herstel.
+  morning('morning'),
+
+  /// The week overview, on Sunday evening.
+  week('week');
+
+  const CoachMoment(this.wire);
+
+  final String wire;
+
+  static CoachMoment? fromWire(String? value) {
+    for (final moment in values) {
+      if (moment.wire == value) return moment;
+    }
+    return null;
+  }
+}
+
+/// How long the coach may answer a geplande prompt.
+enum AnswerLength {
+  short('short'),
+  normal('normal'),
+  long('long');
+
+  const AnswerLength(this.wire);
+
+  final String wire;
+
+  static AnswerLength? fromWire(String? value) {
+    for (final length in values) {
+      if (length.wire == value) return length;
+    }
+    return null;
+  }
+}

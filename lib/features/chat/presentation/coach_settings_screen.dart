@@ -14,6 +14,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
+import '../../prompts/domain/coach_moments.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 import '../data/ai_client.dart';
 import '../data/links.dart';
 import '../domain/coach_budget.dart';
@@ -554,6 +556,8 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickLimit,
             ),
+            const SectionHeader('Vanzelf'),
+            const _PromptsTile(),
             const SectionHeader('Wat de coach over je weet'),
             const _ProfileSwitch(),
             const _HealthSwitch(),
@@ -692,6 +696,27 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
 }
 
 /// Where the coach's memory is: on or off, and how many notes.
+/// The way to the geplande prompts, with the ones that are on.
+class _PromptsTile extends ConsumerWidget {
+  const _PromptsTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final on = [
+      for (final prompt
+          in ref.watch(momentPromptsProvider).value ?? const <MomentPrompt>[])
+        if (prompt.enabled) prompt.moment.title,
+    ];
+    return ListTile(
+      leading: const Icon(Icons.schedule_send_outlined),
+      title: const Text('Geplande prompts'),
+      subtitle: Text(on.isEmpty ? 'Alles uit' : 'Aan: ${on.join(', ')}'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push(Routes.coachPrompts),
+    );
+  }
+}
+
 class _MemoryTile extends ConsumerWidget {
   const _MemoryTile();
 

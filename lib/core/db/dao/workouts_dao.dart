@@ -59,6 +59,14 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     workoutsTable,
   )..where((t) => t.endedAt.isNull())).getSingleOrNull();
 
+  /// The workout finished most recently, by when it started.
+  Stream<WorkoutRow?> watchLastFinished() =>
+      (select(workoutsTable)
+            ..where((t) => t.endedAt.isNotNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
+            ..limit(1))
+          .watchSingleOrNull();
+
   Stream<WorkoutDetail?> watchActiveWorkout() {
     return customSelect(
       'SELECT id FROM workouts WHERE ended_at IS NULL LIMIT 1',

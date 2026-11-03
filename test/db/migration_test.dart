@@ -627,6 +627,35 @@ void main() {
     await db.close();
   });
 
+  test('a database from v56 gets the geplande prompts: each as it comes, '
+      'no answers', () async {
+    final path = '${dir.path}/v56.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    final id = await fresh.workoutsDao.startWorkout(defaultRestSeconds: 90);
+    await fresh.workoutsDao.finishWorkout(id, discardPending: false);
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('DROP TABLE coach_prompts')
+      ..execute('DROP TABLE workout_answers')
+      ..execute('PRAGMA user_version = 56');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    expect(await db.coachPromptsDao.promptRow(CoachMoment.morning), isNull);
+    expect(await db.coachPromptsDao.answerFor(id), isNull);
+    await db.coachPromptsDao.saveAnswer(
+      workoutId: id,
+      createdAt: DateTime(2026, 11, 3),
+      prompt: 'Kritisch',
+      facts: '{}',
+      coachText: 'Goed.',
+    );
+    expect((await db.coachPromptsDao.answerFor(id))!.coachText, 'Goed.');
+    await db.close();
+  });
+
   test('a database from v53 gets no schemas, and no routine is a '
       'session of one', () async {
     final path = '${dir.path}/v53.db';
@@ -804,7 +833,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 56);
+    expect(raw.select('PRAGMA user_version').first.values.first, 57);
     raw.close();
   });
 
@@ -1020,7 +1049,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 56);
+    expect(db.schemaVersion, 57);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

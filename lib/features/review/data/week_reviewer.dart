@@ -2,31 +2,11 @@ import 'dart:convert';
 
 import '../../../core/db/database.dart';
 import '../../chat/data/ai_client.dart';
-import '../../chat/domain/coach_budget.dart';
 import '../../morning/data/morning_reporter.dart' show ReportClientFactory;
+import '../../prompts/data/moment_asker.dart';
+import '../../prompts/domain/coach_moments.dart';
 import '../domain/week_facts.dart';
 import 'week_facts_builder.dart';
-
-/// The whole instruction for one job: the week's facts in a few sentences,
-/// ending in one thing to do next week.
-///
-/// No tools, like the morning report: everything it may say is in the
-/// message. The suggestion is put ready for the coach in the chat, which
-/// can then change a routine; this one only writes.
-const String kWeekReviewSystem = '''
-Je schrijft het weekoverzicht in FitLog, een logboek voor krachttraining. Je
-krijgt de feiten van de afgelopen week als JSON. Schrijf in het Nederlands, in
-de je-vorm, hoogstens vier korte zinnen en geen opsomming:
-- wat goed ging: records, oefeningen die weer vooruitgaan, trainingen gehaald;
-- wat achterbleef, alleen als het in de feiten staat: een spiergroep in
-  lagging_muscles, gemiste trainingen, korter slapen dan gewoonlijk;
-- staat er deload_days, dan was het (deels) een deloadweek: minder volume was
-  de bedoeling, zeg dat het goed is dat je lichter trainde;
-- eindig met één concreet voorstel voor volgende week, in een zin die begint
-  met "Volgende week:".
-Gebruik alleen wat in de feiten staat: verzin geen cijfers, oefeningen of
-spiergroepen. Je bent geen arts: geen diagnoses, geen supplementen.
-''';
 
 /// What the coach wrote about a week, or why it did not.
 class WeekReview {
@@ -74,12 +54,15 @@ class WeekReviewer {
   final AppDatabase db;
   final ReportClientFactory _clientFactory;
 
-  /// Null when there is no coach to ask.
+  /// Null when there is no coach to ask, or the user switched the question
+  /// off (Geplande prompts → Weekoverzicht): the week is its numbers then.
   Future<WeekReview?> write(DateTime start, {DateTime? now}) async {
     final at = now ?? DateTime.now();
     final settings = await db.settingsDao.getSettings();
     final key = settings.anthropicApiKey;
     if (key == null || key.isEmpty) return null;
+    final prompt = await MomentPrompt.load(db, CoachMoment.week);
+    if (!prompt.enabled) return null;
 
     final facts = await buildWeekFacts(db, start, now: at);
     // The review keeps the whole week; the coach is told what it may see.
@@ -88,41 +71,20 @@ class WeekReviewer {
     final told = settings.coachSeesHealth
         ? facts
         : await buildWeekFacts(db, start, now: at, healthConnect: false);
-    final chosen = CoachProvider.fromWire(settings.chatProvider);
-    final provider = chosen != null && kOfferedProviders.contains(chosen)
-        ? chosen
-        : kOfferedProviders.first;
-    final spent = await db.chatDao.usageSince(coachDayStart(at, provider));
-    final limit = settings.coachDailyLimit ?? kDefaultDailyLimit;
-
-    String? text;
-    String? error;
-    CoachUsage? usage;
-    if (limit > 0 && spent.requests >= limit) {
-      error =
+    final answer = await askMoment(
+      db,
+      prompt: prompt,
+      facts: told.forCoach(),
+      atLimit:
           'De coach zit aan je daglimiet, dus over deze week schreef hij '
-          'niets.';
-    } else {
-      final client = _clientFactory(key, provider);
-      try {
-        final reply = await client.send(
-          system: kWeekReviewSystem,
-          messages: [CoachMessage.user(jsonEncode(told.forCoach()))],
-          tools: const [],
-          model: CoachModel.resolveWire(settings.chatModel, provider),
-          maxTokens: 512,
-        );
-        usage = reply.usage;
-        text = reply.text.trim().isEmpty ? null : reply.text.trim();
-        if (text == null) error = 'De coach gaf een leeg antwoord.';
-      } on CoachException catch (e) {
-        error = e.message;
-      } on Object catch (e) {
-        error = 'De coach was niet bereikbaar: $e';
-      } finally {
-        client.close();
-      }
-    }
+          'niets.',
+      now: at,
+      clientFactory: _clientFactory,
+    );
+    if (answer == null) return null;
+    final text = answer.text;
+    final error = answer.error;
+    final usage = answer.usage;
 
     await db.reportsDao.saveWeekReview(
       start: start,

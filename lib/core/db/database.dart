@@ -89,7 +89,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 59;
+  int get schemaVersion => 60;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -573,6 +573,11 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 59) {
           await m.createTable(chatFoldersTable);
+        }
+        if (from >= 58 && from < 60) {
+          // Your own questions as commands: none was one yet. Before v58 the
+          // table is made whole above.
+          await m.addColumn(quickQuestionsTable, quickQuestionsTable.command);
         }
       });
 

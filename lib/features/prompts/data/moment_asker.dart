@@ -46,16 +46,6 @@ Future<MomentAnswer?> askMoment(
   final key = settings.anthropicApiKey;
   if (key == null || key.isEmpty) return null;
 
-  final chosen = CoachProvider.fromWire(settings.chatProvider);
-  final provider = chosen != null && kOfferedProviders.contains(chosen)
-      ? chosen
-      : kOfferedProviders.first;
-  final spent = await db.chatDao.usageSince(coachDayStart(now, provider));
-  final limit = settings.coachDailyLimit ?? kDefaultDailyLimit;
-  if (limit > 0 && spent.requests >= limit) {
-    return MomentAnswer(error: atLimit);
-  }
-
   final profile = settings.coachSeesProfile
       ? await db.settingsDao.getProfile()
       : null;
@@ -78,15 +68,50 @@ Future<MomentAnswer?> askMoment(
           ),
     notes: [for (final note in notes) note.note],
   );
+  return askOnce(
+    db,
+    system: system,
+    message: jsonEncode(facts),
+    maxTokens: prompt.length.maxTokens,
+    atLimit: atLimit,
+    now: now,
+    clientFactory: clientFactory,
+  );
+}
+
+/// Asks the coach once: [system], and [message] as the one question, with
+/// no tools. Null without a key; [atLimit] when the day's limit is spent.
+Future<MomentAnswer?> askOnce(
+  AppDatabase db, {
+  required String system,
+  required String message,
+  required int maxTokens,
+  required String atLimit,
+  required DateTime now,
+  MomentClientFactory? clientFactory,
+}) async {
+  final settings = await db.settingsDao.getSettings();
+  final key = settings.anthropicApiKey;
+  if (key == null || key.isEmpty) return null;
+
+  final chosen = CoachProvider.fromWire(settings.chatProvider);
+  final provider = chosen != null && kOfferedProviders.contains(chosen)
+      ? chosen
+      : kOfferedProviders.first;
+  final spent = await db.chatDao.usageSince(coachDayStart(now, provider));
+  final limit = settings.coachDailyLimit ?? kDefaultDailyLimit;
+  if (limit > 0 && spent.requests >= limit) {
+    return MomentAnswer(error: atLimit);
+  }
 
   final client = (clientFactory ?? _defaultClient)(key, provider);
   try {
     final reply = await client.send(
       system: system,
-      messages: [CoachMessage.user(jsonEncode(facts))],
+      messages: [CoachMessage.user(message)],
       tools: const [],
       model: CoachModel.resolveWire(settings.chatModel, provider),
-      maxTokens: prompt.length.maxTokens,
+      maxTokens: maxTokens,
     );
     final text = reply.text.trim();
     return MomentAnswer(

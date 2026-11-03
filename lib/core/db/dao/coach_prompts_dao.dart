@@ -180,4 +180,11 @@ class CoachPromptsDao extends DatabaseAccessor<AppDatabase>
 
   Future<void> deleteQuickQuestion(int id) =>
       (delete(quickQuestionsTable)..where((t) => t.id.equals(id))).go();
+
+  /// The name the question is asked by after a /, or null for none. Whether
+  /// the name will do is for the one who asks it to say.
+  Future<void> setQuickCommand(int id, String? command) =>
+      (update(quickQuestionsTable)..where((t) => t.id.equals(id))).write(
+        QuickQuestionsTableCompanion(command: Value(command)),
+      );
 }

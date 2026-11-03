@@ -130,6 +130,47 @@ void main() {
     expect(await db.chatDao.folders(), isEmpty);
   });
 
+  test('what a conversation cost is what its answers cost', () async {
+    await db.chatDao.createThread('t-1', 'Vraag');
+    await db.chatDao.createThread('t-2', 'Andere');
+    await db.chatDao.addMessage(
+      id: 'q-1',
+      threadId: 't-1',
+      role: 'user',
+      content: 'Hoi',
+    );
+    await db.chatDao.addMessage(
+      id: 'a-1',
+      threadId: 't-1',
+      role: 'assistant',
+      content: 'Hallo',
+      requests: 3,
+      inputTokens: 1000,
+      outputTokens: 40,
+    );
+    // From before calls were counted: one.
+    await db.chatDao.addMessage(
+      id: 'a-2',
+      threadId: 't-1',
+      role: 'assistant',
+      content: 'Nog eens',
+    );
+    await db.chatDao.addMessage(
+      id: 'a-3',
+      threadId: 't-2',
+      role: 'assistant',
+      content: 'Elders',
+      requests: 5,
+    );
+
+    final usage = await db.chatDao.threadUsage('t-1');
+    expect(usage.answers, 2);
+    expect(usage.requests, 4);
+    expect(usage.inputTokens, 1000);
+    expect(usage.outputTokens, 40);
+    expect((await db.chatDao.threadUsage('t-3')).answers, 0);
+  });
+
   group('pinned and in folders', () {
     test('pinning and moving change nothing about when it was last added '
         'to', () async {

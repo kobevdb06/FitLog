@@ -724,6 +724,7 @@ void main() {
       ..execute('DROP TABLE chat_folders')
       ..execute('ALTER TABLE chat_threads DROP COLUMN folder_id')
       ..execute('ALTER TABLE chat_threads DROP COLUMN pinned')
+      ..execute('ALTER TABLE quick_questions DROP COLUMN command')
       ..execute('PRAGMA user_version = 58');
     raw.close();
 
@@ -738,6 +739,31 @@ void main() {
     expect((await db.chatDao.thread('t-1'))!.folderId, folder);
     await db.close();
   });
+
+  test(
+    'a database from v59 keeps its quick questions, none a command',
+    () async {
+      final path = '${dir.path}/v59.db';
+      final fresh = AppDatabase(NativeDatabase(File(path)));
+      await fresh.settingsDao.ensureInitialized();
+      final id = await fresh.coachPromptsDao.addQuickQuestion('Hoeveel sets?');
+      await fresh.close();
+
+      final raw = sqlite3.open(path)
+        ..execute('ALTER TABLE quick_questions DROP COLUMN command')
+        ..execute('PRAGMA user_version = 59');
+      raw.close();
+
+      final db = AppDatabase(NativeDatabase(File(path)));
+      var kept = (await db.coachPromptsDao.watchQuickQuestions().first).single;
+      expect(kept.question, 'Hoeveel sets?');
+      expect(kept.command, isNull);
+      await db.coachPromptsDao.setQuickCommand(id, 'sets');
+      kept = (await db.coachPromptsDao.watchQuickQuestions().first).single;
+      expect(kept.command, 'sets');
+      await db.close();
+    },
+  );
 
   test('a database from v53 gets no schemas, and no routine is a '
       'session of one', () async {
@@ -922,7 +948,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 59);
+    expect(raw.select('PRAGMA user_version').first.values.first, 60);
     raw.close();
   });
 
@@ -1138,7 +1164,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 59);
+    expect(db.schemaVersion, 60);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

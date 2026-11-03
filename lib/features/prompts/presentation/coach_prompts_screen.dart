@@ -18,6 +18,7 @@ import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/week_navigator.dart';
 import '../../../routing/routes.dart';
+import '../../chat/domain/coach_commands.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../chat/presentation/coach_session.dart';
 import '../../morning/presentation/morning_providers.dart';
@@ -152,6 +153,43 @@ class _QuickQuestionsEditor extends ConsumerWidget {
         maxLines: 3,
       );
 
+  /// The name a question is asked by after a /: empty takes it away, a name
+  /// that will not do says why and is not kept.
+  Future<void> _name(
+    BuildContext context,
+    WidgetRef ref,
+    QuickQuestionRow question,
+    List<QuickQuestionRow> all,
+  ) async {
+    final typed = await promptForText(
+      context,
+      title: 'Commando voor deze vraag',
+      initialValue: question.command,
+      hintText: 'rug',
+      maxLength: kCommandNameLength,
+      capitalization: TextCapitalization.none,
+    );
+    if (typed == null) return;
+    final dao = ref.read(databaseProvider).coachPromptsDao;
+    final name = commandName(typed);
+    if (name.isEmpty) {
+      await dao.setQuickCommand(question.id, null);
+      return;
+    }
+    final problem = commandProblem(
+      name,
+      taken: [
+        for (final other in all)
+          if (other.id != question.id && other.command != null) other.command!,
+      ],
+    );
+    if (problem != null) {
+      if (context.mounted) showSnack(context, problem, isError: true);
+      return;
+    }
+    await dao.setQuickCommand(question.id, name);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -170,7 +208,8 @@ class _QuickQuestionsEditor extends ConsumerWidget {
           ),
           child: Text(
             'Je eigen vragen staan als knopjes in de coach. Er gebeurt niets '
-            'vanzelf: één tik, en de vraag is gesteld.',
+            'vanzelf: één tik, en de vraag is gesteld. Met / geef je er een '
+            'commando aan: /rug in de coach stelt dan die vraag.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -180,6 +219,16 @@ class _QuickQuestionsEditor extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.bolt_outlined),
             title: Text(question.question),
+            subtitle: switch (question.command) {
+              final name? => Text(
+                '/$name',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              null => null,
+            },
             onTap: () async {
               final changed = await _ask(context, question: question.question);
               final words = changed?.trim();
@@ -187,10 +236,25 @@ class _QuickQuestionsEditor extends ConsumerWidget {
                 await dao.changeQuickQuestion(question.id, words);
               }
             },
-            trailing: IconButton(
-              tooltip: 'Verwijderen',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => dao.deleteQuickQuestion(question.id),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Commando',
+                  icon: Text(
+                    '/',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  onPressed: () => _name(context, ref, question, own),
+                ),
+                IconButton(
+                  tooltip: 'Verwijderen',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => dao.deleteQuickQuestion(question.id),
+                ),
+              ],
             ),
           ),
         if (own.length < kQuickQuestionMax)

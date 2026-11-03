@@ -403,6 +403,27 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     );
   }
 
+  /// What the answers in one conversation cost: calls, answers and tokens.
+  /// An answer from before the app counted calls is read as one, as above.
+  Future<({int requests, int answers, int inputTokens, int outputTokens})>
+  threadUsage(String threadId) async {
+    final row = await customSelect(
+      'SELECT COUNT(*) AS answers, '
+      'COALESCE(SUM(COALESCE(requests, 1)), 0) AS requests, '
+      'COALESCE(SUM(COALESCE(input_tokens, 0)), 0) AS input_tokens, '
+      'COALESCE(SUM(COALESCE(output_tokens, 0)), 0) AS output_tokens '
+      "FROM chat_messages WHERE thread_id = ? AND role = 'assistant'",
+      variables: [Variable.withString(threadId)],
+      readsFrom: {chatMessagesTable},
+    ).getSingle();
+    return (
+      requests: row.read<int>('requests'),
+      answers: row.read<int>('answers'),
+      inputTokens: row.read<int>('input_tokens'),
+      outputTokens: row.read<int>('output_tokens'),
+    );
+  }
+
   /// The same, as a stream, so the settings screen follows a conversation
   /// happening in the other tab.
   Stream<({int requests, int answers, int inputTokens, int outputTokens})>

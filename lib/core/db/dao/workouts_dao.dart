@@ -60,6 +60,14 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   )..where((t) => t.endedAt.isNull())).getSingleOrNull();
 
   /// The workout finished most recently, by when it started.
+  Future<WorkoutRow?> lastFinished() =>
+      (select(workoutsTable)
+            ..where((t) => t.endedAt.isNotNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// The same, as it changes.
   Stream<WorkoutRow?> watchLastFinished() =>
       (select(workoutsTable)
             ..where((t) => t.endedAt.isNotNull())

@@ -20,6 +20,8 @@ import '../../../core/util/paths.dart';
 import '../../exercises/presentation/exercise_providers.dart';
 import '../../photos/data/photo_store.dart';
 import '../../plans/data/plan_prompt.dart';
+import '../../prompts/data/moment_asker.dart';
+import '../../prompts/domain/coach_moments.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
 import '../data/coach.dart';
@@ -27,6 +29,7 @@ import '../data/coach_tools.dart';
 import '../data/links.dart';
 import '../data/local_suggester.dart';
 import '../domain/coach_budget.dart';
+import '../domain/coach_commands.dart';
 import '../domain/coach_prompt.dart';
 import '../domain/coach_proposal.dart';
 import '../domain/coach_suggestions.dart';
@@ -522,6 +525,125 @@ class CoachController extends _$CoachController {
     } finally {
       client.close();
     }
+  }
+
+  /// What a one-off question says when the day's limit, the one in the
+  /// settings, is spent.
+  static const String _atLimit =
+      'De coach zit aan je daglimiet. Die stel je in bij Instellingen → '
+      'AI-coach.';
+
+  /// One question about [facts], with the prompt of a geplande moment and
+  /// no tools: what /workout, /week and /maand ask. The question and the
+  /// answer go into [threadId], to go on from there; [sent] is what went
+  /// along, shown under the answer as what the coach looked up is.
+  Future<void> askAbout({
+    required String threadId,
+    required MomentPrompt prompt,
+    required Map<String, Object?> facts,
+    required String sent,
+    bool withWeightUnit = false,
+  }) async {
+    if (state.sending) return;
+    final db = ref.read(databaseProvider);
+    state = const CoachState(sending: true);
+    await db.chatDao.addMessage(
+      id: _uuid.v4(),
+      threadId: threadId,
+      role: 'user',
+      content: prompt.text,
+    );
+    final answer = await askMoment(
+      db,
+      prompt: prompt,
+      facts: facts,
+      atLimit: _atLimit,
+      now: DateTime.now(),
+      clientFactory: ref.read(coachClientFactoryProvider),
+      withWeightUnit: withWeightUnit,
+    );
+    final text = _textOf(answer);
+    if (text == null) return;
+    // On screen until it is stored, as a written answer is.
+    state = CoachState(sending: true, answer: text);
+    await db.chatDao.addMessage(
+      id: _uuid.v4(),
+      threadId: threadId,
+      role: 'assistant',
+      content: text,
+      lookups: sent,
+      requests: 1,
+      inputTokens: answer!.usage?.inputTokens,
+      outputTokens: answer.usage?.outputTokens,
+    );
+    state = const CoachState();
+  }
+
+  /// /samenvat: the coach sums up [threadId] in one question with no tools,
+  /// and a new conversation starts from that - in the same folder - so the
+  /// next question no longer sends the whole old one along. The old one
+  /// stays. The new one's id, or null when there is none: [state] says why.
+  Future<String?> summarize(String threadId) async {
+    if (state.sending) return null;
+    final db = ref.read(databaseProvider);
+    final thread = await db.chatDao.thread(threadId);
+    final messages = await db.chatDao.messages(threadId);
+    if (thread == null || messages.isEmpty) return null;
+
+    state = const CoachState(sending: true);
+    final answer = await askOnce(
+      db,
+      system: kSummarySystem,
+      message: conversationText(thread.title, [
+        for (final message in messages)
+          (role: message.role, text: message.content),
+      ]),
+      maxTokens: AnswerLength.long.maxTokens,
+      atLimit: _atLimit,
+      now: DateTime.now(),
+      clientFactory: ref.read(coachClientFactoryProvider),
+    );
+    final text = _textOf(answer);
+    if (text == null) return null;
+
+    final id = _uuid.v4();
+    await db.chatDao.createThread(id, 'Verder uit: ${thread.title}');
+    if (thread.folderId case final folder?) {
+      await db.chatDao.moveToFolder(id, folder);
+    }
+    await db.chatDao.addMessage(
+      id: _uuid.v4(),
+      threadId: id,
+      role: 'user',
+      content: 'Vat "${thread.title}" samen, om hier verder te gaan.',
+    );
+    await db.chatDao.addMessage(
+      id: _uuid.v4(),
+      threadId: id,
+      role: 'assistant',
+      content: text,
+      lookups: 'het gesprek "${thread.title}"',
+      requests: 1,
+      inputTokens: answer!.usage?.inputTokens,
+      outputTokens: answer.usage?.outputTokens,
+    );
+    state = const CoachState();
+    return id;
+  }
+
+  /// The words of a one-off answer, or null with [state] saying why there
+  /// are none.
+  String? _textOf(MomentAnswer? answer) {
+    if (answer == null) {
+      state = const CoachState(
+        error: 'Er staat geen API-sleutel in de instellingen.',
+        keyRejected: true,
+      );
+      return null;
+    }
+    if (answer.text case final text?) return text;
+    state = CoachState(error: answer.error ?? 'De coach gaf geen antwoord.');
+    return null;
   }
 
   /// What a failure says on screen. A spent daily limit says when it comes

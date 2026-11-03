@@ -29,7 +29,11 @@ import '../../photos/data/photo_store.dart';
 import '../../plans/presentation/plan_build_cards.dart';
 import '../../plans/presentation/plan_card.dart';
 import '../../workout/presentation/workout_providers.dart';
+import '../../prompts/domain/coach_moments.dart';
 import '../data/ai_client.dart';
+import '../data/command_facts.dart';
+import '../domain/coach_budget.dart';
+import '../domain/coach_commands.dart';
 import '../domain/coach_proposal.dart';
 import '../domain/coach_suggestions.dart';
 import '../../../routing/routes.dart';
@@ -70,6 +74,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   /// the first of the coach's after it.
   var _askedAt = 0;
 
+  /// What the last command said back, or null.
+  _Reply? _reply;
+
   @override
   void initState() {
     super.initState();
@@ -103,10 +110,24 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     super.dispose();
   }
 
+  /// What the field sends: a command when it starts with a /, a question
+  /// otherwise. Nothing while the coach is still writing.
   Future<void> _send(String text) async {
     final question = text.trim();
-    if (question.isEmpty) return;
+    if (question.isEmpty || ref.read(coachControllerProvider).sending) return;
+    final typed = readCommand(question, own: _ownCommands());
+    if (typed != null) return _run(typed);
+    await _ask(question);
+  }
 
+  /// Your quick questions that have a name to ask them by.
+  Map<String, String> _ownCommands() => {
+    for (final row
+        in ref.read(quickQuestionsProvider).value ?? const <QuickQuestionRow>[])
+      ?row.command: row.question,
+  };
+
+  Future<void> _ask(String question) async {
     final controller = ref.read(coachControllerProvider.notifier);
     final thread = await _session.threadFor(question);
     if (!mounted) return;
@@ -116,6 +137,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     setState(() {
       _photos.clear();
       _held = null;
+      _reply = null;
       _askedAt = DateTime.now().millisecondsSinceEpoch;
     });
     // Your question is at the bottom, so that is where you go.
@@ -126,6 +148,281 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       imageFiles: photos,
     );
     _toBottom();
+  }
+
+  /// Does what a command says. The free ones stay on the phone; the ones
+  /// that ask go to the coach the way a question does. Something that is
+  /// no command stays in the field, and nothing goes out.
+  Future<void> _run(TypedCommand typed) async {
+    setState(() => _reply = null);
+    switch (typed) {
+      case NoCommand(:final typed):
+        _say('Geen commando: $typed. Met /help zie je ze allemaal.');
+      case OwnCommand(:final question):
+        await _ask(question);
+      case AppCommand(:final command, :final argument):
+        await _runApp(command, argument);
+    }
+  }
+
+  void _say(String text) {
+    if (mounted) setState(() => _reply = _Reply(text: text));
+  }
+
+  Future<void> _runApp(CoachCommand command, String argument) async {
+    final db = ref.read(databaseProvider);
+    final threadId = ref.read(coachSessionControllerProvider).threadId;
+    final thread = threadId == null ? null : await db.chatDao.thread(threadId);
+    if (!mounted) return;
+
+    switch (command) {
+      case CoachCommand.nieuw:
+        _controller.clear();
+        _session.startNew();
+      case CoachCommand.onthoud:
+        await _remember(argument);
+      case CoachCommand.geheugen:
+        _controller.clear();
+        unawaited(context.push(Routes.coachMemory));
+      case CoachCommand.kosten:
+        _controller.clear();
+        await _costs(thread);
+      case CoachCommand.pin:
+        if (_ownThread(thread) case final mine?) {
+          _controller.clear();
+          await db.chatDao.setPinned(mine.id, !mine.pinned);
+          _say(
+            mine.pinned
+                ? 'Losgemaakt.'
+                : 'Vastgepind: het staat bovenaan in het paneel.',
+          );
+        }
+      case CoachCommand.map:
+        if (_ownThread(thread) case final mine?) {
+          if (argument.isEmpty) {
+            _say('Zet de naam van de map erachter, zoals /map Techniek.');
+            return;
+          }
+          final folder = await db.chatDao.folderNamed(argument);
+          if (folder == null) return;
+          await db.chatDao.moveToFolder(mine.id, folder);
+          await db.chatDao.setFolderCollapsed(folder, false);
+          final name = (await db.chatDao.folders())
+              .firstWhere((f) => f.id == folder)
+              .name;
+          _controller.clear();
+          _say('In de map "$name".');
+        }
+      case CoachCommand.help:
+        _controller.clear();
+        await _help(inPlan: thread?.planId != null);
+      case CoachCommand.samenvat:
+        if (thread == null || (await db.chatDao.messages(thread.id)).isEmpty) {
+          _say('Er is nog niets om samen te vatten.');
+          return;
+        }
+        if (thread.planId != null) {
+          _say(
+            'Het gesprek van een schema hoort bij dat schema: samenvatten in '
+            'een nieuw gesprek kan daar niet.',
+          );
+          return;
+        }
+        _controller.clear();
+        final fresh = await ref
+            .read(coachControllerProvider.notifier)
+            .summarize(thread.id);
+        if (fresh != null && mounted) _session.show(fresh);
+      case CoachCommand.workout || CoachCommand.week || CoachCommand.maand:
+        await _askAbout(command);
+      case CoachCommand.schema:
+        if (thread?.planId == null) {
+          _say(
+            "/schema werkt in het gesprek van een schema. Je vindt ze onder "
+            "Schema's in het paneel.",
+          );
+          return;
+        }
+        await _ask('Geef een stand van zaken van dit schema.');
+    }
+  }
+
+  /// A conversation of your own to pin or put away, or null with the
+  /// reason said: there is none yet, or it is the one of a schema.
+  ChatThreadRow? _ownThread(ChatThreadRow? thread) {
+    if (thread == null) {
+      _say('Er is nog geen gesprek: stel eerst een vraag.');
+      return null;
+    }
+    if (thread.planId != null) {
+      _say(
+        "Het gesprek van een schema staat onder Schema's, niet bij je chats.",
+      );
+      return null;
+    }
+    return thread;
+  }
+
+  /// /onthoud: into the coach's notebook, with the card the coach's own
+  /// notes get. Full is full, as it is for the coach.
+  Future<void> _remember(String text) async {
+    if (text.isEmpty) {
+      _say(
+        'Zet erachter wat de coach moet onthouden, zoals /onthoud ik train '
+        'thuis met dumbbells.',
+      );
+      return;
+    }
+    final db = ref.read(databaseProvider);
+    if (!(await db.settingsDao.getSettings()).coachMemory) {
+      _say(
+        'Het geheugen van de coach staat uit. Je zet het aan bij '
+        'Instellingen → AI-coach.',
+      );
+      return;
+    }
+    final count = await db.coachNotesDao.count();
+    if (count >= kCoachNoteMax) {
+      _say(
+        'Het geheugen is vol: $kCoachNoteMax notities. Pas er een aan of '
+        'vergeet er een, met /geheugen.',
+      );
+      return;
+    }
+    final id = await db.coachNotesDao.add(text);
+    if (!mounted) return;
+    _controller.clear();
+    setState(
+      () => _reply = _Reply(
+        note: NoteProposal(
+          id: id,
+          text: CoachNotesDao.clean(text),
+          kind: CoachNoteKind.other.wire,
+          action: NoteAction.made,
+          first: count == 0,
+        ),
+      ),
+    );
+  }
+
+  /// /kosten: what this conversation and today cost, counted on the phone.
+  Future<void> _costs(ChatThreadRow? thread) async {
+    final db = ref.read(databaseProvider);
+    final provider = ref.read(coachProviderProvider);
+    final service = provider == CoachProvider.gemini ? 'Google' : 'Anthropic';
+    final limit = ref.read(coachDailyLimitProvider);
+    final today = await db.chatDao.usageSince(
+      coachDayStart(DateTime.now(), provider),
+    );
+    final here = thread == null
+        ? null
+        : await db.chatDao.threadUsage(thread.id);
+
+    String tokens(int input, int output) =>
+        '${Formatters.number(input.toDouble())} tokens in en '
+        '${Formatters.number(output.toDouble())} uit';
+    _say(
+      [
+        if (here != null && here.answers > 0)
+          'Dit gesprek: '
+              '${Formatters.amount(here.answers, 'antwoord', 'antwoorden')}, '
+              '${Formatters.amount(here.requests, 'vraag', 'vragen')} aan '
+              '$service, ${tokens(here.inputTokens, here.outputTokens)}.'
+        else
+          'Dit gesprek kostte nog niets.',
+        'Vandaag: ${today.requests} van je $limit vragen aan $service, '
+            '${tokens(today.inputTokens, today.outputTokens)}.',
+      ].join('\n'),
+    );
+  }
+
+  /// /workout, /week and /maand: the facts and the prompt of their geplande
+  /// moment - also when it is off - with the answer in this conversation.
+  Future<void> _askAbout(CoachCommand command) async {
+    final db = ref.read(databaseProvider);
+    final about = await commandFacts(db, command, now: DateTime.now());
+    final facts = about.facts;
+    if (facts == null) {
+      _say(about.none!);
+      return;
+    }
+    final prompt = await MomentPrompt.load(db, momentOf(command)!);
+    final thread = await _session.threadFor(prompt.text);
+    if (!mounted) return;
+    _controller.clear();
+    setState(() {
+      _held = null;
+      _askedAt = DateTime.now().millisecondsSinceEpoch;
+    });
+    _toBottom();
+    await ref
+        .read(coachControllerProvider.notifier)
+        .askAbout(
+          threadId: thread,
+          prompt: prompt,
+          facts: facts,
+          sent: about.sent,
+          withWeightUnit: command != CoachCommand.week,
+        );
+    _toBottom();
+  }
+
+  /// /help: every command, your own too. A tap puts it in the field.
+  Future<void> _help({required bool inPlan}) async {
+    final own = [
+      for (final row
+          in ref.read(quickQuestionsProvider).value ??
+              const <QuickQuestionRow>[])
+        if (row.command != null) row,
+    ];
+    final picked = await showAppSheet<String>(
+      context: context,
+      title: "Commando's",
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
+            child: Text(
+              'Typ / in het veld. Gratis blijft op je gsm; 1 vraag gaat naar '
+              'de coach en telt op je daglimiet.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          for (final command in CoachCommand.values)
+            if (!command.onlyInPlan || inPlan)
+              _CommandRow(
+                typed: command.typed,
+                argument: command.argument,
+                about: command.about,
+                asks: command.asks,
+                onTap: () => Navigator.of(context).pop(
+                  command.argument == null
+                      ? command.typed
+                      : '${command.typed} ',
+                ),
+              ),
+          for (final row in own)
+            _CommandRow(
+              typed: '/${row.command}',
+              about: 'Jouw vraag: ${row.question}',
+              asks: true,
+              onTap: () => Navigator.of(context).pop('/${row.command}'),
+            ),
+        ],
+      ),
+    );
+    if (picked == null || !mounted) return;
+    _controller.value = TextEditingValue(
+      text: picked,
+      selection: TextSelection.collapsed(offset: picked.length),
+    );
   }
 
   /// Picks photos to ask about, up to [CoachController.photosPerQuestion].
@@ -203,6 +500,18 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         : ref.watch(chatMessagesProvider(threadId)).value ?? const [];
     final running = ref.watch(activeWorkoutProvider).value?.workout;
     final ofWorkout = running != null && running.id == session.workoutId;
+    final own = [
+      for (final row
+          in ref.watch(quickQuestionsProvider).value ??
+              const <QuickQuestionRow>[])
+        if (row.command != null) row,
+    ];
+    final inPlan =
+        (ref.watch(chatThreadsProvider).value ?? const [])
+            .where((t) => t.id == threadId)
+            .firstOrNull
+            ?.planId !=
+        null;
     ref.listen<CoachState>(coachControllerProvider, (previous, next) {
       if (previous == null) return;
       if (previous.sending &&
@@ -215,9 +524,14 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     // A held answer belongs to the conversation it was asked in. On another
     // - a new one above all, which never stores it - it stayed on screen
     // under nothing until the next question.
+    // So does what a command said.
     ref.listen<CoachSession>(coachSessionControllerProvider, (previous, next) {
-      if (previous?.threadId != next.threadId && _held != null) {
-        setState(() => _held = null);
+      if (previous?.threadId != next.threadId &&
+          (_held != null || _reply != null)) {
+        setState(() {
+          _held = null;
+          _reply = null;
+        });
       }
     });
     // Held only until the stored answer is in the list - which may already
@@ -313,10 +627,42 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                 onRetry: () =>
                     ref.read(coachControllerProvider.notifier).clearError(),
               ),
-            // Your own questions, a tap each, also in a conversation that
-            // is going: the opening has them too.
-            if (messages.isNotEmpty && !state.sending)
-              _QuickQuestions(onPick: _send),
+            if (_reply case final reply?)
+              _AppReply(
+                reply: reply,
+                onClose: () => setState(() => _reply = null),
+              ),
+            // While a / is typed, the commands that fit; otherwise your own
+            // questions, a tap each, also in a conversation that is going:
+            // the opening has them too.
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _controller,
+              builder: (context, value, _) {
+                if (commandBeingTyped(value.text) case final typed?) {
+                  return _Commands(
+                    typed: typed,
+                    inPlan: inPlan,
+                    own: own,
+                    onPick: (command, {required fill}) {
+                      if (!fill) {
+                        _send(command);
+                        return;
+                      }
+                      _controller.value = TextEditingValue(
+                        text: '$command ',
+                        selection: TextSelection.collapsed(
+                          offset: command.length + 1,
+                        ),
+                      );
+                    },
+                  );
+                }
+                if (messages.isNotEmpty && !state.sending) {
+                  return _QuickQuestions(onPick: _send);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             if (_photos.isNotEmpty)
               _PickedPhotos(
                 fileNames: _photos,
@@ -1808,6 +2154,225 @@ class CoachDisabledScreen extends StatelessWidget {
               'verbinding.',
           actionLabel: 'Coach aanzetten',
           onAction: () => context.push(Routes.coachKey),
+        ),
+      ),
+    );
+  }
+}
+
+/// What a command said back: from the app, not from the coach, and not
+/// kept. It goes with the next question, another conversation, or ✕.
+class _Reply {
+  const _Reply({this.text, this.note});
+
+  final String? text;
+
+  /// A note /onthoud put in the notebook, shown as the coach's are.
+  final NoteProposal? note;
+}
+
+class _AppReply extends StatelessWidget {
+  const _AppReply({required this.reply, required this.onClose});
+
+  final _Reply reply;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.surfaceContainerHigh,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'VAN DE APP',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: muted,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                if (reply.text case final text?)
+                  Text(text, style: theme.textTheme.bodyMedium),
+                if (reply.note case final note?) _NoteCard(note: note),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Sluiten',
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: onClose,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The commands that fit what is typed after the /, over the field. A tap
+/// runs one, or puts it in the field when something goes after it.
+class _Commands extends StatelessWidget {
+  const _Commands({
+    required this.typed,
+    required this.inPlan,
+    required this.own,
+    required this.onPick,
+  });
+
+  /// The name so far, without the /.
+  final String typed;
+  final bool inPlan;
+
+  /// Your quick questions that have a name.
+  final List<QuickQuestionRow> own;
+  final void Function(String command, {required bool fill}) onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final app = [
+      for (final command in CoachCommand.values)
+        if ((!command.onlyInPlan || inPlan) && command.name.startsWith(typed))
+          command,
+    ];
+    final mine = [
+      for (final row in own)
+        if (row.command!.startsWith(typed)) row,
+    ];
+    if (app.isEmpty && mine.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.3,
+      ),
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        children: [
+          for (final command in app)
+            _CommandRow(
+              typed: command.typed,
+              argument: command.argument,
+              about: command.about,
+              asks: command.asks,
+              onTap: () =>
+                  onPick(command.typed, fill: command.argument != null),
+            ),
+          for (final row in mine)
+            _CommandRow(
+              typed: '/${row.command}',
+              about: 'Jouw vraag: ${row.question}',
+              asks: true,
+              onTap: () => onPick('/${row.command}', fill: false),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One command: its name, what it does, and whether it costs a question.
+class _CommandRow extends StatelessWidget {
+  const _CommandRow({
+    required this.typed,
+    required this.about,
+    required this.asks,
+    required this.onTap,
+    this.argument,
+  });
+
+  final String typed;
+  final String? argument;
+  final String about;
+  final bool asks;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      text: typed,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      children: [
+                        if (argument != null)
+                          TextSpan(
+                            text: ' $argument',
+                            style: TextStyle(
+                              color: muted,
+                              fontWeight: FontWeight.w400,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    about,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              ),
+              child: Text(
+                asks ? '1 vraag' : 'gratis',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: asks ? muted : AppColors.success,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -20217,8 +20217,25 @@ class $QuickQuestionsTableTable extends QuickQuestionsTable
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _commandMeta = const VerificationMeta(
+    'command',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, question, sortOrder, createdAt];
+  late final GeneratedColumn<String> command = GeneratedColumn<String>(
+    'command',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    question,
+    sortOrder,
+    createdAt,
+    command,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -20258,6 +20275,12 @@ class $QuickQuestionsTableTable extends QuickQuestionsTable
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('command')) {
+      context.handle(
+        _commandMeta,
+        command.isAcceptableOrUnknown(data['command']!, _commandMeta),
+      );
+    }
     return context;
   }
 
@@ -20283,6 +20306,10 @@ class $QuickQuestionsTableTable extends QuickQuestionsTable
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
       )!,
+      command: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}command'],
+      ),
     );
   }
 
@@ -20298,11 +20325,16 @@ class QuickQuestionRow extends DataClass
   final String question;
   final int sortOrder;
   final int createdAt;
+
+  /// The name it is asked by after a / in the coach - `rug` for `/rug` -
+  /// or null for none.
+  final String? command;
   const QuickQuestionRow({
     required this.id,
     required this.question,
     required this.sortOrder,
     required this.createdAt,
+    this.command,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -20311,6 +20343,9 @@ class QuickQuestionRow extends DataClass
     map['question'] = Variable<String>(question);
     map['sort_order'] = Variable<int>(sortOrder);
     map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || command != null) {
+      map['command'] = Variable<String>(command);
+    }
     return map;
   }
 
@@ -20320,6 +20355,9 @@ class QuickQuestionRow extends DataClass
       question: Value(question),
       sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
+      command: command == null && nullToAbsent
+          ? const Value.absent()
+          : Value(command),
     );
   }
 
@@ -20333,6 +20371,7 @@ class QuickQuestionRow extends DataClass
       question: serializer.fromJson<String>(json['question']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
+      command: serializer.fromJson<String?>(json['command']),
     );
   }
   @override
@@ -20343,6 +20382,7 @@ class QuickQuestionRow extends DataClass
       'question': serializer.toJson<String>(question),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<int>(createdAt),
+      'command': serializer.toJson<String?>(command),
     };
   }
 
@@ -20351,11 +20391,13 @@ class QuickQuestionRow extends DataClass
     String? question,
     int? sortOrder,
     int? createdAt,
+    Value<String?> command = const Value.absent(),
   }) => QuickQuestionRow(
     id: id ?? this.id,
     question: question ?? this.question,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
+    command: command.present ? command.value : this.command,
   );
   QuickQuestionRow copyWithCompanion(QuickQuestionsTableCompanion data) {
     return QuickQuestionRow(
@@ -20363,6 +20405,7 @@ class QuickQuestionRow extends DataClass
       question: data.question.present ? data.question.value : this.question,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      command: data.command.present ? data.command.value : this.command,
     );
   }
 
@@ -20372,13 +20415,14 @@ class QuickQuestionRow extends DataClass
           ..write('id: $id, ')
           ..write('question: $question, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('command: $command')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, question, sortOrder, createdAt);
+  int get hashCode => Object.hash(id, question, sortOrder, createdAt, command);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -20386,7 +20430,8 @@ class QuickQuestionRow extends DataClass
           other.id == this.id &&
           other.question == this.question &&
           other.sortOrder == this.sortOrder &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.command == this.command);
 }
 
 class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
@@ -20394,17 +20439,20 @@ class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
   final Value<String> question;
   final Value<int> sortOrder;
   final Value<int> createdAt;
+  final Value<String?> command;
   const QuickQuestionsTableCompanion({
     this.id = const Value.absent(),
     this.question = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.command = const Value.absent(),
   });
   QuickQuestionsTableCompanion.insert({
     this.id = const Value.absent(),
     required String question,
     required int sortOrder,
     required int createdAt,
+    this.command = const Value.absent(),
   }) : question = Value(question),
        sortOrder = Value(sortOrder),
        createdAt = Value(createdAt);
@@ -20413,12 +20461,14 @@ class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
     Expression<String>? question,
     Expression<int>? sortOrder,
     Expression<int>? createdAt,
+    Expression<String>? command,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (question != null) 'question': question,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
+      if (command != null) 'command': command,
     });
   }
 
@@ -20427,12 +20477,14 @@ class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
     Value<String>? question,
     Value<int>? sortOrder,
     Value<int>? createdAt,
+    Value<String?>? command,
   }) {
     return QuickQuestionsTableCompanion(
       id: id ?? this.id,
       question: question ?? this.question,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
+      command: command ?? this.command,
     );
   }
 
@@ -20451,6 +20503,9 @@ class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
+    if (command.present) {
+      map['command'] = Variable<String>(command.value);
+    }
     return map;
   }
 
@@ -20460,7 +20515,8 @@ class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
           ..write('id: $id, ')
           ..write('question: $question, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('command: $command')
           ..write(')'))
         .toString();
   }
@@ -34031,6 +34087,7 @@ typedef $$QuickQuestionsTableTableCreateCompanionBuilder =
       required String question,
       required int sortOrder,
       required int createdAt,
+      Value<String?> command,
     });
 typedef $$QuickQuestionsTableTableUpdateCompanionBuilder =
     QuickQuestionsTableCompanion Function({
@@ -34038,6 +34095,7 @@ typedef $$QuickQuestionsTableTableUpdateCompanionBuilder =
       Value<String> question,
       Value<int> sortOrder,
       Value<int> createdAt,
+      Value<String?> command,
     });
 
 class $$QuickQuestionsTableTableFilterComposer
@@ -34066,6 +34124,11 @@ class $$QuickQuestionsTableTableFilterComposer
 
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get command => $composableBuilder(
+    column: $table.command,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -34098,6 +34161,11 @@ class $$QuickQuestionsTableTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get command => $composableBuilder(
+    column: $table.command,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$QuickQuestionsTableTableAnnotationComposer
@@ -34120,6 +34188,9 @@ class $$QuickQuestionsTableTableAnnotationComposer
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get command =>
+      $composableBuilder(column: $table.command, builder: (column) => column);
 }
 
 class $$QuickQuestionsTableTableTableManager
@@ -34169,11 +34240,13 @@ class $$QuickQuestionsTableTableTableManager
                 Value<String> question = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
+                Value<String?> command = const Value.absent(),
               }) => QuickQuestionsTableCompanion(
                 id: id,
                 question: question,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
+                command: command,
               ),
           createCompanionCallback:
               ({
@@ -34181,11 +34254,13 @@ class $$QuickQuestionsTableTableTableManager
                 required String question,
                 required int sortOrder,
                 required int createdAt,
+                Value<String?> command = const Value.absent(),
               }) => QuickQuestionsTableCompanion.insert(
                 id: id,
                 question: question,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
+                command: command,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -5327,3 +5327,47 @@ moeten werken als chats kunnen pinnen." Gebouwd zoals de mockup.
   twee mappen met één naam zouden alleen verwarren. *Alle gesprekken wissen* in de
   instellingen neemt de mappen mee: ze waren er alleen om gesprekken in te
   houden.
+
+## 237. Commando's na een /
+
+Gevraagd: "custom commando's ... denk aan: /compact in claude code maar dan
+handige functies voor de coach." De lijst uit de mockup, "is denk ik al
+goed".
+
+- **De lijst**: begint wat je typt met een /, dan staan de commando's die
+  passen boven het veld, met wat ze doen en *gratis* of *1 vraag*. Een tik
+  voert er een uit, of zet het in het veld als er iets achter moet
+  (*/onthoud*, */map*). Zolang de coach schrijft, gaat er niets: ook geen
+  commando, zoals de knop Versturen dan niets doet.
+- **Gratis**, er gaat niets naar Google: */nieuw*, */onthoud* (met het
+  kaartje dat de coach zelf ook geeft; uit is uit en vol is vol),
+  */geheugen*, */kosten* (dit gesprek en vandaag, zoals de dagbalk telt),
+  */pin*, */map* en */help*. Wat ze zeggen, staat boven het veld als *Van de
+  app*, niet als bericht van de coach, en wordt niet bewaard: het gaat weg
+  met de volgende vraag, een ander gesprek of ✕.
+- **Eén vraag**: */workout*, */week* en */maand* stellen de prompt van dat
+  geplande moment, ook als het uit staat, zonder tools, met de feiten van
+  dat moment (`askMoment`), en het antwoord komt in dit gesprek als vraag en
+  antwoord. Onder het antwoord staat wat meeging, zoals bij een opzoeking.
+  */samenvat* vraagt een samenvatting zonder tools (`askOnce`, uit
+  `askMoment` gehaald) en begint daarmee een nieuw gesprek, *Verder uit:
+  <titel>*, in dezelfde map; het oude blijft. */schema* is een gewone vraag
+  in het gesprek van een schema.
+- **Eigen commando's**: een snelle vraag krijgt met de knop / een naam
+  (letters en cijfers, niet een van de app, niet twee keer). */naam* stelt
+  dan die vraag, als een gewone.
+- **Iets na een / dat geen commando is**, zegt *Geen commando*, en blijft in
+  het veld staan. Een vraag begint nooit met een /, dus wat ermee begint is
+  altijd als commando bedoeld.
+- **Anders dan het plan**:
+  - `quick_questions.command` kwam in schema v60, niet in v59 met de mappen:
+    zo staat elke commit op zichzelf.
+  - */pin* pint vast, of maakt los wat al vastgepind is.
+  - */week* gaat over de laatste zeven dagen, zoals het vrije moment, niet
+    over de kalenderweek van het weekoverzicht: op een maandag stond daar
+    nog niets in. */maand* gaat over deze maand tot nu, naast de vorige; een
+    maand zonder training zegt dat, en vraagt niets.
+  - */samenvat* kan niet in het gesprek van een schema: dat gesprek hoort bij
+    het schema, en een nieuw zou er los van staan. Het nieuwe gesprek begint
+    met de vraag om samen te vatten, en dan de samenvatting: een gesprek met
+    de coach begint met een vraag.

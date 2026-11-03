@@ -1438,4 +1438,8 @@ class QuickQuestionsTable extends Table {
   TextColumn get question => text()();
   IntColumn get sortOrder => integer().named('sort_order')();
   IntColumn get createdAt => integer().named('created_at')();
+
+  /// The name it is asked by after a / in the coach - `rug` for `/rug` -
+  /// or null for none.
+  TextColumn get command => text().nullable()();
 }

@@ -18,6 +18,7 @@ import 'package:fitlog/features/chat/presentation/coach_memory_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_session.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
+import 'package:fitlog/features/prompts/domain/coach_moments.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -406,6 +407,257 @@ void main() {
 
       await pieces.close();
       await tester.pumpAndSettle();
+    });
+  });
+
+  group("commando's na een /", () {
+    Future<void> send(WidgetTester tester, String text) async {
+      await tester.enterText(find.byType(TextField), text);
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      await tester.pumpAndSettle();
+    }
+
+    /// A finished Push A with one set of bench presses.
+    Future<String> pushA() async {
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-bench',
+              name: 'Bankdrukken',
+              primaryMuscle: 'borst',
+              category: 'barbell',
+              createdAt: 0,
+            ),
+          );
+      final id = await db.workoutsDao.startWorkout(
+        name: 'Push A',
+        defaultRestSeconds: 90,
+      );
+      await db.workoutsDao.addExercises(id, [
+        'ex-bench',
+      ], defaultRestSeconds: 90);
+      final set = (await db.workoutsDao.getWorkoutDetail(id))!
+          .exercises
+          .single
+          .sets
+          .single;
+      await db.workoutsDao.updateSet(
+        set.id,
+        weightKg: const Value(80),
+        reps: const Value(6),
+        isCompleted: const Value(true),
+      );
+      await db.workoutsDao.finishWorkout(id, discardPending: false);
+      return id;
+    }
+
+    testWidgets("na een / staan de commando's met wat ze kosten, en wat je "
+        'typt filtert', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), '/');
+      await tester.pump();
+      for (final name in ['/nieuw', '/kosten', '/samenvat', '/workout']) {
+        expect(find.text(name), findsOneWidget, reason: name);
+      }
+      // Alleen in het gesprek van een schema.
+      expect(find.text('/schema'), findsNothing);
+      expect(find.text('gratis'), findsWidgets);
+      expect(find.text('1 vraag'), findsWidgets);
+
+      await tester.enterText(find.byType(TextField), '/wo');
+      await tester.pump();
+      expect(find.text('/workout'), findsOneWidget);
+      expect(find.text('/kosten'), findsNothing);
+
+      // Iets erachter: de lijst gaat weg.
+      await tester.enterText(find.byType(TextField), '/workout ');
+      await tester.pump();
+      expect(find.text('/workout'), findsNothing);
+      expect(sent, isEmpty);
+    });
+
+    testWidgets('wat gratis is, stuurt niets: kosten, onthouden, vastpinnen, '
+        'een map, en wat geen commando is', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Mijn knie');
+      await db.chatDao.addMessage(
+        id: 'q-1',
+        threadId: 't-1',
+        role: 'user',
+        content: 'Doet pijn bij squats.',
+      );
+      await db.chatDao.addMessage(
+        id: 'a-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Tot parallel dan.',
+        requests: 2,
+        inputTokens: 1200,
+        outputTokens: 30,
+      );
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('ok')),
+      );
+      await tester.pumpAndSettle();
+
+      await send(tester, '/kosten');
+      expect(find.text('VAN DE APP'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Dit gesprek: 1 antwoord, 2 vragen aan Google, 1.200 tokens in en '
+          '30 uit.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Vandaag: 2 van je 250 vragen'),
+        findsOneWidget,
+      );
+
+      await send(tester, '/onthoud ik train thuis met dumbbells');
+      expect(find.text('Onthouden'), findsOneWidget);
+      expect(find.text('ik train thuis met dumbbells'), findsOneWidget);
+      expect(await tester.runAsync(() => db.coachNotesDao.count()), 1);
+
+      await send(tester, '/pin');
+      expect(find.textContaining('Vastgepind'), findsOneWidget);
+      await send(tester, '/map Techniek');
+      expect(find.text('In de map "Techniek".'), findsOneWidget);
+      final thread = (await tester.runAsync(() => db.chatDao.thread('t-1')))!;
+      expect(thread.pinned, isTrue);
+      expect(thread.folderId, isNotNull);
+
+      await send(tester, '/compact');
+      expect(find.textContaining('Geen commando: /compact'), findsOneWidget);
+      // Wat er stond, blijft staan.
+      expect(find.widgetWithText(TextField, '/compact'), findsOneWidget);
+
+      // Weg met ✕.
+      await tester.tap(find.byTooltip('Sluiten'));
+      await tester.pumpAndSettle();
+      expect(find.text('VAN DE APP'), findsNothing);
+
+      expect(sent, isEmpty);
+    });
+
+    testWidgets('je eigen commando stelt je vraag, en /help toont het met de '
+        'rest', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      final id = await db.coachPromptsDao.addQuickQuestion(
+        'Hoeveel sets nog voor mijn rug?',
+      );
+      await db.coachPromptsDao.setQuickCommand(id, 'rug');
+      await pump(tester, const CoachScreen(), api: apiSaying(says('Nog zes.')));
+      await tester.pumpAndSettle();
+
+      await send(tester, '/help');
+      expect(find.text("Commando's"), findsOneWidget);
+      expect(
+        find.text('Jouw vraag: Hoeveel sets nog voor mijn rug?'),
+        findsOneWidget,
+      );
+      await tester.tap(find.widgetWithText(InkWell, '/rug'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, '/rug'), findsOneWidget);
+      expect(sent, isEmpty);
+
+      // In de lijst boven het veld: een tik stelt de vraag.
+      await tester.tap(find.widgetWithText(InkWell, '/rug'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nog zes.'), findsOneWidget);
+      expect(sent, hasLength(1));
+      expect(sent.single, contains('Hoeveel sets nog voor mijn rug?'));
+    });
+
+    testWidgets('/workout vraagt je prompt over je laatste workout, zonder '
+        'tools, en het antwoord komt in dit gesprek', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await tester.runAsync(pushA);
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('Sterke set op 80 kg.')),
+      );
+      await tester.pumpAndSettle();
+
+      await send(tester, '/workout');
+
+      expect(find.text(CoachMoment.workout.defaultPrompt), findsOneWidget);
+      expect(find.text('Sterke set op 80 kg.'), findsOneWidget);
+      expect(find.textContaining('je laatste workout (Push A'), findsOneWidget);
+      expect(sent, hasLength(1));
+      expect(sent.single, contains('Push A'));
+      expect(sent.single, isNot(contains('functionDeclarations')));
+    });
+
+    testWidgets('/workout zonder workout zegt dat, en vraagt niets', (
+      tester,
+    ) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+
+      await send(tester, '/workout');
+
+      expect(find.text('Je hebt nog geen workout afgerond.'), findsOneWidget);
+      expect(sent, isEmpty);
+    });
+
+    testWidgets('/samenvat begint een nieuw gesprek met de samenvatting, in '
+        'dezelfde map, en het oude blijft', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.chatDao.createThread('t-1', 'Mijn knie');
+      await db.chatDao.addMessage(
+        id: 'q-1',
+        threadId: 't-1',
+        role: 'user',
+        content: 'Doet pijn bij squats.',
+      );
+      await db.chatDao.addMessage(
+        id: 'a-1',
+        threadId: 't-1',
+        role: 'assistant',
+        content: 'Tot parallel dan.',
+      );
+      final folder = (await db.chatDao.folderNamed('Blessures'))!;
+      await db.chatDao.moveToFolder('t-1', folder);
+      await pump(
+        tester,
+        const CoachScreen(),
+        thread: 't-1',
+        api: apiSaying(says('Knie: squats tot parallel.')),
+      );
+      await tester.pumpAndSettle();
+
+      await send(tester, '/samenvat');
+
+      expect(
+        find.text('Vat "Mijn knie" samen, om hier verder te gaan.'),
+        findsOneWidget,
+      );
+      expect(find.text('Knie: squats tot parallel.'), findsOneWidget);
+      expect(find.text('Doet pijn bij squats.'), findsNothing);
+      expect(sent, hasLength(1));
+      expect(sent.single, contains('Gebruiker: Doet pijn bij squats.'));
+
+      final threads = (await tester.runAsync(
+        () => db.select(db.chatThreadsTable).get(),
+      ))!;
+      expect(threads, hasLength(2));
+      final fresh = threads.firstWhere((t) => t.id != 't-1');
+      expect(fresh.title, 'Verder uit: Mijn knie');
+      expect(fresh.folderId, folder);
+      expect(
+        await tester.runAsync(() => db.chatDao.messages('t-1')),
+        hasLength(2),
+      );
     });
   });
 

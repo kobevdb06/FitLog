@@ -226,6 +226,40 @@ void main() {
     expect(find.text('Hoeveel sets nog voor mijn rug?'), findsNothing);
   });
 
+  testWidgets('een snelle vraag krijgt een commando; een naam die niet mag, '
+      'zegt waarom', (tester) async {
+    await db.coachPromptsDao.addQuickQuestion(
+      'Hoeveel sets nog voor mijn rug?',
+    );
+    tester.view.physicalSize = const Size(1100, 6000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      wrapWithContainer(containerFor(), const CoachPromptsScreen()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.byTooltip('Commando'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '/Rug');
+    await tester.tap(find.text('Opslaan'));
+    await tester.pumpAndSettle();
+    expect(find.text('/rug'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Commando'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'kosten');
+    await tester.tap(find.text('Opslaan'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('al een commando van de app'), findsOneWidget);
+    expect(find.text('/rug'), findsOneWidget);
+    final kept = await tester.runAsync(
+      () => db.coachPromptsDao.watchQuickQuestions().first,
+    );
+    expect(kept!.single.command, 'rug');
+  });
+
   testWidgets('een voorbeeld vult de prompt in en wordt bewaard; De gewone '
       'zet hem terug', (tester) async {
     tester.view.physicalSize = const Size(1100, 3600);

@@ -656,6 +656,36 @@ void main() {
     await db.close();
   });
 
+  test('a database from v57 keeps its prompts, and gets the other moments '
+      'and quick questions: none yet', () async {
+    final path = '${dir.path}/v57.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute('DROP TABLE moment_answers')
+      ..execute('DROP TABLE quick_questions')
+      ..execute('ALTER TABLE coach_prompts DROP COLUMN option')
+      ..execute(
+        "INSERT INTO coach_prompts (moment, enabled, prompt, updated_at) "
+        "VALUES ('workout', 1, 'Wees kritisch.', 1)",
+      )
+      ..execute('PRAGMA user_version = 57');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final kept = (await db.coachPromptsDao.promptRow(CoachMoment.workout))!;
+    expect(kept.prompt, 'Wees kritisch.');
+    expect(kept.option, isNull);
+    expect(
+      await db.coachPromptsDao.latestMomentAnswer(CoachMoment.month),
+      isNull,
+    );
+    expect(await db.coachPromptsDao.addQuickQuestion('Hoeveel sets?'), 1);
+    await db.close();
+  });
+
   test('a database from v53 gets no schemas, and no routine is a '
       'session of one', () async {
     final path = '${dir.path}/v53.db';
@@ -833,7 +863,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 57);
+    expect(raw.select('PRAGMA user_version').first.values.first, 58);
     raw.close();
   });
 
@@ -1049,7 +1079,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 57);
+    expect(db.schemaVersion, 58);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

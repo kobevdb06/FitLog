@@ -1,5 +1,6 @@
 /// Instellingen → AI-coach → Geplande prompts: what the coach is asked at a
-/// moment, in the user's own words, and the screen of one moment.
+/// moment, in the user's own words, the screen of one moment, and the
+/// user's own quick questions.
 library;
 
 import 'dart:async';
@@ -10,21 +11,31 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/week_navigator.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
+import '../../chat/presentation/coach_session.dart';
 import '../../morning/presentation/morning_providers.dart';
 import '../../review/data/week_alarm.dart';
 import '../../review/presentation/review_providers.dart';
+import '../data/moment_facts.dart';
 import '../domain/coach_moments.dart';
+import 'moment_answer_card.dart';
+import 'prompt_notify.dart';
 import 'prompt_providers.dart';
-import 'workout_answer_card.dart';
 
 /// The longest prompt: a few sentences, not a second system prompt.
 const int kMomentPromptLength = 500;
+
+/// The longest quick question, and how many there can be: a row of buttons,
+/// not a second chat.
+const int kQuickQuestionLength = 200;
+const int kQuickQuestionMax = 10;
 
 /// Stores [prompt] with what changed. Words or a length equal to the
 /// moment's own are stored as its own, so a later version of the app can
@@ -35,6 +46,7 @@ Future<void> saveMomentPrompt(
   bool? enabled,
   String? text,
   AnswerLength? length,
+  String? option,
 }) {
   final moment = prompt.moment;
   final words = (text ?? prompt.text).trim();
@@ -44,7 +56,22 @@ Future<void> saveMomentPrompt(
     enabled: enabled ?? prompt.enabled,
     prompt: words.isEmpty || words == moment.defaultPrompt ? null : words,
     length: chosen == moment.defaultLength ? null : chosen,
+    option: option ?? prompt.option,
   );
+}
+
+/// Whether [moment] comes with the alarm: then a change moves the alarm.
+bool _alarmed(CoachMoment moment) =>
+    moment == CoachMoment.idle ||
+    moment == CoachMoment.free ||
+    moment == CoachMoment.month;
+
+/// Stores [prompt] switched [on] or off, and keeps the alarm in step.
+Future<void> switchMoment(WidgetRef ref, MomentPrompt prompt, bool on) async {
+  await saveMomentPrompt(ref.read(databaseProvider), prompt, enabled: on);
+  if (!_alarmed(prompt.moment)) return;
+  final notify = ref.read(promptNotifyProvider);
+  await (on ? notify.switchedOn() : notify.syncAlarm());
 }
 
 class CoachPromptsScreen extends ConsumerWidget {
@@ -65,7 +92,7 @@ class CoachPromptsScreen extends ConsumerWidget {
               AppSpacing.lg,
               AppSpacing.lg,
               AppSpacing.lg,
-              AppSpacing.sm,
+              0,
             ),
             child: Text(
               'Op een vast moment vraagt FitLog de coach iets, in jouw '
@@ -76,34 +103,120 @@ class CoachPromptsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          for (final prompt in prompts ?? const <MomentPrompt>[])
-            ListTile(
-              isThreeLine: true,
-              title: Text(prompt.moment.title),
-              subtitle: Text(
-                '${prompt.moment.when}\n'
-                '${prompt.enabled ? prompt.text : 'Uit'}',
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Switch(
-                value: prompt.enabled,
-                onChanged: (on) => saveMomentPrompt(
-                  ref.read(databaseProvider),
-                  prompt,
-                  enabled: on,
-                ),
-              ),
-              onTap: () => context.push(Routes.coachPrompt(prompt.moment.wire)),
-            ),
+          for (final group in MomentGroup.values) ...[
+            SectionHeader(group.label),
+            for (final prompt in prompts ?? const <MomentPrompt>[])
+              if (prompt.moment.group == group) _MomentTile(prompt: prompt),
+          ],
+          const SectionHeader('Eigen snelle vragen'),
+          const _QuickQuestionsEditor(),
         ],
       ),
     );
   }
 }
 
-/// One moment: on or off, the words, the length, what goes along, and a
-/// way to try it.
+class _MomentTile extends ConsumerWidget {
+  const _MomentTile({required this.prompt});
+
+  final MomentPrompt prompt;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ListTile(
+    isThreeLine: true,
+    title: Text(prompt.moment.title),
+    subtitle: Text(
+      '${prompt.moment.when}\n${prompt.enabled ? prompt.text : 'Uit'}',
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    ),
+    trailing: Switch(
+      value: prompt.enabled,
+      onChanged: (on) => switchMoment(ref, prompt, on),
+    ),
+    onTap: () => context.push(Routes.coachPrompt(prompt.moment.wire)),
+  );
+}
+
+/// The user's own questions: a row of buttons in the coach, one tap asks.
+class _QuickQuestionsEditor extends ConsumerWidget {
+  const _QuickQuestionsEditor();
+
+  Future<String?> _ask(BuildContext context, {String? question}) =>
+      promptForText(
+        context,
+        title: question == null ? 'Vraag toevoegen' : 'Vraag aanpassen',
+        initialValue: question,
+        hintText: 'Hoeveel sets heb ik deze week nog nodig voor mijn rug?',
+        maxLength: kQuickQuestionLength,
+        maxLines: 3,
+      );
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final own = ref.watch(quickQuestionsProvider).value ?? const [];
+    final dao = ref.read(databaseProvider).coachPromptsDao;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.xs,
+          ),
+          child: Text(
+            'Je eigen vragen staan als knopjes in de coach. Er gebeurt niets '
+            'vanzelf: één tik, en de vraag is gesteld.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        for (final question in own)
+          ListTile(
+            leading: const Icon(Icons.bolt_outlined),
+            title: Text(question.question),
+            onTap: () async {
+              final changed = await _ask(context, question: question.question);
+              final words = changed?.trim();
+              if (words != null && words.isNotEmpty) {
+                await dao.changeQuickQuestion(question.id, words);
+              }
+            },
+            trailing: IconButton(
+              tooltip: 'Verwijderen',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => dao.deleteQuickQuestion(question.id),
+            ),
+          ),
+        if (own.length < kQuickQuestionMax)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              child: TextButton.icon(
+                onPressed: () async {
+                  final words = (await _ask(context))?.trim();
+                  if (words != null && words.isNotEmpty) {
+                    await dao.addQuickQuestion(words);
+                  }
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Vraag toevoegen'),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// One moment: on or off, the words, the length, when, what goes along,
+/// and a way to try it.
 class MomentPromptScreen extends ConsumerStatefulWidget {
   const MomentPromptScreen({super.key, required this.wire});
 
@@ -147,6 +260,12 @@ class _MomentPromptScreenState extends ConsumerState<MomentPromptScreen> {
     _pending = Timer(const Duration(milliseconds: 600), _storeWords);
   }
 
+  void _fill(MomentPrompt prompt, String words) {
+    _pending?.cancel();
+    _field.text = words;
+    saveMomentPrompt(ref.read(databaseProvider), prompt, text: words);
+  }
+
   /// Keeps the words in the field now, also when the last key was a moment
   /// ago: what is tried is what is there.
   Future<void> _keepWords() async {
@@ -163,10 +282,9 @@ class _MomentPromptScreenState extends ConsumerState<MomentPromptScreen> {
     );
   }
 
-  Future<void> _tryOn(String workoutId) async {
-    await _keepWords();
-    if (!mounted) return;
-    await ref.read(workoutAskProvider(workoutId).notifier).ask();
+  Future<void> _setOption(MomentPrompt prompt, String option) async {
+    await saveMomentPrompt(ref.read(databaseProvider), prompt, option: option);
+    await ref.read(promptNotifyProvider).syncAlarm();
   }
 
   Future<void> _tryMorning() async {
@@ -179,12 +297,6 @@ class _MomentPromptScreenState extends ConsumerState<MomentPromptScreen> {
     await _keepWords();
     if (!mounted) return;
     await ref.read(weekReviewControllerProvider.notifier).write(start);
-  }
-
-  void _fill(MomentPrompt prompt, String words) {
-    _pending?.cancel();
-    _field.text = words;
-    saveMomentPrompt(ref.read(databaseProvider), prompt, text: words);
   }
 
   @override
@@ -225,8 +337,76 @@ class _MomentPromptScreenState extends ConsumerState<MomentPromptScreen> {
             title: Text(moment.switchTitle),
             subtitle: Text(moment.switchHint),
             value: prompt.enabled,
-            onChanged: (on) => saveMomentPrompt(db, prompt, enabled: on),
+            onChanged: (on) => switchMoment(ref, prompt, on),
           ),
+          if (moment == CoachMoment.idle) ...[
+            const SectionHeader('Wanneer'),
+            ListTile(
+              title: Text('Na ${prompt.idleDays} dagen zonder training'),
+              subtitle: const Text(
+                'Om 18:00, één keer per keer dat je stilvalt.',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              child: Slider(
+                value: prompt.idleDays.toDouble(),
+                min: kIdleDaysMin.toDouble(),
+                max: kIdleDaysMax.toDouble(),
+                divisions: kIdleDaysMax - kIdleDaysMin,
+                label: '${prompt.idleDays} dagen',
+                onChanged: (days) => _setOption(prompt, '${days.round()}'),
+              ),
+            ),
+          ],
+          if (moment == CoachMoment.free) ...[
+            const SectionHeader('Wanneer'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  for (var day = DateTime.monday; day <= DateTime.sunday; day++)
+                    ChoiceChip(
+                      label: Text(Formatters.weekdayName(day)),
+                      selected: prompt.freeTime.weekday == day,
+                      onSelected: (_) => _setOption(
+                        prompt,
+                        freeTimeOption((
+                          weekday: day,
+                          hour: prompt.freeTime.hour,
+                        )),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            ListTile(
+              title: const Text('Uur'),
+              subtitle: Text('${prompt.freeTime.hour}:00'),
+              trailing: const Icon(Icons.schedule),
+              onTap: () async {
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay(hour: prompt.freeTime.hour, minute: 0),
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(alwaysUse24HourFormat: true),
+                    child: child!,
+                  ),
+                );
+                if (picked == null) return;
+                await _setOption(
+                  prompt,
+                  freeTimeOption((
+                    weekday: prompt.freeTime.weekday,
+                    hour: picked.hour,
+                  )),
+                );
+              },
+            ),
+          ],
           const SectionHeader('Je prompt'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -330,7 +510,6 @@ class _MomentPromptScreenState extends ConsumerState<MomentPromptScreen> {
           ),
           const SectionHeader('Uitproberen'),
           switch (moment) {
-            CoachMoment.workout => _TryOnLastWorkout(onTry: _tryOn),
             CoachMoment.morning => _TryReport(
               moment: moment,
               on: prompt.enabled,
@@ -341,6 +520,7 @@ class _MomentPromptScreenState extends ConsumerState<MomentPromptScreen> {
               on: prompt.enabled,
               onTry: () => _tryWeek(weekStartOf(lastSundayEvening(_now()))),
             ),
+            _ => _TryMoment(moment: moment, keepWords: _keepWords),
           },
         ],
       ),
@@ -349,6 +529,104 @@ class _MomentPromptScreenState extends ConsumerState<MomentPromptScreen> {
 }
 
 DateTime _now() => DateTime.now();
+
+/// What a prompt at [moment] is tried on, worked out when the screen opens.
+final _trySubjectProvider = FutureProvider.autoDispose
+    .family<TrySubject, CoachMoment>((ref, moment) async {
+      final settings = await ref.watch(settingsProvider.future);
+      return trySubject(
+        ref.watch(databaseProvider),
+        moment,
+        health: settings.coachSeesHealth,
+        now: DateTime.now(),
+      );
+    });
+
+/// The prompt as it stands, asked about the newest thing it could be about;
+/// the answer takes the place of what was there. In the chat, a try is a
+/// conversation of its own.
+class _TryMoment extends ConsumerWidget {
+  const _TryMoment({required this.moment, required this.keepWords});
+
+  final CoachMoment moment;
+  final Future<void> Function() keepWords;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final found = ref.watch(_trySubjectProvider(moment)).value;
+    if (found == null) return const SizedBox.shrink();
+    final subject = found.subject;
+    final hasCoach = ref.watch(coachApiKeyProvider) != null;
+    final busy =
+        subject != null && ref.watch(momentAskProvider(moment, subject)).busy;
+    final thread = subject == null
+        ? null
+        : ref.watch(momentAnswerProvider(moment, subject)).value?.threadId;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            !hasCoach
+                ? 'Zet eerst de coach aan met je sleutel.'
+                : subject == null
+                ? found.note
+                : '${found.note} Dat is één vraag, en het antwoord komt in de '
+                      'plaats van wat er stond.',
+            style: muted,
+          ),
+          if (subject != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: !hasCoach || busy
+                  ? null
+                  : () async {
+                      await keepWords();
+                      await ref
+                          .read(momentAskProvider(moment, subject).notifier)
+                          .ask();
+                    },
+              icon: busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.play_arrow_outlined),
+              // Short: the line above says on what, and on a narrow phone
+              // with large text a longer label took two lines.
+              label: const Text('Uitproberen'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (thread != null)
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  ref
+                      .read(coachSessionControllerProvider.notifier)
+                      .show(thread);
+                  context.go(Routes.chat);
+                },
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Open het gesprek'),
+              )
+            else
+              MomentAnswerCard(
+                moment: moment,
+                subject: subject,
+                actions: false,
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 /// The morning report of today or the last week that is over, written
 /// again with the prompt as it stands: what was there makes way for it.
@@ -438,60 +716,6 @@ class _TryReport extends ConsumerWidget {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-/// The prompt as it stands, asked about the workout finished last; the
-/// answer takes the place of what that workout had.
-class _TryOnLastWorkout extends ConsumerWidget {
-  const _TryOnLastWorkout({required this.onTry});
-
-  final Future<void> Function(String workoutId) onTry;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final last = ref.watch(lastFinishedWorkoutProvider).value;
-    if (last == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: Text(
-          'Na je eerste workout kan je de prompt hier uitproberen.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      );
-    }
-    final busy = ref.watch(workoutAskProvider(last.id)).busy;
-    final hasCoach = ref.watch(coachApiKeyProvider) != null;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            hasCoach
-                ? 'Op "${last.name}", je laatste workout. Dat is één vraag, en '
-                      'het antwoord komt in de plaats van wat er bij die '
-                      'workout stond.'
-                : 'Zet eerst de coach aan met je sleutel.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            onPressed: !hasCoach || busy ? null : () => onTry(last.id),
-            icon: const Icon(Icons.play_arrow_outlined),
-            label: const Text('Uitproberen'),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          WorkoutAnswerCard(workoutId: last.id, actions: false),
         ],
       ),
     );

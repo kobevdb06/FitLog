@@ -126,3 +126,47 @@ Future<List<ExercisePlateau>> loadPlateaus(
     healthConnect: healthConnect,
   );
 }
+
+/// [item] as the coach is given it: in the chat's lookup and when an
+/// exercise stalls (Geplande prompts).
+Map<String, Object?> plateauForCoach(ExercisePlateau item, {DateTime? now}) {
+  double one(double value) => (value * 10).round() / 10;
+  Map<String, Object?> compared(Object? now, Object? before) => {
+    'now': now,
+    'before': ?before,
+  };
+  final since = item.plateau.since;
+  return {
+    'exercise': item.exercise.name,
+    'muscle': item.exercise.primaryMuscle,
+    'measured_in': switch (item.plateau.measure) {
+      ProgressMeasure.oneRm => 'estimated_1rm_kg',
+      ProgressMeasure.reps => 'most_reps_in_a_set',
+      ProgressMeasure.hold => 'longest_hold_seconds',
+    },
+    'since':
+        '${since.year}-${since.month.toString().padLeft(2, '0')}-'
+        '${since.day.toString().padLeft(2, '0')}',
+    'weeks': item.plateau.weeksAt(now ?? DateTime.now()),
+    'best': one(item.plateau.best),
+    'latest': one(item.plateau.latest),
+    'sessions_since': item.context.sessions,
+    'sessions_per_week': one(item.context.sessionsPerWeek),
+    'working_sets_per_session': one(item.context.setsPerSession),
+    'typical_reps': ?item.context.typicalReps,
+    'muscle_sets_per_week': compared(
+      one(item.context.muscleSetsPerWeek),
+      switch (item.context.muscleSetsPerWeekBefore) {
+        final rate? => one(rate),
+        null => null,
+      },
+    ),
+    if (item.context.averageSleep case final sleep?)
+      'sleep_minutes_per_night': compared(
+        sleep.inMinutes,
+        item.context.averageSleepBefore?.inMinutes,
+      ),
+    if (item.plateau.measure != ProgressMeasure.hold)
+      'started_before_recovered': item.context.unrecovered,
+  };
+}

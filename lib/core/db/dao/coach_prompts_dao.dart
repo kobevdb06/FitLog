@@ -4,9 +4,16 @@ import '../database.dart';
 
 part 'coach_prompts_dao.drift.dart';
 
-/// The geplande prompts - what the user asks the coach at a moment - and what
-/// the coach answered after a workout.
-@DriftAccessor(tables: [CoachPromptsTable, WorkoutAnswersTable])
+/// The geplande prompts - what the user asks the coach at a moment - what the
+/// coach answered, and the user's own quick questions.
+@DriftAccessor(
+  tables: [
+    CoachPromptsTable,
+    WorkoutAnswersTable,
+    MomentAnswersTable,
+    QuickQuestionsTable,
+  ],
+)
 class CoachPromptsDao extends DatabaseAccessor<AppDatabase>
     with _$CoachPromptsDaoMixin {
   CoachPromptsDao(super.db);
@@ -19,13 +26,14 @@ class CoachPromptsDao extends DatabaseAccessor<AppDatabase>
   Stream<List<CoachPromptRow>> watchPromptRows() =>
       select(coachPromptsTable).watch();
 
-  /// Stores the whole of [moment] as the user left it. A null [prompt] or
-  /// [length] is the moment's own.
+  /// Stores the whole of [moment] as the user left it. A null [prompt],
+  /// [length] or [option] is the moment's own.
   Future<void> savePrompt({
     required CoachMoment moment,
     required bool enabled,
     String? prompt,
     AnswerLength? length,
+    String? option,
     DateTime? at,
   }) => into(coachPromptsTable).insertOnConflictUpdate(
     CoachPromptsTableCompanion.insert(
@@ -33,6 +41,7 @@ class CoachPromptsDao extends DatabaseAccessor<AppDatabase>
       enabled: enabled,
       prompt: Value(prompt),
       length: Value(length?.wire),
+      option: Value(option),
       updatedAt: (at ?? DateTime.now()).millisecondsSinceEpoch,
     ),
   );
@@ -69,4 +78,106 @@ class CoachPromptsDao extends DatabaseAccessor<AppDatabase>
       outputTokens: Value(outputTokens),
     ),
   );
+
+  // --- The other moments ----------------------------------------------------
+
+  Future<MomentAnswerRow?> momentAnswer(CoachMoment moment, String subject) =>
+      (select(momentAnswersTable)..where(
+            (t) => t.moment.equals(moment.wire) & t.subject.equals(subject),
+          ))
+          .getSingleOrNull();
+
+  Stream<MomentAnswerRow?> watchMomentAnswer(
+    CoachMoment moment,
+    String subject,
+  ) =>
+      (select(momentAnswersTable)..where(
+            (t) => t.moment.equals(moment.wire) & t.subject.equals(subject),
+          ))
+          .watchSingleOrNull();
+
+  /// The newest answer at [moment], whatever it was about.
+  Future<MomentAnswerRow?> latestMomentAnswer(CoachMoment moment) =>
+      (select(momentAnswersTable)
+            ..where((t) => t.moment.equals(moment.wire))
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(1))
+          .getSingleOrNull();
+
+  Stream<MomentAnswerRow?> watchLatestMomentAnswer(CoachMoment moment) =>
+      (select(momentAnswersTable)
+            ..where((t) => t.moment.equals(moment.wire))
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(1))
+          .watchSingleOrNull();
+
+  /// Stores what the coach said at [moment] about [subject]. Asking again
+  /// replaces it.
+  Future<void> saveMomentAnswer({
+    required CoachMoment moment,
+    required String subject,
+    required DateTime createdAt,
+    required String prompt,
+    required String facts,
+    String? coachText,
+    String? coachError,
+    String? threadId,
+    int? requests,
+    int? inputTokens,
+    int? outputTokens,
+  }) => into(momentAnswersTable).insertOnConflictUpdate(
+    MomentAnswersTableCompanion.insert(
+      moment: moment.wire,
+      subject: subject,
+      createdAt: createdAt.millisecondsSinceEpoch,
+      prompt: prompt,
+      facts: facts,
+      coachText: Value(coachText),
+      coachError: Value(coachError),
+      threadId: Value(threadId),
+      requests: Value(requests),
+      inputTokens: Value(inputTokens),
+      outputTokens: Value(outputTokens),
+    ),
+  );
+
+  /// Takes away what was said about [subject] at [moment] - a workout that
+  /// is deleted takes the word before it along.
+  Future<void> deleteMomentAnswer(CoachMoment moment, String subject) =>
+      (delete(momentAnswersTable)..where(
+            (t) => t.moment.equals(moment.wire) & t.subject.equals(subject),
+          ))
+          .go();
+
+  // --- Quick questions -------------------------------------------------------
+
+  Stream<List<QuickQuestionRow>> watchQuickQuestions() =>
+      (select(quickQuestionsTable)..orderBy([
+            (t) => OrderingTerm.asc(t.sortOrder),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+          .watch();
+
+  /// Adds [question] at the end.
+  Future<int> addQuickQuestion(String question, {DateTime? at}) async {
+    final last = quickQuestionsTable.sortOrder.max();
+    final row = await (selectOnly(
+      quickQuestionsTable,
+    )..addColumns([last])).getSingle();
+    return into(quickQuestionsTable).insert(
+      QuickQuestionsTableCompanion.insert(
+        question: question,
+        sortOrder: (row.read(last) ?? -1) + 1,
+        createdAt: (at ?? DateTime.now()).millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  Future<void> changeQuickQuestion(int id, String question) =>
+      (update(quickQuestionsTable)..where((t) => t.id.equals(id))).write(
+        QuickQuestionsTableCompanion(question: Value(question)),
+      );
+
+  Future<void> deleteQuickQuestion(int id) =>
+      (delete(quickQuestionsTable)..where((t) => t.id.equals(id))).go();
 }

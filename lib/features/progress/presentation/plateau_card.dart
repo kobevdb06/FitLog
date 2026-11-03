@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/db/database.dart';
 import '../../../core/calc/plateau.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -13,6 +14,7 @@ import '../../chat/presentation/chat_providers.dart';
 import '../data/plateau_loader.dart';
 import 'progress_providers.dart';
 import 'sleep_section.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 
 /// `1`, `1,5`, `10,3`: a rate, as precise as it means anything.
 String _rate(double value) => NumberFormat('#,##0.#', 'nl').format(value);
@@ -58,7 +60,12 @@ class PlateauCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final formatters = ref.watch(formattersProvider);
-    final coach = ref.watch(coachEnabledProvider);
+    // With the moment on, the coach answers under the card by itself, and
+    // a question put ready would be the same thing twice.
+    final coach =
+        ref.watch(coachEnabledProvider) &&
+        !(ref.watch(momentPromptProvider(CoachMoment.plateau))?.enabled ??
+            false);
     final plateau = found.plateau;
     final facts = found.context;
     final at = now ?? DateTime.now();

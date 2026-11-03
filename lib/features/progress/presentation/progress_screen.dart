@@ -583,6 +583,12 @@ class _More extends ConsumerWidget {
           subtitle: thisWeek,
           onTap: () => context.push(Routes.weekReview),
         ),
+        _MoreTile(
+          icon: Icons.calendar_month_outlined,
+          title: 'Maandoverzicht',
+          subtitle: 'Je maand naast de maand ervoor',
+          onTap: () => context.push(Routes.monthReview),
+        ),
         const _RecoveryTile(),
         _MoreTile(
           icon: Icons.favorite_border,

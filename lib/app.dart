@@ -19,6 +19,8 @@ import 'features/chat/presentation/coach_session.dart';
 import 'features/health/presentation/health_providers.dart';
 import 'features/morning/data/morning_alarm.dart';
 import 'features/morning/presentation/morning_providers.dart';
+import 'features/prompts/data/prompt_alarm.dart';
+import 'features/prompts/presentation/prompt_notify.dart';
 import 'features/readiness/presentation/check_providers.dart';
 import 'features/review/data/week_alarm.dart';
 import 'features/review/presentation/review_providers.dart';
@@ -45,6 +47,12 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
 
   /// The same for the Sunday evening's weekly review.
   final ReceivePort _weekPort = ReceivePort();
+
+  /// And for the geplande prompts that come with a notification.
+  final ReceivePort _promptsPort = ReceivePort();
+
+  /// A conversation a notification asked for, waiting for the unlock.
+  String? _pendingThread;
 
   /// A route a notification asked for, waiting for the app to be unlocked.
   String? _pendingRoute;
@@ -73,6 +81,16 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
       if (message is! SendPort) return;
       message.send(true);
       unawaited(ref.read(weekNotifyProvider).onAlarm());
+    });
+    IsolateNameServer.removePortNameMapping(kPromptsPortName);
+    IsolateNameServer.registerPortWithName(
+      _promptsPort.sendPort,
+      kPromptsPortName,
+    );
+    _promptsPort.listen((message) {
+      if (message is! SendPort) return;
+      message.send(true);
+      unawaited(ref.read(promptNotifyProvider).onAlarm());
     });
 
     // A tap on the morning report opens Herstel - now if the app is open,
@@ -104,6 +122,8 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     _morningPort.close();
     IsolateNameServer.removePortNameMapping(kWeekPortName);
     _weekPort.close();
+    IsolateNameServer.removePortNameMapping(kPromptsPortName);
+    _promptsPort.close();
     NotificationService.instance.onTapped = null;
     super.dispose();
   }
@@ -116,6 +136,16 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
       _pendingRoute =
           '${Routes.weekReview}?start='
           '${payload.substring(NotificationService.weekPayloadPrefix.length)}';
+    } else if (payload.startsWith(NotificationService.monthPayloadPrefix)) {
+      final month = payload.substring(
+        NotificationService.monthPayloadPrefix.length,
+      );
+      _pendingRoute = '${Routes.monthReview}?start=$month-1';
+    } else if (payload.startsWith(NotificationService.threadPayloadPrefix)) {
+      // The conversation the coach put its answer in.
+      _pendingThread = payload.substring(
+        NotificationService.threadPayloadPrefix.length,
+      );
     } else {
       return;
     }
@@ -123,8 +153,14 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
   }
 
   void _openPendingRoute() {
+    if (ref.read(appControllerProvider) is! AppReady) return;
+    if (_pendingThread case final thread?) {
+      _pendingThread = null;
+      ref.read(coachSessionControllerProvider.notifier).show(thread);
+      ref.read(routerProvider).go(Routes.chat);
+    }
     final route = _pendingRoute;
-    if (route == null || ref.read(appControllerProvider) is! AppReady) return;
+    if (route == null) return;
     _pendingRoute = null;
     ref.read(routerProvider).push(route);
   }
@@ -142,6 +178,8 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
       unawaited(morning.syncAlarm().then((_) => morning.catchUp()));
       final week = ref.read(weekNotifyProvider);
       unawaited(week.syncAlarm().then((_) => week.catchUp()));
+      final prompts = ref.read(promptNotifyProvider);
+      unawaited(prompts.syncAlarm().then((_) => prompts.catchUp()));
       _openPendingRoute();
       _scheduleAutoBackup();
     });

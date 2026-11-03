@@ -18410,6 +18410,15 @@ class $CoachPromptsTableTable extends CoachPromptsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _optionMeta = const VerificationMeta('option');
+  @override
+  late final GeneratedColumn<String> option = GeneratedColumn<String>(
+    'option',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -18427,6 +18436,7 @@ class $CoachPromptsTableTable extends CoachPromptsTable
     enabled,
     prompt,
     length,
+    option,
     updatedAt,
   ];
   @override
@@ -18469,6 +18479,12 @@ class $CoachPromptsTableTable extends CoachPromptsTable
         length.isAcceptableOrUnknown(data['length']!, _lengthMeta),
       );
     }
+    if (data.containsKey('option')) {
+      context.handle(
+        _optionMeta,
+        option.isAcceptableOrUnknown(data['option']!, _optionMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -18502,6 +18518,10 @@ class $CoachPromptsTableTable extends CoachPromptsTable
         DriftSqlType.string,
         data['${effectivePrefix}length'],
       ),
+      option: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}option'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
@@ -18526,12 +18546,17 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
 
   /// One of `AnswerLength`; null is the moment's own.
   final String? length;
+
+  /// What else the moment needs, as the moment reads it: after how many
+  /// days without training, or which day and hour. Null is its own.
+  final String? option;
   final int updatedAt;
   const CoachPromptRow({
     required this.moment,
     required this.enabled,
     this.prompt,
     this.length,
+    this.option,
     required this.updatedAt,
   });
   @override
@@ -18544,6 +18569,9 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
     }
     if (!nullToAbsent || length != null) {
       map['length'] = Variable<String>(length);
+    }
+    if (!nullToAbsent || option != null) {
+      map['option'] = Variable<String>(option);
     }
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
@@ -18559,6 +18587,9 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
       length: length == null && nullToAbsent
           ? const Value.absent()
           : Value(length),
+      option: option == null && nullToAbsent
+          ? const Value.absent()
+          : Value(option),
       updatedAt: Value(updatedAt),
     );
   }
@@ -18573,6 +18604,7 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
       enabled: serializer.fromJson<bool>(json['enabled']),
       prompt: serializer.fromJson<String?>(json['prompt']),
       length: serializer.fromJson<String?>(json['length']),
+      option: serializer.fromJson<String?>(json['option']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
   }
@@ -18584,6 +18616,7 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
       'enabled': serializer.toJson<bool>(enabled),
       'prompt': serializer.toJson<String?>(prompt),
       'length': serializer.toJson<String?>(length),
+      'option': serializer.toJson<String?>(option),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
   }
@@ -18593,12 +18626,14 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
     bool? enabled,
     Value<String?> prompt = const Value.absent(),
     Value<String?> length = const Value.absent(),
+    Value<String?> option = const Value.absent(),
     int? updatedAt,
   }) => CoachPromptRow(
     moment: moment ?? this.moment,
     enabled: enabled ?? this.enabled,
     prompt: prompt.present ? prompt.value : this.prompt,
     length: length.present ? length.value : this.length,
+    option: option.present ? option.value : this.option,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   CoachPromptRow copyWithCompanion(CoachPromptsTableCompanion data) {
@@ -18607,6 +18642,7 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
       prompt: data.prompt.present ? data.prompt.value : this.prompt,
       length: data.length.present ? data.length.value : this.length,
+      option: data.option.present ? data.option.value : this.option,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -18618,13 +18654,15 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
           ..write('enabled: $enabled, ')
           ..write('prompt: $prompt, ')
           ..write('length: $length, ')
+          ..write('option: $option, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(moment, enabled, prompt, length, updatedAt);
+  int get hashCode =>
+      Object.hash(moment, enabled, prompt, length, option, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -18633,6 +18671,7 @@ class CoachPromptRow extends DataClass implements Insertable<CoachPromptRow> {
           other.enabled == this.enabled &&
           other.prompt == this.prompt &&
           other.length == this.length &&
+          other.option == this.option &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -18641,6 +18680,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
   final Value<bool> enabled;
   final Value<String?> prompt;
   final Value<String?> length;
+  final Value<String?> option;
   final Value<int> updatedAt;
   final Value<int> rowid;
   const CoachPromptsTableCompanion({
@@ -18648,6 +18688,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
     this.enabled = const Value.absent(),
     this.prompt = const Value.absent(),
     this.length = const Value.absent(),
+    this.option = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -18656,6 +18697,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
     required bool enabled,
     this.prompt = const Value.absent(),
     this.length = const Value.absent(),
+    this.option = const Value.absent(),
     required int updatedAt,
     this.rowid = const Value.absent(),
   }) : moment = Value(moment),
@@ -18666,6 +18708,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
     Expression<bool>? enabled,
     Expression<String>? prompt,
     Expression<String>? length,
+    Expression<String>? option,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -18674,6 +18717,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
       if (enabled != null) 'enabled': enabled,
       if (prompt != null) 'prompt': prompt,
       if (length != null) 'length': length,
+      if (option != null) 'option': option,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -18684,6 +18728,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
     Value<bool>? enabled,
     Value<String?>? prompt,
     Value<String?>? length,
+    Value<String?>? option,
     Value<int>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -18692,6 +18737,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
       enabled: enabled ?? this.enabled,
       prompt: prompt ?? this.prompt,
       length: length ?? this.length,
+      option: option ?? this.option,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -18712,6 +18758,9 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
     if (length.present) {
       map['length'] = Variable<String>(length.value);
     }
+    if (option.present) {
+      map['option'] = Variable<String>(option.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
     }
@@ -18728,6 +18777,7 @@ class CoachPromptsTableCompanion extends UpdateCompanion<CoachPromptRow> {
           ..write('enabled: $enabled, ')
           ..write('prompt: $prompt, ')
           ..write('length: $length, ')
+          ..write('option: $option, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -19325,6 +19375,990 @@ class WorkoutAnswersTableCompanion extends UpdateCompanion<WorkoutAnswerRow> {
   }
 }
 
+class $MomentAnswersTableTable extends MomentAnswersTable
+    with TableInfo<$MomentAnswersTableTable, MomentAnswerRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MomentAnswersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _momentMeta = const VerificationMeta('moment');
+  @override
+  late final GeneratedColumn<String> moment = GeneratedColumn<String>(
+    'moment',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _subjectMeta = const VerificationMeta(
+    'subject',
+  );
+  @override
+  late final GeneratedColumn<String> subject = GeneratedColumn<String>(
+    'subject',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _promptMeta = const VerificationMeta('prompt');
+  @override
+  late final GeneratedColumn<String> prompt = GeneratedColumn<String>(
+    'prompt',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _factsMeta = const VerificationMeta('facts');
+  @override
+  late final GeneratedColumn<String> facts = GeneratedColumn<String>(
+    'facts',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _coachTextMeta = const VerificationMeta(
+    'coachText',
+  );
+  @override
+  late final GeneratedColumn<String> coachText = GeneratedColumn<String>(
+    'coach_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coachErrorMeta = const VerificationMeta(
+    'coachError',
+  );
+  @override
+  late final GeneratedColumn<String> coachError = GeneratedColumn<String>(
+    'coach_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _threadIdMeta = const VerificationMeta(
+    'threadId',
+  );
+  @override
+  late final GeneratedColumn<String> threadId = GeneratedColumn<String>(
+    'thread_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requestsMeta = const VerificationMeta(
+    'requests',
+  );
+  @override
+  late final GeneratedColumn<int> requests = GeneratedColumn<int>(
+    'requests',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _inputTokensMeta = const VerificationMeta(
+    'inputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> inputTokens = GeneratedColumn<int>(
+    'input_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outputTokensMeta = const VerificationMeta(
+    'outputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> outputTokens = GeneratedColumn<int>(
+    'output_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    moment,
+    subject,
+    createdAt,
+    prompt,
+    facts,
+    coachText,
+    coachError,
+    threadId,
+    requests,
+    inputTokens,
+    outputTokens,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'moment_answers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MomentAnswerRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('moment')) {
+      context.handle(
+        _momentMeta,
+        moment.isAcceptableOrUnknown(data['moment']!, _momentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_momentMeta);
+    }
+    if (data.containsKey('subject')) {
+      context.handle(
+        _subjectMeta,
+        subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subjectMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('prompt')) {
+      context.handle(
+        _promptMeta,
+        prompt.isAcceptableOrUnknown(data['prompt']!, _promptMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_promptMeta);
+    }
+    if (data.containsKey('facts')) {
+      context.handle(
+        _factsMeta,
+        facts.isAcceptableOrUnknown(data['facts']!, _factsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_factsMeta);
+    }
+    if (data.containsKey('coach_text')) {
+      context.handle(
+        _coachTextMeta,
+        coachText.isAcceptableOrUnknown(data['coach_text']!, _coachTextMeta),
+      );
+    }
+    if (data.containsKey('coach_error')) {
+      context.handle(
+        _coachErrorMeta,
+        coachError.isAcceptableOrUnknown(data['coach_error']!, _coachErrorMeta),
+      );
+    }
+    if (data.containsKey('thread_id')) {
+      context.handle(
+        _threadIdMeta,
+        threadId.isAcceptableOrUnknown(data['thread_id']!, _threadIdMeta),
+      );
+    }
+    if (data.containsKey('requests')) {
+      context.handle(
+        _requestsMeta,
+        requests.isAcceptableOrUnknown(data['requests']!, _requestsMeta),
+      );
+    }
+    if (data.containsKey('input_tokens')) {
+      context.handle(
+        _inputTokensMeta,
+        inputTokens.isAcceptableOrUnknown(
+          data['input_tokens']!,
+          _inputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('output_tokens')) {
+      context.handle(
+        _outputTokensMeta,
+        outputTokens.isAcceptableOrUnknown(
+          data['output_tokens']!,
+          _outputTokensMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {moment, subject};
+  @override
+  MomentAnswerRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MomentAnswerRow(
+      moment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}moment'],
+      )!,
+      subject: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subject'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      prompt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt'],
+      )!,
+      facts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}facts'],
+      )!,
+      coachText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_text'],
+      ),
+      coachError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_error'],
+      ),
+      threadId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thread_id'],
+      ),
+      requests: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}requests'],
+      ),
+      inputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}input_tokens'],
+      ),
+      outputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}output_tokens'],
+      ),
+    );
+  }
+
+  @override
+  $MomentAnswersTableTable createAlias(String alias) {
+    return $MomentAnswersTableTable(attachedDatabase, alias);
+  }
+}
+
+class MomentAnswerRow extends DataClass implements Insertable<MomentAnswerRow> {
+  /// One of `CoachMoment`.
+  final String moment;
+  final String subject;
+  final int createdAt;
+
+  /// The words it was asked in, as they were then.
+  final String prompt;
+
+  /// The facts the coach was given, as JSON.
+  final String facts;
+  final String? coachText;
+  final String? coachError;
+
+  /// The conversation the answer was put in, for a moment that answers in
+  /// the chat; its cost is on the message there.
+  final String? threadId;
+
+  /// What it cost, for the daily bar; null when it is on the message.
+  final int? requests;
+  final int? inputTokens;
+  final int? outputTokens;
+  const MomentAnswerRow({
+    required this.moment,
+    required this.subject,
+    required this.createdAt,
+    required this.prompt,
+    required this.facts,
+    this.coachText,
+    this.coachError,
+    this.threadId,
+    this.requests,
+    this.inputTokens,
+    this.outputTokens,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['moment'] = Variable<String>(moment);
+    map['subject'] = Variable<String>(subject);
+    map['created_at'] = Variable<int>(createdAt);
+    map['prompt'] = Variable<String>(prompt);
+    map['facts'] = Variable<String>(facts);
+    if (!nullToAbsent || coachText != null) {
+      map['coach_text'] = Variable<String>(coachText);
+    }
+    if (!nullToAbsent || coachError != null) {
+      map['coach_error'] = Variable<String>(coachError);
+    }
+    if (!nullToAbsent || threadId != null) {
+      map['thread_id'] = Variable<String>(threadId);
+    }
+    if (!nullToAbsent || requests != null) {
+      map['requests'] = Variable<int>(requests);
+    }
+    if (!nullToAbsent || inputTokens != null) {
+      map['input_tokens'] = Variable<int>(inputTokens);
+    }
+    if (!nullToAbsent || outputTokens != null) {
+      map['output_tokens'] = Variable<int>(outputTokens);
+    }
+    return map;
+  }
+
+  MomentAnswersTableCompanion toCompanion(bool nullToAbsent) {
+    return MomentAnswersTableCompanion(
+      moment: Value(moment),
+      subject: Value(subject),
+      createdAt: Value(createdAt),
+      prompt: Value(prompt),
+      facts: Value(facts),
+      coachText: coachText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachText),
+      coachError: coachError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachError),
+      threadId: threadId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(threadId),
+      requests: requests == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requests),
+      inputTokens: inputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputTokens),
+      outputTokens: outputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputTokens),
+    );
+  }
+
+  factory MomentAnswerRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MomentAnswerRow(
+      moment: serializer.fromJson<String>(json['moment']),
+      subject: serializer.fromJson<String>(json['subject']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      prompt: serializer.fromJson<String>(json['prompt']),
+      facts: serializer.fromJson<String>(json['facts']),
+      coachText: serializer.fromJson<String?>(json['coachText']),
+      coachError: serializer.fromJson<String?>(json['coachError']),
+      threadId: serializer.fromJson<String?>(json['threadId']),
+      requests: serializer.fromJson<int?>(json['requests']),
+      inputTokens: serializer.fromJson<int?>(json['inputTokens']),
+      outputTokens: serializer.fromJson<int?>(json['outputTokens']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'moment': serializer.toJson<String>(moment),
+      'subject': serializer.toJson<String>(subject),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'prompt': serializer.toJson<String>(prompt),
+      'facts': serializer.toJson<String>(facts),
+      'coachText': serializer.toJson<String?>(coachText),
+      'coachError': serializer.toJson<String?>(coachError),
+      'threadId': serializer.toJson<String?>(threadId),
+      'requests': serializer.toJson<int?>(requests),
+      'inputTokens': serializer.toJson<int?>(inputTokens),
+      'outputTokens': serializer.toJson<int?>(outputTokens),
+    };
+  }
+
+  MomentAnswerRow copyWith({
+    String? moment,
+    String? subject,
+    int? createdAt,
+    String? prompt,
+    String? facts,
+    Value<String?> coachText = const Value.absent(),
+    Value<String?> coachError = const Value.absent(),
+    Value<String?> threadId = const Value.absent(),
+    Value<int?> requests = const Value.absent(),
+    Value<int?> inputTokens = const Value.absent(),
+    Value<int?> outputTokens = const Value.absent(),
+  }) => MomentAnswerRow(
+    moment: moment ?? this.moment,
+    subject: subject ?? this.subject,
+    createdAt: createdAt ?? this.createdAt,
+    prompt: prompt ?? this.prompt,
+    facts: facts ?? this.facts,
+    coachText: coachText.present ? coachText.value : this.coachText,
+    coachError: coachError.present ? coachError.value : this.coachError,
+    threadId: threadId.present ? threadId.value : this.threadId,
+    requests: requests.present ? requests.value : this.requests,
+    inputTokens: inputTokens.present ? inputTokens.value : this.inputTokens,
+    outputTokens: outputTokens.present ? outputTokens.value : this.outputTokens,
+  );
+  MomentAnswerRow copyWithCompanion(MomentAnswersTableCompanion data) {
+    return MomentAnswerRow(
+      moment: data.moment.present ? data.moment.value : this.moment,
+      subject: data.subject.present ? data.subject.value : this.subject,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      prompt: data.prompt.present ? data.prompt.value : this.prompt,
+      facts: data.facts.present ? data.facts.value : this.facts,
+      coachText: data.coachText.present ? data.coachText.value : this.coachText,
+      coachError: data.coachError.present
+          ? data.coachError.value
+          : this.coachError,
+      threadId: data.threadId.present ? data.threadId.value : this.threadId,
+      requests: data.requests.present ? data.requests.value : this.requests,
+      inputTokens: data.inputTokens.present
+          ? data.inputTokens.value
+          : this.inputTokens,
+      outputTokens: data.outputTokens.present
+          ? data.outputTokens.value
+          : this.outputTokens,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MomentAnswerRow(')
+          ..write('moment: $moment, ')
+          ..write('subject: $subject, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('prompt: $prompt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('threadId: $threadId, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    moment,
+    subject,
+    createdAt,
+    prompt,
+    facts,
+    coachText,
+    coachError,
+    threadId,
+    requests,
+    inputTokens,
+    outputTokens,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MomentAnswerRow &&
+          other.moment == this.moment &&
+          other.subject == this.subject &&
+          other.createdAt == this.createdAt &&
+          other.prompt == this.prompt &&
+          other.facts == this.facts &&
+          other.coachText == this.coachText &&
+          other.coachError == this.coachError &&
+          other.threadId == this.threadId &&
+          other.requests == this.requests &&
+          other.inputTokens == this.inputTokens &&
+          other.outputTokens == this.outputTokens);
+}
+
+class MomentAnswersTableCompanion extends UpdateCompanion<MomentAnswerRow> {
+  final Value<String> moment;
+  final Value<String> subject;
+  final Value<int> createdAt;
+  final Value<String> prompt;
+  final Value<String> facts;
+  final Value<String?> coachText;
+  final Value<String?> coachError;
+  final Value<String?> threadId;
+  final Value<int?> requests;
+  final Value<int?> inputTokens;
+  final Value<int?> outputTokens;
+  final Value<int> rowid;
+  const MomentAnswersTableCompanion({
+    this.moment = const Value.absent(),
+    this.subject = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.prompt = const Value.absent(),
+    this.facts = const Value.absent(),
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.threadId = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MomentAnswersTableCompanion.insert({
+    required String moment,
+    required String subject,
+    required int createdAt,
+    required String prompt,
+    required String facts,
+    this.coachText = const Value.absent(),
+    this.coachError = const Value.absent(),
+    this.threadId = const Value.absent(),
+    this.requests = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : moment = Value(moment),
+       subject = Value(subject),
+       createdAt = Value(createdAt),
+       prompt = Value(prompt),
+       facts = Value(facts);
+  static Insertable<MomentAnswerRow> custom({
+    Expression<String>? moment,
+    Expression<String>? subject,
+    Expression<int>? createdAt,
+    Expression<String>? prompt,
+    Expression<String>? facts,
+    Expression<String>? coachText,
+    Expression<String>? coachError,
+    Expression<String>? threadId,
+    Expression<int>? requests,
+    Expression<int>? inputTokens,
+    Expression<int>? outputTokens,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (moment != null) 'moment': moment,
+      if (subject != null) 'subject': subject,
+      if (createdAt != null) 'created_at': createdAt,
+      if (prompt != null) 'prompt': prompt,
+      if (facts != null) 'facts': facts,
+      if (coachText != null) 'coach_text': coachText,
+      if (coachError != null) 'coach_error': coachError,
+      if (threadId != null) 'thread_id': threadId,
+      if (requests != null) 'requests': requests,
+      if (inputTokens != null) 'input_tokens': inputTokens,
+      if (outputTokens != null) 'output_tokens': outputTokens,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MomentAnswersTableCompanion copyWith({
+    Value<String>? moment,
+    Value<String>? subject,
+    Value<int>? createdAt,
+    Value<String>? prompt,
+    Value<String>? facts,
+    Value<String?>? coachText,
+    Value<String?>? coachError,
+    Value<String?>? threadId,
+    Value<int?>? requests,
+    Value<int?>? inputTokens,
+    Value<int?>? outputTokens,
+    Value<int>? rowid,
+  }) {
+    return MomentAnswersTableCompanion(
+      moment: moment ?? this.moment,
+      subject: subject ?? this.subject,
+      createdAt: createdAt ?? this.createdAt,
+      prompt: prompt ?? this.prompt,
+      facts: facts ?? this.facts,
+      coachText: coachText ?? this.coachText,
+      coachError: coachError ?? this.coachError,
+      threadId: threadId ?? this.threadId,
+      requests: requests ?? this.requests,
+      inputTokens: inputTokens ?? this.inputTokens,
+      outputTokens: outputTokens ?? this.outputTokens,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (moment.present) {
+      map['moment'] = Variable<String>(moment.value);
+    }
+    if (subject.present) {
+      map['subject'] = Variable<String>(subject.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (prompt.present) {
+      map['prompt'] = Variable<String>(prompt.value);
+    }
+    if (facts.present) {
+      map['facts'] = Variable<String>(facts.value);
+    }
+    if (coachText.present) {
+      map['coach_text'] = Variable<String>(coachText.value);
+    }
+    if (coachError.present) {
+      map['coach_error'] = Variable<String>(coachError.value);
+    }
+    if (threadId.present) {
+      map['thread_id'] = Variable<String>(threadId.value);
+    }
+    if (requests.present) {
+      map['requests'] = Variable<int>(requests.value);
+    }
+    if (inputTokens.present) {
+      map['input_tokens'] = Variable<int>(inputTokens.value);
+    }
+    if (outputTokens.present) {
+      map['output_tokens'] = Variable<int>(outputTokens.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MomentAnswersTableCompanion(')
+          ..write('moment: $moment, ')
+          ..write('subject: $subject, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('prompt: $prompt, ')
+          ..write('facts: $facts, ')
+          ..write('coachText: $coachText, ')
+          ..write('coachError: $coachError, ')
+          ..write('threadId: $threadId, ')
+          ..write('requests: $requests, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuickQuestionsTableTable extends QuickQuestionsTable
+    with TableInfo<$QuickQuestionsTableTable, QuickQuestionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuickQuestionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _questionMeta = const VerificationMeta(
+    'question',
+  );
+  @override
+  late final GeneratedColumn<String> question = GeneratedColumn<String>(
+    'question',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, question, sortOrder, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quick_questions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuickQuestionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('question')) {
+      context.handle(
+        _questionMeta,
+        question.isAcceptableOrUnknown(data['question']!, _questionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_questionMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuickQuestionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuickQuestionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      question: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}question'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $QuickQuestionsTableTable createAlias(String alias) {
+    return $QuickQuestionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class QuickQuestionRow extends DataClass
+    implements Insertable<QuickQuestionRow> {
+  final int id;
+  final String question;
+  final int sortOrder;
+  final int createdAt;
+  const QuickQuestionRow({
+    required this.id,
+    required this.question,
+    required this.sortOrder,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['question'] = Variable<String>(question);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  QuickQuestionsTableCompanion toCompanion(bool nullToAbsent) {
+    return QuickQuestionsTableCompanion(
+      id: Value(id),
+      question: Value(question),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory QuickQuestionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuickQuestionRow(
+      id: serializer.fromJson<int>(json['id']),
+      question: serializer.fromJson<String>(json['question']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'question': serializer.toJson<String>(question),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  QuickQuestionRow copyWith({
+    int? id,
+    String? question,
+    int? sortOrder,
+    int? createdAt,
+  }) => QuickQuestionRow(
+    id: id ?? this.id,
+    question: question ?? this.question,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  QuickQuestionRow copyWithCompanion(QuickQuestionsTableCompanion data) {
+    return QuickQuestionRow(
+      id: data.id.present ? data.id.value : this.id,
+      question: data.question.present ? data.question.value : this.question,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickQuestionRow(')
+          ..write('id: $id, ')
+          ..write('question: $question, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, question, sortOrder, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuickQuestionRow &&
+          other.id == this.id &&
+          other.question == this.question &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
+  final Value<int> id;
+  final Value<String> question;
+  final Value<int> sortOrder;
+  final Value<int> createdAt;
+  const QuickQuestionsTableCompanion({
+    this.id = const Value.absent(),
+    this.question = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  QuickQuestionsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String question,
+    required int sortOrder,
+    required int createdAt,
+  }) : question = Value(question),
+       sortOrder = Value(sortOrder),
+       createdAt = Value(createdAt);
+  static Insertable<QuickQuestionRow> custom({
+    Expression<int>? id,
+    Expression<String>? question,
+    Expression<int>? sortOrder,
+    Expression<int>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (question != null) 'question': question,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  QuickQuestionsTableCompanion copyWith({
+    Value<int>? id,
+    Value<String>? question,
+    Value<int>? sortOrder,
+    Value<int>? createdAt,
+  }) {
+    return QuickQuestionsTableCompanion(
+      id: id ?? this.id,
+      question: question ?? this.question,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (question.present) {
+      map['question'] = Variable<String>(question.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickQuestionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('question: $question, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -19395,6 +20429,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CoachPromptsTableTable(this);
   late final $WorkoutAnswersTableTable workoutAnswersTable =
       $WorkoutAnswersTableTable(this);
+  late final $MomentAnswersTableTable momentAnswersTable =
+      $MomentAnswersTableTable(this);
+  late final $QuickQuestionsTableTable quickQuestionsTable =
+      $QuickQuestionsTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -19498,6 +20536,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     trainingPlansTable,
     coachPromptsTable,
     workoutAnswersTable,
+    momentAnswersTable,
+    quickQuestionsTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -31498,6 +32538,7 @@ typedef $$CoachPromptsTableTableCreateCompanionBuilder =
       required bool enabled,
       Value<String?> prompt,
       Value<String?> length,
+      Value<String?> option,
       required int updatedAt,
       Value<int> rowid,
     });
@@ -31507,6 +32548,7 @@ typedef $$CoachPromptsTableTableUpdateCompanionBuilder =
       Value<bool> enabled,
       Value<String?> prompt,
       Value<String?> length,
+      Value<String?> option,
       Value<int> updatedAt,
       Value<int> rowid,
     });
@@ -31537,6 +32579,11 @@ class $$CoachPromptsTableTableFilterComposer
 
   ColumnFilters<String> get length => $composableBuilder(
     column: $table.length,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get option => $composableBuilder(
+    column: $table.option,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31575,6 +32622,11 @@ class $$CoachPromptsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get option => $composableBuilder(
+    column: $table.option,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -31601,6 +32653,9 @@ class $$CoachPromptsTableTableAnnotationComposer
 
   GeneratedColumn<String> get length =>
       $composableBuilder(column: $table.length, builder: (column) => column);
+
+  GeneratedColumn<String> get option =>
+      $composableBuilder(column: $table.option, builder: (column) => column);
 
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -31650,6 +32705,7 @@ class $$CoachPromptsTableTableTableManager
                 Value<bool> enabled = const Value.absent(),
                 Value<String?> prompt = const Value.absent(),
                 Value<String?> length = const Value.absent(),
+                Value<String?> option = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CoachPromptsTableCompanion(
@@ -31657,6 +32713,7 @@ class $$CoachPromptsTableTableTableManager
                 enabled: enabled,
                 prompt: prompt,
                 length: length,
+                option: option,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -31666,6 +32723,7 @@ class $$CoachPromptsTableTableTableManager
                 required bool enabled,
                 Value<String?> prompt = const Value.absent(),
                 Value<String?> length = const Value.absent(),
+                Value<String?> option = const Value.absent(),
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => CoachPromptsTableCompanion.insert(
@@ -31673,6 +32731,7 @@ class $$CoachPromptsTableTableTableManager
                 enabled: enabled,
                 prompt: prompt,
                 length: length,
+                option: option,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -32115,6 +33174,530 @@ typedef $$WorkoutAnswersTableTableProcessedTableManager =
       WorkoutAnswerRow,
       PrefetchHooks Function({bool workoutId})
     >;
+typedef $$MomentAnswersTableTableCreateCompanionBuilder =
+    MomentAnswersTableCompanion Function({
+      required String moment,
+      required String subject,
+      required int createdAt,
+      required String prompt,
+      required String facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<String?> threadId,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+typedef $$MomentAnswersTableTableUpdateCompanionBuilder =
+    MomentAnswersTableCompanion Function({
+      Value<String> moment,
+      Value<String> subject,
+      Value<int> createdAt,
+      Value<String> prompt,
+      Value<String> facts,
+      Value<String?> coachText,
+      Value<String?> coachError,
+      Value<String?> threadId,
+      Value<int?> requests,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int> rowid,
+    });
+
+class $$MomentAnswersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MomentAnswersTableTable> {
+  $$MomentAnswersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get moment => $composableBuilder(
+    column: $table.moment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get threadId => $composableBuilder(
+    column: $table.threadId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MomentAnswersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MomentAnswersTableTable> {
+  $$MomentAnswersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get moment => $composableBuilder(
+    column: $table.moment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get facts => $composableBuilder(
+    column: $table.facts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachText => $composableBuilder(
+    column: $table.coachText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get threadId => $composableBuilder(
+    column: $table.threadId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get requests => $composableBuilder(
+    column: $table.requests,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MomentAnswersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MomentAnswersTableTable> {
+  $$MomentAnswersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get moment =>
+      $composableBuilder(column: $table.moment, builder: (column) => column);
+
+  GeneratedColumn<String> get subject =>
+      $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get prompt =>
+      $composableBuilder(column: $table.prompt, builder: (column) => column);
+
+  GeneratedColumn<String> get facts =>
+      $composableBuilder(column: $table.facts, builder: (column) => column);
+
+  GeneratedColumn<String> get coachText =>
+      $composableBuilder(column: $table.coachText, builder: (column) => column);
+
+  GeneratedColumn<String> get coachError => $composableBuilder(
+    column: $table.coachError,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get threadId =>
+      $composableBuilder(column: $table.threadId, builder: (column) => column);
+
+  GeneratedColumn<int> get requests =>
+      $composableBuilder(column: $table.requests, builder: (column) => column);
+
+  GeneratedColumn<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => column,
+  );
+}
+
+class $$MomentAnswersTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MomentAnswersTableTable,
+          MomentAnswerRow,
+          $$MomentAnswersTableTableFilterComposer,
+          $$MomentAnswersTableTableOrderingComposer,
+          $$MomentAnswersTableTableAnnotationComposer,
+          $$MomentAnswersTableTableCreateCompanionBuilder,
+          $$MomentAnswersTableTableUpdateCompanionBuilder,
+          (
+            MomentAnswerRow,
+            BaseReferences<
+              _$AppDatabase,
+              $MomentAnswersTableTable,
+              MomentAnswerRow
+            >,
+          ),
+          MomentAnswerRow,
+          PrefetchHooks Function()
+        > {
+  $$MomentAnswersTableTableTableManager(
+    _$AppDatabase db,
+    $MomentAnswersTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MomentAnswersTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MomentAnswersTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MomentAnswersTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> moment = const Value.absent(),
+                Value<String> subject = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<String> prompt = const Value.absent(),
+                Value<String> facts = const Value.absent(),
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<String?> threadId = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MomentAnswersTableCompanion(
+                moment: moment,
+                subject: subject,
+                createdAt: createdAt,
+                prompt: prompt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                threadId: threadId,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String moment,
+                required String subject,
+                required int createdAt,
+                required String prompt,
+                required String facts,
+                Value<String?> coachText = const Value.absent(),
+                Value<String?> coachError = const Value.absent(),
+                Value<String?> threadId = const Value.absent(),
+                Value<int?> requests = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MomentAnswersTableCompanion.insert(
+                moment: moment,
+                subject: subject,
+                createdAt: createdAt,
+                prompt: prompt,
+                facts: facts,
+                coachText: coachText,
+                coachError: coachError,
+                threadId: threadId,
+                requests: requests,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MomentAnswersTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MomentAnswersTableTable,
+      MomentAnswerRow,
+      $$MomentAnswersTableTableFilterComposer,
+      $$MomentAnswersTableTableOrderingComposer,
+      $$MomentAnswersTableTableAnnotationComposer,
+      $$MomentAnswersTableTableCreateCompanionBuilder,
+      $$MomentAnswersTableTableUpdateCompanionBuilder,
+      (
+        MomentAnswerRow,
+        BaseReferences<
+          _$AppDatabase,
+          $MomentAnswersTableTable,
+          MomentAnswerRow
+        >,
+      ),
+      MomentAnswerRow,
+      PrefetchHooks Function()
+    >;
+typedef $$QuickQuestionsTableTableCreateCompanionBuilder =
+    QuickQuestionsTableCompanion Function({
+      Value<int> id,
+      required String question,
+      required int sortOrder,
+      required int createdAt,
+    });
+typedef $$QuickQuestionsTableTableUpdateCompanionBuilder =
+    QuickQuestionsTableCompanion Function({
+      Value<int> id,
+      Value<String> question,
+      Value<int> sortOrder,
+      Value<int> createdAt,
+    });
+
+class $$QuickQuestionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $QuickQuestionsTableTable> {
+  $$QuickQuestionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get question => $composableBuilder(
+    column: $table.question,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$QuickQuestionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuickQuestionsTableTable> {
+  $$QuickQuestionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get question => $composableBuilder(
+    column: $table.question,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuickQuestionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuickQuestionsTableTable> {
+  $$QuickQuestionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get question =>
+      $composableBuilder(column: $table.question, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$QuickQuestionsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuickQuestionsTableTable,
+          QuickQuestionRow,
+          $$QuickQuestionsTableTableFilterComposer,
+          $$QuickQuestionsTableTableOrderingComposer,
+          $$QuickQuestionsTableTableAnnotationComposer,
+          $$QuickQuestionsTableTableCreateCompanionBuilder,
+          $$QuickQuestionsTableTableUpdateCompanionBuilder,
+          (
+            QuickQuestionRow,
+            BaseReferences<
+              _$AppDatabase,
+              $QuickQuestionsTableTable,
+              QuickQuestionRow
+            >,
+          ),
+          QuickQuestionRow,
+          PrefetchHooks Function()
+        > {
+  $$QuickQuestionsTableTableTableManager(
+    _$AppDatabase db,
+    $QuickQuestionsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuickQuestionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuickQuestionsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$QuickQuestionsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> question = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+              }) => QuickQuestionsTableCompanion(
+                id: id,
+                question: question,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String question,
+                required int sortOrder,
+                required int createdAt,
+              }) => QuickQuestionsTableCompanion.insert(
+                id: id,
+                question: question,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$QuickQuestionsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuickQuestionsTableTable,
+      QuickQuestionRow,
+      $$QuickQuestionsTableTableFilterComposer,
+      $$QuickQuestionsTableTableOrderingComposer,
+      $$QuickQuestionsTableTableAnnotationComposer,
+      $$QuickQuestionsTableTableCreateCompanionBuilder,
+      $$QuickQuestionsTableTableUpdateCompanionBuilder,
+      (
+        QuickQuestionRow,
+        BaseReferences<
+          _$AppDatabase,
+          $QuickQuestionsTableTable,
+          QuickQuestionRow
+        >,
+      ),
+      QuickQuestionRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -32181,4 +33764,8 @@ class $AppDatabaseManager {
       $$CoachPromptsTableTableTableManager(_db, _db.coachPromptsTable);
   $$WorkoutAnswersTableTableTableManager get workoutAnswersTable =>
       $$WorkoutAnswersTableTableTableManager(_db, _db.workoutAnswersTable);
+  $$MomentAnswersTableTableTableManager get momentAnswersTable =>
+      $$MomentAnswersTableTableTableManager(_db, _db.momentAnswersTable);
+  $$QuickQuestionsTableTableTableManager get quickQuestionsTable =>
+      $$QuickQuestionsTableTableTableManager(_db, _db.quickQuestionsTable);
 }

@@ -37,6 +37,9 @@ import '../../readiness/domain/training_check.dart';
 import '../../readiness/presentation/check_providers.dart';
 import '../../readiness/presentation/check_sheet.dart';
 import '../../routines/presentation/routine_start.dart';
+import '../../prompts/data/moment_facts.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 
 /// The Start tab: where you are, what is next, and one big button.
 ///
@@ -1375,6 +1378,7 @@ class _WaitCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final lead = check.lead;
     final instead = check.instead;
+    final subject = MomentSubject.wait(DateTime.now(), lead.routineId);
     void sheet() => showCheckSheet(context, ref, check);
     final choices = [
       if (instead != null)
@@ -1411,6 +1415,9 @@ class _WaitCard extends ConsumerWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          // Asked once it shows; the answer is read behind Andere keuzes,
+          // and in a line below where the block has room for one.
+          MomentAsker(moment: CoachMoment.wait, subject: subject),
           const SizedBox(height: AppSpacing.xs),
           CheckLine(check: lead, onTap: sheet),
           const SizedBox(height: AppSpacing.lg),
@@ -1471,6 +1478,7 @@ class _WaitCard extends ConsumerWidget {
                   ],
                 ),
                 ...choices.skip(1),
+                _WaitCoachLine(subject: subject, onTap: sheet),
               ],
             ),
           ),
@@ -1693,6 +1701,51 @@ class _BackupReminderBanner extends ConsumerWidget {
               const Icon(Icons.chevron_right),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The start of what the coach said about waiting, where the block has room
+/// for it; the whole of it is in the sheet.
+class _WaitCoachLine extends ConsumerWidget {
+  const _WaitCoachLine({required this.subject, required this.onTap});
+
+  final String subject;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(coachEnabledProvider)) return const SizedBox.shrink();
+    final text = ref
+        .watch(momentAnswerProvider(CoachMoment.wait, subject))
+        .value
+        ?.coachText;
+    if (text == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.smart_toy_outlined,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          ],
         ),
       ),
     );

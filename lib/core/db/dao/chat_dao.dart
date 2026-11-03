@@ -18,6 +18,7 @@ part 'chat_dao.drift.dart';
     MorningReportsTable,
     WeekReviewsTable,
     WorkoutAnswersTable,
+    MomentAnswersTable,
   ],
 )
 class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
@@ -275,12 +276,15 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
       'FROM week_reviews WHERE requests IS NOT NULL AND created_at >= ? '
       'UNION ALL '
       'SELECT requests, COALESCE(input_tokens, 0), COALESCE(output_tokens, 0) '
-      'FROM workout_answers WHERE requests IS NOT NULL AND created_at >= ?'
+      'FROM workout_answers WHERE requests IS NOT NULL AND created_at >= ? '
+      'UNION ALL '
+      'SELECT requests, COALESCE(input_tokens, 0), COALESCE(output_tokens, 0) '
+      'FROM moment_answers WHERE requests IS NOT NULL AND created_at >= ?'
       ')';
 
   /// One [since] for each part of [_usageSql].
   static List<Variable<int>> _usageVariables(DateTime since) => [
-    for (var i = 0; i < 4; i++) Variable.withInt(since.millisecondsSinceEpoch),
+    for (var i = 0; i < 5; i++) Variable.withInt(since.millisecondsSinceEpoch),
   ];
 
   Set<TableInfo> get _usageTables => {
@@ -288,6 +292,7 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     morningReportsTable,
     weekReviewsTable,
     workoutAnswersTable,
+    momentAnswersTable,
   };
 
   /// What was spent since [since]: calls, answers and tokens.

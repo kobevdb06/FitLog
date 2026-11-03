@@ -10,6 +10,49 @@ import '../../readiness/data/check_loader.dart';
 import '../../readiness/domain/training_check.dart';
 import '../domain/morning_facts.dart';
 
+/// The morning at [at] as the report sees it: the night, what still
+/// recovers, and the check before today's session. Also what the coach is
+/// told about today before a workout, or when it had better wait.
+Future<MorningFacts> loadMorningFacts(
+  AppDatabase db,
+  DateTime at, {
+  required bool healthConnect,
+}) async {
+  final nights = [
+    for (final row
+        in await db.recoveryDao
+            .watchSleepSince(at.subtract(const Duration(days: 2)))
+            .first)
+      if (healthConnect || row.source == null) row,
+  ];
+  final vitals = [
+    if (healthConnect)
+      for (final row
+          in await db.healthDao
+              .watchVitalsSince(at.subtract(kVitalsBaselineWindow))
+              .first)
+        vitalsDayOf(row),
+  ];
+  final estimates = await loadRecoveryEstimates(
+    db,
+    now: at,
+    healthConnect: healthConnect,
+  );
+  return buildMorningFacts(
+    now: at,
+    nights: nights,
+    vitals: vitals,
+    estimates: estimates,
+    // The check before today's session, from the same morning.
+    check: await loadTodayCheck(
+      db,
+      now: at,
+      estimates: estimates,
+      body: checkBody(now: at, nights: nights, vitals: vitals),
+    ),
+  );
+}
+
 /// How a client is made, so a test can hand over one that answers from
 /// memory. The same shape as the chat's own factory.
 typedef ReportClientFactory = AiClient Function(
@@ -61,41 +104,8 @@ class MorningReporter {
   Future<MorningReport> write({DateTime? now, String? importError}) async {
     final at = now ?? DateTime.now();
 
-    Future<MorningFacts> build({required bool healthConnect}) async {
-      final nights = [
-        for (final row
-            in await db.recoveryDao
-                .watchSleepSince(at.subtract(const Duration(days: 2)))
-                .first)
-          if (healthConnect || row.source == null) row,
-      ];
-      final vitals = [
-        if (healthConnect)
-          for (final row
-              in await db.healthDao
-                  .watchVitalsSince(at.subtract(kVitalsBaselineWindow))
-                  .first)
-            vitalsDayOf(row),
-      ];
-      final estimates = await loadRecoveryEstimates(
-        db,
-        now: at,
-        healthConnect: healthConnect,
-      );
-      return buildMorningFacts(
-        now: at,
-        nights: nights,
-        vitals: vitals,
-        estimates: estimates,
-        // The check before today's session, from the same morning.
-        check: await loadTodayCheck(
-          db,
-          now: at,
-          estimates: estimates,
-          body: checkBody(now: at, nights: nights, vitals: vitals),
-        ),
-      );
-    }
+    Future<MorningFacts> build({required bool healthConnect}) =>
+        loadMorningFacts(db, at, healthConnect: healthConnect);
 
     final facts = await build(healthConnect: true);
 

@@ -65,7 +65,7 @@ Future<Map<String, Object?>?> buildWorkoutFacts(
                 ..._numbers(set),
               },
           ],
-          'last_time': ?await _lastTime(
+          'last_time': ?await lastTimeOf(
             db,
             exerciseId: item.exercise.id,
             before: workout.startedAt,
@@ -112,7 +112,7 @@ Future<Map<String, int>> _targetReps(AppDatabase db, String workoutId) async {
 /// this one, done the same way: one arm at a time or both. Before, not the
 /// newest: asked about an older workout, a later session is not "last time".
 /// A deload is looked past, as the hint does.
-Future<Map<String, Object?>?> _lastTime(
+Future<Map<String, Object?>?> lastTimeOf(
   AppDatabase db, {
   required String exerciseId,
   required int before,

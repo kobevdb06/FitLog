@@ -37,10 +37,21 @@ class NotificationService {
   /// `2026-9-28`, so it opens that week even when tapped on the Monday after.
   static const String weekPayloadPrefix = 'week:';
 
+  /// The geplande prompts that come with a notification: one id each, so a
+  /// month does not replace a nudge, and one for "it waits for the unlock".
+  static const int promptLockedNotificationId = 1010;
+  static int promptNotificationId(int moment) => 1011 + moment;
+
+  /// A tap on one opens the conversation it is in (`thread:` and its id) or
+  /// the month it is about (`month:` and `2026-10`).
+  static const String threadPayloadPrefix = 'thread:';
+  static const String monthPayloadPrefix = 'month:';
+
   static const _channelId = 'fitlog_rest_timer';
   static const _workoutChannelId = 'fitlog_workout';
   static const _morningChannelId = 'fitlog_morning';
   static const _weekChannelId = 'fitlog_week';
+  static const _promptChannelId = 'fitlog_prompts';
 
   /// Called with the payload of a notification the user tapped while the
   /// app was running. The app sets it; the service only passes it on.
@@ -345,6 +356,57 @@ class NotificationService {
       );
     } on Object catch (error) {
       debugPrint('FitLog: weekoverzicht niet getoond ($error)');
+    }
+  }
+
+  /// Shows what the coach said at a geplande prompt. Private on a locked
+  /// screen, like the morning report: it is about your training.
+  Future<void> showCoachMoment({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    try {
+      await _plugin.show(
+        id: id,
+        title: title,
+        body: body,
+        payload: payload,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _promptChannelId,
+            'Geplande prompts',
+            channelDescription:
+                'Wat de coach schrijft op een moment dat je instelde: na een '
+                'tijd zonder training, op jouw dag en uur, en je maand.',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            category: AndroidNotificationCategory.status,
+            styleInformation: BigTextStyleInformation(body),
+            visibility: NotificationVisibility.private,
+            autoCancel: true,
+          ),
+          iOS: const DarwinNotificationDetails(presentAlert: true),
+        ),
+      );
+    } on Object catch (error) {
+      debugPrint('FitLog: geplande prompt niet getoond ($error)');
+    }
+  }
+
+  /// Whether the notification with [id] is in the shade right now.
+  Future<bool> isShowing(int id) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final active = await android?.getActiveNotifications() ?? const [];
+      return active.any((n) => n.id == id);
+    } on Object {
+      return false;
     }
   }
 

@@ -80,6 +80,11 @@ abstract final class Routes {
   /// Sunday notification both open it.
   static const weekReview = '/week';
 
+  /// Voortgang → Maandoverzicht, on a day of the month to show.
+  static const monthReview = '/maand';
+  static String monthReviewOf(DateTime month) =>
+      '/maand?start=${month.year}-${month.month}-1';
+
   /// The same, opened on the week from [start].
   static String weekReviewOf(DateTime start) =>
       '/week?start=${start.year}-${start.month}-${start.day}';

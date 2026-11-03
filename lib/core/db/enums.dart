@@ -415,7 +415,12 @@ enum PlanSessionState {
 
 /// A moment at which the coach is asked something in the user's own words:
 /// a geplande prompt (Instellingen → AI-coach → Geplande prompts).
+///
+/// In the order the settings list them.
 enum CoachMoment {
+  /// When a workout starts, at the top of it.
+  before('before'),
+
   /// Right after a workout, on its summary.
   workout('workout'),
 
@@ -423,7 +428,31 @@ enum CoachMoment {
   morning('morning'),
 
   /// The week overview, on Sunday evening.
-  week('week');
+  week('week'),
+
+  /// The month overview, on the first of the month.
+  month('month'),
+
+  /// An exercise that stalls, on its card.
+  plateau('plateau'),
+
+  /// The check before a session says it had better wait.
+  wait('wait'),
+
+  /// A schema that is done.
+  planDone('plan_done'),
+
+  /// A milestone reached with a workout.
+  milestone('milestone'),
+
+  /// A new weighing, at most once a week.
+  weighing('weighing'),
+
+  /// Some days without training: a message in the chat.
+  idle('idle'),
+
+  /// A day and hour of the user's choosing: a message in the chat.
+  free('free');
 
   const CoachMoment(this.wire);
 

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
-import 'package:fitlog/features/prompts/data/workout_answerer.dart';
+import 'package:fitlog/features/prompts/data/moment_answerer.dart';
 import 'package:fitlog/features/prompts/data/workout_facts.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -141,7 +141,13 @@ void main() {
       (kg: 82.5, reps: 6, done: true),
     ]);
 
-    expect(await WorkoutAnswerer(db, clientFactory: client).answer(id), isNull);
+    expect(
+      await MomentAnswerer(
+        db,
+        clientFactory: client,
+      ).answer(CoachMoment.workout, id),
+      isNull,
+    );
     expect(sent, isEmpty);
     expect(await db.coachPromptsDao.answerFor(id), isNull);
   });
@@ -160,10 +166,10 @@ void main() {
         (kg: 82.5, reps: 6, done: true),
       ]);
 
-      final row = await WorkoutAnswerer(
+      final row = await MomentAnswerer(
         db,
         clientFactory: client,
-      ).answer(id, now: DateTime(2026, 9, 8, 19));
+      ).answer(CoachMoment.workout, id, now: DateTime(2026, 9, 8, 19));
 
       expect(sent, hasLength(1));
       expect(sent.single, contains('Wees kritisch over mijn bankdrukken.'));
@@ -186,10 +192,18 @@ void main() {
         final id = await session(DateTime(2026, 9, 8, 18), [
           (kg: 82.5, reps: 6, done: true),
         ]);
-        final answerer = WorkoutAnswerer(db, clientFactory: client);
-        await answerer.answer(earlier, now: DateTime(2026, 9, 8, 12));
+        final answerer = MomentAnswerer(db, clientFactory: client);
+        await answerer.answer(
+          CoachMoment.workout,
+          earlier,
+          now: DateTime(2026, 9, 8, 12),
+        );
 
-        final row = await answerer.answer(id, now: DateTime(2026, 9, 8, 19));
+        final row = await answerer.answer(
+          CoachMoment.workout,
+          id,
+          now: DateTime(2026, 9, 8, 19),
+        );
 
         expect(sent, hasLength(1));
         expect(row!.coachText, isNull);
@@ -202,13 +216,13 @@ void main() {
       final id = await session(DateTime(2026, 9, 8), [
         (kg: 82.5, reps: 6, done: true),
       ]);
-      final answerer = WorkoutAnswerer(db, clientFactory: client);
+      final answerer = MomentAnswerer(db, clientFactory: client);
 
-      await answerer.answer(id);
+      await answerer.answer(CoachMoment.workout, id);
       await db.settingsDao.updateSettings(
         const AppSettingsTableCompanion(coachMemory: Value(false)),
       );
-      await answerer.answer(id);
+      await answerer.answer(CoachMoment.workout, id);
 
       expect(sent.first, contains('Knie: geen diepe squats'));
       expect(sent.last, isNot(contains('Knie')));
@@ -218,7 +232,10 @@ void main() {
       final id = await session(DateTime(2026, 9, 8), [
         (kg: 82.5, reps: 6, done: true),
       ]);
-      await WorkoutAnswerer(db, clientFactory: client).answer(id);
+      await MomentAnswerer(
+        db,
+        clientFactory: client,
+      ).answer(CoachMoment.workout, id);
 
       await db.workoutsDao.deleteWorkoutCompletely(id);
 

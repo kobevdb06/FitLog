@@ -297,6 +297,9 @@ void main() {
           'quadriceps nog 40 u',
         ),
       );
+      // What the coach's own card watched in the sheet closes on the way
+      // out; let that happen inside the test.
+      await tester.pump(const Duration(milliseconds: 100));
     });
 
     testWidgets('één sein: gewoon gaan, met een regel erbij', (tester) async {

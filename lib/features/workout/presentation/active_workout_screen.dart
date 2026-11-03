@@ -30,6 +30,7 @@ import '../../exercises/presentation/exercise_preview_sheet.dart';
 import '../domain/set_columns.dart';
 import 'plate_calculator_sheet.dart';
 import 'pr_attempt_card.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
 import 'pr_attempt_providers.dart';
 import 'pr_attempt_screen.dart';
 import 'rest_timer_bar.dart';
@@ -616,6 +617,22 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         AppSpacing.sm,
                       ),
                       onReorder: (from, to) => _reorder(workout, from, to),
+                      // Three lines until tapped open: the sets are what
+                      // this screen is for.
+                      header: MomentAnswerCard(
+                        moment: CoachMoment.before,
+                        subject: workout.workout.id,
+                        askNow: true,
+                        compact: true,
+                        title: 'Voor je workout',
+                        about: 'mijn workout "${workout.workout.name}"',
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          AppSpacing.sm,
+                          AppSpacing.md,
+                          0,
+                        ),
+                      ),
                       summaryOf: (index) {
                         final exercise = workout.exercises[index];
                         final group = exercise.workoutExercise.supersetGroup;

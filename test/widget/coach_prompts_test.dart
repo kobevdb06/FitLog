@@ -174,21 +174,56 @@ void main() {
     });
   });
 
-  testWidgets('de lijst toont de drie momenten: het ochtendrapport en het '
-      'weekoverzicht aan, na je workout uit', (tester) async {
+  testWidgets('de lijst toont elk moment in zijn groep: alleen het '
+      'ochtendrapport en het weekoverzicht staan aan', (tester) async {
+    tester.view.physicalSize = const Size(1100, 6000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       wrapWithContainer(containerFor(), const CoachPromptsScreen()),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    for (final title in ['Na je workout', 'Ochtendrapport', 'Weekoverzicht']) {
-      expect(find.text(title), findsOneWidget);
+    for (final group in MomentGroup.values) {
+      expect(find.text(group.label.toUpperCase()), findsOneWidget);
+    }
+    for (final moment in CoachMoment.values) {
+      expect(find.text(moment.title), findsOneWidget);
     }
     final switches = tester
         .widgetList<Switch>(find.byType(Switch))
-        .map((s) => s.value);
-    expect(switches, [false, true, true]);
+        .map((s) => s.value)
+        .toList();
+    expect(switches, [
+      for (final moment in CoachMoment.values)
+        moment == CoachMoment.morning || moment == CoachMoment.week,
+    ]);
+  });
+
+  testWidgets('eigen snelle vragen: toevoegen en weghalen', (tester) async {
+    tester.view.physicalSize = const Size(1100, 6000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      wrapWithContainer(containerFor(), const CoachPromptsScreen()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('Vraag toevoegen'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField).last,
+      'Hoeveel sets nog voor mijn rug?',
+    );
+    await tester.tap(find.text('Opslaan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hoeveel sets nog voor mijn rug?'), findsOneWidget);
+    await tester.tap(find.byTooltip('Verwijderen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hoeveel sets nog voor mijn rug?'), findsNothing);
   });
 
   testWidgets('een voorbeeld vult de prompt in en wordt bewaard; De gewone '

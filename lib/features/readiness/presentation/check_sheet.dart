@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/db/database.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
 import '../../chat/presentation/chat_providers.dart';
+import '../../prompts/data/moment_facts.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
 import '../../routines/presentation/routine_start.dart';
 import '../domain/training_check.dart';
 import '../../../core/formatting/formatters.dart';
@@ -163,6 +166,13 @@ class _CheckSheet extends ConsumerWidget {
               style: muted,
             ),
           ],
+          if (verdict == CheckVerdict.wait)
+            MomentAnswerCard(
+              moment: CoachMoment.wait,
+              subject: MomentSubject.wait(DateTime.now(), check.routineId),
+              about: 'de check voor ${check.routineName} van vandaag',
+              padding: const EdgeInsets.only(top: AppSpacing.md),
+            ),
           heading('Spieren in deze sessie'),
           if (check.muscles.isEmpty)
             Text(

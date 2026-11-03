@@ -21,7 +21,9 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/muscle_map.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/recovery_providers.dart';
-import '../../prompts/presentation/workout_answer_card.dart';
+import '../../prompts/data/moment_facts.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 import '../../progress/presentation/recovery_view.dart';
 import 'workout_providers.dart';
 
@@ -155,11 +157,23 @@ class WorkoutSummaryScreen extends ConsumerWidget {
               ),
               // Right under the numbers: it is what this screen is read for
               // when it is on.
-              WorkoutAnswerCard(
-                workoutId: workoutId,
+              MomentAnswerCard(
+                moment: CoachMoment.workout,
+                subject: workoutId,
                 askNow: true,
+                about: 'mijn workout "${workout.workout.name}"',
                 padding: const EdgeInsets.only(top: AppSpacing.xl),
               ),
+              if (ref.watch(milestoneReachedProvider(workoutId)).value
+                  case final milestone?)
+                MomentAnswerCard(
+                  moment: CoachMoment.milestone,
+                  subject: milestone,
+                  askNow: true,
+                  title: 'Mijlpaal: ${milestoneLabel(milestone)}',
+                  about: 'mijn mijlpaal, ${milestoneLabel(milestone)}',
+                  padding: const EdgeInsets.only(top: AppSpacing.md),
+                ),
               if (records.isNotEmpty) ...[
                 const SectionHeader(
                   'Nieuwe records',

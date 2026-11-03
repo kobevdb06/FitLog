@@ -22,6 +22,7 @@ import '../../routines/presentation/routine_providers.dart';
 import '../../routines/presentation/routine_start.dart';
 import '../data/plan_actions.dart';
 import 'plan_start_sheet.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
 import 'plan_providers.dart';
 
 /// Opens the conversation of [planId] in the Chat tab: where it was made,
@@ -91,7 +92,8 @@ class PlansView extends ConsumerWidget {
             ],
             if (done.isNotEmpty) ...[
               const SectionHeader("Eerdere schema's"),
-              for (final plan in done) _EarlierTile(plan: plan),
+              for (final plan in done)
+                _EarlierTile(plan: plan, last: plan == lastDone(done)),
             ],
           ],
         );
@@ -100,14 +102,39 @@ class PlansView extends ConsumerWidget {
   }
 }
 
-/// A schema that was: how long, and when it ended.
+/// A schema that was: how long, and when it ended - and what the coach said
+/// about it, asked by itself for the one that ended last.
 class _EarlierTile extends ConsumerWidget {
-  const _EarlierTile({required this.plan});
+  const _EarlierTile({required this.plan, this.last = false});
 
   final TrainingPlanRow plan;
 
+  /// The schema that ended last: the one that just is done.
+  final bool last;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ListTile(
+  Widget build(BuildContext context, WidgetRef ref) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _earlier(context, ref),
+      if (plan.startDay != null)
+        MomentAnswerCard(
+          moment: CoachMoment.planDone,
+          subject: plan.id,
+          askNow: last,
+          onlyAnswered: !last,
+          about: 'mijn schema "${plan.name}"',
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+        ),
+    ],
+  );
+
+  Widget _earlier(BuildContext context, WidgetRef ref) => ListTile(
     leading: const Icon(Icons.calendar_month_outlined),
     title: Text(plan.name),
     subtitle: Text(
@@ -123,6 +150,15 @@ class _EarlierTile extends ConsumerWidget {
         ? () => openPlanConversation(context, ref, plan.id)
         : null,
   );
+}
+
+/// Of [done], the schema that ended last.
+TrainingPlanRow? lastDone(List<TrainingPlanRow> done) {
+  TrainingPlanRow? last;
+  for (final plan in done) {
+    if ((plan.endedAt ?? 0) > (last?.endedAt ?? -1)) last = plan;
+  }
+  return last;
 }
 
 /// A schema still being built: how far, and Start schema once it is whole.
@@ -549,7 +585,11 @@ class _RunningPlanState extends ConsumerState<_RunningPlan> {
             _Shelf(
               title: "Eerdere schema's",
               children: [
-                for (final plan in widget.earlier) _EarlierTile(plan: plan),
+                for (final plan in widget.earlier)
+                  _EarlierTile(
+                    plan: plan,
+                    last: plan == lastDone(widget.earlier),
+                  ),
               ],
             ),
         ],

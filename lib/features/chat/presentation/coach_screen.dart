@@ -38,6 +38,7 @@ import 'coach_memory_screen.dart';
 import 'coach_session.dart';
 import 'photo_prompts_sheet.dart';
 import 'report_answer_sheet.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 
 class CoachScreen extends ConsumerStatefulWidget {
   const CoachScreen({super.key});
@@ -283,6 +284,10 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                 onRetry: () =>
                     ref.read(coachControllerProvider.notifier).clearError(),
               ),
+            // Your own questions, a tap each, also in a conversation that
+            // is going: the opening has them too.
+            if (messages.isNotEmpty && !state.sending)
+              _QuickQuestions(onPick: _send),
             if (_photos.isNotEmpty)
               _PickedPhotos(
                 fileNames: _photos,
@@ -459,6 +464,26 @@ class _OpeningState extends ConsumerState<_Opening> {
           style: theme.textTheme.bodyMedium?.copyWith(color: muted),
         ),
         const SizedBox(height: AppSpacing.lg),
+        if (ref.watch(quickQuestionsProvider).value ?? const [] case final own
+            when own.isNotEmpty) ...[
+          Text(
+            'Jouw vragen',
+            style: theme.textTheme.labelMedium?.copyWith(color: muted),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final question in own)
+                ActionChip(
+                  label: Text(question.question),
+                  onPressed: () => widget.onPick(question.question),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         if (all.isNotEmpty) ...[
           Text(
             'Voor jou, nu',
@@ -1727,6 +1752,41 @@ class CoachDisabledScreen extends StatelessWidget {
           actionLabel: 'Coach aanzetten',
           onAction: () => context.push(Routes.coachKey),
         ),
+      ),
+    );
+  }
+}
+
+/// The user's own questions (Geplande prompts → Eigen snelle vragen), in a
+/// row over the field: one tap asks one.
+class _QuickQuestions extends ConsumerWidget {
+  const _QuickQuestions({required this.onPick});
+
+  final void Function(String question) onPick;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final own = ref.watch(quickQuestionsProvider).value ?? const [];
+    if (own.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        children: [
+          for (final question in own)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: ActionChip(
+                label: Text(
+                  question.question,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onPressed: () => onPick(question.question),
+              ),
+            ),
+        ],
       ),
     );
   }

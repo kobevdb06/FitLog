@@ -19,7 +19,6 @@ import 'package:drift/drift.dart'
     show BooleanExpressionOperators, Constant, OrderingTerm, QueryRow, Variable;
 
 import '../../../core/calc/deload.dart';
-import '../../../core/calc/plateau.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/calc/sleep_score.dart';
 import '../../../core/db/dao/routines_dao.dart' show draftOf;
@@ -2112,48 +2111,12 @@ class CoachTools {
 
   Future<CoachLookup> _plateaus() async {
     final found = await loadPlateaus(db, healthConnect: health);
-    double one(double value) => (value * 10).round() / 10;
-    Map<String, Object?> compared(Object? now, Object? before) => {
-      'now': now,
-      'before': ?before,
-    };
 
     return CoachLookup(
       json: jsonEncode({
         ..._unshared,
         'plateaus': [
-          for (final item in found.take(kCoachRowCap))
-            {
-              'exercise': item.exercise.name,
-              'muscle': item.exercise.primaryMuscle,
-              'measured_in': switch (item.plateau.measure) {
-                ProgressMeasure.oneRm => 'estimated_1rm_kg',
-                ProgressMeasure.reps => 'most_reps_in_a_set',
-                ProgressMeasure.hold => 'longest_hold_seconds',
-              },
-              'since': _day(item.plateau.since.millisecondsSinceEpoch),
-              'weeks': item.plateau.weeksAt(DateTime.now()),
-              'best': one(item.plateau.best),
-              'latest': one(item.plateau.latest),
-              'sessions_since': item.context.sessions,
-              'sessions_per_week': one(item.context.sessionsPerWeek),
-              'working_sets_per_session': one(item.context.setsPerSession),
-              'typical_reps': ?item.context.typicalReps,
-              'muscle_sets_per_week': compared(
-                one(item.context.muscleSetsPerWeek),
-                switch (item.context.muscleSetsPerWeekBefore) {
-                  final rate? => one(rate),
-                  null => null,
-                },
-              ),
-              if (item.context.averageSleep case final sleep?)
-                'sleep_minutes_per_night': compared(
-                  sleep.inMinutes,
-                  item.context.averageSleepBefore?.inMinutes,
-                ),
-              if (item.plateau.measure != ProgressMeasure.hold)
-                'started_before_recovered': item.context.unrecovered,
-            },
+          for (final item in found.take(kCoachRowCap)) plateauForCoach(item),
         ],
       }),
       summary: 'welke oefeningen stilstaan',

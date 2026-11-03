@@ -15,6 +15,7 @@ import '../features/chat/presentation/coach_memory_screen.dart';
 import '../features/chat/presentation/coach_settings_screen.dart';
 import '../features/plans/presentation/plan_new_screen.dart';
 import '../features/prompts/presentation/coach_prompts_screen.dart';
+import '../features/prompts/presentation/month_review_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/exercises/presentation/custom_exercise_screen.dart';
 import '../features/exercises/presentation/exercise_detail_screen.dart';
@@ -231,6 +232,14 @@ GoRouter router(Ref ref) {
         parentNavigatorKey: _rootKey,
         pageBuilder: (context, state) =>
             appPage(state, const StepsWeekScreen()),
+      ),
+      GoRoute(
+        path: Routes.monthReview,
+        parentNavigatorKey: _rootKey,
+        pageBuilder: (context, state) => appPage(
+          state,
+          MonthReviewScreen(initial: _day(state.uri.queryParameters['start'])),
+        ),
       ),
       GoRoute(
         path: Routes.weekReview,

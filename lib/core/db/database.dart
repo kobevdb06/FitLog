@@ -65,6 +65,8 @@ part 'database.drift.dart';
     TrainingPlansTable,
     CoachPromptsTable,
     WorkoutAnswersTable,
+    MomentAnswersTable,
+    QuickQuestionsTable,
   ],
   daos: [
     SettingsDao,
@@ -86,7 +88,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 57;
+  int get schemaVersion => 58;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -552,6 +554,15 @@ class AppDatabase extends _$AppDatabase {
           // Geplande prompts: every moment as it comes, no answer yet.
           await m.createTable(coachPromptsTable);
           await m.createTable(workoutAnswersTable);
+        }
+        if (from >= 57 && from < 58) {
+          // Before v57 the table is made whole above.
+          await m.addColumn(coachPromptsTable, coachPromptsTable.option);
+        }
+        if (from < 58) {
+          // The other moments, and questions of your own: none yet.
+          await m.createTable(momentAnswersTable);
+          await m.createTable(quickQuestionsTable);
         }
       });
 

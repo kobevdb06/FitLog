@@ -16,6 +16,8 @@ import '../../../core/widgets/exercise_image.dart';
 import '../../../routing/routes.dart';
 import '../../progress/presentation/plateau_card.dart';
 import '../../progress/presentation/progress_providers.dart';
+import '../../prompts/data/moment_facts.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
 import '../../workout/presentation/pr_attempt_screen.dart';
 import 'custom_exercise_screen.dart';
 import 'exercise_providers.dart';
@@ -488,6 +490,16 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
       children: [
         if (plateau != null) ...[
           PlateauCard(found: plateau),
+          MomentAnswerCard(
+            moment: CoachMoment.plateau,
+            subject: MomentSubject.plateau(
+              plateau.exercise.id,
+              plateau.plateau.since,
+            ),
+            askNow: true,
+            about: 'mijn ${plateau.exercise.name} die stilstaat',
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+          ),
           const SizedBox(height: AppSpacing.lg),
         ],
         SizedBox(

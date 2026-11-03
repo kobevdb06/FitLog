@@ -1400,6 +1400,12 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
           .toSet();
 
       await (delete(workoutsTable)..where((t) => t.id.equals(workoutId))).go();
+      // The coach's word before it points at it by id only, with no
+      // reference to follow: it goes here. The one after goes by cascade.
+      await db.coachPromptsDao.deleteMomentAnswer(
+        CoachMoment.before,
+        workoutId,
+      );
 
       await db.recordsDao.rebuildRecordsFor(exerciseIds);
 

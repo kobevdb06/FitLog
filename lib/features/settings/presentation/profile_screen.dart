@@ -21,6 +21,9 @@ import '../../../routing/routes.dart';
 import '../../measurements/presentation/measurements_screen.dart';
 import '../../history/presentation/history_providers.dart';
 import '../../progress/presentation/progress_providers.dart';
+import '../../prompts/data/moment_facts.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 
 /// The Profiel tab: who you are, what you have lifted, and the way into
 /// settings.
@@ -155,6 +158,21 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: _Milestones(stats: stats),
           ),
+          if (ref.watch(latestMomentAnswerProvider(CoachMoment.milestone)).value
+              case final last?)
+            MomentAnswerCard(
+              moment: CoachMoment.milestone,
+              subject: last.subject,
+              onlyAnswered: true,
+              title: 'Mijlpaal: ${milestoneLabel(last.subject)}',
+              about: 'mijn mijlpaal, ${milestoneLabel(last.subject)}',
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
+              ),
+            ),
           const SectionHeader('Gegevens'),
           ListTile(
             title: const Text('Naam'),

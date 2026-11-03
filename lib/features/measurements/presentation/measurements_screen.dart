@@ -15,6 +15,10 @@ import '../../../core/widgets/dialogs.dart';
 import '../../../core/widgets/keypad_sheet.dart';
 import '../../../core/widgets/keypad_value.dart';
 import '../../../core/widgets/numeric_keypad.dart';
+import '../../prompts/data/moment_facts.dart';
+import '../../prompts/domain/coach_moments.dart';
+import '../../prompts/presentation/moment_answer_card.dart';
+import '../../prompts/presentation/prompt_providers.dart';
 
 part 'measurements_screen.g.dart';
 
@@ -41,6 +45,11 @@ class MeasurementsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final latest = ref.watch(latestMeasurementsProvider).value ?? const {};
     final theme = Theme.of(context);
+    final weighing = weighingSubject(
+      latest[MeasurementType.weight],
+      ref.watch(latestMomentAnswerProvider(CoachMoment.weighing)).value,
+      DateTime.now(),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Lichaamsmetingen')),
@@ -52,6 +61,14 @@ class MeasurementsScreen extends ConsumerWidget {
           AppSpacing.xl,
         ),
         children: [
+          if (weighing != null)
+            MomentAnswerCard(
+              moment: CoachMoment.weighing,
+              subject: weighing,
+              askNow: true,
+              about: 'mijn gewicht',
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            ),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -744,4 +761,22 @@ Future<void> showAddMeasurementSheet(
   );
 
   noteController.dispose();
+}
+
+/// What the coach on Lichaamsmetingen is about: what it said last while that
+/// is less than a week ago, the newest weighing after that.
+String? weighingSubject(
+  BodyMeasurementRow? newest,
+  MomentAnswerRow? last,
+  DateTime now,
+) {
+  if (last != null &&
+      now.difference(DateTime.fromMillisecondsSinceEpoch(last.createdAt)) <
+          kWeighingEvery) {
+    return last.subject;
+  }
+  if (newest == null) return last?.subject;
+  return MomentSubject.day(
+    DateTime.fromMillisecondsSinceEpoch(newest.measuredAt),
+  );
 }

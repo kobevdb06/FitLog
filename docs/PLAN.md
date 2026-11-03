@@ -57,10 +57,8 @@ FitLog een tijdje gebruiken zoals het is, en verbeteren wat in de zaal opvalt. D
 
 ### 2.4 De volgende stap uit het coachplan
 
-**Geplande prompts** (DECISIONS 233): de eerste ronde is er - *Na je workout*, en eigen woorden
-voor het ochtendrapport en het weekoverzicht. Volgende ronde, als gevraagd: *Voor je workout*,
-*Een oefening staat stil* en *Je schema is af*; daarna een maandoverzicht, een mijlpaal, een tijd
-niet getraind, na een weging, en eigen snelle vragen als knopjes in de coach. Bekeken en niet
+**Geplande prompts** (DECISIONS 233 en 234): alle momenten uit het rapport zijn er, en eigen
+snelle vragen als knopjes in de coach. Bekeken en niet
 gekozen: na elke oefening tijdens de workout (zes vragen per workout, de hint doet het al), bij een
 progressfoto (een foto van je lichaam die vertrekt zonder tik), bij elke wijziging van een routine.
 

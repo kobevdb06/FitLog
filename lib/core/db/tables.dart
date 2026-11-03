@@ -1320,6 +1320,10 @@ class CoachPromptsTable extends Table {
 
   /// One of `AnswerLength`; null is the moment's own.
   TextColumn get length => text().nullable()();
+
+  /// What else the moment needs, as the moment reads it: after how many
+  /// days without training, or which day and hour. Null is its own.
+  TextColumn get option => text().nullable()();
   IntColumn get updatedAt => integer().named('updated_at')();
 
   @override
@@ -1356,4 +1360,55 @@ class WorkoutAnswersTable extends Table {
 
   @override
   Set<Column> get primaryKey => {workoutId};
+}
+
+/// What the coach said at a moment other than after a workout, one row per
+/// moment and what it was about: a workout that starts, an exercise that
+/// stalls since a day, a month, a milestone.
+///
+/// What it was about is text the moment reads (`subject`), so a new moment
+/// needs no new table. No reference to what it is about: a stalled exercise
+/// or a month is no row to point at.
+@DataClassName('MomentAnswerRow')
+class MomentAnswersTable extends Table {
+  @override
+  String get tableName => 'moment_answers';
+
+  /// One of `CoachMoment`.
+  TextColumn get moment => text()();
+  TextColumn get subject => text()();
+  IntColumn get createdAt => integer().named('created_at')();
+
+  /// The words it was asked in, as they were then.
+  TextColumn get prompt => text()();
+
+  /// The facts the coach was given, as JSON.
+  TextColumn get facts => text()();
+
+  TextColumn get coachText => text().named('coach_text').nullable()();
+  TextColumn get coachError => text().named('coach_error').nullable()();
+
+  /// The conversation the answer was put in, for a moment that answers in
+  /// the chat; its cost is on the message there.
+  TextColumn get threadId => text().named('thread_id').nullable()();
+
+  /// What it cost, for the daily bar; null when it is on the message.
+  IntColumn get requests => integer().nullable()();
+  IntColumn get inputTokens => integer().named('input_tokens').nullable()();
+  IntColumn get outputTokens => integer().named('output_tokens').nullable()();
+
+  @override
+  Set<Column> get primaryKey => {moment, subject};
+}
+
+/// A question of the user's own, as a button in the coach: one tap asks it.
+@DataClassName('QuickQuestionRow')
+class QuickQuestionsTable extends Table {
+  @override
+  String get tableName => 'quick_questions';
+
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get question => text()();
+  IntColumn get sortOrder => integer().named('sort_order')();
+  IntColumn get createdAt => integer().named('created_at')();
 }

@@ -11,6 +11,10 @@ mixin _$CoachPromptsDaoMixin on DatabaseAccessor<AppDatabase> {
   $WorkoutsTableTable get workoutsTable => attachedDatabase.workoutsTable;
   $WorkoutAnswersTableTable get workoutAnswersTable =>
       attachedDatabase.workoutAnswersTable;
+  $MomentAnswersTableTable get momentAnswersTable =>
+      attachedDatabase.momentAnswersTable;
+  $QuickQuestionsTableTable get quickQuestionsTable =>
+      attachedDatabase.quickQuestionsTable;
   CoachPromptsDaoManager get managers => CoachPromptsDaoManager(this);
 }
 
@@ -35,5 +39,15 @@ class CoachPromptsDaoManager {
       $$WorkoutAnswersTableTableTableManager(
         _db.attachedDatabase,
         _db.workoutAnswersTable,
+      );
+  $$MomentAnswersTableTableTableManager get momentAnswersTable =>
+      $$MomentAnswersTableTableTableManager(
+        _db.attachedDatabase,
+        _db.momentAnswersTable,
+      );
+  $$QuickQuestionsTableTableTableManager get quickQuestionsTable =>
+      $$QuickQuestionsTableTableTableManager(
+        _db.attachedDatabase,
+        _db.quickQuestionsTable,
       );
 }

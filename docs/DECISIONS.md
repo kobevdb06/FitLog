@@ -5212,3 +5212,62 @@ twee momenten waar de coach al schreef.
 - **Uitproberen** gebruikt wat er in het veld staat, ook als de laatste toets
   net gevallen is, en vervangt wat er was: het antwoord bij je laatste
   workout, het rapport van vanochtend, het overzicht van je laatste week.
+
+## 234. Geplande prompts: de andere momenten, en eigen snelle vragen
+
+Gevraagd na de eerste ronde (233): "voeg de andere al maar toe". Dus alle
+momenten uit het rapport, elk met een eigen prompt, standaard uit.
+
+- **Voor je workout**: als het scherm van een workout opent, bovenaan, drie
+  regels tot je erop tikt. De sets zoals ze klaarstaan, elke oefening de
+  vorige keer, welke stilstaan, en vandaag zoals het ochtendrapport het ziet
+  (herstel en de check).
+- **Maandoverzicht**: een nieuw scherm onder Voortgang, een maand per keer,
+  naast de maand ervoor: workouts, sets, volume, records, sets per
+  spiergroep, gewicht en slaap. De coach schrijft over een maand die voorbij
+  is: op de eerste om 9:00 met een melding, of als je het scherm opent. Over
+  een maand zonder trainingen niets.
+- **Een oefening staat stil**: één keer per keer dat ze stilvalt (de
+  oefening en de dag van de laatste stap vooruit), onder de kaart bij die
+  oefening, met de cijfers die de coach in de chat al krijgt - die staan nu
+  op één plek (`plateauForCoach`). Met dit moment aan verdwijnt *Vraag de
+  coach* op de kaart: dat zou twee keer hetzelfde zijn.
+- **Beter wachten**: hoogstens één keer per dag en sessie, als de check dat
+  zegt. Het blok op Vandaag heeft een vaste maat: het vraagt, en toont een
+  regel van het antwoord als er plaats is; het hele antwoord staat in het
+  blad achter *Andere keuzes*.
+- **Je schema is af**: onder het schema dat het laatst afliep, met per week
+  hoeveel sessies gedaan werden en per oefening de geschatte 1RM van de
+  eerste en de laatste week. Bij oudere schema's staat het alleen als het er
+  al is.
+- **Een mijlpaal**: als een workout er een haalt (de eerste, 10, 25 ...
+  workouts; weken op rij; ton; records), op de samenvatting onder het
+  antwoord van *Na je workout*, en de laatste ook op Profiel. Geen melding,
+  anders dan het rapport zei: je staat dan al in de app.
+- **Na een weging**: op Lichaamsmetingen, hoogstens één keer per week; de
+  weegschaal van Health Connect alleen als je die deelt.
+- **Een tijd niet getraind** en **een vrij moment** antwoorden in de chat,
+  met een melding: de vraag en het antwoord als een gesprek van zichzelf, om
+  op door te gaan. Niet getraind kijkt elke dag om 18:00 (na 2 tot 14
+  dagen, standaard 5), één keer per keer dat je stilvalt. Het vrije moment op
+  een dag en uur die je kiest, over je laatste zeven dagen. De kost staat op
+  het antwoord in het gesprek, zodat de dagbalk het niet dubbel telt.
+- **Eén wekker** voor wat met een melding komt (id 7303), zoals die van het
+  ochtendrapport en de week. Ze draagt haar tijden zelf mee: met een pincode
+  is de database dicht, en de volgende moet toch gezet worden. Met een
+  pincode zegt een melding dat er iets klaarstaat; na het ontgrendelen wordt
+  het gevraagd en neemt het de plaats in van die melding. Tot twee dagen
+  later wordt een gemist moment nog gevraagd, niet later.
+- **Eigen snelle vragen**: tot tien, als knopjes in de coach - bij een leeg
+  gesprek onder *Jouw vragen*, in een lopend gesprek in een rij boven het
+  veld. Eén tik stelt de vraag. Niet in het paneel over andere apps, anders
+  dan het rapport zei: dat is een ander scherm, en tijdens een workout opent
+  de chat hetzelfde gesprek.
+- **Waar het bewaard wordt** (schema v58): `moment_answers`, één rij per
+  moment en waarover, met de prompt en de feiten van toen; een kolom
+  `option` op `coach_prompts` voor het aantal dagen en het vrije moment;
+  `quick_questions`. Het antwoord na een workout blijft in `workout_answers`
+  (v57). Wat een workout voor zich kreeg, gaat mee als ze verwijderd wordt.
+- **Uitproberen** kan bij elk moment, op het nieuwste waar het over kan
+  gaan; in de chat is een probeersel een gesprek van zichzelf, dat het echte
+  moment niet in de weg zit.

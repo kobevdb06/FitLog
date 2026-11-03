@@ -5371,3 +5371,50 @@ goed".
     het schema, en een nieuw zou er los van staan. Het nieuwe gesprek begint
     met de vraag om samen te vatten, en dan de samenvatting: een gesprek met
     de coach begint met een vraag.
+
+## 238. Het schemapaneel, zoals Cowork
+
+Gevraagd: "Als je in schema's een chat aan het bekijken bent moet er meer
+info komen die aangepast kan worden. ik wil dat dit ongeveer lijkt op de
+cowork van claude ... Denk aan: week displayen, welke routine je wilt
+aanpassen, en zo voort." Gebouwd zoals de mockup, "zoals in de mockup is
+goed".
+
+- **De strook**, in elk gesprek van een schema, onder de balk: de naam, en
+  waar het staat - *Week 2 van 4 · 1 van 2 gedaan*, hoe ver het in de maak
+  is, wanneer het begint of eindigde - met *n voorstel(len)* als de coach
+  iets voorstelt. Een tik erop, of op het icoontje rechtsboven, opent het
+  paneel.
+- **Het paneel** komt van rechts over de chat, zoals de gesprekken van
+  links. Bovenaan, boven de tabbladen, wat de coach voorstelt, met dezelfde
+  kaart als in het gesprek (`PlanChangeCard`): Aanvaarden legt uit wat hij
+  schreef zonder hem opnieuw te vragen (220). Wat je daar kiest, staat ook
+  zo in het gesprek.
+- **Week**: bladeren met ‹ en ›; per sessie de dag en *gedaan*, *open* of
+  *gemist* - zoals Schema's het telt, in de week dat ze gedaan werd - wat de
+  week vraagt (*+1 set per oefening*, de deload), en *Start* voor wat deze
+  week nog te doen is. Start, Openen en Bespreek sluiten het paneel en
+  gebeuren dan op het scherm eronder.
+- **Sessies**: de focus en het aantal oefeningen. *Bespreek* zet *Over:
+  Push A* boven het veld; de volgende vraag wordt *Over Push A: …*, en de
+  sessie gaat mee zoals de coach een routine leest (`routineForCoach`, uit
+  de tools gehaald), als wat er nu speelt - niet bewaard bij de vraag. Onder
+  het antwoord staat dat ze meeging. *Openen* opent de routine-editor.
+- **Weken**: elke week met wat ze vraagt, de deload in amber, deze week
+  vet en *nu*.
+- **Instellen**: het doel, de dagen en wie de cijfers bijstelt, meteen
+  bewaard, zonder vraag aan de coach; en *Schema stoppen*, met dezelfde
+  vraag als onder ⋮ op Schema's. Een afgerond schema kun je alleen
+  bekijken.
+- **Anders dan het plan**:
+  - Andere dagen kiezen verschuift de sessies mee, in hun volgorde, één per
+    dag vanaf maandag: anders stond een sessie nog op een dag die je
+    weghaalde. Een sessie zonder dag over heeft er geen, en telt gewoon mee
+    als je ze doet.
+  - Bovenaan staan alleen de voorstellen van een lopend schema (`Aanvaarden`
+    en `Houden`). De opzet en de sessies van een schema in de maak keur je
+    goed in het gesprek zelf, zoals voordien: daar bouwt de coach ze stap
+    voor stap.
+  - De tabbladen zijn even breed, en een naam wordt kleiner als het krap
+    wordt: in een schuivende rij viel *Instellen* op een smalle gsm van het
+    scherm.

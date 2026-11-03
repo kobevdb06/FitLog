@@ -206,7 +206,7 @@ String planProgress(TrainingPlanRow plan, List<RoutineRow> sessions) {
 }
 
 /// Asks, and stops [plan]: it joins the earlier schema's.
-Future<void> _stopPlan(
+Future<void> stopPlan(
   BuildContext context,
   WidgetRef ref,
   TrainingPlanRow plan,
@@ -258,7 +258,7 @@ class PlanShelfActions extends ConsumerWidget {
               title: plan.name,
               builder: (context) => _AboutPlan(plan: plan),
             ),
-            _PlanMenu.stop => _stopPlan(context, ref, plan),
+            _PlanMenu.stop => stopPlan(context, ref, plan),
           },
           itemBuilder: (context) => const [
             PopupMenuItem(

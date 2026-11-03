@@ -391,6 +391,95 @@ final class PlanThisWeekFamily extends $Family
   String toString() => r'planThisWeekProvider';
 }
 
+/// How [week] of [planId] stands: its sessions in order, and which were
+/// done in it, on any day. Nothing done before the schema began.
+
+@ProviderFor(planWeekStanding)
+final planWeekStandingProvider = PlanWeekStandingFamily._();
+
+/// How [week] of [planId] stands: its sessions in order, and which were
+/// done in it, on any day. Nothing done before the schema began.
+
+final class PlanWeekStandingProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<PlanWeekStanding>,
+          PlanWeekStanding,
+          Stream<PlanWeekStanding>
+        >
+    with $FutureModifier<PlanWeekStanding>, $StreamProvider<PlanWeekStanding> {
+  /// How [week] of [planId] stands: its sessions in order, and which were
+  /// done in it, on any day. Nothing done before the schema began.
+  PlanWeekStandingProvider._({
+    required PlanWeekStandingFamily super.from,
+    required (String, int) super.argument,
+  }) : super(
+         retry: null,
+         name: r'planWeekStandingProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$planWeekStandingHash();
+
+  @override
+  String toString() {
+    return r'planWeekStandingProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<PlanWeekStanding> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<PlanWeekStanding> create(Ref ref) {
+    final argument = this.argument as (String, int);
+    return planWeekStanding(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PlanWeekStandingProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$planWeekStandingHash() => r'63d2ebaf27abb94d2fcfe13d2b77bfb223b0b184';
+
+/// How [week] of [planId] stands: its sessions in order, and which were
+/// done in it, on any day. Nothing done before the schema began.
+
+final class PlanWeekStandingFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<PlanWeekStanding>, (String, int)> {
+  PlanWeekStandingFamily._()
+    : super(
+        retry: null,
+        name: r'planWeekStandingProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// How [week] of [planId] stands: its sessions in order, and which were
+  /// done in it, on any day. Nothing done before the schema began.
+
+  PlanWeekStandingProvider call(String planId, int week) =>
+      PlanWeekStandingProvider._(argument: (planId, week), from: this);
+
+  @override
+  String toString() => r'planWeekStandingProvider';
+}
+
 @ProviderFor(TrainShelfChoice)
 final trainShelfChoiceProvider = TrainShelfChoiceProvider._();
 
@@ -441,6 +530,93 @@ abstract class _$TrainShelfChoice extends $Notifier<TrainShelf> {
             >;
     return element.handleCreate(ref, build);
   }
+}
+
+/// The changes the coach proposed for [planId] that wait.
+
+@ProviderFor(planWaitingChanges)
+final planWaitingChangesProvider = PlanWaitingChangesFamily._();
+
+/// The changes the coach proposed for [planId] that wait.
+
+final class PlanWaitingChangesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<WaitingPlanChange>>,
+          List<WaitingPlanChange>,
+          Stream<List<WaitingPlanChange>>
+        >
+    with
+        $FutureModifier<List<WaitingPlanChange>>,
+        $StreamProvider<List<WaitingPlanChange>> {
+  /// The changes the coach proposed for [planId] that wait.
+  PlanWaitingChangesProvider._({
+    required PlanWaitingChangesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'planWaitingChangesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$planWaitingChangesHash();
+
+  @override
+  String toString() {
+    return r'planWaitingChangesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<WaitingPlanChange>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<WaitingPlanChange>> create(Ref ref) {
+    final argument = this.argument as String;
+    return planWaitingChanges(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PlanWaitingChangesProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$planWaitingChangesHash() =>
+    r'68ee76a0694272c2097a51ad6e60456fbd8151f6';
+
+/// The changes the coach proposed for [planId] that wait.
+
+final class PlanWaitingChangesFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<WaitingPlanChange>>, String> {
+  PlanWaitingChangesFamily._()
+    : super(
+        retry: null,
+        name: r'planWaitingChangesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// The changes the coach proposed for [planId] that wait.
+
+  PlanWaitingChangesProvider call(String planId) =>
+      PlanWaitingChangesProvider._(argument: planId, from: this);
+
+  @override
+  String toString() => r'planWaitingChangesProvider';
 }
 
 /// How many changes the coach proposed for [planId] that wait for
@@ -500,7 +676,7 @@ final class PlanOpenChangesProvider
   }
 }
 
-String _$planOpenChangesHash() => r'22b25a09fa307a238fa1209f4ab9c9828b595cb6';
+String _$planOpenChangesHash() => r'5140de1f294c28be700ddc5240d26873fc105570';
 
 /// How many changes the coach proposed for [planId] that wait for
 /// Aanvaarden or Houden.

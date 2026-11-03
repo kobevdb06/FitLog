@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/calc/plan_weeks.dart';
+import 'package:fitlog/core/calc/schedule.dart';
+import 'package:fitlog/core/formatting/formatters.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
@@ -309,6 +311,323 @@ void main() {
     expect(find.text('Gehouden zoals het was.'), findsOneWidget);
     final plan = await tester.runAsync(() => db.plansDao.plan('p-1'));
     expect(plan!.weeks, 4);
+  });
+
+  testWidgets('een voorstel staat ook bovenaan het schemapaneel, en wat je '
+      'daar kiest, geldt ook in het gesprek', (tester) async {
+    bigScreen(tester);
+    await db
+        .into(db.exercisesTable)
+        .insert(
+          ExercisesTableCompanion.insert(
+            id: 'ex-bench',
+            name: 'Bench Press',
+            primaryMuscle: 'borst',
+            category: 'barbell',
+            createdAt: 0,
+          ),
+        );
+    await db.plansDao.createDraft(
+      id: 'p-1',
+      goal: 'Sterker',
+      split: PlanSplit.fullBody,
+      days: 0x01,
+      progression: PlanProgression.app,
+      at: DateTime.now(),
+    );
+    await db.chatDao.createThread('t-1', 'Kracht', planId: 'p-1');
+    final layout = {
+      'name': 'Kracht',
+      'change': 'De week overdoen.',
+      'weeks': [
+        for (var i = 0; i < 4; i++) {'kind': 'build'},
+      ],
+      'sessions': [
+        {
+          'name': 'Full body',
+          'weekday': 1,
+          'exercises': [
+            {
+              'exercise': 'Bench Press',
+              'sets': [
+                {'reps': 5},
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    await CoachTools(db, planId: 'p-1').applyPlanLayout(layout);
+    final now = DateTime.now();
+    await db.plansDao.start(
+      'p-1',
+      startDay: DateTime(now.year, now.month, now.day - (now.weekday - 1)),
+      at: now,
+    );
+    final card = (await CoachTools(db, planId: 'p-1', sunday: true).run(
+      'propose_plan_change',
+      layout
+        ..['weeks'] = [
+          for (var i = 0; i < 5; i++) {'kind': 'build'},
+        ],
+    )).proposal!;
+    await db.chatDao.addMessage(
+      id: 'm-1',
+      threadId: 't-1',
+      role: 'assistant',
+      content: 'Doe de week nog eens.',
+      proposals: encodeProposals([card]),
+    );
+    makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
+    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    // The strip's own numbers arrive after the conversation.
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('1 voorstel'), findsOneWidget);
+    await tester.tap(find.text('1 voorstel'));
+    await tester.pumpAndSettle();
+    expect(find.text('SCHEMA'), findsOneWidget);
+    // In het gesprek eronder, en bovenaan het paneel.
+    expect(find.text('Voorstel voor je schema'), findsNWidgets(2));
+    await tester.tap(find.text('Houden').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Uit het paneel: er wacht niets meer. In het gesprek staat het zo.
+    expect(find.text('Voorstel voor je schema'), findsOneWidget);
+    expect(find.text('Gehouden zoals het was.'), findsOneWidget);
+    expect(find.text('1 voorstel'), findsNothing);
+    final plan = await tester.runAsync(() => db.plansDao.plan('p-1'));
+    expect(plan!.weeks, 4);
+  });
+
+  group('het schemapaneel', () {
+    /// Kracht (p-1), followed since last Monday: four weeks, the second a
+    /// set more, the last a deload. Push on Monday, Pull on Thursday; last
+    /// week only Push was done. Its conversation is t-1.
+    Future<void> running() async {
+      await db
+          .into(db.exercisesTable)
+          .insert(
+            ExercisesTableCompanion.insert(
+              id: 'ex-bench',
+              name: 'Bench Press',
+              primaryMuscle: 'borst',
+              category: 'barbell',
+              createdAt: 0,
+            ),
+          );
+      final now = DateTime.now();
+      final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+      final lastMonday = DateTime(monday.year, monday.month, monday.day - 7);
+      await db.plansDao.createDraft(
+        id: 'p-1',
+        goal: 'Sterker',
+        split: PlanSplit.upperLower,
+        days: WeekdaySet.of([1, 4]).mask,
+        progression: PlanProgression.app,
+        at: lastMonday,
+      );
+      await db.plansDao.layOut(
+        'p-1',
+        name: 'Kracht',
+        weeks: const [
+          PlanWeek(),
+          PlanWeek(sets: 1, note: 'zwaarder'),
+          PlanWeek(),
+          PlanWeek(kind: PlanWeekKind.deload),
+        ],
+        at: lastMonday,
+      );
+      await db.plansDao.approveOutline('p-1', lastMonday);
+      final push = await db.routinesDao.createRoutine(
+        const RoutineDraft(
+          name: 'Push',
+          exercises: [
+            RoutineExerciseDraft(
+              exerciseId: 'ex-bench',
+              sets: [RoutineSetDraft(targetReps: 5, targetWeightKg: 80)],
+            ),
+          ],
+        ),
+      );
+      final pull = await db.routinesDao.createRoutine(
+        const RoutineDraft(name: 'Pull', exercises: []),
+      );
+      await db.plansDao.placeSession(
+        push,
+        planId: 'p-1',
+        position: 0,
+        weekday: 1,
+        focus: 'Borst, schouders',
+      );
+      await db.plansDao.placeSession(
+        pull,
+        planId: 'p-1',
+        position: 1,
+        weekday: 4,
+        focus: 'Rug, biceps',
+      );
+      await db.plansDao.start('p-1', startDay: lastMonday, at: lastMonday);
+      final done = await db.workoutsDao.startWorkout(
+        routineId: push,
+        defaultRestSeconds: 90,
+      );
+      await db.workoutsDao.finishWorkout(done, discardPending: false);
+      final at = lastMonday.add(const Duration(hours: 18));
+      await db.customStatement(
+        'UPDATE workouts SET started_at = ?, ended_at = ? WHERE id = ?',
+        [
+          at.millisecondsSinceEpoch,
+          at.add(const Duration(hours: 1)).millisecondsSinceEpoch,
+          done,
+        ],
+      );
+      await db.chatDao.createThread('t-1', 'Kracht', planId: 'p-1');
+    }
+
+    Future<void> pumpThread(WidgetTester tester) async {
+      makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
+      await tester.pumpWidget(
+        wrapWithContainer(container!, const CoachScreen()),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('de strook zegt de week, en het paneel toont ze: open, '
+        'gedaan en gemist, met Start voor wat nog moet', (tester) async {
+      bigScreen(tester);
+      await tester.runAsync(running);
+      await pumpThread(tester);
+
+      final strip = find.text('Week 2 van 4 · 0 van 2 gedaan');
+      expect(strip, findsOneWidget);
+      await tester.tap(strip);
+      await tester.pumpAndSettle();
+
+      expect(find.text('SCHEMA'), findsOneWidget);
+      for (final tab in ['Week', 'Sessies', 'Weken', 'Instellen']) {
+        expect(find.text(tab), findsOneWidget, reason: tab);
+      }
+      expect(find.text('Week 2 van 4'), findsOneWidget);
+      expect(find.text('Deze week'), findsOneWidget);
+      expect(find.text('+1 set per oefening · zwaarder'), findsOneWidget);
+      final monday = Formatters.weekdayShort(1);
+      final thursday = Formatters.weekdayShort(4);
+      expect(find.text('$monday · open'), findsOneWidget);
+      expect(find.text('$thursday · open'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Start'), findsNWidgets(2));
+
+      await tester.tap(find.byTooltip('Vorige week'));
+      await tester.pumpAndSettle();
+      expect(find.text('Week 1 van 4'), findsOneWidget);
+      expect(find.text('$monday · gedaan'), findsOneWidget);
+      expect(find.text('$thursday · gemist'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Start'), findsNothing);
+
+      await tester.tap(find.text('Weken'));
+      await tester.pumpAndSettle();
+      expect(find.text('Deload: elke sessie lichter'), findsOneWidget);
+      expect(find.text('nu'), findsOneWidget);
+    });
+
+    testWidgets('Bespreek zet de sessie boven het veld, en ze gaat mee met '
+        'de vraag', (tester) async {
+      bigScreen(tester);
+      await tester.runAsync(running);
+      await pumpThread(tester);
+
+      await tester.tap(find.byTooltip('Schema'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sessies'));
+      await tester.pumpAndSettle();
+      expect(find.text('Borst, schouders · 1 oefening'), findsOneWidget);
+      await tester.tap(find.text('Bespreek').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('SCHEMA'), findsNothing);
+      expect(find.text('Over: Push'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'Kan de bench anders?');
+      await tester.tap(find.byIcon(Icons.arrow_upward));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Over Push: Kan de bench anders?'), findsOneWidget);
+      expect(find.text('Over: Push'), findsNothing);
+      expect(find.textContaining('de sessie Push'), findsOneWidget);
+      expect(sent, hasLength(1));
+      expect(sent.single, contains('vraagt over de sessie'));
+      expect(sent.single, contains('Bench Press'));
+    });
+
+    testWidgets('Instellen bewaart meteen: de dagen, met de sessies erbij, '
+        'wie de cijfers zet, en het doel', (tester) async {
+      bigScreen(tester);
+      await tester.runAsync(running);
+      await pumpThread(tester);
+
+      await tester.tap(find.byTooltip('Schema'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Instellen'));
+      await tester.pumpAndSettle();
+
+      // Maandag eruit, woensdag erbij: Push op woensdag, Pull op donderdag.
+      await tester.tap(
+        find.widgetWithText(FilterChip, Formatters.weekdayShort(1)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(FilterChip, Formatters.weekdayShort(3)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(SegmentedButton<PlanProgression>),
+          matching: find.text('Coach'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Doel aanpassen'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Sterker op bench');
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      final plan = (await tester.runAsync(() => db.plansDao.plan('p-1')))!;
+      expect(WeekdaySet(plan.days).weekdays, [3, 4]);
+      expect(plan.progressionKind, PlanProgression.coach);
+      expect(plan.goal, 'Sterker op bench');
+      final sessions = (await tester.runAsync(
+        () => db.plansDao.sessions('p-1'),
+      ))!;
+      expect([for (final s in sessions) s.planWeekday], [3, 4]);
+      expect(find.text('Sterker op bench'), findsOneWidget);
+      expect(sent, isEmpty);
+    });
+
+    testWidgets('past op een smalle gsm met grote letters, elk tabblad', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 780);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.runAsync(running);
+      await pumpThread(tester);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byTooltip('Schema'));
+      await tester.pumpAndSettle();
+      for (final tab in ['Sessies', 'Weken', 'Instellen', 'Week']) {
+        await tester.tap(find.text(tab));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: tab);
+      }
+    });
   });
 
   group('stap voor stap', () {

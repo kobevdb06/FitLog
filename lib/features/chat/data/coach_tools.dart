@@ -1144,30 +1144,8 @@ class CoachTools {
     );
   }
 
-  /// A routine's exercises and every set of them, as the coach reads them.
-  Future<List<Map<String, Object?>>> _routineContent(String routineId) async {
-    final detail = await db.routinesDao.getRoutineDetail(routineId);
-    if (detail == null) return const [];
-    return [
-      for (final item in detail.exercises)
-        {
-          'exercise': item.exercise.name,
-          'rest_seconds': ?item.routineExercise.restSeconds,
-          'superset': ?item.routineExercise.supersetGroup,
-          'notes': ?_text(item.routineExercise.notes),
-          'sets': [
-            for (final set in item.sets)
-              {
-                'type': set.setType,
-                'reps': ?set.targetReps,
-                'weight_kg': ?set.targetWeightKg,
-                'seconds': ?set.targetDurationSeconds,
-                'meters': ?set.targetDistanceM,
-              },
-          ],
-        },
-    ];
-  }
+  Future<List<Map<String, Object?>>> _routineContent(String routineId) =>
+      routineForCoach(db, routineId);
 
   /// The most of each the coach may put in one routine. A guard against a
   /// runaway answer, far above anything a person would train.
@@ -2371,4 +2349,38 @@ class _Checked {
   final List<RoutineExerciseDraft> drafts;
   final List<ProposedRoutineExercise> card;
   final CoachLookup? refusal;
+}
+
+/// A routine's exercises and every set of them, as the coach reads them:
+/// what it looks up, and what goes along when you ask about a session.
+Future<List<Map<String, Object?>>> routineForCoach(
+  AppDatabase db,
+  String routineId,
+) async {
+  final detail = await db.routinesDao.getRoutineDetail(routineId);
+  if (detail == null) return const [];
+  String? text(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  return [
+    for (final item in detail.exercises)
+      {
+        'exercise': item.exercise.name,
+        'rest_seconds': ?item.routineExercise.restSeconds,
+        'superset': ?item.routineExercise.supersetGroup,
+        'notes': ?text(item.routineExercise.notes),
+        'sets': [
+          for (final set in item.sets)
+            {
+              'type': set.setType,
+              'reps': ?set.targetReps,
+              'weight_kg': ?set.targetWeightKg,
+              'seconds': ?set.targetDurationSeconds,
+              'meters': ?set.targetDistanceM,
+            },
+        ],
+      },
+  ];
 }

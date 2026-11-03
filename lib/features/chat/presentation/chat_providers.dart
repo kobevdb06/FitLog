@@ -346,12 +346,14 @@ class CoachController extends _$CoachController {
   ///
   /// [situation] is where the user is asking from - in the middle of a set,
   /// from the panel over another app - told to the coach and not stored with
-  /// the question.
+  /// the question. [sent] says what went along besides, under the answer
+  /// with what the coach looked up.
   Future<void> ask({
     required String threadId,
     required String question,
     List<String> imageFiles = const [],
     String? situation,
+    List<String> sent = const [],
   }) async {
     final text = question.trim();
     final photos = imageFiles.take(photosPerQuestion).toList();
@@ -504,6 +506,7 @@ class CoachController extends _$CoachController {
           deload.isOnAt(now)
               ? 'dat je in een deload zit'
               : 'dat er een deload gepland staat',
+        ...sent,
         ...answer.lookups,
       ];
       await db.chatDao.addMessage(

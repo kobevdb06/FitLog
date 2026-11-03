@@ -7,6 +7,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -28,9 +29,12 @@ import '../../deload/presentation/deload_start_sheet.dart';
 import '../../photos/data/photo_store.dart';
 import '../../plans/presentation/plan_build_cards.dart';
 import '../../plans/presentation/plan_card.dart';
+import '../../plans/presentation/plan_panel.dart';
+import '../../routines/presentation/routine_start.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../../prompts/domain/coach_moments.dart';
 import '../data/ai_client.dart';
+import '../data/coach_tools.dart' show routineForCoach;
 import '../data/command_facts.dart';
 import '../domain/coach_budget.dart';
 import '../domain/coach_commands.dart';
@@ -76,6 +80,10 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
   /// What the last command said back, or null.
   _Reply? _reply;
+
+  /// The session of the schema the next question is about, put above the
+  /// field with Bespreek in the panel.
+  RoutineRow? _about;
 
   @override
   void initState() {
@@ -130,6 +138,12 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   Future<void> _ask(String question) async {
     final controller = ref.read(coachControllerProvider.notifier);
     final thread = await _session.threadFor(question);
+    // A session put up for discussion goes along as the coach reads one, so
+    // it need not look it up; the question says which it was about.
+    final about = _about;
+    final content = about == null
+        ? null
+        : await routineForCoach(ref.read(databaseProvider), about.id);
     if (!mounted) return;
 
     final photos = List.of(_photos);
@@ -138,17 +152,32 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       _photos.clear();
       _held = null;
       _reply = null;
+      _about = null;
       _askedAt = DateTime.now().millisecondsSinceEpoch;
     });
     // Your question is at the bottom, so that is where you go.
     _toBottom();
     await controller.ask(
       threadId: thread,
-      question: question,
+      question: about == null ? question : 'Over ${about.name}: $question',
       imageFiles: photos,
+      situation: about == null
+          ? null
+          : 'de gebruiker vraagt over de sessie "${about.name}" van dit '
+                'schema, zoals ze nu staat: ${jsonEncode(content)}',
+      sent: [if (about != null) 'de sessie ${about.name}'],
     );
     _toBottom();
   }
+
+  /// The panel of the schema this conversation is about.
+  void _openPanel(String planId) => showPlanPanel(
+    context,
+    planId: planId,
+    onStart: (id) => startSession(context, ref, routineId: id),
+    onOpen: (id) => context.push(Routes.routineEdit(id)),
+    onDiscuss: (session) => setState(() => _about = session),
+  );
 
   /// Does what a command says. The free ones stay on the phone; the ones
   /// that ask go to the coach the way a question does. Something that is
@@ -506,12 +535,11 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
               const <QuickQuestionRow>[])
         if (row.command != null) row,
     ];
-    final inPlan =
-        (ref.watch(chatThreadsProvider).value ?? const [])
-            .where((t) => t.id == threadId)
-            .firstOrNull
-            ?.planId !=
-        null;
+    final planId = (ref.watch(chatThreadsProvider).value ?? const [])
+        .where((t) => t.id == threadId)
+        .firstOrNull
+        ?.planId;
+    final inPlan = planId != null;
     ref.listen<CoachState>(coachControllerProvider, (previous, next) {
       if (previous == null) return;
       if (previous.sending &&
@@ -524,13 +552,14 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
     // A held answer belongs to the conversation it was asked in. On another
     // - a new one above all, which never stores it - it stayed on screen
     // under nothing until the next question.
-    // So does what a command said.
+    // So do what a command said and the session put up for discussion.
     ref.listen<CoachSession>(coachSessionControllerProvider, (previous, next) {
       if (previous?.threadId != next.threadId &&
-          (_held != null || _reply != null)) {
+          (_held != null || _reply != null || _about != null)) {
         setState(() {
           _held = null;
           _reply = null;
+          _about = null;
         });
       }
     });
@@ -568,6 +597,12 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         ),
         title: const Text('Coach'),
         actions: [
+          if (planId != null)
+            IconButton(
+              tooltip: 'Schema',
+              icon: const Icon(Icons.view_sidebar_outlined),
+              onPressed: () => _openPanel(planId),
+            ),
           IconButton(
             tooltip: 'Nieuw gesprek',
             icon: const Icon(Icons.add_comment_outlined),
@@ -579,6 +614,8 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         child: Column(
           children: [
             if (ofWorkout) _WorkoutStrip(workout: running),
+            if (planId != null)
+              PlanStrip(planId: planId, onOpen: () => _openPanel(planId)),
             Expanded(
               child: messages.isEmpty && !writing
                   ? _Opening(onPick: _send)
@@ -663,6 +700,24 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
                 return const SizedBox.shrink();
               },
             ),
+            if (_about case final about?)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.xs,
+                ),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: InputChip(
+                    avatar: const Icon(Icons.event_note_outlined, size: 18),
+                    label: Text('Over: ${about.name}'),
+                    deleteButtonTooltipMessage: 'Niet meer over deze sessie',
+                    onDeleted: () => setState(() => _about = null),
+                  ),
+                ),
+              ),
             if (_photos.isNotEmpty)
               _PickedPhotos(
                 fileNames: _photos,

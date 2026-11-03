@@ -56,6 +56,17 @@ String planRequest({
   ].join('\n');
 }
 
+/// What it means who sets the numbers, in a line under the choice.
+String planProgressionAbout(PlanProgression progression) =>
+    switch (progression) {
+      PlanProgression.app =>
+        'Gratis: FitLog rekent elke week uit wat je deed. Eerst de '
+            'herhalingen, dan het gewicht.',
+      PlanProgression.coach =>
+        'De coach stelt elke zondag de volgende week bij. Dat kost een '
+            'vraag per week.',
+    };
+
 /// Nieuw schema: what you want, how to divide it, which days, and who keeps
 /// the numbers up to date. The coach then lays it out in a conversation of
 /// its own, and nothing is followed until you start it.
@@ -266,14 +277,7 @@ class _PlanNewScreenState extends ConsumerState<PlanNewScreen> {
                 setState(() => _progression = picked.first),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(switch (_progression) {
-            PlanProgression.app =>
-              'Gratis: FitLog rekent elke week uit wat je deed. Eerst de '
-                  'herhalingen, dan het gewicht.',
-            PlanProgression.coach =>
-              'De coach stelt elke zondag de volgende week bij. Dat kost een '
-                  'vraag per week.',
-          }, style: muted),
+          Text(planProgressionAbout(_progression), style: muted),
           const SizedBox(height: AppSpacing.lg),
           Text(
             'De lengte kiest de coach, meestal met een deloadweek op het '

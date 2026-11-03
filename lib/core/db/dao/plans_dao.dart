@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../calc/plan_weeks.dart';
+import '../../calc/schedule.dart';
 import '../database.dart';
 
 part 'plans_dao.drift.dart';
@@ -207,6 +208,58 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
           updatedAt: Value(at.millisecondsSinceEpoch),
         ),
       );
+
+  /// What the user wants from it, in their own words, as they changed it.
+  /// Nothing empty.
+  Future<void> setGoal(String planId, String goal, DateTime at) async {
+    final clean = goal.trim();
+    if (clean.isEmpty) return;
+    await (update(trainingPlansTable)..where((t) => t.id.equals(planId))).write(
+      TrainingPlansTableCompanion(
+        goal: Value(clean),
+        updatedAt: Value(at.millisecondsSinceEpoch),
+      ),
+    );
+  }
+
+  /// Who sets the numbers from the next week on.
+  Future<void> setProgression(
+    String planId,
+    PlanProgression progression,
+    DateTime at,
+  ) => (update(trainingPlansTable)..where((t) => t.id.equals(planId))).write(
+    TrainingPlansTableCompanion(
+      progression: Value(progression.wire),
+      updatedAt: Value(at.millisecondsSinceEpoch),
+    ),
+  );
+
+  /// The days the user means to train. The sessions follow, in their order,
+  /// one a day from Monday on; a session with no day left over has none,
+  /// and is done whenever it fits. Nothing for no days at all.
+  Future<void> setDays(String planId, WeekdaySet days, DateTime at) async {
+    if (days.isEmpty) return;
+    await transaction(() async {
+      await (update(
+        trainingPlansTable,
+      )..where((t) => t.id.equals(planId))).write(
+        TrainingPlansTableCompanion(
+          days: Value(days.mask),
+          updatedAt: Value(at.millisecondsSinceEpoch),
+        ),
+      );
+      final weekdays = days.weekdays;
+      for (final (i, session) in (await sessions(planId)).indexed) {
+        await (update(
+          routinesTable,
+        )..where((t) => t.id.equals(session.id))).write(
+          RoutinesTableCompanion(
+            planWeekday: Value(i < weekdays.length ? weekdays[i] : null),
+          ),
+        );
+      }
+    });
+  }
 
   /// Where [routineId] is in the building of its schema.
   Future<void> markSession(String routineId, PlanSessionState state) =>

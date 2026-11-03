@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/calc/plan_weeks.dart';
+import 'package:fitlog/core/calc/schedule.dart';
 import 'package:fitlog/core/db/dao/plans_dao.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -178,6 +179,61 @@ void main() {
     await db.plansDao.deletePlan('p-1');
     expect(await db.plansDao.plan('p-1'), isNull);
     expect(await db.routinesDao.getRoutine(push), isNull);
+  });
+
+  test('the goal, who sets the numbers and the days change from the '
+      'panel; the sessions follow the days in their order', () async {
+    await db.plansDao.createDraft(
+      id: 'p-1',
+      goal: 'Sterker',
+      split: PlanSplit.pushPullLegs,
+      days: WeekdaySet.of([1, 3, 5]).mask,
+      progression: PlanProgression.app,
+      at: DateTime(2026, 11, 1),
+    );
+    final ids = <String>[];
+    for (final (i, name) in ['Push', 'Pull', 'Legs'].indexed) {
+      final id = await db.routinesDao.createRoutine(
+        RoutineDraft(name: name, exercises: const []),
+      );
+      await db.plansDao.placeSession(
+        id,
+        planId: 'p-1',
+        position: i,
+        weekday: [1, 3, 5][i],
+      );
+      ids.add(id);
+    }
+
+    await db.plansDao.setGoal(
+      'p-1',
+      '  Sterker en fitter ',
+      DateTime(2026, 11, 3),
+    );
+    await db.plansDao.setGoal('p-1', '   ', DateTime(2026, 11, 3));
+    await db.plansDao.setProgression(
+      'p-1',
+      PlanProgression.coach,
+      DateTime(2026, 11, 3),
+    );
+    await db.plansDao.setDays(
+      'p-1',
+      WeekdaySet.of([2, 4]),
+      DateTime(2026, 11, 3),
+    );
+
+    final plan = (await db.plansDao.plan('p-1'))!;
+    expect(plan.goal, 'Sterker en fitter');
+    expect(plan.progressionKind, PlanProgression.coach);
+    expect(WeekdaySet(plan.days).weekdays, [2, 4]);
+    expect(
+      [for (final s in await db.plansDao.sessions('p-1')) s.planWeekday],
+      [2, 4, null],
+    );
+
+    // No days at all is no choice: it stays as it was.
+    await db.plansDao.setDays('p-1', WeekdaySet.none, DateTime(2026, 11, 3));
+    expect(WeekdaySet((await db.plansDao.plan('p-1'))!.days).weekdays, [2, 4]);
   });
 
   test('an outline waits for approval, and so does every session', () async {

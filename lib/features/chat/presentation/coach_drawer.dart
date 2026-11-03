@@ -8,6 +8,9 @@
 /// Two lists, switched at the top the way Claude switches between Chat and
 /// Code: the conversations, and the schema's - each with the conversation it
 /// was made in.
+///
+/// The conversations you come back to are pinned at the top, or kept in
+/// folders under that; the rest goes by the day it was last added to.
 library;
 
 import 'dart:math' as math;
@@ -79,6 +82,10 @@ enum ThreadGroup {
 
 /// Which list the panel shows.
 enum _Shelf { chats, plans }
+
+/// What *Nieuwe map* answers in the sheet of folders, where the others
+/// answer with their id - which is never this.
+const _newFolder = 'nieuw';
 
 class _CoachDrawer extends ConsumerStatefulWidget {
   const _CoachDrawer();
@@ -202,8 +209,11 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
     }
   }
 
-  /// Hernoemen and Verwijderen, from ⋮ or a long press.
+  /// Vastpinnen, Naar map…, Hernoemen and Verwijderen, from ⋮ or a long
+  /// press.
   Future<void> _actions(ChatThreadRow thread) async {
+    final folders = ref.read(chatFoldersProvider).value ?? const [];
+    final inFolder = folders.any((folder) => folder.id == thread.folderId);
     final picked = await showAppSheet<String>(
       context: context,
       title: thread.title,
@@ -226,6 +236,24 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
             ),
           ),
           ListTile(
+            leading: Icon(
+              thread.pinned ? Icons.push_pin : Icons.push_pin_outlined,
+            ),
+            title: Text(thread.pinned ? 'Losmaken' : 'Vastpinnen'),
+            onTap: () => Navigator.of(context).pop('pin'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.drive_file_move_outline),
+            title: const Text('Naar map…'),
+            onTap: () => Navigator.of(context).pop('folder'),
+          ),
+          if (inFolder)
+            ListTile(
+              leading: const Icon(Icons.folder_off_outlined),
+              title: const Text('Uit map halen'),
+              onTap: () => Navigator.of(context).pop('out'),
+            ),
+          ListTile(
             leading: const Icon(Icons.edit_outlined),
             title: const Text('Hernoemen'),
             onTap: () => Navigator.of(context).pop('rename'),
@@ -246,6 +274,21 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
     );
     if (!mounted || picked == null) return;
     final chats = ref.read(databaseProvider).chatDao;
+
+    if (picked == 'pin') {
+      await chats.setPinned(thread.id, !thread.pinned);
+      if (_found != null) _find(_search.text);
+      return;
+    }
+    if (picked == 'folder') {
+      await _toFolder(thread);
+      return;
+    }
+    if (picked == 'out') {
+      await chats.moveToFolder(thread.id, null);
+      if (_found != null) _find(_search.text);
+      return;
+    }
 
     if (picked == 'rename') {
       final name = await promptForText(
@@ -275,6 +318,115 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
     if (_found != null) _find(_search.text);
   }
 
+  /// Naar map…: one of the folders, or a new one. The folder opens, so you
+  /// see where the conversation went.
+  Future<void> _toFolder(ChatThreadRow thread) async {
+    final chats = ref.read(databaseProvider).chatDao;
+    final folders = await chats.folders();
+    if (!mounted) return;
+    final picked = await showAppSheet<String>(
+      context: context,
+      title: 'Naar map',
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final folder in folders)
+            ListTile(
+              leading: const Icon(Icons.folder_outlined),
+              title: Text(folder.name),
+              trailing: folder.id == thread.folderId
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () => Navigator.of(context).pop(folder.id),
+            ),
+          ListTile(
+            leading: const Icon(Icons.create_new_folder_outlined),
+            title: const Text('Nieuwe map'),
+            onTap: () => Navigator.of(context).pop(_newFolder),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || picked == null) return;
+
+    var folder = picked;
+    if (picked == _newFolder) {
+      final name = await promptForText(
+        context,
+        title: 'Nieuwe map',
+        hintText: 'Bijvoorbeeld Techniek',
+        confirmLabel: 'Maken',
+        maxLength: ChatDao.folderNameLength,
+      );
+      if (name == null) return;
+      final made = await chats.folderNamed(name);
+      if (made == null) return;
+      folder = made;
+    }
+    await chats.moveToFolder(thread.id, folder);
+    await chats.setFolderCollapsed(folder, false);
+    if (_found != null) _find(_search.text);
+  }
+
+  /// Hernoemen and Verwijderen for a folder, from ⋮ or a long press.
+  /// Verwijderen takes the folder away, not what is in it.
+  Future<void> _folderActions(ChatFolderRow folder, int count) async {
+    final picked = await showAppSheet<String>(
+      context: context,
+      title: folder.name,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: const Text('Hernoemen'),
+            onTap: () => Navigator.of(context).pop('rename'),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            title: Text(
+              'Verwijderen',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            onTap: () => Navigator.of(context).pop('delete'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || picked == null) return;
+    final chats = ref.read(databaseProvider).chatDao;
+
+    if (picked == 'rename') {
+      final name = await promptForText(
+        context,
+        title: 'Map hernoemen',
+        initialValue: folder.name,
+        maxLength: ChatDao.folderNameLength,
+      );
+      if (name == null) return;
+      await chats.renameFolder(folder.id, name);
+      return;
+    }
+
+    final ok = await confirm(
+      context,
+      title: 'Map verwijderen?',
+      message: switch (count) {
+        0 => '"${folder.name}" is leeg.',
+        1 => '"${folder.name}" verdwijnt. Het gesprek erin blijft, zonder map.',
+        _ =>
+          '"${folder.name}" verdwijnt. De $count gesprekken erin blijven, '
+              'zonder map.',
+      },
+      confirmLabel: 'Verwijderen',
+      destructive: true,
+    );
+    if (ok) await chats.deleteFolder(folder.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -285,16 +437,22 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
     final shown = ref.watch(coachSessionControllerProvider).threadId;
     final running = ref.watch(activeWorkoutProvider).value?.workout.id;
     final width = math.min(320.0, MediaQuery.sizeOf(context).width * 0.85);
+    final folders = ref.watch(chatFoldersProvider).value ?? const [];
+    final chats = ref.read(databaseProvider).chatDao;
 
-    Widget tile(ChatThreadRow thread) => ListTile(
+    Widget tile(ChatThreadRow thread, {bool inFolder = false}) => ListTile(
       dense: true,
       visualDensity: VisualDensity.compact,
-      contentPadding: const EdgeInsets.only(left: AppSpacing.sm),
+      contentPadding: EdgeInsets.only(
+        left: inFolder ? AppSpacing.sm + AppSpacing.lg : AppSpacing.sm,
+      ),
       selected: thread.id == shown,
       selectedTileColor: theme.colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       leading: Icon(
-        thread.workoutId != null
+        thread.pinned
+            ? Icons.push_pin_outlined
+            : thread.workoutId != null
             ? Icons.fitness_center
             : Icons.chat_bubble_outline,
         size: 18,
@@ -330,12 +488,76 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
       ),
     );
 
+    final known = {for (final folder in folders) folder.id};
+    final pinned = [
+      for (final thread in threads)
+        if (thread.pinned) thread,
+    ];
+    // A pinned one stays in its folder too: that is where it belongs, the
+    // pin is a way to get to it sooner.
+    final inFolders = <String, List<ChatThreadRow>>{};
+    for (final thread in threads) {
+      if (thread.folderId case final id? when known.contains(id)) {
+        inFolders.putIfAbsent(id, () => []).add(thread);
+      }
+    }
+    // The rest goes by day, under what was pinned or put away above.
+    final loose = [
+      for (final thread in threads)
+        if (!thread.pinned && !known.contains(thread.folderId)) thread,
+    ];
+
+    List<Widget> folder(ChatFolderRow folder) {
+      final inside = inFolders[folder.id] ?? const <ChatThreadRow>[];
+      final open = !folder.isCollapsed;
+      return [
+        Semantics(
+          expanded: open,
+          child: ListTile(
+            dense: true,
+            visualDensity: VisualDensity.compact,
+            contentPadding: const EdgeInsets.only(left: AppSpacing.sm),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            // Shut is full: the outlines of an open and a shut folder are
+            // too alike to tell apart.
+            leading: Icon(open ? Icons.folder_open : Icons.folder, size: 18),
+            minLeadingWidth: 20,
+            title: Text(
+              folder.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${inside.length}', style: theme.textTheme.bodySmall),
+                IconButton(
+                  tooltip: 'Meer over ${folder.name}',
+                  icon: const Icon(Icons.more_vert, size: 18),
+                  onPressed: () => _folderActions(folder, inside.length),
+                ),
+              ],
+            ),
+            onTap: () => chats.setFolderCollapsed(folder.id, open),
+            onLongPress: () => _folderActions(folder, inside.length),
+          ),
+        ),
+        if (open)
+          for (final thread in inside) tile(thread, inFolder: true),
+      ];
+    }
+
     final now = DateTime.now();
     final ofWorkout = running == null
         ? null
-        : threads.where((t) => t.workoutId == running).firstOrNull;
+        : loose.where((t) => t.workoutId == running).firstOrNull;
     final grouped = <ThreadGroup, List<ChatThreadRow>>{};
-    for (final thread in threads) {
+    for (final thread in loose) {
       if (thread.id == ofWorkout?.id) continue;
       final group = ThreadGroup.of(
         DateTime.fromMillisecondsSinceEpoch(thread.updatedAt),
@@ -346,6 +568,14 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
 
     final list = _found == null
         ? <Widget>[
+            if (pinned.isNotEmpty) ...[
+              heading('Vastgepind'),
+              for (final thread in pinned) tile(thread),
+            ],
+            if (folders.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              for (final each in folders) ...folder(each),
+            ],
             if (ofWorkout != null) ...[heading('Nu'), tile(ofWorkout)],
             for (final group in ThreadGroup.values)
               if (grouped[group] case final threads?) ...[

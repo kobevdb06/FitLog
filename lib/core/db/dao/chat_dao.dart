@@ -1,10 +1,13 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 import '../database.dart';
 
 part 'chat_dao.drift.dart';
+
+const _uuid = Uuid();
 
 /// The conversations with the coach.
 ///
@@ -15,6 +18,7 @@ part 'chat_dao.drift.dart';
   tables: [
     ChatThreadsTable,
     ChatMessagesTable,
+    ChatFoldersTable,
     MorningReportsTable,
     WeekReviewsTable,
     WorkoutAnswersTable,
@@ -26,6 +30,9 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
 
   /// How much of a first question becomes the name of a thread.
   static const int titleLength = 60;
+
+  /// How long the name of a folder can be: it has to fit in the panel.
+  static const int folderNameLength = 40;
 
   Stream<List<ChatThreadRow>> watchThreads() => (select(
     chatThreadsTable,
@@ -250,10 +257,91 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
     await (delete(chatThreadsTable)..where((t) => t.id.equals(id))).go();
   }
 
-  /// Everything, for the button in the settings that means everything.
+  /// Everything, for the button in the settings that means everything: the
+  /// folders too, which were only there to keep conversations in.
   Future<void> deleteAllThreads() async {
     await delete(chatMessagesTable).go();
     await delete(chatThreadsTable).go();
+    await delete(chatFoldersTable).go();
+  }
+
+  /// Pinned at the top of the panel, or not any more. The order of the rest
+  /// does not change: that is the last time something was said.
+  Future<void> setPinned(String threadId, bool pinned) async {
+    await (update(chatThreadsTable)..where((t) => t.id.equals(threadId))).write(
+      ChatThreadsTableCompanion(pinned: Value(pinned)),
+    );
+  }
+
+  /// Into the folder [folderId], or out of the one it is in with null.
+  Future<void> moveToFolder(String threadId, String? folderId) async {
+    await (update(chatThreadsTable)..where((t) => t.id.equals(threadId))).write(
+      ChatThreadsTableCompanion(folderId: Value(folderId)),
+    );
+  }
+
+  /// The folders, in the order they were made.
+  Stream<List<ChatFolderRow>> watchFolders() => (select(
+    chatFoldersTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).watch();
+
+  Future<List<ChatFolderRow>> folders() => (select(
+    chatFoldersTable,
+  )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).get();
+
+  /// The folder called [name], made now when there is none: two folders by
+  /// one name would only be confusing. Null for a name that is nothing.
+  Future<String?> folderNamed(String name) => transaction(() async {
+    final clean = _folderName(name);
+    if (clean == null) return null;
+    for (final folder in await folders()) {
+      if (folder.name.toLowerCase() == clean.toLowerCase()) return folder.id;
+    }
+    final id = _uuid.v4();
+    final max = chatFoldersTable.sortOrder.max();
+    final row = await (selectOnly(
+      chatFoldersTable,
+    )..addColumns([max])).getSingle();
+    await into(chatFoldersTable).insert(
+      ChatFoldersTableCompanion.insert(
+        id: id,
+        name: clean,
+        sortOrder: (row.read(max) ?? -1) + 1,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    return id;
+  });
+
+  /// A name you chose, trimmed; nothing empty.
+  Future<void> renameFolder(String id, String name) async {
+    final clean = _folderName(name);
+    if (clean == null) return;
+    await (update(chatFoldersTable)..where((t) => t.id.equals(id))).write(
+      ChatFoldersTableCompanion(name: Value(clean)),
+    );
+  }
+
+  Future<void> setFolderCollapsed(String id, bool collapsed) async {
+    await (update(chatFoldersTable)..where((t) => t.id.equals(id))).write(
+      ChatFoldersTableCompanion(isCollapsed: Value(collapsed)),
+    );
+  }
+
+  /// The folder goes; the conversations in it stay, in none.
+  Future<void> deleteFolder(String id) => transaction(() async {
+    await (update(chatThreadsTable)..where((t) => t.folderId.equals(id))).write(
+      const ChatThreadsTableCompanion(folderId: Value(null)),
+    );
+    await (delete(chatFoldersTable)..where((t) => t.id.equals(id))).go();
+  });
+
+  static String? _folderName(String name) {
+    final clean = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.isEmpty) return null;
+    return clean.length > folderNameLength
+        ? clean.substring(0, folderNameLength)
+        : clean;
   }
 
   /// Every answer since a moment, from the chat, the morning reports, the

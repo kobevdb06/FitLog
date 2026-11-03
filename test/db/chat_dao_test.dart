@@ -119,11 +119,87 @@ void main() {
       );
     }
 
+    final folder = (await db.chatDao.folderNamed('Techniek'))!;
+    await db.chatDao.moveToFolder('t-1', folder);
+
     await db.chatDao.deleteAllThreads();
 
     expect(await db.chatDao.countThreads(), 0);
     expect(await db.chatDao.messages('t-1'), isEmpty);
     expect(await db.chatDao.messages('t-2'), isEmpty);
+    expect(await db.chatDao.folders(), isEmpty);
+  });
+
+  group('pinned and in folders', () {
+    test('pinning and moving change nothing about when it was last added '
+        'to', () async {
+      await db.chatDao.createThread('t-1', 'Mijn knie');
+      final before = (await db.chatDao.thread('t-1'))!.updatedAt;
+      final folder = (await db.chatDao.folderNamed('Techniek'))!;
+
+      await db.chatDao.setPinned('t-1', true);
+      await db.chatDao.moveToFolder('t-1', folder);
+      var thread = (await db.chatDao.thread('t-1'))!;
+      expect(thread.pinned, isTrue);
+      expect(thread.folderId, folder);
+      expect(thread.updatedAt, before);
+
+      await db.chatDao.setPinned('t-1', false);
+      await db.chatDao.moveToFolder('t-1', null);
+      thread = (await db.chatDao.thread('t-1'))!;
+      expect(thread.pinned, isFalse);
+      expect(thread.folderId, isNull);
+    });
+
+    test('a folder by a name there is, is that folder', () async {
+      final first = await db.chatDao.folderNamed('  Techniek ');
+      final again = await db.chatDao.folderNamed('techniek');
+      final other = await db.chatDao.folderNamed('Voeding');
+
+      expect(again, first);
+      expect(other, isNot(first));
+      expect(
+        [for (final f in await db.chatDao.folders()) f.name],
+        ['Techniek', 'Voeding'],
+      );
+      expect(await db.chatDao.folderNamed('   '), isNull);
+      final long = (await db.chatDao.folderNamed('x' * 80))!;
+      final folders = await db.chatDao.folders();
+      expect(
+        folders.firstWhere((f) => f.id == long).name,
+        hasLength(ChatDao.folderNameLength),
+      );
+    });
+
+    test('renaming keeps a name, and nothing is no name', () async {
+      final id = (await db.chatDao.folderNamed('Techniek'))!;
+      await db.chatDao.renameFolder(id, '  Squat   en deadlift ');
+      await db.chatDao.renameFolder(id, '  ');
+      expect((await db.chatDao.folders()).single.name, 'Squat en deadlift');
+    });
+
+    test('deleting a folder leaves its conversations, in none', () async {
+      await db.chatDao.createThread('t-1', 'Squat diepte');
+      await db.chatDao.createThread('t-2', 'Deadlift rug');
+      final techniek = (await db.chatDao.folderNamed('Techniek'))!;
+      final voeding = (await db.chatDao.folderNamed('Voeding'))!;
+      await db.chatDao.moveToFolder('t-1', techniek);
+      await db.chatDao.moveToFolder('t-2', voeding);
+
+      await db.chatDao.deleteFolder(techniek);
+
+      expect((await db.chatDao.thread('t-1'))!.folderId, isNull);
+      expect((await db.chatDao.thread('t-2'))!.folderId, voeding);
+      expect((await db.chatDao.folders()).single.id, voeding);
+      expect(await db.chatDao.countThreads(), 2);
+    });
+
+    test('a folder remembers it was folded shut', () async {
+      final id = (await db.chatDao.folderNamed('Techniek'))!;
+      expect((await db.chatDao.folders()).single.isCollapsed, isFalse);
+      await db.chatDao.setFolderCollapsed(id, true);
+      expect((await db.chatDao.folders()).single.isCollapsed, isTrue);
+    });
   });
 
   test('a newer answer moves its thread to the top', () async {

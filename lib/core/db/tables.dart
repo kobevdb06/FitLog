@@ -414,6 +414,33 @@ class ChatThreadsTable extends Table {
   /// the coach says what it would change. No reference, like [workoutId].
   TextColumn get planId => text().named('plan_id').nullable()();
 
+  /// The folder you put it in, or null for none. No reference, like
+  /// [workoutId]: a folder taken away leaves its conversations loose.
+  TextColumn get folderId => text().named('folder_id').nullable()();
+
+  /// Pinned at the top of the panel, above the folders.
+  BoolColumn get pinned => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A folder of conversations you come back to, in the panel of the coach.
+@DataClassName('ChatFolderRow')
+class ChatFoldersTable extends Table {
+  @override
+  String get tableName => 'chat_folders';
+
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  IntColumn get sortOrder => integer().named('sort_order')();
+
+  /// Folded shut in the panel, the way a folder of routines can be on
+  /// Trainen.
+  BoolColumn get isCollapsed =>
+      boolean().named('is_collapsed').withDefault(const Constant(false))();
+  IntColumn get createdAt => integer().named('created_at')();
+
   @override
   Set<Column> get primaryKey => {id};
 }

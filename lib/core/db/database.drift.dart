@@ -5719,6 +5719,30 @@ class $ChatThreadsTableTable extends ChatThreadsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _folderIdMeta = const VerificationMeta(
+    'folderId',
+  );
+  @override
+  late final GeneratedColumn<String> folderId = GeneratedColumn<String>(
+    'folder_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pinnedMeta = const VerificationMeta('pinned');
+  @override
+  late final GeneratedColumn<bool> pinned = GeneratedColumn<bool>(
+    'pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5727,6 +5751,8 @@ class $ChatThreadsTableTable extends ChatThreadsTable
     updatedAt,
     workoutId,
     planId,
+    folderId,
+    pinned,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5781,6 +5807,18 @@ class $ChatThreadsTableTable extends ChatThreadsTable
         planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
       );
     }
+    if (data.containsKey('folder_id')) {
+      context.handle(
+        _folderIdMeta,
+        folderId.isAcceptableOrUnknown(data['folder_id']!, _folderIdMeta),
+      );
+    }
+    if (data.containsKey('pinned')) {
+      context.handle(
+        _pinnedMeta,
+        pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta),
+      );
+    }
     return context;
   }
 
@@ -5814,6 +5852,14 @@ class $ChatThreadsTableTable extends ChatThreadsTable
         DriftSqlType.string,
         data['${effectivePrefix}plan_id'],
       ),
+      folderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_id'],
+      ),
+      pinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pinned'],
+      )!,
     );
   }
 
@@ -5839,6 +5885,13 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
   /// The schema this is the conversation of: where it was made, and where
   /// the coach says what it would change. No reference, like [workoutId].
   final String? planId;
+
+  /// The folder you put it in, or null for none. No reference, like
+  /// [workoutId]: a folder taken away leaves its conversations loose.
+  final String? folderId;
+
+  /// Pinned at the top of the panel, above the folders.
+  final bool pinned;
   const ChatThreadRow({
     required this.id,
     required this.title,
@@ -5846,6 +5899,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     required this.updatedAt,
     this.workoutId,
     this.planId,
+    this.folderId,
+    required this.pinned,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5860,6 +5915,10 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     if (!nullToAbsent || planId != null) {
       map['plan_id'] = Variable<String>(planId);
     }
+    if (!nullToAbsent || folderId != null) {
+      map['folder_id'] = Variable<String>(folderId);
+    }
+    map['pinned'] = Variable<bool>(pinned);
     return map;
   }
 
@@ -5875,6 +5934,10 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       planId: planId == null && nullToAbsent
           ? const Value.absent()
           : Value(planId),
+      folderId: folderId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderId),
+      pinned: Value(pinned),
     );
   }
 
@@ -5890,6 +5953,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
       workoutId: serializer.fromJson<String?>(json['workoutId']),
       planId: serializer.fromJson<String?>(json['planId']),
+      folderId: serializer.fromJson<String?>(json['folderId']),
+      pinned: serializer.fromJson<bool>(json['pinned']),
     );
   }
   @override
@@ -5902,6 +5967,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       'updatedAt': serializer.toJson<int>(updatedAt),
       'workoutId': serializer.toJson<String?>(workoutId),
       'planId': serializer.toJson<String?>(planId),
+      'folderId': serializer.toJson<String?>(folderId),
+      'pinned': serializer.toJson<bool>(pinned),
     };
   }
 
@@ -5912,6 +5979,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     int? updatedAt,
     Value<String?> workoutId = const Value.absent(),
     Value<String?> planId = const Value.absent(),
+    Value<String?> folderId = const Value.absent(),
+    bool? pinned,
   }) => ChatThreadRow(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -5919,6 +5988,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
     updatedAt: updatedAt ?? this.updatedAt,
     workoutId: workoutId.present ? workoutId.value : this.workoutId,
     planId: planId.present ? planId.value : this.planId,
+    folderId: folderId.present ? folderId.value : this.folderId,
+    pinned: pinned ?? this.pinned,
   );
   ChatThreadRow copyWithCompanion(ChatThreadsTableCompanion data) {
     return ChatThreadRow(
@@ -5928,6 +5999,8 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
       planId: data.planId.present ? data.planId.value : this.planId,
+      folderId: data.folderId.present ? data.folderId.value : this.folderId,
+      pinned: data.pinned.present ? data.pinned.value : this.pinned,
     );
   }
 
@@ -5939,14 +6012,24 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('workoutId: $workoutId, ')
-          ..write('planId: $planId')
+          ..write('planId: $planId, ')
+          ..write('folderId: $folderId, ')
+          ..write('pinned: $pinned')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, createdAt, updatedAt, workoutId, planId);
+  int get hashCode => Object.hash(
+    id,
+    title,
+    createdAt,
+    updatedAt,
+    workoutId,
+    planId,
+    folderId,
+    pinned,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5956,7 +6039,9 @@ class ChatThreadRow extends DataClass implements Insertable<ChatThreadRow> {
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.workoutId == this.workoutId &&
-          other.planId == this.planId);
+          other.planId == this.planId &&
+          other.folderId == this.folderId &&
+          other.pinned == this.pinned);
 }
 
 class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
@@ -5966,6 +6051,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
   final Value<int> updatedAt;
   final Value<String?> workoutId;
   final Value<String?> planId;
+  final Value<String?> folderId;
+  final Value<bool> pinned;
   final Value<int> rowid;
   const ChatThreadsTableCompanion({
     this.id = const Value.absent(),
@@ -5974,6 +6061,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     this.updatedAt = const Value.absent(),
     this.workoutId = const Value.absent(),
     this.planId = const Value.absent(),
+    this.folderId = const Value.absent(),
+    this.pinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatThreadsTableCompanion.insert({
@@ -5983,6 +6072,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     required int updatedAt,
     this.workoutId = const Value.absent(),
     this.planId = const Value.absent(),
+    this.folderId = const Value.absent(),
+    this.pinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -5995,6 +6086,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     Expression<int>? updatedAt,
     Expression<String>? workoutId,
     Expression<String>? planId,
+    Expression<String>? folderId,
+    Expression<bool>? pinned,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6004,6 +6097,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (workoutId != null) 'workout_id': workoutId,
       if (planId != null) 'plan_id': planId,
+      if (folderId != null) 'folder_id': folderId,
+      if (pinned != null) 'pinned': pinned,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6015,6 +6110,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     Value<int>? updatedAt,
     Value<String?>? workoutId,
     Value<String?>? planId,
+    Value<String?>? folderId,
+    Value<bool>? pinned,
     Value<int>? rowid,
   }) {
     return ChatThreadsTableCompanion(
@@ -6024,6 +6121,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
       updatedAt: updatedAt ?? this.updatedAt,
       workoutId: workoutId ?? this.workoutId,
       planId: planId ?? this.planId,
+      folderId: folderId ?? this.folderId,
+      pinned: pinned ?? this.pinned,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6049,6 +6148,12 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
     if (planId.present) {
       map['plan_id'] = Variable<String>(planId.value);
     }
+    if (folderId.present) {
+      map['folder_id'] = Variable<String>(folderId.value);
+    }
+    if (pinned.present) {
+      map['pinned'] = Variable<bool>(pinned.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6064,6 +6169,8 @@ class ChatThreadsTableCompanion extends UpdateCompanion<ChatThreadRow> {
           ..write('updatedAt: $updatedAt, ')
           ..write('workoutId: $workoutId, ')
           ..write('planId: $planId, ')
+          ..write('folderId: $folderId, ')
+          ..write('pinned: $pinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20359,6 +20466,375 @@ class QuickQuestionsTableCompanion extends UpdateCompanion<QuickQuestionRow> {
   }
 }
 
+class $ChatFoldersTableTable extends ChatFoldersTable
+    with TableInfo<$ChatFoldersTableTable, ChatFolderRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatFoldersTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isCollapsedMeta = const VerificationMeta(
+    'isCollapsed',
+  );
+  @override
+  late final GeneratedColumn<bool> isCollapsed = GeneratedColumn<bool>(
+    'is_collapsed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_collapsed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    sortOrder,
+    isCollapsed,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_folders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ChatFolderRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('is_collapsed')) {
+      context.handle(
+        _isCollapsedMeta,
+        isCollapsed.isAcceptableOrUnknown(
+          data['is_collapsed']!,
+          _isCollapsedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ChatFolderRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatFolderRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      isCollapsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_collapsed'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ChatFoldersTableTable createAlias(String alias) {
+    return $ChatFoldersTableTable(attachedDatabase, alias);
+  }
+}
+
+class ChatFolderRow extends DataClass implements Insertable<ChatFolderRow> {
+  final String id;
+  final String name;
+  final int sortOrder;
+
+  /// Folded shut in the panel, the way a folder of routines can be on
+  /// Trainen.
+  final bool isCollapsed;
+  final int createdAt;
+  const ChatFolderRow({
+    required this.id,
+    required this.name,
+    required this.sortOrder,
+    required this.isCollapsed,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['is_collapsed'] = Variable<bool>(isCollapsed);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  ChatFoldersTableCompanion toCompanion(bool nullToAbsent) {
+    return ChatFoldersTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      sortOrder: Value(sortOrder),
+      isCollapsed: Value(isCollapsed),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ChatFolderRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatFolderRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      isCollapsed: serializer.fromJson<bool>(json['isCollapsed']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'isCollapsed': serializer.toJson<bool>(isCollapsed),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  ChatFolderRow copyWith({
+    String? id,
+    String? name,
+    int? sortOrder,
+    bool? isCollapsed,
+    int? createdAt,
+  }) => ChatFolderRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    sortOrder: sortOrder ?? this.sortOrder,
+    isCollapsed: isCollapsed ?? this.isCollapsed,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ChatFolderRow copyWithCompanion(ChatFoldersTableCompanion data) {
+    return ChatFolderRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      isCollapsed: data.isCollapsed.present
+          ? data.isCollapsed.value
+          : this.isCollapsed,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatFolderRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isCollapsed: $isCollapsed, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, sortOrder, isCollapsed, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatFolderRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.sortOrder == this.sortOrder &&
+          other.isCollapsed == this.isCollapsed &&
+          other.createdAt == this.createdAt);
+}
+
+class ChatFoldersTableCompanion extends UpdateCompanion<ChatFolderRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<int> sortOrder;
+  final Value<bool> isCollapsed;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const ChatFoldersTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.isCollapsed = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatFoldersTableCompanion.insert({
+    required String id,
+    required String name,
+    required int sortOrder,
+    this.isCollapsed = const Value.absent(),
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       sortOrder = Value(sortOrder),
+       createdAt = Value(createdAt);
+  static Insertable<ChatFolderRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<int>? sortOrder,
+    Expression<bool>? isCollapsed,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (isCollapsed != null) 'is_collapsed': isCollapsed,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatFoldersTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<int>? sortOrder,
+    Value<bool>? isCollapsed,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ChatFoldersTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      sortOrder: sortOrder ?? this.sortOrder,
+      isCollapsed: isCollapsed ?? this.isCollapsed,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (isCollapsed.present) {
+      map['is_collapsed'] = Variable<bool>(isCollapsed.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatFoldersTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isCollapsed: $isCollapsed, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -20433,6 +20909,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $MomentAnswersTableTable(this);
   late final $QuickQuestionsTableTable quickQuestionsTable =
       $QuickQuestionsTableTable(this);
+  late final $ChatFoldersTableTable chatFoldersTable = $ChatFoldersTableTable(
+    this,
+  );
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -20538,6 +21017,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workoutAnswersTable,
     momentAnswersTable,
     quickQuestionsTable,
+    chatFoldersTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -23507,6 +23987,8 @@ typedef $$ChatThreadsTableTableCreateCompanionBuilder =
       required int updatedAt,
       Value<String?> workoutId,
       Value<String?> planId,
+      Value<String?> folderId,
+      Value<bool> pinned,
       Value<int> rowid,
     });
 typedef $$ChatThreadsTableTableUpdateCompanionBuilder =
@@ -23517,6 +23999,8 @@ typedef $$ChatThreadsTableTableUpdateCompanionBuilder =
       Value<int> updatedAt,
       Value<String?> workoutId,
       Value<String?> planId,
+      Value<String?> folderId,
+      Value<bool> pinned,
       Value<int> rowid,
     });
 
@@ -23590,6 +24074,16 @@ class $$ChatThreadsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get folderId => $composableBuilder(
+    column: $table.folderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> chatMessagesTableRefs(
     Expression<bool> Function($$ChatMessagesTableTableFilterComposer f) f,
   ) {
@@ -23654,6 +24148,16 @@ class $$ChatThreadsTableTableOrderingComposer
     column: $table.planId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get folderId => $composableBuilder(
+    column: $table.folderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ChatThreadsTableTableAnnotationComposer
@@ -23682,6 +24186,12 @@ class $$ChatThreadsTableTableAnnotationComposer
 
   GeneratedColumn<String> get planId =>
       $composableBuilder(column: $table.planId, builder: (column) => column);
+
+  GeneratedColumn<String> get folderId =>
+      $composableBuilder(column: $table.folderId, builder: (column) => column);
+
+  GeneratedColumn<bool> get pinned =>
+      $composableBuilder(column: $table.pinned, builder: (column) => column);
 
   Expression<T> chatMessagesTableRefs<T extends Object>(
     Expression<T> Function($$ChatMessagesTableTableAnnotationComposer a) f,
@@ -23746,6 +24256,8 @@ class $$ChatThreadsTableTableTableManager
                 Value<int> updatedAt = const Value.absent(),
                 Value<String?> workoutId = const Value.absent(),
                 Value<String?> planId = const Value.absent(),
+                Value<String?> folderId = const Value.absent(),
+                Value<bool> pinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatThreadsTableCompanion(
                 id: id,
@@ -23754,6 +24266,8 @@ class $$ChatThreadsTableTableTableManager
                 updatedAt: updatedAt,
                 workoutId: workoutId,
                 planId: planId,
+                folderId: folderId,
+                pinned: pinned,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -23764,6 +24278,8 @@ class $$ChatThreadsTableTableTableManager
                 required int updatedAt,
                 Value<String?> workoutId = const Value.absent(),
                 Value<String?> planId = const Value.absent(),
+                Value<String?> folderId = const Value.absent(),
+                Value<bool> pinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ChatThreadsTableCompanion.insert(
                 id: id,
@@ -23772,6 +24288,8 @@ class $$ChatThreadsTableTableTableManager
                 updatedAt: updatedAt,
                 workoutId: workoutId,
                 planId: planId,
+                folderId: folderId,
+                pinned: pinned,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -33698,6 +34216,214 @@ typedef $$QuickQuestionsTableTableProcessedTableManager =
       QuickQuestionRow,
       PrefetchHooks Function()
     >;
+typedef $$ChatFoldersTableTableCreateCompanionBuilder =
+    ChatFoldersTableCompanion Function({
+      required String id,
+      required String name,
+      required int sortOrder,
+      Value<bool> isCollapsed,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$ChatFoldersTableTableUpdateCompanionBuilder =
+    ChatFoldersTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<int> sortOrder,
+      Value<bool> isCollapsed,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$ChatFoldersTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ChatFoldersTableTable> {
+  $$ChatFoldersTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCollapsed => $composableBuilder(
+    column: $table.isCollapsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ChatFoldersTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChatFoldersTableTable> {
+  $$ChatFoldersTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isCollapsed => $composableBuilder(
+    column: $table.isCollapsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChatFoldersTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChatFoldersTableTable> {
+  $$ChatFoldersTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCollapsed => $composableBuilder(
+    column: $table.isCollapsed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ChatFoldersTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChatFoldersTableTable,
+          ChatFolderRow,
+          $$ChatFoldersTableTableFilterComposer,
+          $$ChatFoldersTableTableOrderingComposer,
+          $$ChatFoldersTableTableAnnotationComposer,
+          $$ChatFoldersTableTableCreateCompanionBuilder,
+          $$ChatFoldersTableTableUpdateCompanionBuilder,
+          (
+            ChatFolderRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ChatFoldersTableTable,
+              ChatFolderRow
+            >,
+          ),
+          ChatFolderRow,
+          PrefetchHooks Function()
+        > {
+  $$ChatFoldersTableTableTableManager(
+    _$AppDatabase db,
+    $ChatFoldersTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChatFoldersTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChatFoldersTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChatFoldersTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<bool> isCollapsed = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChatFoldersTableCompanion(
+                id: id,
+                name: name,
+                sortOrder: sortOrder,
+                isCollapsed: isCollapsed,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required int sortOrder,
+                Value<bool> isCollapsed = const Value.absent(),
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ChatFoldersTableCompanion.insert(
+                id: id,
+                name: name,
+                sortOrder: sortOrder,
+                isCollapsed: isCollapsed,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ChatFoldersTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChatFoldersTableTable,
+      ChatFolderRow,
+      $$ChatFoldersTableTableFilterComposer,
+      $$ChatFoldersTableTableOrderingComposer,
+      $$ChatFoldersTableTableAnnotationComposer,
+      $$ChatFoldersTableTableCreateCompanionBuilder,
+      $$ChatFoldersTableTableUpdateCompanionBuilder,
+      (
+        ChatFolderRow,
+        BaseReferences<_$AppDatabase, $ChatFoldersTableTable, ChatFolderRow>,
+      ),
+      ChatFolderRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -33768,4 +34494,6 @@ class $AppDatabaseManager {
       $$MomentAnswersTableTableTableManager(_db, _db.momentAnswersTable);
   $$QuickQuestionsTableTableTableManager get quickQuestionsTable =>
       $$QuickQuestionsTableTableTableManager(_db, _db.quickQuestionsTable);
+  $$ChatFoldersTableTableTableManager get chatFoldersTable =>
+      $$ChatFoldersTableTableTableManager(_db, _db.chatFoldersTable);
 }

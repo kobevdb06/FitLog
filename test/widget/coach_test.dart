@@ -1781,6 +1781,170 @@ void main() {
       );
     });
 
+    testWidgets('vastpinnen zet een gesprek bovenaan, losmaken haalt het '
+        'terug', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Wat train ik vandaag?');
+      await thread('t-2', 'Mijn knie', daysAgo: 20);
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+      expect(find.text('Vastgepind'), findsNothing);
+
+      await tester.longPress(find.widgetWithText(ListTile, 'Mijn knie'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Vastpinnen'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vastgepind'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Mijn knie')).dy,
+        lessThan(tester.getTopLeft(find.text('Vandaag')).dy),
+      );
+      // Het staat er één keer: niet ook nog onder Eerder.
+      expect(find.text('Eerder'), findsNothing);
+      expect(
+        (await tester.runAsync(() => db.chatDao.thread('t-2')))!.pinned,
+        isTrue,
+      );
+
+      await tester.longPress(find.widgetWithText(ListTile, 'Mijn knie'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Losmaken'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vastgepind'), findsNothing);
+      expect(find.text('Eerder'), findsOneWidget);
+    });
+
+    testWidgets('naar een nieuwe map, inklappen, eruit halen en de map weer '
+        'weg', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Rustdag of niet?');
+      await thread('t-2', 'Squat diepte', daysAgo: 3);
+      await thread('t-3', 'Deadlift rug', daysAgo: 20);
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+
+      // Een nieuwe map, met het eerste gesprek erin.
+      await tester.longPress(find.widgetWithText(ListTile, 'Squat diepte'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Naar map…'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nieuwe map'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Techniek');
+      await tester.tap(find.text('Maken'));
+      await tester.pumpAndSettle();
+
+      final folder = find.widgetWithText(ListTile, 'Techniek');
+      expect(folder, findsOneWidget);
+      expect(
+        find.descendant(of: folder, matching: find.text('1')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getTopLeft(find.text('Squat diepte')).dy,
+        greaterThan(tester.getTopLeft(find.text('Techniek')).dy),
+      );
+      expect(find.text('Afgelopen week'), findsNothing);
+
+      // Een tweede, in de map die er al is.
+      await tester.longPress(find.widgetWithText(ListTile, 'Deadlift rug'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Naar map…'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Techniek').last);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: folder, matching: find.text('2')),
+        findsOneWidget,
+      );
+      expect(find.text('Eerder'), findsNothing);
+
+      // Dichtklappen, en open, en dat blijft zo.
+      await tester.tap(folder);
+      await tester.pumpAndSettle();
+      expect(find.text('Squat diepte'), findsNothing);
+      expect(
+        (await tester.runAsync(() => db.chatDao.folders()))!.single.isCollapsed,
+        isTrue,
+      );
+      await tester.tap(folder);
+      await tester.pumpAndSettle();
+      expect(find.text('Squat diepte'), findsOneWidget);
+
+      // Eruit, terug bij zijn dag.
+      await tester.longPress(find.widgetWithText(ListTile, 'Deadlift rug'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Uit map halen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Eerder'), findsOneWidget);
+
+      // De map weg; wat erin zat, blijft.
+      await tester.tap(find.byTooltip('Meer over Techniek'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Verwijderen'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Het gesprek erin blijft'), findsOneWidget);
+      await tester.tap(find.text('Verwijderen').last);
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ListTile, 'Techniek'), findsNothing);
+      expect(find.text('Afgelopen week'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Squat diepte'), findsOneWidget);
+      expect(await tester.runAsync(() => db.chatDao.countThreads()), 3);
+    });
+
+    testWidgets('een map hernoemen', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Squat diepte');
+      final id = (await db.chatDao.folderNamed('Techniek'))!;
+      await db.chatDao.moveToFolder('t-1', id);
+
+      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+      await tester.longPress(find.widgetWithText(ListTile, 'Techniek'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hernoemen'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'Benen');
+      await tester.tap(find.text('Opslaan'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ListTile, 'Benen'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Squat diepte'), findsOneWidget);
+    });
+
+    testWidgets('mappen en vastgepinde passen op een smalle telefoon met '
+        'grote letters', (tester) async {
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await thread('t-1', 'Een vraag over mijn linkerknie bij diepe squats');
+      await thread('t-2', 'Squat diepte en de stand van mijn voeten');
+      await db.chatDao.setPinned('t-1', true);
+      final id = (await db.chatDao.folderNamed('x' * 40))!;
+      await db.chatDao.moveToFolder('t-2', id);
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      await pump(
+        tester,
+        const CoachScreen(),
+        api: apiSaying(says('ok')),
+        size: const Size(360, 780),
+      );
+      await tester.pumpAndSettle();
+      await openPanel(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Vastgepind'), findsOneWidget);
+      expect(find.byTooltip('Meer over ${'x' * 40}'), findsOneWidget);
+    });
+
     testWidgets('het gesprek van de lopende workout staat bovenaan, onder Nu', (
       tester,
     ) async {

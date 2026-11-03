@@ -146,6 +146,10 @@ Stream<List<ChatThreadRow>> chatThreads(Ref ref) =>
     ref.watch(databaseProvider).chatDao.watchThreads();
 
 @riverpod
+Stream<List<ChatFolderRow>> chatFolders(Ref ref) =>
+    ref.watch(databaseProvider).chatDao.watchFolders();
+
+@riverpod
 Stream<List<ChatMessageRow>> chatMessages(Ref ref, String threadId) =>
     ref.watch(databaseProvider).chatDao.watchMessages(threadId);
 

@@ -67,6 +67,7 @@ part 'database.drift.dart';
     WorkoutAnswersTable,
     MomentAnswersTable,
     QuickQuestionsTable,
+    ChatFoldersTable,
   ],
   daos: [
     SettingsDao,
@@ -88,7 +89,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 58;
+  int get schemaVersion => 59;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -563,6 +564,15 @@ class AppDatabase extends _$AppDatabase {
           // The other moments, and questions of your own: none yet.
           await m.createTable(momentAnswersTable);
           await m.createTable(quickQuestionsTable);
+        }
+        if (from >= 21 && from < 59) {
+          // Pinned and in folders: none was. Before v21 the table is made
+          // whole above.
+          await m.addColumn(chatThreadsTable, chatThreadsTable.folderId);
+          await m.addColumn(chatThreadsTable, chatThreadsTable.pinned);
+        }
+        if (from < 59) {
+          await m.createTable(chatFoldersTable);
         }
       });
 

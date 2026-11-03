@@ -594,6 +594,47 @@ final class ChatThreadsProvider
 
 String _$chatThreadsHash() => r'28db39add1c56fc10c2ae9097a52d6bcb082e323';
 
+@ProviderFor(chatFolders)
+final chatFoldersProvider = ChatFoldersProvider._();
+
+final class ChatFoldersProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<ChatFolderRow>>,
+          List<ChatFolderRow>,
+          Stream<List<ChatFolderRow>>
+        >
+    with
+        $FutureModifier<List<ChatFolderRow>>,
+        $StreamProvider<List<ChatFolderRow>> {
+  ChatFoldersProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'chatFoldersProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatFoldersHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<ChatFolderRow>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<ChatFolderRow>> create(Ref ref) {
+    return chatFolders(ref);
+  }
+}
+
+String _$chatFoldersHash() => r'726c487dd28b023389924975f83fb644a83bf584';
+
 @ProviderFor(chatMessages)
 final chatMessagesProvider = ChatMessagesFamily._();
 

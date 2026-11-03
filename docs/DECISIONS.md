@@ -5296,3 +5296,34 @@ uit het paneel, een melding, *Open het gesprek* of *Verder vragen*.
   plek bijstelt als het groeit.
 - **Een vraag sturen** brengt je onderaan, bij je vraag. Voordien bleef de
   lijst staan waar je was.
+
+## 236. Gesprekken vastpinnen en in mappen
+
+Gevraagd: "mappen kunnen maken voor chats die je vaker gebruikt. dit zou
+moeten werken als chats kunnen pinnen." Gebouwd zoals de mockup.
+
+- **Waar het staat** (schema v59, alleen optellen): `chat_threads.pinned`
+  en `folder_id`, en een tabel `chat_folders`. Geen verwijzing op
+  `folder_id`, zoals op `workout_id` en `plan_id` (220): een map die weggaat,
+  zet haar gesprekken los in plaats van ze mee te nemen.
+- **Het paneel**: bovenaan *Vastgepind*, dan de mappen (naam en aantal,
+  open of dicht met een tik), dan *Nu* en de dagen. Wat vastgepind is of in
+  een map zit, staat niet nog eens onder *Nu* of een dag. Een vastgepind
+  gesprek in een map staat wel in die map, met een speld: daar hoort het, de
+  speld is een snellere weg ernaartoe. Zoeken gaat over alles, zoals
+  voordien. Schema's krijgen dit niet: die hebben hun eigen tabblad.
+- **Het menu van een gesprek** (⋮ of lang drukken): *Vastpinnen* of
+  *Losmaken*, *Naar map…* (de mappen en *Nieuwe map*), *Uit map halen* als
+  het in een map zit, dan *Hernoemen* en *Verwijderen*. Een gesprek dat in
+  een map gaat, opent die map, zodat je ziet waar het heen ging. Vastpinnen
+  of verplaatsen verandert niets aan de volgorde: die blijft het laatste
+  bericht.
+- **Het menu van een map**: *Hernoemen* en *Verwijderen*. Verwijderen
+  vraagt eerst, en zegt dat de gesprekken blijven, zonder map.
+- **Anders dan het plan**: een map onthoudt of ze dicht is
+  (`is_collapsed`), zoals een map van routines op Trainen. Zonder dat stond
+  elke map weer open of dicht bij elke keer dat je het paneel opent. *Nieuwe
+  map* met een naam die er al is (in hoofd- of kleine letters), is die map:
+  twee mappen met één naam zouden alleen verwarren. *Alle gesprekken wissen* in de
+  instellingen neemt de mappen mee: ze waren er alleen om gesprekken in te
+  houden.

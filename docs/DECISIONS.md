@@ -5418,3 +5418,21 @@ goed".
   - De tabbladen zijn even breed, en een naam wordt kleiner als het krap
     wordt: in een schuivende rij viel *Instellen* op een smalle gsm van het
     scherm.
+
+## 239. Herstel: een antwoord gaat door naar de volgende spier
+
+Gemeld: om na een spiergroep de volgende te zeggen, moest je het blad
+sluiten en de volgende aantikken - twee keer drukken. "Dit moet in 1 keer
+kunnen." Twee ontwerpen in een mockup: een knop *Volgende*, of vanzelf door.
+Gekozen: vanzelf door ("bouw b").
+
+- **Fris, Stijf of Pijnlijk** bewaart het antwoord en schuift het blad naar
+  de volgende spiergroep van de lijst; erboven staat *Bewaard: Borst:
+  stijf*, zodat te zien is dat het bleef. Na de laatste gaat het blad dicht.
+  Eén tik per spier, de hele lijst af.
+- **‹ en ›** naast de naam, met *2 van 6* eronder, gaan terug of slaan er een
+  over zonder antwoord. Met één spier in de lijst staan ze er niet.
+- **Nog eens op hetzelfde antwoord** neemt het terug, zoals voordien, en het
+  blad blijft dan staan: terugnemen is geen antwoord.
+- **De volgorde** is die van de lijst toen het blad openging. Een antwoord
+  verandert de schattingen, en de volgorde mag niet onder je duim schuiven.

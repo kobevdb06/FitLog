@@ -100,6 +100,46 @@ void main() {
     }
   }
 
+  /// Bench presses in the same session: chest in the list as well.
+  Future<void> trainedLegsAndChest() async {
+    await trainedLegs();
+    await db
+        .into(db.exercisesTable)
+        .insert(
+          ExercisesTableCompanion.insert(
+            id: 'ex-bench',
+            name: 'Bench Press',
+            primaryMuscle: 'borst',
+            category: 'barbell',
+            createdAt: 0,
+          ),
+        );
+    await db
+        .into(db.workoutExercisesTable)
+        .insert(
+          WorkoutExercisesTableCompanion.insert(
+            id: 'we-bench',
+            workoutId: 'w-legs',
+            exerciseId: 'ex-bench',
+            sortOrder: 1,
+          ),
+        );
+    for (var i = 0; i < 3; i++) {
+      await db
+          .into(db.workoutSetsTable)
+          .insert(
+            WorkoutSetsTableCompanion.insert(
+              id: 'b$i',
+              workoutExerciseId: 'we-bench',
+              sortOrder: i,
+              weightKg: const Value(80),
+              reps: const Value(5),
+              isCompleted: const Value(true),
+            ),
+          );
+    }
+  }
+
   Future<void> pumpApp(
     WidgetTester tester, {
     Size size = const Size(1100, 2400),
@@ -391,9 +431,10 @@ void main() {
       final rows = await db.select(db.sorenessChecksTable).get();
       expect(rows.single.muscle, 'quadriceps');
       expect(rows.single.level, SorenessLevel.sore.wire);
-      // En het scherm zegt waarom de schatting nu is wat ze is: in het
-      // blad, en in de lijst eronder.
-      expect(find.textContaining('vandaag pijnlijk'), findsWidgets);
+      // De enige spier: het blad gaat dicht, en de lijst zegt het.
+      expect(find.byType(ChoiceChip), findsNothing);
+      expect(find.textContaining('vandaag pijnlijk'), findsOneWidget);
+      await openMuscle(tester);
       expect(
         tester
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Pijnlijk'))
@@ -409,6 +450,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(ChoiceChip, 'Pijnlijk'));
       await tester.pumpAndSettle();
+      await openMuscle(tester);
       await tester.tap(find.widgetWithText(ChoiceChip, 'Stijf'));
       await tester.pumpAndSettle();
 
@@ -416,17 +458,84 @@ void main() {
       expect(rows.single.level, SorenessLevel.stiff.wire);
     });
 
-    testWidgets('en nog eens tikken neemt het terug', (tester) async {
+    testWidgets('en nog eens tikken neemt het terug, en het blad blijft', (
+      tester,
+    ) async {
       await trainedLegs();
       await openRecovery(tester);
       await openMuscle(tester);
 
       await tester.tap(find.widgetWithText(ChoiceChip, 'Stijf'));
       await tester.pumpAndSettle();
+      await openMuscle(tester);
       await tester.tap(find.widgetWithText(ChoiceChip, 'Stijf'));
       await tester.pumpAndSettle();
 
       expect(await db.select(db.sorenessChecksTable).get(), isEmpty);
+      expect(find.widgetWithText(ChoiceChip, 'Stijf'), findsOneWidget);
+    });
+
+    testWidgets('het blad met pijlen past op een smalle gsm met grote '
+        'letters', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await trainedLegsAndChest();
+      await pumpApp(tester, size: const Size(360, 780));
+      container!.read(routerProvider).push(Routes.muscleRecovery);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Quadriceps'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byTooltip('Volgende spiergroep'), findsOneWidget);
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Fris'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('een antwoord gaat door naar de volgende spier, met terug en '
+        'verder, en na de laatste gaat het blad dicht', (tester) async {
+      await trainedLegsAndChest();
+      await openRecovery(tester);
+
+      // In de volgorde van de lijst.
+      final quads = tester.getTopLeft(find.text('Quadriceps')).dy;
+      final chest = tester.getTopLeft(find.text('Borst')).dy;
+      final (first, second) = quads < chest
+          ? ('Quadriceps', 'Borst')
+          : ('Borst', 'Quadriceps');
+      await tester.tap(find.text(first));
+      await tester.pumpAndSettle();
+      expect(find.text('1 van 2'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Fris'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 van 2'), findsOneWidget);
+      expect(find.text('Bewaard: $first: fris'), findsOneWidget);
+      expect(find.text(second), findsWidgets);
+
+      // Terug: het antwoord staat er.
+      await tester.tap(find.byTooltip('Vorige spiergroep'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 van 2'), findsOneWidget);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Fris'))
+            .selected,
+        isTrue,
+      );
+      await tester.tap(find.byTooltip('Volgende spiergroep'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 van 2'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Stijf'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ChoiceChip), findsNothing);
+
+      final rows = await db.select(db.sorenessChecksTable).get();
+      final said = {for (final row in rows) row.muscle: row.level};
+      expect(said[first.toLowerCase()], SorenessLevel.fresh.wire);
+      expect(said[second.toLowerCase()], SorenessLevel.stiff.wire);
     });
   });
 
@@ -668,8 +777,8 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, 'Pijnlijk'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await tester.tapAt(const Offset(10, 10));
-    await tester.pumpAndSettle();
+    // The only muscle: answered, the sheet closes by itself.
+    expect(find.byType(ChoiceChip), findsNothing);
 
     final button = find.text('Afgelopen nacht invullen');
     await tester.scrollUntilVisible(

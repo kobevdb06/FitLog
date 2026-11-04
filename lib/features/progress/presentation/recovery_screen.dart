@@ -94,7 +94,13 @@ class RecoveryScreen extends ConsumerWidget {
                     children: [
                       for (final (i, estimate) in recent.indexed) ...[
                         if (i > 0) const Divider(height: 1),
-                        _MuscleRow(estimate: estimate, now: now),
+                        _MuscleRow(
+                          estimate: estimate,
+                          now: now,
+                          onTap: () => _showMuscles(context, [
+                            for (final e in recent) e.muscle,
+                          ], i),
+                        ),
                       ],
                     ],
                   ),
@@ -108,7 +114,8 @@ class RecoveryScreen extends ConsumerWidget {
                   0,
                 ),
                 child: Text(
-                  'Tik op een spier om te zeggen hoe ze voelt.',
+                  'Tik op een spier om te zeggen hoe ze voelt. Na je antwoord '
+                  'komt de volgende.',
                   style: muted,
                 ),
               ),
@@ -197,16 +204,21 @@ SorenessLevel? _saidToday(RecoveryEstimate estimate, DateTime now) {
 /// One muscle in a line: how far, how long still, and what you said about
 /// it today. A tap opens the rest.
 class _MuscleRow extends StatelessWidget {
-  const _MuscleRow({required this.estimate, required this.now});
+  const _MuscleRow({
+    required this.estimate,
+    required this.now,
+    required this.onTap,
+  });
 
   final RecoveryEstimate estimate;
   final DateTime now;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final said = _saidToday(estimate, now);
     return InkWell(
-      onTap: () => _showMuscle(context, estimate.muscle),
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -229,107 +241,243 @@ class _MuscleRow extends StatelessWidget {
   }
 }
 
-/// One muscle in full: why the estimate is what it is, and how it feels.
-Future<void> _showMuscle(BuildContext context, String muscle) =>
-    showAppSheet<void>(
-      context: context,
-      title: Formatters.muscle(muscle),
-      builder: (context) => _MuscleSheet(muscle: muscle),
-    );
+/// The muscles of the list in full, one at a time from [start]: why each
+/// estimate is what it is, and how it feels.
+///
+/// An answer is kept and the sheet moves on to the next muscle, so going
+/// down the list is a tap per muscle; after the last it closes. ‹ and ›
+/// go back, or skip one without an answer.
+Future<void> _showMuscles(
+  BuildContext context,
+  List<String> muscles,
+  int start,
+) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  builder: (context) => SingleChildScrollView(
+    child: _MuscleSheet(muscles: muscles, start: start),
+  ),
+);
 
-class _MuscleSheet extends ConsumerWidget {
-  const _MuscleSheet({required this.muscle});
+class _MuscleSheet extends ConsumerStatefulWidget {
+  const _MuscleSheet({required this.muscles, required this.start});
 
-  final String muscle;
+  /// In the order of the list, as it was when the sheet opened: an answer
+  /// changes the estimates, and the order must not move under a thumb.
+  final List<String> muscles;
+  final int start;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MuscleSheet> createState() => _MuscleSheetState();
+}
+
+class _MuscleSheetState extends ConsumerState<_MuscleSheet> {
+  late int _index = widget.start;
+
+  /// What was just answered for the muscle before, said once on the next
+  /// one: the sheet moves on, and the answer should be seen to have stuck.
+  String? _kept;
+
+  void _go(int index) => setState(() {
+    _index = index;
+    _kept = null;
+  });
+
+  void _answer(String muscle, SorenessLevel level, SorenessLevel? said) {
+    final actions = ref.read(recoveryActionsProvider);
+    // Tapping the answer you already gave takes it back, and stays.
+    if (said == level) {
+      actions.unfeel(muscle);
+      setState(() => _kept = null);
+      return;
+    }
+    actions.feel(muscle, level);
+    if (_index == widget.muscles.length - 1) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() {
+      _kept = '${Formatters.muscle(muscle)}: ${level.label.toLowerCase()}';
+      _index++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final now = DateTime.now();
+    final muscle = widget.muscles[_index];
+    final count = widget.muscles.length;
     RecoveryEstimate? estimate;
     for (final e in ref.watch(recoveryEstimatesProvider).value ?? const []) {
       if (e.muscle == muscle) estimate = e;
     }
     final found = estimate;
-    if (found == null) return const SizedBox.shrink();
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Between ‹ and › when there is more than one; one alone is a title
+        // like any sheet's, against the left edge with what is under it.
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            count > 1 ? AppSpacing.sm : AppSpacing.lg,
+            0,
+            count > 1 ? AppSpacing.sm : AppSpacing.lg,
+            count > 1 ? AppSpacing.sm : AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              if (count > 1)
+                IconButton(
+                  tooltip: 'Vorige spiergroep',
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: _index > 0 ? () => _go(_index - 1) : null,
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: count > 1
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      Formatters.muscle(muscle),
+                      textAlign: count > 1 ? TextAlign.center : TextAlign.start,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    if (count > 1)
+                      Text('${_index + 1} van $count', style: muted),
+                  ],
+                ),
+              ),
+              if (count > 1)
+                IconButton(
+                  tooltip: 'Volgende spiergroep',
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: _index < count - 1 ? () => _go(_index + 1) : null,
+                ),
+            ],
+          ),
+        ),
+        if (found != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: _MuscleState(
+              estimate: found,
+              now: now,
+              kept: _kept,
+              onAnswer: (level) =>
+                  _answer(muscle, level, _saidToday(found, now)),
+            ),
+          ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
+    );
+  }
+}
+
+/// One muscle: how far and how long, why, and the three answers.
+class _MuscleState extends StatelessWidget {
+  const _MuscleState({
+    required this.estimate,
+    required this.now,
+    required this.onAnswer,
+    this.kept,
+  });
+
+  final RecoveryEstimate estimate;
+  final DateTime now;
+  final ValueChanged<SorenessLevel> onAnswer;
+  final String? kept;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final found = estimate;
+    final muscle = found.muscle;
     final said = _saidToday(found, now);
     final reasons = recoveryReasons(found, now: now);
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // The name is the sheet's title: here only how far, and how long.
-          Text(
-            [
-              if (found.isReadyAt(now))
-                'klaar'
-              else
-                Formatters.remainingWords(found.remainingAt(now)),
-              '${(found.progressAt(now) * 100).round()}% hersteld',
-            ].join(' · '),
-            style: theme.textTheme.bodyLarge,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-            child: LinearProgressIndicator(
-              value: found.progressAt(now),
-              minHeight: 4,
-              backgroundColor: AppColors.forMuscle(muscle)
-                  .withValues(alpha: 0.18),
-              valueColor: AlwaysStoppedAnimation(AppColors.forMuscle(muscle)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (kept != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Row(
+              children: [
+                const Icon(Icons.check, size: 16, color: AppColors.success),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(child: Text('Bewaard: $kept', style: muted)),
+              ],
             ),
           ),
-          if (found.provisional)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xs),
-              child: Text(
-                'Nog te weinig sessies voor deze spiergroep om met je eigen '
-                'gemiddelde te vergelijken.',
-                style: muted,
+        // The name is the sheet's title: here only how far, and how long.
+        Text(
+          [
+            if (found.isReadyAt(now))
+              'klaar'
+            else
+              Formatters.remainingWords(found.remainingAt(now)),
+            '${(found.progressAt(now) * 100).round()}% hersteld',
+          ].join(' · '),
+          style: theme.textTheme.bodyLarge,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          child: LinearProgressIndicator(
+            value: found.progressAt(now),
+            minHeight: 4,
+            backgroundColor: AppColors.forMuscle(muscle)
+                .withValues(alpha: 0.18),
+            valueColor: AlwaysStoppedAnimation(AppColors.forMuscle(muscle)),
+          ),
+        ),
+        if (found.provisional)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: Text(
+              'Nog te weinig sessies voor deze spiergroep om met je eigen '
+              'gemiddelde te vergelijken.',
+              style: muted,
+            ),
+          ),
+        if (reasons.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: Text(reasons.join(' · '), style: muted),
+          ),
+        const SizedBox(height: AppSpacing.lg),
+        Text('Hoe voelt ze vandaag?', style: theme.textTheme.titleSmall),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          children: [
+            for (final level in SorenessLevel.values)
+              ChoiceChip(
+                label: Text(level.label),
+                selected: said == level,
+                onSelected: (_) => onAnswer(level),
               ),
-            ),
-          if (reasons.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xs),
-              child: Text(reasons.join(' · '), style: muted),
-            ),
-          const SizedBox(height: AppSpacing.lg),
-          Text('Hoe voelt ze vandaag?', style: theme.textTheme.titleSmall),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            children: [
-              for (final level in SorenessLevel.values)
-                ChoiceChip(
-                  label: Text(level.label),
-                  selected: said == level,
-                  onSelected: (_) {
-                    final actions = ref.read(recoveryActionsProvider);
-                    // Tapping the answer you already gave takes it back.
-                    if (said == level) {
-                      actions.unfeel(muscle);
-                    } else {
-                      actions.feel(muscle, level);
-                    }
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Wat je voelt, is het enige wat FitLog echt meet. Na een paar '
-            'keer leert het hoe snel jij herstelt.',
-            style: muted,
-          ),
-        ],
-      ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Wat je voelt, is het enige wat FitLog echt meet. Na een paar '
+          'keer leert het hoe snel jij herstelt.',
+          style: muted,
+        ),
+      ],
     );
   }
 }

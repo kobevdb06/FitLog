@@ -80,6 +80,31 @@ void main() {
     expect(find.text('Benen'), findsOneWidget);
   });
 
+  testWidgets('the menu of a session has the icons the session itself has', (
+    tester,
+  ) async {
+    await session('Push A', first);
+    await pump(tester);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    for (final (icon, label) in [
+      (Icons.replay, 'Opnieuw doen'),
+      (Icons.delete_outline, 'Verwijderen'),
+    ]) {
+      expect(
+        find.ancestor(
+          of: find.byIcon(icon),
+          matching: find.byType(PopupMenuItem<String>),
+        ),
+        findsOneWidget,
+        reason: label,
+      );
+      expect(find.text(label), findsOneWidget);
+    }
+  });
+
   testWidgets('tapping a day leaves only that day', (tester) async {
     await session('Push A', first);
     await session('Benen', second);

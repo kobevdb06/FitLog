@@ -354,9 +354,16 @@ class _WorkoutTile extends ConsumerWidget {
             deleteWorkoutWithUndo(context, ref, workout);
           }
         },
-        itemBuilder: (context) => const [
-          PopupMenuItem(value: 'repeat', child: Text('Opnieuw doen')),
-          PopupMenuItem(value: 'delete', child: Text('Verwijderen')),
+        // The same menu as on the workout itself, icons and all.
+        itemBuilder: (context) => [
+          menuItem(value: 'repeat', icon: Icons.replay, label: 'Opnieuw doen'),
+          const PopupMenuDivider(),
+          menuItem(
+            value: 'delete',
+            icon: Icons.delete_outline,
+            label: 'Verwijderen',
+            destructive: true,
+          ),
         ],
       ),
     );

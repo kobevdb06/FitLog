@@ -160,16 +160,18 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
   );
 
   /// Makes [routineId] the session of [planId] at [position], meant for
-  /// [weekday].
+  /// [weekday] - under [name], when it was renamed.
   Future<void> placeSession(
     String routineId, {
     required String planId,
     required int position,
     int? weekday,
     String? focus,
+    String? name,
     PlanSessionState state = PlanSessionState.approved,
   }) => (update(routinesTable)..where((t) => t.id.equals(routineId))).write(
     RoutinesTableCompanion(
+      name: name == null ? const Value.absent() : Value(name.trim()),
       planId: Value(planId),
       planWeekday: Value(weekday),
       planFocus: Value(focus),
@@ -331,9 +333,11 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
     DateTime to,
   ) {
     final marks = List.filled(routineIds.length, '?').join(', ');
+    // By the session the workout kept, not the routine it points to: that
+    // pointer is cleared when a routine goes (DECISIONS 240).
     return customSelect(
-      'SELECT DISTINCT routine_id FROM workouts '
-      'WHERE routine_id IN ($marks) AND ended_at IS NOT NULL '
+      'SELECT DISTINCT plan_session_id FROM workouts '
+      'WHERE plan_session_id IN ($marks) AND ended_at IS NOT NULL '
       'AND started_at >= ? AND started_at < ?',
       variables: [
         for (final id in routineIds) Variable.withString(id),
@@ -341,7 +345,31 @@ class PlansDao extends DatabaseAccessor<AppDatabase> with _$PlansDaoMixin {
         Variable.withInt(to.millisecondsSinceEpoch),
       ],
       readsFrom: {workoutsTable},
-    ).map((row) => row.read<String>('routine_id'));
+    ).map((row) => row.read<String>('plan_session_id'));
+  }
+
+  /// The session of [plan] named [name] that is gone, but was done since
+  /// the schema began: what a session put back under that name is again,
+  /// so what was done in it still counts. Null when there is none.
+  Future<String?> formerSession(TrainingPlanRow plan, String name) async {
+    final start = plan.startDay;
+    if (start == null) return null;
+    final rows = await customSelect(
+      'SELECT plan_session_id, name FROM workouts '
+      'WHERE plan_session_id IS NOT NULL AND started_at >= ? '
+      'AND plan_session_id NOT IN (SELECT id FROM routines) '
+      'ORDER BY started_at DESC',
+      variables: [Variable.withInt(start)],
+      readsFrom: {workoutsTable, routinesTable},
+    ).get();
+    // Compared here, not in SQL: lower() there folds ASCII only.
+    final wanted = name.trim().toLowerCase();
+    for (final row in rows) {
+      if (row.read<String>('name').trim().toLowerCase() == wanted) {
+        return row.read<String>('plan_session_id');
+      }
+    }
+    return null;
   }
 
   /// Which of [routineIds] were done - finished - between [from] and [to].

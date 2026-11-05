@@ -52,6 +52,7 @@ void main() {
         WorkoutsTableCompanion.insert(
           id: 'w-$routineId-${when.millisecondsSinceEpoch}',
           routineId: Value(routineId),
+          planSessionId: Value(routineId),
           name: 'Sessie',
           startedAt: when.millisecondsSinceEpoch,
           endedAt: Value(when.millisecondsSinceEpoch + 3600000),

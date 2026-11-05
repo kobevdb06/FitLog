@@ -203,6 +203,7 @@ void main() {
           WorkoutsTableCompanion.insert(
             id: 'w-1',
             routineId: Value(ids[0]),
+            planSessionId: Value(ids[0]),
             name: 'Sessie 1',
             startedAt: DateTime.now()
                 .subtract(const Duration(minutes: 90))
@@ -384,6 +385,7 @@ void main() {
           WorkoutsTableCompanion.insert(
             id: 'w-1',
             routineId: Value(ids[0]),
+            planSessionId: Value(ids[0]),
             name: 'Sessie 1',
             startedAt: DateTime.now()
                 .subtract(const Duration(minutes: 90))

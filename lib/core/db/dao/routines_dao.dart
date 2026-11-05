@@ -359,9 +359,11 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
         .toList(growable: false);
   }
 
-  /// Creates a routine and everything under it in one transaction.
-  Future<String> createRoutine(RoutineDraft draft) async {
-    final id = _uuid.v4();
+  /// Creates a routine and everything under it in one transaction: under
+  /// [id] when given - the session of a schema put back as who it was - and
+  /// a new one otherwise.
+  Future<String> createRoutine(RoutineDraft draft, {String? id}) async {
+    final made = id ?? _uuid.v4();
     final now = DateTime.now().millisecondsSinceEpoch;
     await transaction(() async {
       final max = routinesTable.sortOrder.max();
@@ -370,7 +372,7 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
       )..addColumns([max])).getSingle();
       await into(routinesTable).insert(
         RoutinesTableCompanion.insert(
-          id: id,
+          id: made,
           name: draft.name,
           notes: Value(draft.notes),
           folderId: Value(draft.folderId),
@@ -380,9 +382,9 @@ class RoutinesDao extends DatabaseAccessor<AppDatabase>
           updatedAt: now,
         ),
       );
-      await _writeRoutineExercises(id, draft.exercises);
+      await _writeRoutineExercises(made, draft.exercises);
     });
-    return id;
+    return made;
   }
 
   /// Replaces the full content of a routine. The editor always saves the whole

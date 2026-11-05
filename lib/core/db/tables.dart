@@ -794,6 +794,13 @@ class WorkoutsTable extends Table {
   BoolColumn get isLight =>
       boolean().named('is_light').withDefault(const Constant(false))();
 
+  /// The session of a schema this was done for: the id of that routine,
+  /// copied at the start and never changed after. [routineId] is cleared
+  /// when the routine goes; this is not, so a schema still knows the
+  /// session was done whatever became of its exercises. Null for anything
+  /// that was no session of a schema. No reference, for that reason.
+  TextColumn get planSessionId => text().named('plan_session_id').nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

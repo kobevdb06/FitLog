@@ -122,6 +122,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
         WorkoutsTableCompanion.insert(
           id: id,
           routineId: Value(routine?.id),
+          planSessionId: Value(routine?.planId == null ? null : routine?.id),
           name: name ?? routine?.name ?? 'Losse workout',
           colorIndex: Value(routine?.colorIndex),
           startedAt: now,

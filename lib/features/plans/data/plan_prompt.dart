@@ -50,8 +50,10 @@ Future<String> describePlanOf(
     PlanStatus.running =>
       '${week >= 1 ? 'Het schema loopt, week $week${plan.weeks == null ? '' : ' van ${plan.weeks}'}.' : 'Het schema is gestart en begint maandag.'} '
           'Pas het alleen aan als de gebruiker erom vraagt: één sessie met '
-          'save_plan_session, de opzet met save_plan_outline. Wat al gedaan '
-          'is, blijft.',
+          'save_plan_session, de opzet met save_plan_outline. De opzet geef '
+          'je altijd met alle sessies van de week, ook die niet veranderen; '
+          'een sessie hernoemen doe je met was, en een sessie gaat alleen weg '
+          'als je ze in remove zet. Wat al gedaan is, blijft.',
     PlanStatus.draft when sessions.isEmpty =>
       'Stap 1: stel de opzet voor met save_plan_outline - een naam, de weken '
           '(4 tot 12, meestal met een deload als laatste), de sessies van een '

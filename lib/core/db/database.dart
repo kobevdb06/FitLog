@@ -89,7 +89,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 60;
+  int get schemaVersion => 61;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -578,6 +578,31 @@ class AppDatabase extends _$AppDatabase {
           // Your own questions as commands: none was one yet. Before v58 the
           // table is made whole above.
           await m.addColumn(quickQuestionsTable, quickQuestionsTable.command);
+        }
+        if (from < 61) {
+          // A workout keeps the session of a schema it was done for. Every
+          // session still there knows its own; one the coach threw away and
+          // made again under the same name, while the schema ran, lost it
+          // (DECISIONS 240) and gets the one of that name now. Before v54
+          // there were no schema's, and nothing matches.
+          await m.addColumn(workoutsTable, workoutsTable.planSessionId);
+          await customStatement(
+            'UPDATE workouts SET plan_session_id = routine_id '
+            'WHERE routine_id IN '
+            '(SELECT id FROM routines WHERE plan_id IS NOT NULL)',
+          );
+          await customStatement(
+            'UPDATE workouts SET plan_session_id = ('
+            'SELECT r.id FROM routines r '
+            'JOIN training_plans p ON p.id = r.plan_id '
+            'WHERE lower(r.name) = lower(workouts.name) '
+            'AND p.start_day IS NOT NULL '
+            'AND workouts.started_at >= p.start_day '
+            'AND (p.ended_at IS NULL OR workouts.started_at < p.ended_at) '
+            'LIMIT 1) '
+            'WHERE routine_id IS NULL AND plan_session_id IS NULL '
+            'AND ended_at IS NOT NULL',
+          );
         }
       });
 

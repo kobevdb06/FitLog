@@ -5436,3 +5436,51 @@ Gekozen: vanzelf door ("bouw b").
   blad blijft dan staan: terugnemen is geen antwoord.
 - **De volgorde** is die van de lijst toen het blad openging. Een antwoord
   verandert de schattingen, en de volgorde mag niet onder je duim schuiven.
+
+## 240. Wat in een schema gedaan is, blijft gedaan
+
+Gemeld: de coach paste in het gesprek van een lopend schema de pull day
+aan, goed en in één keer, maar daarna was er alleen nog pull. De push van
+die week stond in de geschiedenis, en toch zei het schema 0/5 in plaats
+van 1/5, en dat push nog moest.
+
+Oorzaak, twee keer. Een schema telde een sessie als gedaan via
+`workouts.routine_id`, en die wordt leeg (`ON DELETE SET NULL`) zodra de
+routine weggaat. En `save_plan_outline` - en Aanvaarden van een voorstel
+op zondag - nam de sessies die het kreeg als het hele schema: wat er niet
+in stond, ging weg. De coach gaf alleen de sessie die veranderde, en nam
+zo de andere mee. Werden ze daarna opnieuw gemaakt, dan was het onder een
+nieuw id, en wees de push van die week nergens meer naar.
+
+Het voorstel van Kobe: een vast id per sessie, gemaakt bij het aanmaken
+en nooit veranderd, en een workout die het bewaart. Dat id is er al - de
+routine van de sessie houdt het zolang ze bestaat - dus:
+
+- **Een workout bewaart zijn sessie.** Nieuw `workouts.plan_session_id`
+  (v61): bij de start het id van de routine, als die een sessie van een
+  schema is, en daarna nooit veranderd; geen verwijzing, zodat niets het
+  leegmaakt. Wat gedaan is, telt het schema via die kolom, wat de routine
+  intussen ook werd.
+- **Een sessie gaat niet meer weg zonder dat het gezegd is.** Bij een
+  lopend schema moet elke sessie in de opzet staan - bij haar naam - of in
+  het nieuwe `remove` bij naam genoemd zijn; anders weigert FitLog, en
+  verandert er niets. Zo ook een voorstel op zondag, al voor het een kaart
+  wordt. Bij een ontwerp blijft het zoals het was: wat de coach weglaat,
+  valt weg, want er is nog niets gedaan.
+- **Hernoemen is dezelfde sessie.** Een sessie in de opzet met `was` - de
+  naam die ze nu heeft - houdt haar id, haar oefeningen en wat erin gedaan
+  is. Voorheen was een andere naam een nieuwe sessie.
+- **Teruggezet onder haar naam is ze weer wie ze was.** Een sessie die
+  weg was en terugkomt terwijl het schema loopt, krijgt het id terug dat de
+  workouts van haar naam sinds de start bewaren (`formerSession`), zodat
+  wat die week gedaan is weer meetelt.
+- **De migratie herstelt wat al misging.** Elke workout van een sessie die
+  er nog is, krijgt die sessie. Een workout zonder routine meer, gedaan
+  terwijl een schema liep, krijgt de sessie van dat schema met dezelfde
+  naam: precies de push van de melding, als de coach haar onder dezelfde
+  naam terugzette. Een andere naam herkent de migratie niet; dat raadt ze
+  liever niet.
+- **De coach weet het ook.** De tools zeggen dat de opzet altijd alle
+  sessies van de week heeft, en het gesprek van een lopend schema zegt
+  hoe hernoemen en weghalen gaan. Een weigering noemt de sessies die
+  ontbraken, zodat de coach het in dezelfde beurt goed doet.

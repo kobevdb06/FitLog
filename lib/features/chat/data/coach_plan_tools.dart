@@ -70,6 +70,26 @@ const Map<String, Object?> _weeksSchema = {
   },
 };
 
+/// The name a session has now, for one the coach renames: it stays the
+/// same session, with its exercises and what was done in it.
+const Map<String, Object?> _wasField = {
+  'type': 'string',
+  'description':
+      'Alleen als je een sessie hernoemt: de naam die ze nu heeft. Ze blijft '
+      'dezelfde sessie, met wat er al in gedaan is.',
+};
+
+/// The sessions of a running schema that go. One left out and not named
+/// here is refused (DECISIONS 240).
+const Map<String, Object?> _removeField = {
+  'type': 'array',
+  'items': {'type': 'string'},
+  'description':
+      'Alleen bij een lopend schema: de sessies die echt weg moeten, bij hun '
+      'naam. Een sessie die je weglaat zonder ze hier te noemen, wordt '
+      'geweigerd.',
+};
+
 /// A whole schema, as save_plan and propose_plan_change take it.
 const Map<String, Object?> _layoutSchema = {
   'type': 'object',
@@ -88,12 +108,13 @@ const Map<String, Object?> _layoutSchema = {
     'sessions': {
       'type': 'array',
       'description':
-          'De sessies van een week, in de volgorde waarin ze gedaan '
-          'worden: 1 tot $kPlanMaxSessions.',
+          'Alle sessies van een week, ook die je niet verandert, in de '
+          'volgorde waarin ze gedaan worden: 1 tot $kPlanMaxSessions.',
       'items': {
         'type': 'object',
         'properties': {
           'name': {'type': 'string'},
+          'was': _wasField,
           'weekday': {
             'type': 'integer',
             'description': 'De dag ervoor: 1 is maandag, 7 zondag.',
@@ -104,6 +125,7 @@ const Map<String, Object?> _layoutSchema = {
         'required': ['name', 'exercises'],
       },
     },
+    'remove': _removeField,
   },
   'required': ['name', 'change', 'weeks', 'sessions'],
 };
@@ -169,9 +191,10 @@ extension _PlanTools on CoachTools {
       'description':
           'Legt de opzet van het schema vast, nog zonder oefeningen: de naam, '
           'de weken, de sessies van een week met hun dag en hun focus, en '
-          'hoeveel werksets per spiergroep per week. Een sessie die al '
-          'bestaat, houdt haar oefeningen. Bij een ontwerp wacht de opzet '
-          'daarna op het akkoord van de gebruiker.',
+          'hoeveel werksets per spiergroep per week. Geef altijd alle '
+          'sessies van de week mee, ook die je niet verandert. Een sessie '
+          'die al bestaat, houdt haar oefeningen. Bij een ontwerp wacht de '
+          'opzet daarna op het akkoord van de gebruiker.',
       'input_schema': {
         'type': 'object',
         'properties': {
@@ -189,12 +212,13 @@ extension _PlanTools on CoachTools {
           'sessions': {
             'type': 'array',
             'description':
-                'De sessies van een week, in de volgorde waarin ze gedaan '
-                'worden: 1 tot $kPlanMaxSessions.',
+                'Alle sessies van een week, ook die je niet verandert, in de '
+                'volgorde waarin ze gedaan worden: 1 tot $kPlanMaxSessions.',
             'items': {
               'type': 'object',
               'properties': {
                 'name': {'type': 'string'},
+                'was': _wasField,
                 'weekday': {
                   'type': 'integer',
                   'description': 'De dag ervoor: 1 is maandag, 7 zondag.',
@@ -221,6 +245,7 @@ extension _PlanTools on CoachTools {
               'required': ['muscle', 'sets'],
             },
           },
+          'remove': _removeField,
         },
         'required': ['name', 'change', 'weeks', 'sessions', 'volume'],
       },
@@ -367,6 +392,7 @@ extension _PlanTools on CoachTools {
       sessions.add(
         _PlanSession(
           name: session,
+          was: _text(entry['was']),
           weekday: weekday != null && weekday >= 1 && weekday <= 7
               ? weekday
               : null,
@@ -400,6 +426,64 @@ extension _PlanTools on CoachTools {
       ),
       null,
     );
+  }
+
+  /// Which session that is there each of [wanted] is - by the name it had
+  /// when it is renamed, or else by its name - and which are left out.
+  /// While a schema runs, one left out goes only when [remove] names it: an
+  /// outline written with just the session that changed once took every
+  /// other with it, and what was done in them (DECISIONS 240).
+  (_Matched?, CoachLookup?) _match(
+    TrainingPlanRow plan,
+    List<RoutineRow> before,
+    List<({String name, String? was})> wanted,
+    Object? remove,
+  ) {
+    final byName = {for (final row in before) row.name.toLowerCase(): row};
+    final taken = <String>{};
+    final existing = List<RoutineRow?>.filled(wanted.length, null);
+    // The renamed first, so that a new session under an old name cannot
+    // take the one that was renamed away from it.
+    for (final (i, session) in wanted.indexed) {
+      final row = byName[session.was?.toLowerCase()];
+      if (row != null && taken.add(row.id)) existing[i] = row;
+    }
+    for (final (i, session) in wanted.indexed) {
+      if (existing[i] != null) continue;
+      final row = byName[session.name.toLowerCase()];
+      if (row != null && taken.add(row.id)) existing[i] = row;
+    }
+    final gone = [
+      for (final row in before)
+        if (!taken.contains(row.id)) row,
+    ];
+    if (plan.state == PlanStatus.running) {
+      final named = {
+        for (final name in remove is List ? remove : const [])
+          if (_text(name) case final text?) text.toLowerCase(),
+      };
+      final missing = [
+        for (final row in gone)
+          if (!named.contains(row.name.toLowerCase())) row.name,
+      ];
+      if (missing.isNotEmpty) {
+        return (
+          null,
+          CoachLookup(
+            json: jsonEncode({
+              'ok': false,
+              'error':
+                  'je liet ${missing.join(', ')} weg. Geef alle sessies van '
+                  'de week mee, ook die je niet verandert; een sessie die je '
+                  'hernoemt, met was. Moet er echt een weg, zet ze dan in '
+                  'remove.',
+            }),
+            summary: 'een schema zonder ${missing.join(' en ')}',
+          ),
+        );
+      }
+    }
+    return (_Matched(existing: existing, gone: gone), null);
   }
 
   /// The schema of this conversation, or why it may not change.
@@ -442,21 +526,18 @@ extension _PlanTools on CoachTools {
 
     final before = await db.plansDao.sessions(plan.id);
     final running = plan.state == PlanStatus.running;
-    final names = {for (final s in layout.sessions) s.name.toLowerCase()};
+    final (matched, left) = _match(plan, before, [
+      for (final s in layout.sessions) (name: s.name, was: s.was),
+    ], input['remove']);
+    if (matched == null) return left!;
     await db.transaction(() async {
       // While it is still talked over, nothing was done in the sessions:
-      // they are simply made again. A running schema keeps its sessions by
-      // name, with what was done in them, and how each was before.
-      final kept = <String, RoutineRow>{
-        if (running)
-          for (final row in before) row.name.toLowerCase(): row,
-      };
-      for (final row in before) {
-        if (!kept.containsKey(row.name.toLowerCase()) ||
-            !names.contains(row.name.toLowerCase())) {
-          // Gone from the schema. What was done in it stays in the history.
-          await db.routinesDao.deleteRoutine(row.id);
-        }
+      // they are simply made again. A running schema keeps each session -
+      // by its name, or the name it had - with what was done in it, and how
+      // it was before.
+      for (final row in running ? matched.gone : before) {
+        // Gone from the schema. What was done in it stays in the history.
+        await db.routinesDao.deleteRoutine(row.id);
       }
       for (final (position, session) in layout.sessions.indexed) {
         final draft = RoutineDraft(
@@ -465,12 +546,18 @@ extension _PlanTools on CoachTools {
           exercises: session.drafts,
         );
         final String id;
-        if (kept[session.name.toLowerCase()] case final existing?) {
+        if ((running ? matched.existing[position] : null)
+            case final existing?) {
           id = existing.id;
           await db.routinesDao.keepVersion(id, 'Voor: ${layout.change}');
           await db.routinesDao.updateRoutine(id, draft);
         } else {
-          id = await db.routinesDao.createRoutine(draft);
+          id = await db.routinesDao.createRoutine(
+            draft,
+            id: running
+                ? await db.plansDao.formerSession(plan, session.name)
+                : null,
+          );
         }
         await db.plansDao.placeSession(
           id,
@@ -558,6 +645,7 @@ extension _PlanTools on CoachTools {
       );
     }
     final outline = <OutlineSession>[];
+    final renamed = <String?>[];
     final names = <String>{};
     for (final entry in sessionsIn) {
       if (entry is! Map) continue;
@@ -572,6 +660,7 @@ extension _PlanTools on CoachTools {
         );
       }
       final weekday = _number(entry['weekday'])?.round();
+      renamed.add(_text(entry['was']));
       outline.add(
         OutlineSession(
           name: session,
@@ -596,23 +685,26 @@ extension _PlanTools on CoachTools {
 
     final running = plan.state == PlanStatus.running;
     final at = DateTime.now();
-    final before = {
-      for (final row in await db.plansDao.sessions(plan.id))
-        row.name.toLowerCase(): row,
-    };
+    final (matched, left) = _match(plan, await db.plansDao.sessions(plan.id), [
+      for (final (i, s) in outline.indexed) (name: s.name, was: renamed[i]),
+    ], input['remove']);
+    if (matched == null) return left!;
     await db.transaction(() async {
-      for (final row in before.values) {
-        if (!names.contains(row.name.toLowerCase())) {
-          // Gone from the outline. What was done in it stays in the history.
-          await db.routinesDao.deleteRoutine(row.id);
-        }
+      for (final row in matched.gone) {
+        // Gone from the outline. What was done in it stays in the history.
+        await db.routinesDao.deleteRoutine(row.id);
       }
       for (final (position, session) in outline.indexed) {
-        final existing = before[session.name.toLowerCase()];
+        final existing = matched.existing[position];
         final id =
             existing?.id ??
             await db.routinesDao.createRoutine(
               RoutineDraft(name: session.name, exercises: const []),
+              // Put back while it runs: the session it was, with what was
+              // done in it this week.
+              id: running
+                  ? await db.plansDao.formerSession(plan, session.name)
+                  : null,
             );
         await db.plansDao.placeSession(
           id,
@@ -620,6 +712,9 @@ extension _PlanTools on CoachTools {
           position: position,
           weekday: session.weekday,
           focus: session.focus,
+          name: existing != null && existing.name != session.name
+              ? session.name
+              : null,
           state: existing?.sessionState ?? PlanSessionState.planned,
         );
       }
@@ -777,6 +872,12 @@ extension _PlanTools on CoachTools {
     if (plan == null) return closed!;
     final (layout, refusal) = await _checkLayout(input);
     if (layout == null) return refusal!;
+    // Refused now, not only at Aanvaarden: a card that takes sessions
+    // nobody meant to lose should not be offered at all.
+    final (_, left) = _match(plan, await db.plansDao.sessions(plan.id), [
+      for (final s in layout.sessions) (name: s.name, was: s.was),
+    ], input['remove']);
+    if (left != null) return left;
     return CoachLookup(
       json: jsonEncode({
         'ok': true,
@@ -926,6 +1027,7 @@ class _PlanLayout {
 class _PlanSession {
   const _PlanSession({
     required this.name,
+    this.was,
     required this.weekday,
     required this.notes,
     required this.drafts,
@@ -933,8 +1035,23 @@ class _PlanSession {
   });
 
   final String name;
+
+  /// The name it has now, when the coach renames it.
+  final String? was;
   final int? weekday;
   final String? notes;
   final List<RoutineExerciseDraft> drafts;
   final List<ProposedRoutineExercise> card;
+}
+
+/// How the sessions the coach wrote meet the ones that are there.
+class _Matched {
+  const _Matched({required this.existing, required this.gone});
+
+  /// Per session written, in its order: the one it is, or null for a new
+  /// one.
+  final List<RoutineRow?> existing;
+
+  /// What is there and was not written: it goes.
+  final List<RoutineRow> gone;
 }

@@ -326,6 +326,10 @@ const Duration kShortestCardio = Duration(minutes: 10);
 /// - **Weight:** every reading, with Health Connect's id.
 /// - **Cardio:** runs and rides only, at least [kShortestCardio], and never
 ///   FitLog's own workouts coming back.
+/// How far apart two sleep sessions of one source may be and still be one
+/// night: long enough to have been awake for a while, too short for a nap.
+const Duration kNightPieceGap = Duration(minutes: 90);
+
 HealthSnapshot snapshotFromPoints(List<HealthDataPoint> points) {
   double numeric(HealthDataPoint point) =>
       (point.value as NumericHealthValue).numericValue.toDouble();
@@ -342,9 +346,37 @@ HealthSnapshot snapshotFromPoints(List<HealthDataPoint> points) {
         p,
   ];
 
+  // The pieces of one night: a watch that saw you awake at two wrote two
+  // sessions, and only the longer one was kept, without the stages of the
+  // other (DECISIONS 255). Pieces of one source this close are one night.
+  final pieces = [...sessions]
+    ..sort((a, b) {
+      final bySource = a.sourceName.compareTo(b.sourceName);
+      return bySource != 0 ? bySource : a.dateFrom.compareTo(b.dateFrom);
+    });
+  final windows = <({DateTime from, DateTime to, String source})>[];
+  for (final piece in pieces) {
+    final last = windows.lastOrNull;
+    if (last != null &&
+        last.source == piece.sourceName &&
+        !piece.dateFrom.isAfter(last.to.add(kNightPieceGap))) {
+      windows[windows.length - 1] = (
+        from: last.from,
+        to: piece.dateTo.isAfter(last.to) ? piece.dateTo : last.to,
+        source: last.source,
+      );
+    } else {
+      windows.add((
+        from: piece.dateFrom,
+        to: piece.dateTo,
+        source: piece.sourceName,
+      ));
+    }
+  }
+
   final nights = <String, ImportedNight>{};
-  for (final session in sessions) {
-    final length = session.dateTo.difference(session.dateFrom);
+  for (final session in windows) {
+    final length = session.to.difference(session.from);
     if (length < kShortestImportedNight) continue;
 
     int? minutesOf(HealthDataType type) {
@@ -352,11 +384,13 @@ HealthSnapshot snapshotFromPoints(List<HealthDataPoint> points) {
       var any = false;
       for (final stage in stages) {
         if (stage.type != type) continue;
+        // The stages of the source that wrote the night: a phone and a
+        // watch that both write them counted the same sleep twice.
+        if (stage.sourceName != session.source) continue;
         final middle = stage.dateFrom.add(
           stage.dateTo.difference(stage.dateFrom) ~/ 2,
         );
-        if (middle.isBefore(session.dateFrom) ||
-            middle.isAfter(session.dateTo)) {
+        if (middle.isBefore(session.from) || middle.isAfter(session.to)) {
           continue;
         }
         total += stage.dateTo.difference(stage.dateFrom).inMinutes;
@@ -366,9 +400,9 @@ HealthSnapshot snapshotFromPoints(List<HealthDataPoint> points) {
     }
 
     final night = ImportedNight(
-      fellAsleepAt: session.dateFrom,
-      wokeAt: session.dateTo,
-      source: session.sourceName,
+      fellAsleepAt: session.from,
+      wokeAt: session.to,
+      source: session.source,
       lightMinutes: minutesOf(HealthDataType.SLEEP_LIGHT),
       remMinutes: minutesOf(HealthDataType.SLEEP_REM),
       deepMinutes: minutesOf(HealthDataType.SLEEP_DEEP),

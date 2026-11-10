@@ -5903,3 +5903,19 @@ volgende keer nog eens geschreven: twee keer dezelfde training. Nu kijkt
 en einde (`findOwnWorkout`). Staat ze er, dan wordt ze alleen gemarkeerd.
 Dat kost één opzoeking per sessie die nog geschreven moet worden, en dat
 zijn er meestal geen of één.
+
+## 255. Een nacht in stukken, en fasen van één bron
+
+Uit het Fable-rapport: G5.
+
+- **Een nacht in twee stukken.** Een horloge dat je om twee uur even wakker
+  zag, schreef twee slaapsessies. Per ochtend bleef alleen de langste, met
+  alleen haar eigen fasen. Nu zijn sessies van dezelfde bron die hoogstens
+  90 minuten uit elkaar liggen één nacht (`kNightPieceGap`): van het eerste
+  inslapen tot het laatste wakker worden. Lang genoeg om even wakker te
+  zijn geweest, te kort voor een dutje. Twee verschillende bronnen worden
+  niet samengevoegd: daar telt nog altijd de langste.
+- **Fasen van een andere bron.** De fasen werden aan een sessie gekoppeld
+  op hun tijdstip, niet op hun bron. Een gsm en een horloge die allebei
+  fasen schrijven, telden dezelfde slaap twee keer. Nu tellen alleen de
+  fasen van de bron die de nacht schreef.

@@ -77,6 +77,59 @@ void main() {
       expect(snapshot.nights, isEmpty);
     });
 
+    test('een nacht in twee stukken is één nacht (DECISIONS 255)', () {
+      // Even wakker om twee uur: het horloge schreef twee sessies, en alleen
+      // de langste bleef, zonder de fasen van de andere.
+      final snapshot = snapshotFromPoints([
+        point(
+          HealthDataType.SLEEP_SESSION,
+          DateTime(2026, 3, 2, 23),
+          DateTime(2026, 3, 3, 2),
+        ),
+        point(
+          HealthDataType.SLEEP_SESSION,
+          DateTime(2026, 3, 3, 2, 40),
+          DateTime(2026, 3, 3, 7),
+        ),
+        point(
+          HealthDataType.SLEEP_DEEP,
+          DateTime(2026, 3, 3, 0),
+          DateTime(2026, 3, 3, 1),
+        ),
+        point(
+          HealthDataType.SLEEP_DEEP,
+          DateTime(2026, 3, 3, 4),
+          DateTime(2026, 3, 3, 4, 30),
+        ),
+      ]);
+
+      final night = snapshot.nights.single;
+      expect(night.fellAsleepAt, DateTime(2026, 3, 2, 23));
+      expect(night.wokeAt, DateTime(2026, 3, 3, 7));
+      expect(night.deepMinutes, 90);
+    });
+
+    test('fasen van een andere bron tellen niet mee', () {
+      // Een gsm en een horloge die allebei fasen schrijven: dezelfde slaap
+      // telde twee keer.
+      final snapshot = snapshotFromPoints([
+        point(HealthDataType.SLEEP_SESSION, evening, morning),
+        point(
+          HealthDataType.SLEEP_DEEP,
+          evening.add(const Duration(hours: 1)),
+          evening.add(const Duration(hours: 2)),
+        ),
+        point(
+          HealthDataType.SLEEP_DEEP,
+          evening.add(const Duration(hours: 1)),
+          evening.add(const Duration(hours: 2)),
+          source: 'com.example.phone',
+        ),
+      ]);
+
+      expect(snapshot.nights.single.deepMinutes, 60);
+    });
+
     test('twee sessies op één ochtend: de langste telt', () {
       final snapshot = snapshotFromPoints([
         point(

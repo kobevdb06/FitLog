@@ -284,11 +284,45 @@ class WorkoutController {
     );
   }
 
-  Future<void> removeExercise(String workoutExerciseId) =>
-      _db.workoutsDao.removeExercise(workoutExerciseId);
+  /// Takes an exercise out of the session, and with it whatever record its
+  /// sets held; the totals follow at once rather than at the finish
+  /// (DECISIONS 243).
+  Future<void> removeExercise(String workoutExerciseId) async {
+    final exercise = await _db.workoutsDao.exerciseOfWorkoutExercise(
+      workoutExerciseId,
+    );
+    await _db.workoutsDao.removeExercise(workoutExerciseId);
+    await _recalculate();
+    await _rebuildRecords([?exercise]);
+  }
 
-  Future<void> replaceExercise(String workoutExerciseId, String exerciseId) =>
-      _db.workoutsDao.replaceExercise(workoutExerciseId, exerciseId);
+  /// Another exercise in its place: the sets ticked off belong to the new
+  /// one now, so the records of both are worked out again.
+  Future<void> replaceExercise(
+    String workoutExerciseId,
+    String exerciseId,
+  ) async {
+    final before = await _db.workoutsDao.exerciseOfWorkoutExercise(
+      workoutExerciseId,
+    );
+    await _db.workoutsDao.replaceExercise(workoutExerciseId, exerciseId);
+    await _recalculate();
+    await _rebuildRecords([?before, exerciseId]);
+  }
+
+  /// The records of [exerciseIds], from every set ticked off - this
+  /// session's included.
+  Future<void> _rebuildRecords(Iterable<String> exerciseIds) =>
+      _db.recordsDao.rebuildRecordsFor(exerciseIds);
+
+  /// The same for the exercise of [setId], when the set was ticked off: a
+  /// record may have come from it.
+  Future<void> _rebuildRecordsOfSet(String setId, {bool always = false}) async {
+    final row = await _db.workoutsDao.getSet(setId);
+    if (row == null || !(always || row.isCompleted)) return;
+    final exercise = await _db.workoutsDao.exerciseOfSet(setId);
+    if (exercise != null) await _rebuildRecords([exercise]);
+  }
 
   Future<void> reorderExercises(List<String> orderedIds) =>
       _db.workoutsDao.reorderExercises(orderedIds);
@@ -313,8 +347,14 @@ class WorkoutController {
       .addSet(workoutExerciseId, setType: setType ?? SetType.normal);
 
   Future<void> deleteSet(String setId) async {
+    final row = await _db.workoutsDao.getSet(setId);
+    final exercise = row != null && row.isCompleted
+        ? await _db.workoutsDao.exerciseOfSet(setId)
+        : null;
     await _db.workoutsDao.deleteSet(setId);
     await _recalculate();
+    // 1000 kg typed by mistake and swiped away stayed the record.
+    await _rebuildRecords([?exercise]);
   }
 
   Future<void> updateSetValues(
@@ -334,6 +374,8 @@ class WorkoutController {
       rpe: rpe,
     );
     await _recalculate();
+    // A ticked-off set made lighter: the record it gave must come down too.
+    await _rebuildRecordsOfSet(setId);
   }
 
   /// Puts what the hint says into the working sets that are still open.
@@ -437,6 +479,8 @@ class WorkoutController {
   Future<void> setSetType(String setId, SetType type) async {
     await _db.workoutsDao.updateSet(setId, setType: Value(type.wire));
     await _recalculate();
+    // A warm-up holds no record.
+    await _rebuildRecordsOfSet(setId);
   }
 
   Future<void> insertWarmupSets(
@@ -614,8 +658,11 @@ class WorkoutController {
     if (changed == 0) return 0;
     await _recalculate();
     // A set that was completed is untouched, but a record could have come from
-    // one that is now skipped, so the history is replayed.
-    await _db.recordsDao.rebuildAllRecords();
+    // one that is now skipped, so its records are worked out again.
+    final exercise = await _db.workoutsDao.exerciseOfWorkoutExercise(
+      workoutExerciseId,
+    );
+    await _rebuildRecords([?exercise]);
     return changed;
   }
 
@@ -633,8 +680,8 @@ class WorkoutController {
     );
     await _recalculate();
     // The set may have been completed a moment ago, and a record may have come
-    // from it, so the history is replayed.
-    await _db.recordsDao.rebuildAllRecords();
+    // from it, so the records of its exercise are worked out again.
+    await _rebuildRecordsOfSet(setId, always: true);
   }
 
   /// Back to an ordinary empty set, from either of the other two states.
@@ -646,8 +693,9 @@ class WorkoutController {
       isSkipped: const Value(false),
     );
     await _recalculate();
-    // A record may have come from this set, so the history is replayed.
-    await _db.recordsDao.rebuildAllRecords();
+    // A record may have come from this set, so the records of its exercise
+    // are worked out again.
+    await _rebuildRecordsOfSet(setId, always: true);
   }
 
   /// Inside a superset the rest only starts after the last exercise of the
@@ -717,6 +765,9 @@ class WorkoutController {
       discardPending: discardPending,
       notes: notes,
     );
+    // Whatever happened to the sets on the way, the session ends with the
+    // records its sets hold.
+    await _rebuildRecords(await _db.workoutsDao.exercisesOfWorkout(workoutId));
     await ref.read(restTimerProvider.notifier).skip();
     // Into Health Connect too, when you asked for that. It gives up after a
     // few seconds and never throws, so it cannot hold up the finish.

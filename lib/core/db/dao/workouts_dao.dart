@@ -768,6 +768,33 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     workoutSetsTable,
   )..where((t) => t.id.equals(setId))).getSingleOrNull();
 
+  /// The exercise a set is of, or null when the set is gone.
+  Future<String?> exerciseOfSet(String setId) async {
+    final row = await customSelect(
+      'SELECT we.exercise_id AS exercise_id FROM workout_sets ws '
+      'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+      'WHERE ws.id = ?',
+      variables: [Variable.withString(setId)],
+      readsFrom: {workoutSetsTable, workoutExercisesTable},
+    ).getSingleOrNull();
+    return row?.read<String>('exercise_id');
+  }
+
+  /// The exercise a session's exercise is, or null when it is gone.
+  Future<String?> exerciseOfWorkoutExercise(String workoutExerciseId) async =>
+      (await (select(
+            workoutExercisesTable,
+          )..where((t) => t.id.equals(workoutExerciseId))).getSingleOrNull())
+          ?.exerciseId;
+
+  /// Every exercise in [workoutId].
+  Future<Set<String>> exercisesOfWorkout(String workoutId) async => {
+    for (final row in await (select(
+      workoutExercisesTable,
+    )..where((t) => t.workoutId.equals(workoutId))).get())
+      row.exerciseId,
+  };
+
   Future<void> updateSet(
     String setId, {
     Value<double?> weightKg = const Value.absent(),

@@ -5620,3 +5620,28 @@ nieuwere versie komen en dat je die opnieuw installeert.
 **Een open die mislukt (D12).** Een verbinding die in `_openWith` gemaakt
 werd en de app niet haalde, wordt gesloten. *Opnieuw proberen* opende er
 anders een tweede naast.
+
+## 243. De records van de sessie waarin je zit
+
+Uit het Fable-rapport: T1 en D4.
+
+- **Uitvinken of overslaan wiste de records van de sessie (T1).** Die
+  drie paden speelden de hele geschiedenis opnieuw af met
+  `rebuildAllRecords`, maar alleen de afgeronde workouts, met
+  `ended_at IS NOT NULL`. Een record van de lopende sessie, geschreven
+  toen je de set afvinkte, was weg zodra je eender welke andere set
+  uitvinkte. Het afronden bracht het niet terug. Nu tellen de afgevinkte
+  sets van de lopende sessie mee bij elke herbouw. Een weggegooide sessie
+  heeft geen sets meer, die telt vanzelf niet. Het afronden werkt de
+  records van de oefeningen van de sessie nog eens uit.
+- **Wegnemen raakte de records niet (D4).** Een set wegvegen, een
+  oefening verwijderen of vervangen, een afgevinkte set lichter zetten of
+  er een opwarmset van maken: geen van die paden werkte de records bij.
+  1000 kg per ongeluk getikt en weggeveegd bleef het record, en geen
+  echte set kon het nog verslaan. Nu werkt elk van die paden de records
+  van de betrokken oefening opnieuw uit. Bij vervangen zijn dat de oude en
+  de nieuwe oefening. Een oefening verwijderen of vervangen telt ook meteen
+  de totalen opnieuw, en niet pas bij het afronden.
+- **Per oefening, niet de hele geschiedenis.** Uitvinken en overslaan
+  speelden alles opnieuw af. Nu gaat het alleen over de oefening van die
+  set (`rebuildRecordsFor`): even exact, en veel minder werk bij elke tik.

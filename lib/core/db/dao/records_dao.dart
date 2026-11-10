@@ -102,7 +102,11 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
       'FROM workout_sets ws '
       'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
       'JOIN workouts w ON w.id = we.workout_id '
-      'WHERE ws.is_completed = 1 AND w.ended_at IS NOT NULL '
+      // The running session too: its records are written as its sets are
+      // ticked off, and a replay without it took them all away the moment
+      // any other set was unticked (DECISIONS 243). A session thrown away
+      // has no sets left to count.
+      'WHERE ws.is_completed = 1 '
       // A set done one arm at a time is not comparable to the same exercise
       // done with both: 15 kg in one hand is not a worse day than 30 kg in
       // two, and letting it into the records would read as one.
@@ -131,7 +135,11 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
       'FROM workout_sets ws '
       'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
       'JOIN workouts w ON w.id = we.workout_id '
-      'WHERE ws.is_completed = 1 AND w.ended_at IS NOT NULL '
+      // The running session too: its records are written as its sets are
+      // ticked off, and a replay without it took them all away the moment
+      // any other set was unticked (DECISIONS 243). A session thrown away
+      // has no sets left to count.
+      'WHERE ws.is_completed = 1 '
       'AND ws.side IS NULL '
       'ORDER BY achieved_at ASC',
       readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},

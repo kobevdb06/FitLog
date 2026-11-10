@@ -49,6 +49,10 @@ class HealthConnectSource implements HealthSource {
   /// How each permission is called on FitLog's own screen.
   static const Map<HealthDataType, String> _labels = {
     HealthDataType.SLEEP_SESSION: 'slaap',
+    // Each its own permission; one name, as a night shows them together.
+    HealthDataType.SLEEP_LIGHT: 'slaapfasen',
+    HealthDataType.SLEEP_DEEP: 'slaapfasen',
+    HealthDataType.SLEEP_REM: 'slaapfasen',
     HealthDataType.HEART_RATE_VARIABILITY_RMSSD: 'HRV',
     HealthDataType.RESTING_HEART_RATE: 'rusthartslag',
     HealthDataType.WEIGHT: 'gewicht',
@@ -87,11 +91,33 @@ class HealthConnectSource implements HealthSource {
     return await _health.hasPermissions(readTypes) ?? false;
   }
 
+  /// The plugin says yes only when every type was granted, and the user
+  /// chooses type by type: part of it granted counted as nothing, and the
+  /// link was never made (DECISIONS 252). Now any type granted is access,
+  /// and what is missing is said where it shows.
   @override
   Future<bool> requestAccess() async {
     await _ready();
-    return _health.requestAuthorization(readTypes);
+    if (await _health.requestAuthorization(readTypes)) return true;
+    for (final type in readTypes) {
+      if (await _granted(type)) return true;
+    }
+    return false;
   }
+
+  Future<bool> _granted(HealthDataType type) async {
+    try {
+      return await _health.hasPermissions([type]) ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// The name of [type] when a read of it failed though it is granted: then
+  /// it is unread, not refused. A type that was refused found nothing, and
+  /// says so on its own line of missing access.
+  Future<String?> _unread(HealthDataType type) async =>
+      await _granted(type) ? (_labels[type] ?? type.name) : null;
 
   @override
   Future<void> revokeAccess() async {
@@ -108,6 +134,7 @@ class HealthConnectSource implements HealthSource {
     // One type at a time: a type the user refused answers with an error,
     // and that should cost that type, not the whole import.
     final points = <HealthDataPoint>[];
+    final unread = <String>[];
     for (final type in _bulkTypes) {
       try {
         points.addAll(
@@ -118,10 +145,12 @@ class HealthConnectSource implements HealthSource {
           ),
         );
       } on Object {
-        continue;
+        if (await _unread(type) case final label?) {
+          if (!unread.contains(label)) unread.add(label);
+        }
       }
     }
-    return snapshotFromPoints(points);
+    return snapshotFromPoints(points).withUnread(unread);
   }
 
   @override
@@ -145,7 +174,11 @@ class HealthConnectSource implements HealthSource {
             ),
       ];
     } on Object {
-      // Not granted, or no watch: no heart rate, and nothing else lost.
+      // Not granted: no heart rate, and nothing else lost. Granted and
+      // still failing: asked again (DECISIONS 252).
+      if (await _unread(HealthDataType.HEART_RATE) case final label?) {
+        throw HealthUnreadable(label);
+      }
       return const [];
     }
   }
@@ -171,6 +204,9 @@ class HealthConnectSource implements HealthSource {
             ),
       ];
     } on Object {
+      if (await _unread(HealthDataType.BLOOD_OXYGEN) case final label?) {
+        throw HealthUnreadable(label);
+      }
       return const [];
     }
   }
@@ -184,6 +220,9 @@ class HealthConnectSource implements HealthSource {
       final total = await _health.getTotalStepsInInterval(from, to);
       return total == null || total <= 0 ? null : total;
     } on Object {
+      if (await _unread(HealthDataType.STEPS) case final label?) {
+        throw HealthUnreadable(label);
+      }
       return null;
     }
   }
@@ -193,8 +232,8 @@ class HealthConnectSource implements HealthSource {
     await _ready();
     final missing = <String>[];
     for (final MapEntry(key: type, value: label) in _labels.entries) {
-      final granted = await _health.hasPermissions([type]) ?? false;
-      if (!granted) missing.add(label);
+      if (missing.contains(label)) continue;
+      if (!await _granted(type)) missing.add(label);
     }
     return missing;
   }

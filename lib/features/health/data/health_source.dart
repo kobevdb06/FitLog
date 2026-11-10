@@ -155,7 +155,21 @@ class HealthSnapshot {
     this.restingHr = const [],
     this.weights = const [],
     this.cardio = const [],
+    this.unread = const [],
   });
+
+  /// What could not be read though FitLog may read it, by its name on
+  /// FitLog's screen: not the same as nothing found (DECISIONS 252).
+  final List<String> unread;
+
+  HealthSnapshot withUnread(List<String> unread) => HealthSnapshot(
+    nights: nights,
+    hrv: hrv,
+    restingHr: restingHr,
+    weights: weights,
+    cardio: cardio,
+    unread: unread,
+  );
 
   final List<ImportedNight> nights;
 
@@ -173,6 +187,18 @@ class HealthSnapshot {
       restingHr.isEmpty &&
       weights.isEmpty &&
       cardio.isEmpty;
+}
+
+/// A type FitLog may read that Health Connect would not give just now:
+/// [what] is its name on FitLog's screen. The import does not move its
+/// moment on past it, so it is asked again (DECISIONS 252).
+class HealthUnreadable implements Exception {
+  const HealthUnreadable(this.what);
+
+  final String what;
+
+  @override
+  String toString() => 'HealthUnreadable: $what';
 }
 
 /// The heart rate during one session: the average and the highest.

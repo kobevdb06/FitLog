@@ -5855,3 +5855,30 @@ Uit het Fable-rapport: de rest van C6.
   klopten: dat de coach nergens zelf schrijft, dat er niets persoonlijks
   in de systeemtekst staat, dat een vraag maar één verzoek is, en dat de
   release geen internetrecht heeft. Ze zeggen nu wat er is.
+
+## 252. Een lezing die mislukte, is geen lezing zonder iets
+
+Uit het Fable-rapport: G1 en G2.
+
+- **De cursor schoof toch op (G1).** Een fout per gegevenssoort werd
+  overgeslagen, en de import bewaarde daarna gewoon het nieuwe tijdstip;
+  de volgende keek maar twee dagen terug. Een nacht of een loop die op dat
+  moment niet te lezen was, kwam nooit meer binnen, en het scherm zei
+  *Opgehaald*. Nu:
+  - **Mislukt of geweigerd.** Een soort die FitLog mag lezen maar niet kon
+    lezen, is *niet gelezen* (`HealthSnapshot.unread`, en
+    `HealthUnreadable` voor hartslag, zuurstof en stappen). Een soort die
+    geweigerd werd, vond gewoon niets; die staat bij de toegang die
+    ontbreekt.
+  - **Het tijdstip schuift alleen op als alles gelezen is.** De volgende
+    import vraagt dan opnieuw vanaf waar het was.
+  - **Het scherm zegt welke soorten** niet gelezen werden, en dat FitLog
+    het opnieuw vraagt.
+- **Gedeeltelijke toestemming telde als geen (G2).** De plugin zegt alleen
+  ja als álle gevraagde soorten gegeven zijn. Wie wel slaap maar geen
+  gewicht gaf, las *gaf FitLog geen toegang*, en de koppeling kwam er
+  niet, tegen de tekst in dat je per gegeven kiest. Nu is toegang tot één
+  soort genoeg; wat ontbreekt, staat waar het altijd stond.
+- **Slaapfasen.** Een ontbrekend recht op slaapfasen werd nergens gemeld,
+  want alleen de slaapsessie had een naam op het scherm. Nu heten ze
+  samen *slaapfasen*.

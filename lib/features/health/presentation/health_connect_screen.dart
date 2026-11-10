@@ -205,8 +205,12 @@ const List<(IconData, String, String)> _whatWeRead = [
 
 /// One line on what an import brought in.
 String importSummaryText(ImportSummary summary) {
+  final unread = summary.unread.isEmpty
+      ? null
+      : 'Niet gelezen: ${summary.unread.join(', ')}. FitLog vraagt het de '
+            'volgende keer opnieuw.';
   if (summary.isEmpty && summary.ownNightsKept == 0) {
-    return 'Opgehaald: niets nieuws.';
+    return unread ?? 'Opgehaald: niets nieuws.';
   }
   String count(int n, String one, String many) => '$n ${n == 1 ? one : many}';
   final parts = [
@@ -231,6 +235,7 @@ String importSummaryText(ImportSummary summary) {
     if (kept > 0)
       '${count(kept, 'eigen invoer', 'eigen invoeren')} bleef staan zoals je '
           'ze zelf ingaf.',
+    ?unread,
   ].join(' ');
 }
 

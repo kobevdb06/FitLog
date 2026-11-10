@@ -15,7 +15,12 @@ class ImportSummary {
     this.restingWorkedOut = 0,
     this.oxygenNights = 0,
     this.stepDays = 0,
+    this.unread = const [],
   });
+
+  /// What Health Connect would not give though FitLog may read it: asked
+  /// again at the next import (DECISIONS 252).
+  final List<String> unread;
 
   final int nights;
 
@@ -51,6 +56,7 @@ class ImportSummary {
     required int restingWorkedOut,
     required int oxygenNights,
     required int stepDays,
+    List<String> unread = const [],
   }) => ImportSummary(
     nights: nights,
     ownNightsKept: ownNightsKept,
@@ -62,6 +68,7 @@ class ImportSummary {
     restingWorkedOut: restingWorkedOut,
     oxygenNights: oxygenNights,
     stepDays: stepDays,
+    unread: unread,
   );
 }
 

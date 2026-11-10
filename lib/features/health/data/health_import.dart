@@ -64,20 +64,36 @@ class HealthImport {
   }) async {
     final snapshot = await source.read(from: from, to: to);
     final summary = await HealthImporter(db).apply(snapshot);
-    final hearts = await heartRates(from: from, to: to);
-    final resting = await restingFromNights(from: from, to: to);
-    final oxygen = await oxygenOfNights(from: from, to: to);
-    final days = await stepsPerDay(from: from, to: to);
-    await db.settingsDao.updateSettings(
-      AppSettingsTableCompanion(
-        healthConnectSyncedAt: Value(to.millisecondsSinceEpoch),
-      ),
-    );
+    final unread = <String>{...snapshot.unread};
+    Future<int> read(Future<int> Function() step) async {
+      try {
+        return await step();
+      } on HealthUnreadable catch (error) {
+        unread.add(error.what);
+        return 0;
+      }
+    }
+
+    final hearts = await read(() => heartRates(from: from, to: to));
+    final resting = await read(() => restingFromNights(from: from, to: to));
+    final oxygen = await read(() => oxygenOfNights(from: from, to: to));
+    final days = await read(() => stepsPerDay(from: from, to: to));
+    // On only when everything came: what could not be read is asked again
+    // from where it was, and not lost for good behind a moment that moved
+    // on (DECISIONS 252).
+    if (unread.isEmpty) {
+      await db.settingsDao.updateSettings(
+        AppSettingsTableCompanion(
+          healthConnectSyncedAt: Value(to.millisecondsSinceEpoch),
+        ),
+      );
+    }
     return summary.withReadings(
       heartRates: hearts,
       restingWorkedOut: resting,
       oxygenNights: oxygen,
       stepDays: days,
+      unread: [...unread],
     );
   }
 

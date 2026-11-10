@@ -6023,3 +6023,14 @@ Uit het Fable-rapport: D5, D6, D7, D8, D10 en D11.
 - **`VACUUM INTO` met SQLCipher** (het nog open punt uit het rapport): een
   test bewijst nu dat de kopie in een back-up versleuteld is, en het
   tijdstip van die back-up draagt.
+
+## 259. Het coachpaneel gelooft een vingerafdruk niet op zijn woord
+
+Uit het Fable-rapport: S7.
+
+Het paneel over een andere app opent de coach met de pincode of met een
+vingerafdruk die het zelf al afnam. `unlock(biometric: true)` gaf altijd
+*ok*, ook als biometrie in FitLog uit stond. Het paneel is eigen code en
+niet van buitenaf bereikbaar, dus er was geen aanvalsweg. Toch zou een
+paneel dat het ooit per vergissing meestuurt, de coach openen zonder
+slot. Nu telt de vingerafdruk alleen als biometrie aan staat.

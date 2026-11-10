@@ -162,6 +162,22 @@ void main() {
     expect(third['lockoutSeconds'], isA<int>());
   });
 
+  test('een vingerafdruk telt alleen als die aan staat', () async {
+    await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+    await setPin('246810');
+
+    // The panel says the fingerprint went through, but there is none to use:
+    // it was taken at its word (DECISIONS 259).
+    expect((await coach().unlock(biometric: true))['ok'], isFalse);
+    expect((await coach().state())['locked'], isTrue);
+
+    await container
+        .read(keyManagerProvider)
+        .enableBiometrics(Uint8List.fromList(List.filled(32, 7)));
+    expect((await coach().unlock(biometric: true))['ok'], isTrue);
+    expect((await coach().state())['locked'], isFalse);
+  });
+
   test('de vraag gaat met de set erbij, het antwoord komt door en blijft '
       'bewaard', () async {
     await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');

@@ -75,12 +75,16 @@ class WorkoutCoach {
     String? pin,
     bool biometric = false,
   }) async {
+    final manager = _ref.read(keyManagerProvider);
     if (biometric) {
+      // Only when there is a fingerprint to use: the panel's word was taken
+      // as it was, and a panel that ever sent it by mistake opened the coach
+      // (DECISIONS 259).
+      if (!(await manager.status()).biometricEnabled) return {'ok': false};
       _unlockedAt = _now();
       return {'ok': true};
     }
     if (pin == null) return {'ok': false};
-    final manager = _ref.read(keyManagerProvider);
     final wait = (await manager.status()).remainingLockoutAt(_now());
     if (wait > Duration.zero) {
       return {'ok': false, 'lockoutSeconds': wait.inSeconds};

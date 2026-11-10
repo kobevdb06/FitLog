@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../calc/one_rm.dart';
 import '../../calc/pr.dart';
 import '../database.dart';
 import '../models.dart';
@@ -94,7 +95,40 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
       personalRecordsTable,
     )..where((t) => t.exerciseId.isIn(ids))).go();
 
-    final rows = await customSelect(
+    await _writeBestOf(await _setsOf(ids));
+  }
+
+  /// Once, from v62: an estimated max read off more than twelve reps is no
+  /// record any more. Only those rows go, each replaced by the best estimate
+  /// the exercise's other sets give; every other record stays exactly as it
+  /// is (DECISIONS 244).
+  Future<void> replaceUnreliableOneRms() async {
+    final wrong = await customSelect(
+      'SELECT pr.id AS id, pr.exercise_id AS exercise_id '
+      'FROM personal_records pr '
+      'JOIN workout_sets ws ON ws.id = pr.workout_set_id '
+      'WHERE pr.record_type = ? AND ws.reps > ?',
+      variables: [
+        Variable.withString(PrType.est1rm.wire),
+        Variable.withInt(oneRmReliableRepLimit),
+      ],
+      readsFrom: {personalRecordsTable, workoutSetsTable},
+    ).get();
+    if (wrong.isEmpty) return;
+
+    await (delete(personalRecordsTable)..where(
+          (t) => t.id.isIn([for (final row in wrong) row.read<String>('id')]),
+        ))
+        .go();
+    await _writeBestOf(
+      await _setsOf({for (final row in wrong) row.read<String>('exercise_id')}),
+      only: {PrType.est1rm},
+    );
+  }
+
+  /// Every ticked-off set of [ids] a record can come from, oldest first.
+  Future<List<QueryRow>> _setsOf(Set<String> ids) {
+    return customSelect(
       'SELECT ws.id AS set_id, ws.weight_kg AS weight_kg, ws.reps AS reps, '
       'ws.duration_seconds AS duration_seconds, ws.distance_m AS distance_m, '
       'ws.set_type AS set_type, we.exercise_id AS exercise_id, '
@@ -116,8 +150,6 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
       variables: [for (final id in ids) Variable.withString(id)],
       readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},
     ).get();
-
-    await _writeBestOf(rows);
   }
 
   /// Rebuilds every personal record from the stored sets.
@@ -152,9 +184,9 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
   }
 
   /// Picks the best value per exercise and record type out of [rows] and
-  /// writes one row per winner. Callers have already cleared what they are
-  /// replacing.
-  Future<void> _writeBestOf(List<QueryRow> rows) async {
+  /// writes one row per winner - of the types in [only], when given. Callers
+  /// have already cleared what they are replacing.
+  Future<void> _writeBestOf(List<QueryRow> rows, {Set<PrType>? only}) async {
     // exercise -> type -> (value, setId, achievedAt)
     final best = <String, Map<PrType, ({double v, String setId, int at})>>{};
 
@@ -172,6 +204,7 @@ class RecordsDao extends DatabaseAccessor<AppDatabase> with _$RecordsDaoMixin {
 
       final forExercise = best.putIfAbsent(exerciseId, () => {});
       for (final c in candidates) {
+        if (only != null && !only.contains(c.type)) continue;
         final current = forExercise[c.type];
         if (current == null || c.value > current.v) {
           forExercise[c.type] = (

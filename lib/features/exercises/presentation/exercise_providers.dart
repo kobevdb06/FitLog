@@ -270,7 +270,7 @@ List<ChartPoint> buildExerciseSeries({
     switch (metric) {
       case ExerciseMetric.oneRm:
         for (final s in working) {
-          final estimate = estimatedOneRm(weightKg: s.weightKg, reps: s.reps);
+          final estimate = reliableOneRm(weightKg: s.weightKg, reps: s.reps);
           if (estimate != null && (value == null || estimate > value)) {
             value = estimate;
           }

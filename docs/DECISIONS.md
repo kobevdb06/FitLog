@@ -5645,3 +5645,26 @@ Uit het Fable-rapport: T1 en D4.
 - **Per oefening, niet de hele geschiedenis.** Uitvinken en overslaan
   speelden alles opnieuw af. Nu gaat het alleen over de oefening van die
   set (`rebuildRecordsFor`): even exact, en veel minder werk bij elke tik.
+
+## 244. Geen geschatte 1RM uit meer dan 12 herhalingen
+
+Uit het Fable-rapport: F2. `one_rm.dart` zei al dat Epley boven 12
+herhalingen te ver van de werkelijkheid zit, maar alleen het scherm hield
+er rekening mee. Een beste set van 100 kg x 3 geeft 110 kg; een
+uitputtingsset van 60 kg x 30 gaf 120 kg, en werd een nieuw record. Bij
+plateaus telde zo'n dag als vooruitgang.
+
+- **`reliableOneRm`** geeft de schatting alleen tot 12 herhalingen. Records,
+  plateaus, de grafiek van de beste schatting per sessie en de maandcijfers
+  voor de coach vergelijken daarmee. Eén set op zichzelf toont haar
+  schatting zoals vroeger, met de kanttekening.
+- **De beste set voor een PR-poging** komt uit SQL, die dezelfde grens
+  volgt. Ze rangschikt nu ook zoals de Dart-code: een single telt als haar
+  eigen gewicht, en niet als 103,3%.
+- **De migratie naar v62 vervangt alleen wat nu fout is.** Dat is een
+  geschatte 1RM die uit een set van meer dan 12 herhalingen kwam; ze wordt
+  vervangen door de beste die de andere sets van die oefening geven. Elk
+  ander record en elke set blijft zoals hij was. Alles opnieuw opbouwen
+  zou ook records vervangen die niets met deze regel te maken hebben, en
+  een migratie mag alleen toevoegen. Een record van 30 herhalingen blijft
+  een herhalingsrecord.

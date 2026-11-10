@@ -90,7 +90,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The version of the schema this build writes; a restore refuses a
   /// backup from a later one.
-  static const int currentSchemaVersion = 61;
+  static const int currentSchemaVersion = 62;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -599,6 +599,14 @@ class AppDatabase extends _$AppDatabase {
         'WHERE routine_id IS NULL AND plan_session_id IS NULL '
         'AND ended_at IS NOT NULL',
       );
+    }
+
+    if (from < 62) {
+      // An estimated max from more than twelve reps no longer counts. Only
+      // the estimated maxes read off such a set are replaced, by the best
+      // the other sets give; every other record, and every set you logged,
+      // stays as it is (DECISIONS 244).
+      await recordsDao.replaceUnreliableOneRms();
     }
 
     final added = addedBrokenReferences(

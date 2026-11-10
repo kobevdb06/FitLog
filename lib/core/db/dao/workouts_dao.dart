@@ -499,14 +499,18 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     final rows = await customSelect(
       'SELECT ws.weight_kg AS weight_kg, ws.reps AS reps, '
       'COALESCE(ws.completed_at, w.started_at) AS at, '
-      'ws.weight_kg * (1 + ws.reps / 30.0) AS estimate '
+      // As reliableOneRm ranks them: a single is its own weight, and more
+      // than twelve reps estimate nothing (DECISIONS 244).
+      'CASE WHEN ws.reps = 1 THEN ws.weight_kg '
+      'ELSE ws.weight_kg * (1 + ws.reps / 30.0) END AS estimate '
       'FROM workout_sets ws '
       'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
       'JOIN workouts w ON w.id = we.workout_id '
       'WHERE we.exercise_id = ? AND ws.is_completed = 1 '
       "AND ws.set_type != 'warmup' "
       'AND ws.weight_kg IS NOT NULL AND ws.reps IS NOT NULL '
-      'AND ws.weight_kg > 0 AND ws.reps > 0 AND w.ended_at IS NOT NULL '
+      'AND ws.weight_kg > 0 AND ws.reps > 0 AND ws.reps <= 12 '
+      'AND w.ended_at IS NOT NULL '
       'ORDER BY estimate DESC LIMIT 1',
       variables: [Variable.withString(exerciseId)],
       readsFrom: {workoutSetsTable, workoutExercisesTable, workoutsTable},

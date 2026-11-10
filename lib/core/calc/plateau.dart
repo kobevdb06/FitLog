@@ -105,7 +105,7 @@ enum ProgressMeasure {
   };
 
   double? _of(ProgressSet set) => switch (this) {
-    oneRm => estimatedOneRm(weightKg: set.weightKg, reps: set.reps),
+    oneRm => reliableOneRm(weightKg: set.weightKg, reps: set.reps),
     reps => set.reps == null || set.reps! <= 0 ? null : set.reps!.toDouble(),
     hold =>
       set.durationSeconds == null || set.durationSeconds! <= 0

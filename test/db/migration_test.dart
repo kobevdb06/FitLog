@@ -840,6 +840,59 @@ void main() {
     await db.close();
   });
 
+  test('a database from v61 gets its estimated maxes without the ones from '
+      'more than 12 reps, and every other record as it was', () async {
+    final path = '${dir.path}/v61.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.close();
+
+    final raw = sqlite3.open(path)
+      ..execute(
+        "INSERT INTO exercises (id, name, primary_muscle, category, "
+        "created_at) VALUES ('ex-1', 'Squat', 'quadriceps', 'barbell', 1)",
+      )
+      ..execute(
+        "INSERT INTO workouts (id, name, started_at, ended_at) "
+        "VALUES ('w-1', 'Benen', 1000, 2000)",
+      )
+      ..execute(
+        "INSERT INTO workout_exercises (id, workout_id, exercise_id, "
+        "sort_order) VALUES ('we-1', 'w-1', 'ex-1', 0)",
+      );
+    for (final (id, weight, reps) in [('s-1', 100.0, 3), ('s-2', 60.0, 30)]) {
+      raw.execute(
+        "INSERT INTO workout_sets (id, workout_exercise_id, sort_order, "
+        "weight_kg, reps, is_completed, completed_at) "
+        "VALUES ('$id', 'we-1', 0, $weight, $reps, 1, 1500)",
+      );
+    }
+    // What 1.70 wrote: the thirty reps as the heaviest estimate, and a rep
+    // record from them that stays one.
+    raw
+      ..execute(
+        "INSERT INTO personal_records (id, exercise_id, record_type, value, "
+        "workout_set_id, achieved_at) "
+        "VALUES ('pr-1', 'ex-1', 'est_1rm', 120.0, 's-2', 1500)",
+      )
+      ..execute(
+        "INSERT INTO personal_records (id, exercise_id, record_type, value, "
+        "workout_set_id, achieved_at) "
+        "VALUES ('pr-2', 'ex-1', 'max_reps', 30.0, 's-2', 1500)",
+      )
+      ..execute('PRAGMA user_version = 61')
+      ..close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final bests = await db.recordsDao.currentBests('ex-1');
+    expect(bests[PrType.est1rm], closeTo(110, 0.01));
+    final reps = await db
+        .customSelect("SELECT id FROM personal_records WHERE id = 'pr-2'")
+        .get();
+    expect(reps, hasLength(1), reason: 'the other records stay as they were');
+    await db.close();
+  });
+
   test(
     'a database from a later version is refused, and left as it is',
     () async {
@@ -1106,7 +1159,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 61);
+    expect(raw.select('PRAGMA user_version').first.values.first, 62);
     raw.close();
   });
 
@@ -1322,7 +1375,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 61);
+    expect(db.schemaVersion, 62);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')

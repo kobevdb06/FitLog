@@ -202,7 +202,7 @@ Future<Map<String, Object?>?> _planDone(AppDatabase db, String planId) async {
         .get();
     final found = <String, double>{};
     for (final row in rows) {
-      final value = estimatedOneRm(
+      final value = reliableOneRm(
         weightKg: row.read<double>('kg'),
         reps: row.read<int>('reps'),
       );

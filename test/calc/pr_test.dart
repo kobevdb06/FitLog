@@ -33,6 +33,31 @@ void main() {
       );
     });
 
+    test('no estimated max from more than 12 reps (DECISIONS 244)', () {
+      // 60 kg x 30 estimated 120 kg, more than 100 x 3 gives: an exhausting
+      // set of light weight became a record of strength.
+      final candidates = prCandidatesForSet(
+        setType: SetType.normal,
+        isCompleted: true,
+        weightKg: 60,
+        reps: 30,
+      );
+      expect(_valueOf(candidates, PrType.est1rm), isNull);
+      expect(_valueOf(candidates, PrType.maxReps), 30);
+      expect(
+        _valueOf(
+          prCandidatesForSet(
+            setType: SetType.normal,
+            isCompleted: true,
+            weightKg: 60,
+            reps: 12,
+          ),
+          PrType.est1rm,
+        ),
+        closeTo(84, 0.01),
+      );
+    });
+
     test('ignores a set that was not checked off', () {
       expect(
         prCandidatesForSet(

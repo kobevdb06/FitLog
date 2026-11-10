@@ -21,3 +21,15 @@ double? estimatedOneRm({double? weightKg, int? reps}) {
 /// Whether an estimate built on [reps] should be shown with a caveat.
 bool isOneRmEstimateReliable(int? reps) =>
     reps != null && reps > 0 && reps <= oneRmReliableRepLimit;
+
+/// The estimate only where it holds: up to [oneRmReliableRepLimit] reps.
+///
+/// What a record, a plateau and the best of a session compare. A set of 60
+/// kg x 30 estimated 120 kg, more than 100 kg x 3 gives: an exhausting set
+/// of a light weight became a record of strength, and a day of progress
+/// (DECISIONS 244). One set shown on its own keeps its estimate, with the
+/// caveat.
+double? reliableOneRm({double? weightKg, int? reps}) =>
+    isOneRmEstimateReliable(reps)
+    ? estimatedOneRm(weightKg: weightKg, reps: reps)
+    : null;

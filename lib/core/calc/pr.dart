@@ -53,7 +53,7 @@ List<PrCandidate> prCandidatesForSet({
     candidates.add(PrCandidate(PrType.maxReps, reps.toDouble()));
   }
 
-  final oneRm = estimatedOneRm(weightKg: weightKg, reps: reps);
+  final oneRm = reliableOneRm(weightKg: weightKg, reps: reps);
   if (oneRm != null) {
     candidates.add(PrCandidate(PrType.est1rm, oneRm));
   }

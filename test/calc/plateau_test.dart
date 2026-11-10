@@ -173,6 +173,17 @@ void main() {
       ]);
     });
 
+    test('meer dan 12 herhalingen geven geen geschatte 1RM', () {
+      // Een uitputtingsset van 60 x 30 telde als 120, meer dan 100 x 3: een
+      // dag vooruitgang die er geen was (DECISIONS 244).
+      final points = progressPoints([
+        set('a', week(1), weight: 100, reps: 3),
+        set('b', week(0), weight: 60, reps: 30),
+      ], ProgressMeasure.oneRm);
+
+      expect(points.map((p) => p.value), [closeTo(110, 0.01)]);
+    });
+
     test('met één arm telt niet mee naast twee armen', () {
       final points = progressPoints([
         set('a', week(2), weight: 15, reps: 8, side: 'left'),

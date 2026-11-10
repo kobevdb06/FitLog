@@ -268,6 +268,30 @@ class HealthConnectSource implements HealthSource {
   }
 
   @override
+  Future<String?> findOwnWorkout({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    await _ready();
+    try {
+      final points = await _health.getHealthDataFromTypes(
+        types: const [HealthDataType.WORKOUT],
+        startTime: start.subtract(const Duration(minutes: 1)),
+        endTime: end.add(const Duration(minutes: 1)),
+      );
+      for (final point in points) {
+        if (point.sourceName != ownPackage) continue;
+        if (point.dateFrom.difference(start).inSeconds.abs() > 1) continue;
+        if (point.dateTo.difference(end).inSeconds.abs() > 1) continue;
+        if (point.uuid.isNotEmpty) return point.uuid;
+      }
+      return null;
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
   Future<bool> requestBackgroundAccess() async {
     await _ready();
     // Where the feature is missing, Health Connect has no such permission to

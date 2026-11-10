@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/health/data/health_connect_source.dart';
@@ -67,6 +69,36 @@ void main() {
 
     expect(summary.unread, isEmpty);
     expect(await syncedAt(), now.millisecondsSinceEpoch);
+  });
+
+  test('a session whose write timed out but landed is not written twice '
+      '(DECISIONS 254)', () async {
+    await db.settingsDao.updateSettings(
+      const AppSettingsTableCompanion(healthConnectWriteWorkouts: Value(true)),
+    );
+    final id = await db.workoutsDao.startWorkout(
+      name: 'Push',
+      defaultRestSeconds: 90,
+    );
+    await db.workoutsDao.finishWorkout(id, discardPending: false);
+    await db.customStatement(
+      'UPDATE workouts SET started_at = ?, ended_at = ? WHERE id = ?',
+      [
+        now.subtract(const Duration(hours: 2)).millisecondsSinceEpoch,
+        now.subtract(const Duration(hours: 1)).millisecondsSinceEpoch,
+        id,
+      ],
+    );
+    final health = _Landing();
+    final import = HealthImport(db, health);
+
+    await expectLater(import.writeWorkouts(now: now), throwsA(anything));
+    final written = await import.writeWorkouts(now: now);
+
+    expect(health.writes, 1, reason: 'the second run finds it there');
+    expect(written, 1);
+    final row = (await db.workoutsDao.getWorkoutDetail(id))!.workout;
+    expect(row.healthConnectId, 'hc-1');
   });
 
   group('Health Connect itself', () {
@@ -169,6 +201,12 @@ class _Patchy implements HealthSource {
   }) async => null;
 
   @override
+  Future<String?> findOwnWorkout({
+    required DateTime start,
+    required DateTime end,
+  }) async => null;
+
+  @override
   Future<void> deleteWorkout(String id) async {}
 }
 
@@ -209,4 +247,27 @@ class _FakeHealth implements Health {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Health Connect that takes a session in, but answers too late.
+class _Landing extends _Patchy {
+  int writes = 0;
+  final List<DateTime> stored = [];
+
+  @override
+  Future<String?> writeWorkout({
+    required DateTime start,
+    required DateTime end,
+    required String title,
+  }) async {
+    writes++;
+    stored.add(start);
+    throw TimeoutException('te laat');
+  }
+
+  @override
+  Future<String?> findOwnWorkout({
+    required DateTime start,
+    required DateTime end,
+  }) async => stored.contains(start) ? 'hc-1' : null;
 }

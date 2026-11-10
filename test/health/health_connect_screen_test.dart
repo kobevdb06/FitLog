@@ -567,6 +567,12 @@ class _FakeHealth implements HealthSource {
   }
 
   @override
+  Future<String?> findOwnWorkout({
+    required DateTime start,
+    required DateTime end,
+  }) async => null;
+
+  @override
   Future<void> deleteWorkout(String id) async => deleted.add(id);
 
   bool backgroundAsked = false;

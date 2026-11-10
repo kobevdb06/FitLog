@@ -5892,3 +5892,14 @@ openstond, en voor de melding bij een vergrendelde app.
 `reviewedWeekStart` neemt op zondag de week die die dag eindigt, en op elke
 andere dag de week die voorbij is. Het inhalen na het ontgrendelen deed dat
 al, via `lastSundayEvening`.
+
+## 254. Een sessie die te laat antwoordde, niet nog eens schrijven
+
+Uit het Fable-rapport: G4. Het schrijven naar Health Connect wacht
+hoogstens vijf seconden, maar die grens breekt het wachten af, niet het
+schrijven. Een sessie die er toch in kwam, bleef ongemarkeerd en werd de
+volgende keer nog eens geschreven: twee keer dezelfde training. Nu kijkt
+`writeWorkouts` eerst of FitLog die sessie al schreef, met hetzelfde begin
+en einde (`findOwnWorkout`). Staat ze er, dan wordt ze alleen gemarkeerd.
+Dat kost één opzoeking per sessie die nog geschreven moet worden, en dat
+zijn er meestal geen of één.

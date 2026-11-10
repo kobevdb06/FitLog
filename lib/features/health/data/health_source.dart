@@ -64,6 +64,14 @@ abstract class HealthSource {
     required String title,
   });
 
+  /// The id of a session FitLog itself wrote that starts and ends at
+  /// [start] and [end], or null when there is none: a write that timed out
+  /// may have landed all the same (DECISIONS 254).
+  Future<String?> findOwnWorkout({
+    required DateTime start,
+    required DateTime end,
+  });
+
   /// Takes a session FitLog wrote out of Health Connect again.
   Future<void> deleteWorkout(String id);
 

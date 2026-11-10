@@ -228,12 +228,18 @@ class HealthImport {
     for (final workout in await db.healthDao.workoutsToWrite(
       now.subtract(kWriteReach),
     )) {
+      final start = DateTime.fromMillisecondsSinceEpoch(workout.startedAt);
+      final end = DateTime.fromMillisecondsSinceEpoch(workout.endedAt!);
+      // The limit stops the waiting, not the write: one that timed out may
+      // be in Health Connect all the same, and writing it again made two
+      // (DECISIONS 254). What is there already is only marked.
+      if (await source.findOwnWorkout(start: start, end: end) case final id?) {
+        await db.healthDao.markWritten(workout.id, id);
+        written++;
+        continue;
+      }
       final id = await source
-          .writeWorkout(
-            start: DateTime.fromMillisecondsSinceEpoch(workout.startedAt),
-            end: DateTime.fromMillisecondsSinceEpoch(workout.endedAt!),
-            title: workout.name,
-          )
+          .writeWorkout(start: start, end: end, title: workout.name)
           .timeout(kWriteTimeout);
       if (id == null) continue;
       await db.healthDao.markWritten(workout.id, id);

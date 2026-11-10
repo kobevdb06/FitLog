@@ -451,6 +451,12 @@ class _Watch implements HealthSource {
   }) async => null;
 
   @override
+  Future<String?> findOwnWorkout({
+    required DateTime start,
+    required DateTime end,
+  }) async => null;
+
+  @override
   Future<void> deleteWorkout(String id) async {}
 
   @override

@@ -214,12 +214,15 @@ void main() {
       () async {
         final client = AiClient(
           apiKey: 'AQ.Ab8RNiZhX2Mkg',
-          timeout: const Duration(milliseconds: 300),
+          // Each piece well within the limit, more than twice the limit in
+          // all: the old limit over the whole answer let it go at 2 s. With
+          // room to spare, so a busy machine does not make it fail.
+          timeout: const Duration(seconds: 1),
           client: MockClient.streaming((request, body) async {
             final pieces = Stream<List<int>>.periodic(
-              const Duration(milliseconds: 150),
+              const Duration(milliseconds: 300),
               (i) => utf8.encode(sse('deel $i ')),
-            ).take(6);
+            ).take(8);
             return http.StreamedResponse(pieces, 200);
           }),
         );
@@ -232,7 +235,7 @@ void main() {
           onText: (_) {},
         );
 
-        expect(reply.text, contains('deel 5'));
+        expect(reply.text, contains('deel 7'));
       },
     );
 

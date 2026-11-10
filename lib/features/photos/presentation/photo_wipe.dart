@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/photo_image.dart';
 
 class PhotoWipe extends StatefulWidget {
   const PhotoWipe({
@@ -112,7 +113,7 @@ class _Picture extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.file(
+    return photoImage(
       file,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stack) => const MissingPhotoPlaceholder(),

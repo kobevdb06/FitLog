@@ -810,13 +810,12 @@ class CoachController extends _$CoachController {
   /// still makes sense without the picture, and saying "dat bestand is weg"
   /// helps nobody mid-conversation.
   Future<CoachImage?> _encode(AppPaths paths, String fileName) async {
-    final file = PhotoStore(paths).fileFor(fileName);
-    if (!await file.exists()) return null;
-    // A photo stored before the metadata came out at the import still has
-    // it: it is taken out on the way (DECISIONS 247).
-    return CoachImage(
-      base64: base64Encode(stripJpegMetadata(await file.readAsBytes())),
-    );
+    // Opened, as it is sealed on the phone (DECISIONS 257). A photo stored
+    // before the metadata came out at the import still has it: it is taken
+    // out on the way (DECISIONS 247).
+    final bytes = await PhotoStore(paths).readBytes(fileName);
+    if (bytes == null) return null;
+    return CoachImage(base64: base64Encode(stripJpegMetadata(bytes)));
   }
 
   /// [_encode] for each, leaving out the ones that are gone.

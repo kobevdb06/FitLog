@@ -49,6 +49,7 @@ import 'coach_session.dart';
 import 'photo_prompts_sheet.dart';
 import 'report_answer_sheet.dart';
 import '../../prompts/presentation/prompt_providers.dart';
+import '../../../core/widgets/photo_image.dart';
 
 class CoachScreen extends ConsumerStatefulWidget {
   const CoachScreen({super.key});
@@ -1811,7 +1812,7 @@ class _ProposalPhotos extends ConsumerWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-          child: Image.file(
+          child: photoImage(
             PhotoStore(paths).fileFor(fileName),
             width: 88,
             height: 88,
@@ -1909,7 +1910,7 @@ class _PickedPhotos extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(
                           AppSpacing.radiusSm,
                         ),
-                        child: Image.file(
+                        child: photoImage(
                           PhotoStore(paths).fileFor(name),
                           width: 56,
                           height: 56,
@@ -1957,10 +1958,10 @@ class _SentPhoto extends ConsumerWidget {
           context: context,
           builder: (context) => Dialog(
             insetPadding: const EdgeInsets.all(AppSpacing.md),
-            child: InteractiveViewer(child: Image.file(file)),
+            child: InteractiveViewer(child: photoImage(file)),
           ),
         ),
-        child: Image.file(
+        child: photoImage(
           file,
           width: width,
           fit: BoxFit.cover,

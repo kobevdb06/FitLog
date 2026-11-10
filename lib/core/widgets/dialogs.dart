@@ -11,6 +11,7 @@ import '../formatting/formatters.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'common.dart';
+import 'photo_image.dart';
 
 /// Yes/no confirmation. Returns true only when the user actually confirms.
 Future<bool> confirm(
@@ -777,7 +778,7 @@ Future<String?> pickPhoto(
               height: 52,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                child: Image.file(
+                child: photoImage(
                   fileFor(photo.fileName),
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stack) =>

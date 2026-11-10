@@ -4,6 +4,7 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/core/widgets/common.dart';
 import 'package:fitlog/core/widgets/exercise_image.dart';
+import 'package:fitlog/core/widgets/photo_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -140,7 +141,7 @@ void main() {
       );
 
       final provider = tester.widget<Image>(find.byType(Image)).image;
-      final file = (provider as ResizeImage).imageProvider as FileImage;
+      final file = (provider as ResizeImage).imageProvider as PhotoImage;
       expect(file.file.path, paths.photoFile('start.jpg').path);
     });
 

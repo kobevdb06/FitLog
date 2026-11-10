@@ -16,6 +16,7 @@ import '../../chat/data/ai_client.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../photos/data/photo_store.dart';
 import 'exercise_providers.dart';
+import '../../../core/widgets/photo_image.dart';
 
 /// Creating or editing an exercise the user made themselves.
 class CustomExerciseScreen extends ConsumerStatefulWidget {
@@ -641,7 +642,7 @@ class _FrameSlot extends StatelessWidget {
                         ),
                       ],
                     )
-                  : Image.file(
+                  : photoImage(
                       file,
                       fit: BoxFit.cover,
                       gaplessPlayback: true,

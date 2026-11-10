@@ -5937,3 +5937,42 @@ Uit het Fable-rapport: G6.
   (`renewMorningForNight`). Met de coach aan kost dat één vraag, dezelfde
   als de knop. Lukt het niet, dan staat de import er niet minder om, en de
   knop doet het nog altijd.
+
+## 257. Foto's versleuteld, zoals de database
+
+Uit het Fable-rapport: S2. Beslissing van Kobe: versleutelen. Voortgangs-
+en coachfoto's stonden als gewone JPEG's in de fotomap. Een pincode hield
+alleen de database dicht, en de privacypagina, de onboarding en de
+systeemtekst zeiden dat ze versleuteld waren. Lichaamsfoto's zijn het
+gevoeligste wat FitLog bewaart.
+
+- **Elk bestand in de fotomap wordt versleuteld** met AES-GCM, onder een
+  sleutel die met HKDF van de databasesleutel afgeleid is
+  (`PhotoCrypto`). Daardoor verandert een pincode, een nieuwe pincode of
+  de herstelzin er niets aan. Een back-up draagt de databasesleutel mee
+  en opent zijn foto's dus zoals zijn gegevens; dat geldt ook voor een
+  back-up van een ander toestel. Een versleuteld bestand begint met
+  `FLPH` en een versienummer; de bestandsnaam blijft dezelfde, dus de
+  database verandert niet.
+- **De sleutel bestaat zolang de app open is** (`PhotoKey`). Hij wordt
+  gezet als de database opent, en gewist bij vergrendelen, wissen en
+  terugzetten. Bij vergrendelen gaan ook de geopende beelden uit het
+  geheugen. Vergrendeld opent een foto niet; het scherm toont dan wat het
+  toont voor een foto die weg is.
+- **Tonen en versturen.** `PhotoImage` vervangt `Image.file` op elke plek
+  die een foto toont, en de coach leest een foto via `readBytes`. Openen
+  kost ongeveer een tiende van een seconde per foto, dus het gebeurt op
+  een eigen isolate. Wat getoond is, houdt de gewone beeldcache vast.
+- **Foto's van vroeger** zijn nog gewone JPEG's. Ze worden gewoon gelezen,
+  en bij elke start op de achtergrond één voor één versleuteld
+  (`sealAll`): eerst ernaast geschreven, dan erover, zodat een crash
+  halverwege de gewone of de versleutelde laat. Dat geldt ook voor de
+  foto's die een oudere back-up terugbrengt. Zonder sleutel, bijvoorbeeld
+  in een test, schrijft `PhotoStore` zoals vroeger, en de volgende start
+  versleutelt.
+- **Een foto als bron**, zoals een coachfoto die op een oefening komt,
+  wordt eerst geopend.
+- **`core` haalt niets nieuws uit `features`** (B5). De versleuteling staat
+  in `core/security`, de `ImageProvider` in `core/widgets`.
+- **De teksten.** De privacypagina en de handleiding zeggen nu waar de
+  foto's staan: naast de database, met dezelfde sleutel.

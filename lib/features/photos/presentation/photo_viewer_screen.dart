@@ -11,6 +11,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/common.dart';
+import '../../../core/widgets/photo_image.dart';
 
 class PhotoViewerScreen extends StatelessWidget {
   const PhotoViewerScreen({super.key, required this.file, required this.title});
@@ -46,7 +47,7 @@ class PhotoViewerScreen extends StatelessWidget {
         child: InteractiveViewer(
           minScale: 1,
           maxScale: 5,
-          child: Image.file(
+          child: photoImage(
             file,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stack) =>

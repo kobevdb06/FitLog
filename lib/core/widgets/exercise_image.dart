@@ -9,6 +9,7 @@ import '../db/database.dart';
 import '../theme/app_spacing.dart';
 import '../util/paths.dart';
 import 'common.dart';
+import 'photo_image.dart';
 
 /// Where `tool/build_exercise_images.dart` writes its output.
 const String kExerciseAssetDir = 'assets/exercises';
@@ -45,8 +46,7 @@ class ExerciseImageManifest {
   /// Ids the source dataset has no picture for.
   final Set<String> withoutImages;
 
-  bool hasImage(String id) =>
-      animated.contains(id) || staticOnly.contains(id);
+  bool hasImage(String id) => animated.contains(id) || staticOnly.contains(id);
 
   bool isAnimated(String id) => animated.contains(id);
 
@@ -116,10 +116,7 @@ class ExerciseThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final manifest = this.manifest;
-    final fallback = MuscleAvatar(
-      muscle: exercise.primaryMuscle,
-      size: size,
-    );
+    final fallback = MuscleAvatar(muscle: exercise.primaryMuscle, size: size);
     final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     final frames = exerciseFrames(exercise, paths);
@@ -128,7 +125,7 @@ class ExerciseThumb extends StatelessWidget {
       // unreadable while it scrolls.
       return ClipRRect(
         borderRadius: BorderRadius.circular(size / 4),
-        child: Image.file(
+        child: photoImage(
           frames.first,
           width: size,
           height: size,
@@ -271,16 +268,14 @@ class _ExerciseAnimationState extends State<ExerciseAnimation> {
         alignment: Alignment.center,
         children: [
           for (final file in frames)
-            Image.file(
+            photoImage(
               file,
               height: widget.height,
               fit: BoxFit.contain,
               cacheWidth: (360 * devicePixelRatio).round(),
               gaplessPlayback: true,
-              errorBuilder: (context, error, stack) => _Fallback(
-                exercise: widget.exercise,
-                height: widget.height,
-              ),
+              errorBuilder: (context, error, stack) =>
+                  _Fallback(exercise: widget.exercise, height: widget.height),
             ),
         ],
       ),

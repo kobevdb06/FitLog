@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show Uint8List, debugPrint;
+import 'package:flutter/painting.dart' show PaintingBinding;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../db/connection.dart';
@@ -11,6 +13,7 @@ import '../security/biometric_service.dart';
 import '../security/key_file.dart';
 import '../security/key_manager.dart';
 import '../security/key_material.dart';
+import '../security/photo_crypto.dart';
 import '../security/secret_store.dart';
 import '../../features/photos/data/photo_library.dart';
 import '../../features/photos/data/photo_store.dart';
@@ -257,6 +260,9 @@ class AppController extends _$AppController {
 
       final settings = await db.settingsDao.ensureInitialized();
       _autoLockSeconds = settings.autoLockSeconds;
+      // The photos' key from here on: a photo the start below puts back is
+      // sealed like any other (DECISIONS 257).
+      PhotoKey.current = dek;
       final seeder = ExerciseSeeder(db);
       await seeder.seedIfNeeded();
       // A database seeded before a catalogue correction has to be brought up
@@ -290,6 +296,17 @@ class AppController extends _$AppController {
       opened = null;
       if (!ref.mounted) return;
       state = AppReady(db: db, security: security);
+      // Photos from before they were sealed, or that a backup of that time
+      // brought back, are sealed now, one by one, while the app is in use.
+      unawaited(
+        PhotoStore(paths).sealAll().then<void>(
+          (sealed) {
+            if (sealed > 0) debugPrint('FitLog: $sealed foto(s) versleuteld');
+          },
+          onError: (Object error) =>
+              debugPrint('FitLog: foto\'s versleutelen: $error'),
+        ),
+      );
     } on EncryptionUnavailableException catch (e) {
       if (ref.mounted) state = AppFailed(e.message, canRetry: false);
     } on WrongDatabaseKeyException {
@@ -306,6 +323,8 @@ class AppController extends _$AppController {
       // A connection made here that did not make it to the app is closed:
       // "Opnieuw proberen" used to open a second one next to it.
       await opened?.close();
+      // And the photos' key is the one of the database that is open, if any.
+      PhotoKey.current = _dek;
     }
   }
 
@@ -330,7 +349,19 @@ class AppController extends _$AppController {
     final status = await ref.read(keyManagerProvider).status();
     if (status.mode != LockMode.pin) return;
     _dek = null;
+    _forgetPhotos();
     state = AppLocked(status);
+  }
+
+  /// The photos' key gone, and the pictures already opened with it out of
+  /// memory: behind the lock, a photo stays sealed (DECISIONS 257).
+  void _forgetPhotos() {
+    PhotoKey.current = null;
+    try {
+      PaintingBinding.instance.imageCache.clear();
+    } on Object {
+      // No binding, no cache: nothing to forget.
+    }
   }
 
   void setAutoLockSeconds(int seconds) => _autoLockSeconds = seconds;
@@ -360,6 +391,7 @@ class AppController extends _$AppController {
     await _db?.close();
     _db = null;
     _dek = null;
+    _forgetPhotos();
 
     final restore = RestoreFiles(paths);
     for (final file in [
@@ -403,6 +435,7 @@ class AppController extends _$AppController {
     final db = _db;
     _db = null;
     _dek = null;
+    _forgetPhotos();
     state = const AppLoading();
     if (db == null) return true;
 

@@ -16,6 +16,7 @@ import '../../../core/theme/app_colors.dart';
 import '../domain/photo_grouping.dart';
 import 'photo_detail_sheet.dart';
 import 'photo_providers.dart';
+import '../../../core/widgets/photo_image.dart';
 
 /// Progress photos, grouped by month and day.
 class PhotosScreen extends ConsumerStatefulWidget {
@@ -315,7 +316,7 @@ class _PhotoTile extends ConsumerWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.file(
+            photoImage(
               file,
               fit: BoxFit.cover,
               cacheWidth: 320,

@@ -20,6 +20,7 @@ import '../domain/photo_grouping.dart';
 import 'photo_providers.dart';
 import 'photo_viewer_screen.dart';
 import 'photo_wipe.dart';
+import '../../../core/widgets/photo_image.dart';
 
 /// How a pair is laid out. Three or more are always a row.
 enum _Layout { sideBySide, wipe }
@@ -256,7 +257,7 @@ class _Side extends StatelessWidget {
                   '${PhotoPose.fromWire(photo.pose).label} · '
                   '${Formatters.date(takenAt)}',
             ),
-            child: Image.file(
+            child: photoImage(
               file,
               fit: BoxFit.contain,
               width: double.infinity,

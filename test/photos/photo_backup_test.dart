@@ -39,10 +39,7 @@ void main() {
     // --- The device that makes the backup ---------------------------------
     final sourcePaths = AppPaths(source);
     final db = AppDatabase(
-      openEncryptedExecutor(
-        file: sourcePaths.databaseFile,
-        keyHex: toHex(dek),
-      ),
+      openEncryptedExecutor(file: sourcePaths.databaseFile, keyHex: toHex(dek)),
     );
     await db.settingsDao.ensureInitialized();
 
@@ -105,6 +102,45 @@ void main() {
     expect(cleanup.isClean, isTrue);
 
     await restoredDb.close();
+  }, timeout: _timeout);
+
+  test('sealed photos come back, and open with the key of the backup '
+      '(DECISIONS 257)', () async {
+    final phrase = generateRecoveryPhrase();
+    final dek = generateDek();
+    final sourcePaths = AppPaths(source);
+    final db = AppDatabase(
+      openEncryptedExecutor(file: sourcePaths.databaseFile, keyHex: toHex(dek)),
+    );
+    await db.settingsDao.ensureInitialized();
+    await PhotoLibrary(
+      db: db,
+      store: PhotoStore(sourcePaths, key: dek),
+    ).importPhoto(
+      source: writeSourceImage(cache, 'voor.jpg'),
+      pose: PhotoPose.front,
+      takenAt: DateTime(2026, 5, 1),
+    );
+    final archive = await BackupService(
+      db: db,
+      paths: sourcePaths,
+    ).createBackup(recoveryPhrase: phrase, dek: dek);
+    await db.close();
+
+    final restored = await BackupService.readBackup(
+      file: archive,
+      recoveryPhrase: phrase,
+    );
+    final targetPaths = AppPaths(target);
+    await BackupService.applyRestore(
+      await BackupService.stageRestore(backup: restored, paths: targetPaths),
+    );
+
+    final store = PhotoStore(targetPaths, key: restored.dek);
+    final names = await store.storedFileNames();
+    final opened = (await store.readBytes(names.single))!;
+    expect(opened[0], 0xFF);
+    expect(opened[1], 0xD8);
   }, timeout: _timeout);
 
   test('a wrong phrase cannot open the archive', () async {

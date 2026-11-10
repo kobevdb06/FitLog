@@ -20,6 +20,7 @@ import '../../../routing/routes.dart';
 import 'photo_editor_screen.dart';
 import 'photo_providers.dart';
 import 'photo_viewer_screen.dart';
+import '../../../core/widgets/photo_image.dart';
 
 Future<void> showPhotoDetail(
   BuildContext context, {
@@ -86,7 +87,7 @@ class _PhotoDetail extends ConsumerWidget {
               child: SizedBox(
                 height: MediaQuery.of(context).size.height * 0.42,
                 width: double.infinity,
-                child: Image.file(
+                child: photoImage(
                   file,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stack) =>

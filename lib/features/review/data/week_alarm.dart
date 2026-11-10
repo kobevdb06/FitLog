@@ -51,6 +51,16 @@ DateTime lastSundayEvening(DateTime now) {
       : sunday;
 }
 
+/// The Monday of the week a review made at [now] is about: on Sunday the
+/// week that ends that day, on any other day the week that went by. The
+/// alarm is not exact and is set again after a restart; going off on a
+/// Monday it took the new, empty week (DECISIONS 253).
+DateTime reviewedWeekStart(DateTime now) => weekStartOf(
+  now.weekday == DateTime.sunday
+      ? now
+      : DateTime(now.year, now.month, now.day - now.weekday),
+);
+
 /// Something that can wake the app at a moment, once.
 abstract interface class WeekAlarm {
   Future<void> setAt(DateTime at);
@@ -209,7 +219,7 @@ class NotificationWeekNotices implements WeekNotices {
       body:
           'Je week staat klaar. Ontgrendel FitLog om ze te zien: met een '
           'pincode blijft je logboek dicht tot jij het opent.',
-      start: weekStartOf(DateTime.now()),
+      start: reviewedWeekStart(DateTime.now()),
     );
   }
 
@@ -271,7 +281,7 @@ class WeekAlarmHandler {
       }
       final review = await makeWeekReview(
         db,
-        weekStartOf(now),
+        reviewedWeekStart(now),
         now: now,
         clientFactory: clientFactory,
       );

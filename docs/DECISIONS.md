@@ -5882,3 +5882,13 @@ Uit het Fable-rapport: G1 en G2.
 - **Slaapfasen.** Een ontbrekend recht op slaapfasen werd nergens gemeld,
   want alleen de slaapsessie had een naam op het scherm. Nu heten ze
   samen *slaapfasen*.
+
+## 253. Het weekoverzicht gaat over de week die voorbij is
+
+Uit het Fable-rapport: G3. Het wekkertje van zondagavond is niet exact, en
+wordt na een herstart opnieuw gezet. Ging het pas op maandag af, dan nam
+`weekStartOf(now)` de nieuwe, lege week. Dat gold ook in de app, als die
+openstond, en voor de melding bij een vergrendelde app.
+`reviewedWeekStart` neemt op zondag de week die die dag eindigt, en op elke
+andere dag de week die voorbij is. Het inhalen na het ontgrendelen deed dat
+al, via `lastSundayEvening`.

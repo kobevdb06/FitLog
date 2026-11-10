@@ -126,7 +126,7 @@ class WeekNotify {
     final at = now ?? DateTime.now();
     final review = await makeWeekReview(
       _db,
-      weekStartOf(at),
+      reviewedWeekStart(at),
       now: at,
       clientFactory: ref.read(coachClientFactoryProvider),
     );

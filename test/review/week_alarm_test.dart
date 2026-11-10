@@ -61,6 +61,19 @@ void main() {
     });
   });
 
+  test('welke week: op zondag de lopende, anders de week die voorbij is', () {
+    expect(reviewedWeekStart(DateTime(2026, 10, 4, 20)), DateTime(2026, 9, 28));
+    expect(
+      reviewedWeekStart(DateTime(2026, 10, 4, 19, 59)),
+      DateTime(2026, 9, 28),
+    );
+    expect(reviewedWeekStart(DateTime(2026, 10, 5, 7)), DateTime(2026, 9, 28));
+    expect(
+      reviewedWeekStart(DateTime(2026, 10, 10, 23)),
+      DateTime(2026, 9, 28),
+    );
+  });
+
   group('als het afgaat', () {
     final sundayEvening = DateTime(2026, 10, 4, 20);
     late _Alarm alarm;
@@ -75,26 +88,29 @@ void main() {
       opened = null;
     });
 
-    WeekAlarmHandler handler({bool handedOff = false, bool enabled = true}) =>
-        WeekAlarmHandler(
-          schedule: WeekSchedule(alarm),
-          handOff: () async => handedOff,
-          keys: keys,
-          openDatabase: (key) async {
-            final db = createTestDatabase();
-            await db.settingsDao.ensureInitialized();
-            await db.settingsDao.updateSettings(
-              AppSettingsTableCompanion(weekReviewNotify: Value(enabled)),
-            );
-            await db.recoveryDao.setSleep(
-              fellAsleepAt: DateTime(2026, 10, 2, 23),
-              wokeAt: DateTime(2026, 10, 3, 7),
-            );
-            return opened = db;
-          },
-          notices: notices,
-          clock: () => sundayEvening,
+    WeekAlarmHandler handler({
+      bool handedOff = false,
+      bool enabled = true,
+      DateTime? at,
+    }) => WeekAlarmHandler(
+      schedule: WeekSchedule(alarm),
+      handOff: () async => handedOff,
+      keys: keys,
+      openDatabase: (key) async {
+        final db = createTestDatabase();
+        await db.settingsDao.ensureInitialized();
+        await db.settingsDao.updateSettings(
+          AppSettingsTableCompanion(weekReviewNotify: Value(enabled)),
         );
+        await db.recoveryDao.setSleep(
+          fellAsleepAt: DateTime(2026, 10, 2, 23),
+          wokeAt: DateTime(2026, 10, 3, 7),
+        );
+        return opened = db;
+      },
+      notices: notices,
+      clock: () => at ?? sundayEvening,
+    );
 
     test('zonder pincode: maken, bewaren, melden', () async {
       await keys.setDirectKey(Uint8List(32));
@@ -107,6 +123,15 @@ void main() {
       expect(notices.reviews.single.coachText, isNull);
       // En volgende zondag weer.
       expect(alarm.at, DateTime(2026, 10, 11, 20));
+    });
+
+    test('pas maandag afgegaan: nog altijd de week die voorbij is '
+        '(DECISIONS 253)', () async {
+      await keys.setDirectKey(Uint8List(32));
+
+      await handler(at: DateTime(2026, 10, 5, 7)).handle();
+
+      expect(notices.reviews.single.facts.start, DateTime(2026, 9, 28));
     });
 
     test('met een pincode blijft het logboek dicht', () async {
@@ -193,6 +218,15 @@ void main() {
         isNotNull,
       );
     });
+
+    test(
+      'en pas maandag, dan nog altijd over de week die voorbij is',
+      () async {
+        await notify().onAlarm(now: DateTime(2026, 10, 5, 7));
+
+        expect(notices.reviews.single.facts.start, DateTime(2026, 9, 28));
+      },
+    );
 
     test('en is ze vergrendeld, dan wacht het op het ontgrendelen', () async {
       await notify(state: const AppLocked(_none)).onAlarm();

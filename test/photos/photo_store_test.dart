@@ -42,21 +42,23 @@ void main() {
   });
 
   group('import', () {
-    test('copies out of the source directory instead of referencing it',
-        () async {
-      final source = writeSourceImage(cache, 'picked.jpg');
-      final fileName = await store.import(source);
+    test(
+      'copies out of the source directory instead of referencing it',
+      () async {
+        final source = writeSourceImage(cache, 'picked.jpg');
+        final fileName = await store.import(source);
 
-      expect(await store.exists(fileName), isTrue);
-      expect(
-        store.fileFor(fileName).path,
-        startsWith(paths.photosDirectory.path),
-      );
+        expect(await store.exists(fileName), isTrue);
+        expect(
+          store.fileFor(fileName).path,
+          startsWith(paths.photosDirectory.path),
+        );
 
-      // The picker's file lives in a cache the OS empties whenever it likes.
-      await source.delete();
-      expect(await store.exists(fileName), isTrue);
-    });
+        // The picker's file lives in a cache the OS empties whenever it likes.
+        await source.delete();
+        expect(await store.exists(fileName), isTrue);
+      },
+    );
 
     test('stores only a file name, never a path', () async {
       final fileName = await store.import(writeSourceImage(cache, 'a.jpg'));
@@ -97,7 +99,12 @@ void main() {
 
   group('processing', () {
     test('scales the long edge down to 1440', () {
-      final source = writeSourceImage(cache, 'big.jpg', width: 2000, height: 3000);
+      final source = writeSourceImage(
+        cache,
+        'big.jpg',
+        width: 2000,
+        height: 3000,
+      );
       final out = PhotoStore.processBytes(source.readAsBytesSync());
       final decoded = img.decodeImage(out)!;
 
@@ -107,7 +114,12 @@ void main() {
     });
 
     test('leaves a small photo alone', () {
-      final source = writeSourceImage(cache, 'small.jpg', width: 400, height: 600);
+      final source = writeSourceImage(
+        cache,
+        'small.jpg',
+        width: 400,
+        height: 600,
+      );
       final decoded = img.decodeImage(
         PhotoStore.processBytes(source.readAsBytesSync()),
       )!;
@@ -116,7 +128,12 @@ void main() {
     });
 
     test('a 4 MB camera photo shrinks a lot', () async {
-      final source = writeSourceImage(cache, 'camera.jpg', width: 4000, height: 3000);
+      final source = writeSourceImage(
+        cache,
+        'camera.jpg',
+        width: 4000,
+        height: 3000,
+      );
       final fileName = await store.import(source);
       final stored = await store.fileFor(fileName).length();
 
@@ -194,19 +211,23 @@ void main() {
       expect(await store.storedFileNames(), isEmpty);
     });
 
-    test('a row without a file is dropped at startup', () async {
+    test('a row without a file stays, with its pose and its date '
+        '(DECISIONS 258)', () async {
       await library.importPhoto(
         source: writeSourceImage(cache, 'a.jpg'),
         pose: PhotoPose.side,
       );
       final photo = (await db.recordsDao.photos()).single;
 
-      // Simulate the file disappearing underneath the row.
+      // Simulate the file disappearing underneath the row - a restore that
+      // did not bring every photo back.
       await store.deleteFile(photo.fileName);
 
       final result = await library.cleanup();
       expect(result.missingFiles, contains(photo.fileName));
-      expect(await db.recordsDao.photos(), isEmpty);
+      final kept = (await db.recordsDao.photos()).single;
+      expect(kept.pose, PhotoPose.side.wire);
+      expect(kept.takenAt, photo.takenAt);
     });
 
     test('cleanup leaves a healthy library untouched', () async {

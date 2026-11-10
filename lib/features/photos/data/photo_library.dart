@@ -43,8 +43,11 @@ class PhotoLibrary {
     await db.recordsDao.deletePhoto(photo.id);
   }
 
-  /// Runs at startup: deletes files nothing points at, and drops rows whose
-  /// file is gone.
+  /// Runs at startup: deletes files nothing points at. A row whose file is
+  /// gone stays: its pose, date, note and workout are kept, and the screen
+  /// shows that the picture itself is missing. It used to be dropped - after
+  /// a restore that did not bring every photo back, all that went too
+  /// (DECISIONS 258). Deleting it is the user's.
   Future<PhotoCleanupResult> cleanup() async {
     final rows = await db.recordsDao.photos();
     final frames = await db.exercisesDao.imageFileNames();
@@ -52,20 +55,6 @@ class PhotoLibrary {
     final asked = await db.chatDao.imageFileNames();
     final known = {for (final row in rows) row.fileName, ...frames, ...asked};
 
-    final result = await store.reconcile(known);
-
-    for (final row in rows) {
-      if (result.missingFiles.contains(row.fileName)) {
-        await db.recordsDao.deletePhoto(row.id);
-      }
-    }
-    // An exercise outlives its pictures: only the reference is cleared, so the
-    // exercise itself and every workout that used it stay put.
-    for (final fileName in result.missingFiles) {
-      if (frames.contains(fileName)) {
-        await db.exercisesDao.clearImageFile(fileName);
-      }
-    }
-    return result;
+    return store.reconcile(known);
   }
 }

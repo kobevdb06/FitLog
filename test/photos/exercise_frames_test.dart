@@ -107,8 +107,8 @@ void main() {
     expect(await store.exists(kept), isTrue);
   });
 
-  test('a frame whose file is gone loses the reference, not the exercise',
-      () async {
+  test('a frame whose file is gone keeps its exercise, and its reference '
+      '(DECISIONS 258)', () async {
     final start = await importFrame('start.jpg');
     final end = await importFrame('end.jpg');
     final id = await makeExercise(start: start, end: end);
@@ -116,11 +116,13 @@ void main() {
     await store.deleteFile(end);
     final result = await library.cleanup();
 
+    // Said, not cleaned up: a restore that brings the file back finds the
+    // exercise still pointing at it. The picture shows its fallback.
     expect(result.missingFiles, {end});
     final row = await db.exercisesDao.getById(id);
     expect(row, isNotNull, reason: 'the exercise itself must survive');
     expect(row!.startImageFile, start);
-    expect(row.endImageFile, isNull);
+    expect(row.endImageFile, end);
   });
 
   test('clearing one frame does not touch the other', () async {

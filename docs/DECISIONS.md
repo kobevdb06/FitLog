@@ -6034,3 +6034,28 @@ vingerafdruk die het zelf al afnam. `unlock(biometric: true)` gaf altijd
 niet van buitenaf bereikbaar, dus er was geen aanvalsweg. Toch zou een
 paneel dat het ooit per vergissing meestuurt, de coach openen zonder
 slot. Nu telt de vingerafdruk alleen als biometrie aan staat.
+
+## 260. De wachttijd na foute pincodes geldt overal, en vergrendelen is een schermslot
+
+Uit het Fable-rapport: S6.
+
+- **De wachttijd zit nu in de sleutelbeheerder.** Na drie foute pincodes
+  wacht je 2, 4, 8, 16 en dan 30 seconden. Alleen het slotscherm hield
+  zich daaraan. *Pincode wijzigen* en *Toon herstelzin* in Instellingen
+  probeerden zo snel als je kon typen. Nu weigert `unlockWithPin` zelf
+  zolang de wachttijd loopt (`PinLockedOutException`), voor elke weg naar
+  binnen. Zo'n poging wordt niet gecontroleerd en ook niet geteld.
+- **Een klok die terug is gezet,** verlengde de wachttijd met hoe ver ze
+  terugging: een dag terug was een dag wachten. Nu is het hoogstens de
+  wachttijd zelf. Een klok die vooruit wordt gezet, slaat de wachttijd nog
+  altijd over. Daartegen helpt alleen een klok die een herstart overleeft,
+  en de pincode zit sowieso achter Argon2id.
+- **Vergrendelen is een schermslot.** Met een pincode vergeet de app de
+  sleutel als ze vergrendelt, maar de databaseverbinding blijft open. Dat
+  moet: de workoutmelding, de alarmen en de wekelijkse back-up schrijven
+  er achter het slot in. Staat biometrie aan, dan ligt de sleutel ook
+  rechtstreeks in de sleutelopslag. Zo kan de wekelijkse back-up gemaakt
+  worden terwijl de app vergrendeld is, zonder vingerafdruk. Dat is
+  bedoeld: de back-up gaat versleuteld met de herstelzin naar de eigen
+  map van de app. De uitleg bij `KeyManager` zei dat de sleutel alleen
+  bestaat terwijl de app ontgrendeld is. Dat klopte niet en is aangepast.

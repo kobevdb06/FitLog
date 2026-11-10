@@ -160,6 +160,12 @@ void main() {
     // Three wrong ones in a row: the lock screen waits too.
     expect(third['ok'], isFalse);
     expect(third['lockoutSeconds'], isA<int>());
+
+    // And while it waits, the right one is not tried either.
+    final fourth = await coach().unlock(pin: '246810');
+    expect(fourth['ok'], isFalse);
+    expect(fourth['lockoutSeconds'], isA<int>());
+    expect((await coach().state())['locked'], isTrue);
   });
 
   test('een vingerafdruk telt alleen als die aan staat', () async {

@@ -35,6 +35,9 @@ Duration remainingLockout({
   final total = lockoutDelay(consecutiveFailures);
   if (total == Duration.zero) return Duration.zero;
   final elapsed = (now ?? DateTime.now()).difference(lastFailureAt);
+  // A last failure in the future: the clock was set back. The wait is the
+  // whole wait, not that plus however far back it went (DECISIONS 260).
+  if (elapsed.isNegative) return total;
   final left = total - elapsed;
   return left.isNegative ? Duration.zero : left;
 }

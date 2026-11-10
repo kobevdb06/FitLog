@@ -110,6 +110,8 @@ class _SecuritySettingsScreenState
       if (mounted) {
         showSnack(context, 'Die pincode klopt niet.', isError: true);
       }
+    } on PinLockedOutException catch (e) {
+      if (mounted) showSnack(context, e.message, isError: true);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -147,6 +149,9 @@ class _SecuritySettingsScreenState
         if (mounted) {
           showSnack(context, 'Die pincode klopt niet.', isError: true);
         }
+        return;
+      } on PinLockedOutException catch (e) {
+        if (mounted) showSnack(context, e.message, isError: true);
         return;
       }
     } else {

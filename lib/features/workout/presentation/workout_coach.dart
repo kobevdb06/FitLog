@@ -85,10 +85,6 @@ class WorkoutCoach {
       return {'ok': true};
     }
     if (pin == null) return {'ok': false};
-    final wait = (await manager.status()).remainingLockoutAt(_now());
-    if (wait > Duration.zero) {
-      return {'ok': false, 'lockoutSeconds': wait.inSeconds};
-    }
     try {
       await manager.unlockWithPin(pin);
       _unlockedAt = _now();
@@ -99,6 +95,9 @@ class WorkoutCoach {
         'ok': false,
         'lockoutSeconds': after.remainingLockoutAt(_now()).inSeconds,
       };
+    } on PinLockedOutException catch (e) {
+      // The key manager keeps the wait now, for every way in (DECISIONS 260).
+      return {'ok': false, 'lockoutSeconds': e.wait.inSeconds};
     }
   }
 

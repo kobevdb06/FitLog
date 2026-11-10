@@ -43,14 +43,39 @@ class SecurityStatus {
   );
 }
 
+/// A PIN tried while the wait after wrong ones still runs: it is not
+/// checked, and not counted.
+class PinLockedOutException implements Exception {
+  const PinLockedOutException(this.wait);
+
+  /// How long before the next try.
+  final Duration wait;
+
+  /// What to tell the user, in whole seconds rounded up.
+  String get message {
+    final seconds = (wait.inMilliseconds / 1000).ceil().clamp(1, 1 << 20);
+    final unit = seconds == 1 ? 'seconde' : 'seconden';
+    return 'Te veel foute pogingen. Nog $seconds $unit wachten.';
+  }
+
+  @override
+  String toString() => 'PinLockedOutException($wait)';
+}
+
 /// Creates, wraps and recovers the database key.
 ///
-/// Every method here works on the wrapped copies in [SecretStore]; the plain
-/// DEK only ever exists in memory, and only while the app is unlocked.
+/// Every method here works on the wrapped copies in [SecretStore]. With a
+/// PIN, the plain DEK is kept only in memory, and the app forgets it when it
+/// locks. Locking is a screen lock, though: the database connection stays
+/// open, so the workout notification, the alarms and the weekly backup go on
+/// writing behind it. And with biometrics on, the DEK also sits in the key
+/// store as it is, behind the fingerprint the app asks for (DECISIONS 260).
 class KeyManager {
-  KeyManager(this._store, {this._recoveryFile});
+  KeyManager(this._store, {this._recoveryFile, DateTime Function()? clock})
+    : _now = clock ?? DateTime.now;
 
   final SecretStore _store;
+  final DateTime Function() _now;
 
   /// A second copy of the key wrapped under the twelve words, in a file of
   /// its own: what the phrase still opens when the key store lost or cannot
@@ -218,12 +243,17 @@ class KeyManager {
   /// Opens the database key with the PIN.
   ///
   /// Throws [InvalidSecretException] on a wrong PIN and records the failure so
-  /// the next attempt is throttled.
+  /// the next attempt is throttled, and [PinLockedOutException] while that
+  /// wait runs. The wait is kept here, for every way in: only the lock screen
+  /// kept it, and changing the PIN or showing the phrase in Settings tried
+  /// as fast as one could type (DECISIONS 260).
   Future<Uint8List> unlockWithPin(String pin) async {
     final raw = await _store.read(_kPinWrap);
     if (raw == null) {
       throw StateError('Er is geen pincode ingesteld op dit toestel');
     }
+    final wait = (await status()).remainingLockoutAt(_now());
+    if (wait > Duration.zero) throw PinLockedOutException(wait);
     try {
       final dek = await unwrapDek(wrapped: WrappedKey.decode(raw), secret: pin);
       await _clearFailures();
@@ -297,10 +327,7 @@ class KeyManager {
   Future<void> _recordFailure() async {
     final failures = int.tryParse(await _store.read(_kFailures) ?? '') ?? 0;
     await _store.write(_kFailures, '${failures + 1}');
-    await _store.write(
-      _kLastFailure,
-      '${DateTime.now().millisecondsSinceEpoch}',
-    );
+    await _store.write(_kLastFailure, '${_now().millisecondsSinceEpoch}');
   }
 
   Future<void> _clearFailures() async {

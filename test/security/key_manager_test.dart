@@ -25,16 +25,18 @@ void main() {
       expect(status.hasRecoveryPhrase, isFalse);
     });
 
-    test('skipping the PIN gives an initialised device without a lock',
-        () async {
-      final dek = manager.createDek();
-      await manager.setDirectKey(dek);
+    test(
+      'skipping the PIN gives an initialised device without a lock',
+      () async {
+        final dek = manager.createDek();
+        await manager.setDirectKey(dek);
 
-      final status = await manager.status();
-      expect(status.initialised, isTrue);
-      expect(status.mode, LockMode.none);
-      expect(await manager.readDirectKey(), equals(dek));
-    });
+        final status = await manager.status();
+        expect(status.initialised, isTrue);
+        expect(status.mode, LockMode.none);
+        expect(await manager.readDirectKey(), equals(dek));
+      },
+    );
   });
 
   group('PIN', () {
@@ -94,6 +96,53 @@ void main() {
         manager.unlockWithPin('111111'),
         throwsA(isA<InvalidSecretException>()),
       );
+    }, timeout: _timeout);
+
+    test('after the free tries even the right PIN waits its turn', () async {
+      var now = DateTime(2026, 11, 11, 9);
+      manager = KeyManager(store, clock: () => now);
+      final dek = manager.createDek();
+      await manager.setPin(dek: dek, pin: '123456');
+      for (var i = 0; i < kFreeAttempts; i++) {
+        await expectLater(
+          manager.unlockWithPin('000000'),
+          throwsA(isA<InvalidSecretException>()),
+        );
+      }
+
+      // Only the lock screen waited: changing the PIN or showing the phrase
+      // in Settings tried as fast as one could type (DECISIONS 260).
+      await expectLater(
+        manager.unlockWithPin('123456'),
+        throwsA(
+          isA<PinLockedOutException>().having(
+            (e) => e.wait,
+            'wait',
+            const Duration(seconds: 2),
+          ),
+        ),
+      );
+      await expectLater(
+        manager.changePin(currentPin: '123456', newPin: '222222'),
+        throwsA(isA<PinLockedOutException>()),
+      );
+      expect(
+        (await manager.status()).consecutiveFailures,
+        kFreeAttempts,
+        reason: 'a try that was not made is not counted',
+      );
+
+      expect(
+        const PinLockedOutException(Duration(milliseconds: 1500)).message,
+        'Te veel foute pogingen. Nog 2 seconden wachten.',
+      );
+      expect(
+        const PinLockedOutException(Duration(milliseconds: 300)).message,
+        'Te veel foute pogingen. Nog 1 seconde wachten.',
+      );
+
+      now = now.add(const Duration(seconds: 2));
+      expect(await manager.unlockWithPin('123456'), equals(dek));
     }, timeout: _timeout);
 
     test('removing the PIN puts the key back in direct storage', () async {
@@ -248,6 +297,20 @@ void main() {
       expect(
         remainingLockout(consecutiveFailures: 4, lastFailureAt: null),
         Duration.zero,
+      );
+    });
+
+    test('a clock set back does not make the wait longer', () {
+      final at = DateTime(2026, 8, 26, 12, 0, 0);
+      // The last failure in the future: the clock went back a day. It used
+      // to wait that whole day as well (DECISIONS 260).
+      expect(
+        remainingLockout(
+          consecutiveFailures: 4,
+          lastFailureAt: at,
+          now: at.subtract(const Duration(days: 1)),
+        ),
+        const Duration(seconds: 4),
       );
     });
   });

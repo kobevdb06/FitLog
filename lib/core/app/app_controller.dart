@@ -157,6 +157,9 @@ class AppController extends _$AppController {
       final status = await manager.status();
       state = AppLocked(status);
       return 'Verkeerde pincode.';
+    } on PinLockedOutException catch (e) {
+      state = AppLocked(await manager.status());
+      return e.message;
     } on Object catch (error) {
       return '$error';
     }

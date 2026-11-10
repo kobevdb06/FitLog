@@ -5819,3 +5819,39 @@ Uit het Fable-rapport: C3, C4 en C5.
 - **De privacypagina over je naam (C4).** De naam gaat altijd mee als je
   er een invulde, ook zonder *Je profiel delen*. De zin las alsof dat
   delen ook voor de naam gold. Het zijn nu twee punten.
+
+## 251. De kleinere punten van de coach
+
+Uit het Fable-rapport: de rest van C6.
+
+- **De alarmen.** Eén moment dat misliep, hield elk moment erna tegen. Nu
+  staat elk op zichzelf, en volgt de rest gewoon. Een moment waar alleen
+  een fout van bleef (de daglimiet, geen verbinding), bleef staan tot je
+  op *Opnieuw* tikte. Nu houdt alleen een antwoord dat kwam een moment
+  tegen; het volgende alarm, of het volgende openen van het scherm, vraagt
+  het opnieuw. Aan de daglimiet vertrekt er dan niets: die wordt vooraf
+  bekeken.
+- **Opnieuw.** De knop bij een fout heet *Sluiten* en wiste alleen de
+  fout; een echte *Opnieuw* was er niet. Nu stuurt *Opnieuw* de laatste
+  vraag zonder antwoord nog eens. Ze stond al in het gesprek en wordt niet
+  nog eens bewaard. Bij een geweigerde sleutel staat de knop er niet: daar
+  moet eerst een andere sleutel komen.
+- **Samenvatten** stuurde het hele gesprek, zonder grens, terwijl net een
+  gesprek dat te duur werd om een samenvatting vraagt. Nu gaat hoogstens
+  24.000 tekens mee, een paar duizend tokens: het nieuwste deel, met een
+  regel over wat weggelaten werd.
+- **De tijdslimiet** van 180 seconden gold voor het hele antwoord, twee
+  keer genomen; een lang antwoord, zoals een heel schema, kon worden
+  afgekapt terwijl het nog binnenkwam. Nu geldt ze per stuk: zolang er
+  stukken komen, wacht de app. En er is *Stoppen*: tijdens een antwoord
+  wordt de verstuurknop een stopknop. Wat al binnen was, blijft in het
+  gesprek staan, met *(gestopt)* erachter.
+- **De modellenlijst** laat weg wat volgens zijn naam geen chatmodel is.
+  Een chatmodel van morgen met zo'n woord in de naam viel dan weg, en er
+  was niets aan te doen. Nu kan je onderaan een naam zelf intikken. Een
+  lijst die niet opgehaald kon worden, zegt dat in gewone woorden in
+  plaats van met de ruwe fout.
+- **Verouderde opmerkingen** in de code zeiden dingen die niet meer
+  klopten: dat de coach nergens zelf schrijft, dat er niets persoonlijks
+  in de systeemtekst staat, dat een vraag maar één verzoek is, en dat de
+  release geen internetrecht heeft. Ze zeggen nu wat er is.

@@ -5,8 +5,10 @@
 /// fitness coach, because that is what the user signed up for when they put
 /// in their own API key.
 ///
-/// It gets no personal data here. Everything about the user it learns, it
-/// learns by asking, through the tools, one lookup at a time.
+/// Little about the user goes along here: the name when one is filled in,
+/// the profile only when it is shared, the notes while the memory is on,
+/// and where a deload or a schema stands. The training itself it learns by
+/// asking, through the tools, one lookup at a time.
 library;
 
 /// What the app can do, in the words the app itself uses.

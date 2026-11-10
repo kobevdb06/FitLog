@@ -184,6 +184,56 @@ void main() {
       expect(sent, hasLength(1));
     });
 
+    test('een moment dat misliep, komt de volgende keer terug (DECISIONS '
+        '251)', () async {
+      await on(CoachMoment.idle, option: '5');
+      await session(DateTime(2026, 10, 24, 18));
+      var calls = 0;
+      AiClient failingOnce(String apiKey, CoachProvider provider) {
+        calls++;
+        if (calls > 1) return client(apiKey, provider);
+        return AiClient(
+          apiKey: apiKey,
+          provider: provider,
+          client: MockClient((request) async => http.Response('kapot', 500)),
+        );
+      }
+
+      final first = await runDuePrompts(
+        db,
+        now: DateTime(2026, 10, 30, 18, 5),
+        clientFactory: failingOnce,
+      );
+      expect(first.single.answer.coachText, isNull);
+
+      final again = await runDuePrompts(
+        db,
+        now: DateTime(2026, 10, 31, 18, 5),
+        clientFactory: failingOnce,
+      );
+      expect(again.single.answer.coachText, startsWith('Tijd om weer te gaan'));
+    });
+
+    test('een moment dat stukloopt, houdt de andere niet tegen', () async {
+      await on(CoachMoment.idle, option: '5');
+      await on(CoachMoment.month);
+      await session(DateTime(2026, 10, 24, 18));
+      var calls = 0;
+      AiClient brokenFirst(String apiKey, CoachProvider provider) {
+        calls++;
+        if (calls == 1) throw StateError('kapot');
+        return client(apiKey, provider);
+      }
+
+      final runs = await runDuePrompts(
+        db,
+        now: DateTime(2026, 11, 1, 18, 5),
+        clientFactory: brokenFirst,
+      );
+
+      expect(runs.map((r) => r.moment), contains(CoachMoment.month));
+    });
+
     test('een tijd niet getraind vraagt niets voor de dagen om zijn', () async {
       await on(CoachMoment.idle, option: '5');
       await session(DateTime(2026, 10, 27, 18));

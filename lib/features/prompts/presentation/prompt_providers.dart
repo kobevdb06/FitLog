@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
+import '../../chat/data/ai_client.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../data/moment_answerer.dart';
 import '../data/moment_facts.dart';
@@ -97,7 +98,11 @@ class MomentAsk extends _$MomentAsk {
       if (ref.mounted) state = const AskState();
     } on Object catch (error) {
       if (ref.mounted) {
-        state = AskState(error: 'De coach vragen lukte niet: $error');
+        state = AskState(
+          error:
+              'De coach vragen lukte niet. '
+              '${AiClient.asCoachException(error).message}',
+        );
       }
     }
   }

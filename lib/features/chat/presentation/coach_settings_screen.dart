@@ -332,8 +332,9 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Text(
-                    'De lijst kon niet opgehaald worden: '
-                    '${models.error}. Hieronder staat wat de app zelf kent.',
+                    'De lijst kon niet opgehaald worden. '
+                    '${AiClient.asCoachException(models.error!).message} '
+                    'Hieronder staat wat de app zelf kent.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -362,6 +363,15 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
                     onTap: () => Navigator.of(context).pop(model.wire),
                   ),
               ],
+              // The list leaves out what is no chat model by its name; a
+              // chat model of tomorrow with such a word in it would be gone
+              // from it with nothing to be done (DECISIONS 251).
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Een andere naam intikken'),
+                subtitle: const Text('Voor een model dat hier niet staat'),
+                onTap: () => Navigator.of(context).pop(_ownModel),
+              ),
             ],
           );
         },
@@ -369,11 +379,32 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
     );
     if (picked == null || !mounted) return;
 
+    var chosen = picked;
+    if (picked == _ownModel) {
+      final typed = await promptForText(
+        context,
+        title: 'Naam van het model',
+        initialValue: current,
+        hintText: 'zoals de dienst het noemt',
+        confirmLabel: 'Bewaren',
+      );
+      if (typed == null || !mounted) return;
+      final name = typed.trim();
+      if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9._/-]*$').hasMatch(name)) {
+        showSnack(context, 'Dat is geen modelnaam: letters, cijfers, - . _ /.');
+        return;
+      }
+      chosen = name;
+    }
+
     await ref
         .read(databaseProvider)
         .settingsDao
-        .updateSettings(AppSettingsTableCompanion(chatModel: Value(picked)));
+        .updateSettings(AppSettingsTableCompanion(chatModel: Value(chosen)));
   }
+
+  /// What the sheet hands back for "Een andere naam intikken".
+  static const String _ownModel = ':eigen naam:';
 
   /// The recommended ones first, then the rest, each under its own heading -
   /// unless there is nothing to recommend, in which case one unlabelled list

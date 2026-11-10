@@ -91,7 +91,12 @@ class MomentAnswerer {
     final key = (await db.settingsDao.getSettings()).anthropicApiKey;
     if (key == null || key.isEmpty) return false;
     if (!(await MomentPrompt.load(db, moment)).enabled) return false;
-    if (await readMomentAnswer(db, moment, subject) != null) return false;
+    // Only an answer that came keeps it from being asked: one that holds
+    // nothing but an error - the day's limit, no connection - is asked again,
+    // where it used to stay until you tapped Opnieuw (DECISIONS 251).
+    if ((await readMomentAnswer(db, moment, subject))?.coachText != null) {
+      return false;
+    }
     if (moment == CoachMoment.weighing) {
       final last = await db.coachPromptsDao.latestMomentAnswer(moment);
       final at = now ?? DateTime.now();

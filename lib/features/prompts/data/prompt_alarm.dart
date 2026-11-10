@@ -148,11 +148,17 @@ Future<List<PromptRun>> runDuePrompts(
   final answerer = MomentAnswerer(db, clientFactory: clientFactory);
   final runs = <PromptRun>[];
 
+  // Each on its own: one that went wrong stopped every one after it
+  // (DECISIONS 251). It is asked again at the next turn of the alarm.
   Future<void> run(CoachMoment moment, String subject) async {
-    if (!await answerer.isDue(moment, subject, now: now)) return;
-    final answer = await answerer.answer(moment, subject, now: now);
-    if (answer != null) {
-      runs.add((moment: moment, subject: subject, answer: answer));
+    try {
+      if (!await answerer.isDue(moment, subject, now: now)) return;
+      final answer = await answerer.answer(moment, subject, now: now);
+      if (answer != null) {
+        runs.add((moment: moment, subject: subject, answer: answer));
+      }
+    } on Object {
+      // Nothing to show for it; the next turn tries again.
     }
   }
 

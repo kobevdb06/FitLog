@@ -668,8 +668,18 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
               _Failure(
                 message: state.error!,
                 keyRejected: state.keyRejected,
-                onRetry: () =>
+                onClose: () =>
                     ref.read(coachControllerProvider.notifier).clearError(),
+                // The question that got no answer, sent again: a refused key
+                // needs another key first.
+                onRetry:
+                    threadId == null ||
+                        state.keyRejected ||
+                        messages.lastOrNull?.role != 'user'
+                    ? null
+                    : () => ref
+                          .read(coachControllerProvider.notifier)
+                          .retry(threadId),
               ),
             if (_reply case final reply?)
               _AppReply(
@@ -734,6 +744,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
               controller: _controller,
               busy: state.sending,
               onSend: _send,
+              onStop: () => ref.read(coachControllerProvider.notifier).stop(),
               onPickPhoto: _photos.length < CoachController.photosPerQuestion
                   ? _pickPhoto
                   : null,
@@ -2100,12 +2111,16 @@ class _Failure extends StatelessWidget {
   const _Failure({
     required this.message,
     required this.keyRejected,
+    required this.onClose,
     required this.onRetry,
   });
 
   final String message;
   final bool keyRejected;
-  final VoidCallback onRetry;
+  final VoidCallback onClose;
+
+  /// Sends the question without an answer again; null when there is none.
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -2121,7 +2136,9 @@ class _Failure extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Wrap(
             children: [
-              TextButton(onPressed: onRetry, child: const Text('Sluiten')),
+              if (onRetry case final retry?)
+                TextButton(onPressed: retry, child: const Text('Opnieuw')),
+              TextButton(onPressed: onClose, child: const Text('Sluiten')),
               // A refused key has one way on: another one, pasted.
               if (keyRejected)
                 TextButton(
@@ -2141,12 +2158,16 @@ class _Ask extends StatelessWidget {
     required this.controller,
     required this.busy,
     required this.onSend,
+    required this.onStop,
     required this.onPickPhoto,
   });
 
   final TextEditingController controller;
   final bool busy;
   final void Function(String question) onSend;
+
+  /// While an answer is being written, the button stops it.
+  final VoidCallback onStop;
 
   /// Null once there are as many photos as go with one question.
   final VoidCallback? onPickPhoto;
@@ -2185,11 +2206,17 @@ class _Ask extends StatelessWidget {
           // Part of the field: sending keeps the keyboard up for the next
           // question, the way a chat does.
           TextFieldTapRegion(
-            child: IconButton.filled(
-              tooltip: 'Versturen',
-              onPressed: busy ? null : () => onSend(controller.text),
-              icon: const Icon(Icons.arrow_upward),
-            ),
+            child: busy
+                ? IconButton.filledTonal(
+                    tooltip: 'Stoppen',
+                    onPressed: onStop,
+                    icon: const Icon(Icons.stop),
+                  )
+                : IconButton.filled(
+                    tooltip: 'Versturen',
+                    onPressed: () => onSend(controller.text),
+                    icon: const Icon(Icons.arrow_upward),
+                  ),
           ),
         ],
       ),

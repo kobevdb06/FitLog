@@ -380,6 +380,20 @@ class CoachController extends _$CoachController {
     }
   }
 
+  /// The client of the question being answered, so Stoppen can let it go.
+  AiClient? _answering;
+
+  /// Stoppen was tapped: what comes next is not a failure.
+  bool _stopped = false;
+
+  /// Stoppen: the answer being written is let go, and what had come of it
+  /// stays in the conversation (DECISIONS 251).
+  void stop() {
+    if (!state.sending || _answering == null) return;
+    _stopped = true;
+    _answering?.close();
+  }
+
   /// [error] as the chat shows it, with the key's own flag when it was the
   /// key.
   CoachState _failed(Object error) {
@@ -387,12 +401,44 @@ class CoachController extends _$CoachController {
     return CoachState(error: _say(said), keyRejected: said.badKey);
   }
 
+  /// Opnieuw: the last question of [threadId] sent again, when no answer
+  /// came. It was stored before it was sent, so it is not stored a second
+  /// time (DECISIONS 251).
+  Future<void> retry(String threadId) async {
+    if (state.sending) return;
+    state = const CoachState(sending: true);
+    try {
+      final messages = await ref
+          .read(databaseProvider)
+          .chatDao
+          .messages(threadId);
+      final last = messages.lastOrNull;
+      if (last == null || last.role != 'user') {
+        state = const CoachState();
+        return;
+      }
+      await _ask(
+        threadId: threadId,
+        text: last.content,
+        photos: last.photos,
+        situation: null,
+        sent: const [],
+        storedId: last.id,
+      );
+    } on Object catch (error) {
+      if (state.sending) state = _failed(error);
+    }
+  }
+
+  /// [storedId]: the id of the question when it is in the conversation
+  /// already, sent again.
   Future<void> _ask({
     required String threadId,
     required String text,
     required List<String> photos,
     required String? situation,
     required List<String> sent,
+    String? storedId,
   }) async {
     final db = ref.read(databaseProvider);
     // Straight from the database rather than from the stream: on a cold start
@@ -408,14 +454,16 @@ class CoachController extends _$CoachController {
       return;
     }
 
-    final asked = _uuid.v4();
-    await db.chatDao.addMessage(
-      id: asked,
-      threadId: threadId,
-      role: 'user',
-      content: text,
-      imageFiles: photos,
-    );
+    final asked = storedId ?? _uuid.v4();
+    if (storedId == null) {
+      await db.chatDao.addMessage(
+        id: asked,
+        threadId: threadId,
+        role: 'user',
+        content: text,
+        imageFiles: photos,
+      );
+    }
 
     // The day limit holds for the chat as well: it stopped only the
     // automatic questions, while it is called the day's limit (DECISIONS
@@ -471,6 +519,8 @@ class CoachController extends _$CoachController {
       key,
       ref.read(coachProviderProvider),
     );
+    _answering = client;
+    _stopped = false;
     try {
       // From the database, not from the streams: on a cold start these can
       // still be on their way, and an unshared profile must not be shared,
@@ -574,7 +624,22 @@ class CoachController extends _$CoachController {
         outputTokens: answer.usage.outputTokens,
       );
       state = const CoachState();
+    } on Object {
+      if (!_stopped) rethrow;
+      // Stopped: what had come is kept, as an answer cut short.
+      final partial = state.answer.trim();
+      if (partial.isNotEmpty) {
+        await db.chatDao.addMessage(
+          id: _uuid.v4(),
+          threadId: threadId,
+          role: 'assistant',
+          content: '$partial\n\n(gestopt)',
+        );
+      }
+      state = const CoachState();
     } finally {
+      _answering = null;
+      _stopped = false;
       client.close();
     }
   }
@@ -762,9 +827,11 @@ class CoachController extends _$CoachController {
 
   /// Creates what a proposal describes, and remembers that it was taken up.
   ///
-  /// This is the only place in the coach that writes anything to the logbook,
-  /// and it runs because the user tapped a button - never because the model
-  /// asked for it.
+  /// What runs here, runs because the user tapped a button. The coach also
+  /// writes some things itself, because the user asked for them in the
+  /// conversation: its own routines, its notes, and a schema in the
+  /// schema's conversation (DECISIONS 233, 236, 240). Everything else it
+  /// only proposes.
   Future<String?> accept({
     required ChatMessageRow message,
     required int index,

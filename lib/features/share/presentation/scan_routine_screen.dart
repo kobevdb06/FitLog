@@ -8,9 +8,9 @@ import '../domain/routine_code.dart';
 
 /// The camera, pointed at a friend's screen.
 ///
-/// The scanner runs entirely on the device: the barcode model is bundled in
-/// the app rather than fetched by Play Services, and the release manifest
-/// strips the INTERNET permission whatever a dependency asks for.
+/// The scanner reads on the device: the barcode model is bundled in the app
+/// rather than fetched by Play Services. The app does hold the INTERNET
+/// permission, for the coach.
 class ScanRoutineScreen extends StatefulWidget {
   const ScanRoutineScreen({super.key});
 

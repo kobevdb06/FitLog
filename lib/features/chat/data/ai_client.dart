@@ -3,8 +3,9 @@
 /// Everything else in FitLog works on the device and nowhere else. The coach
 /// is the single exception, and the user switches it on by pasting an API key
 /// of their own. This file is the whole of that exception: two possible
-/// hosts, one key, no analytics, no second request. A test walks `lib/` and
-/// fails if any other file so much as imports an HTTP client.
+/// hosts, one key, no analytics, and no request a question does not need -
+/// though one question may need several, one per lookup. A test walks
+/// `lib/` and fails if any other file so much as imports an HTTP client.
 ///
 /// Two services, because a key is a key: whoever has one from Google should
 /// not have to go and buy one from Anthropic to ask how their bench is going.
@@ -813,7 +814,17 @@ class AiClient {
   final Duration timeout;
   final http.Client _client;
 
-  void close() => _client.close();
+  /// The answer being streamed, so [close] ends the wait for it too: a
+  /// stream does not always notice its connection went.
+  Completer<void>? _streaming;
+
+  void close() {
+    final streaming = _streaming;
+    if (streaming != null && !streaming.isCompleted) {
+      streaming.completeError(const CoachException('Gestopt.'));
+    }
+    _client.close();
+  }
 
   /// One round trip. Tool results come back in as ordinary turns, so the loop
   /// that runs them lives above this.
@@ -1020,8 +1031,24 @@ class AiClient {
 
     final chunks = <Map<String, Object?>>[];
     final finished = Completer<void>();
+    // Waited for piece by piece, not for the whole: a long answer - a whole
+    // schema - that kept coming was cut off by one limit over all of it
+    // (DECISIONS 251). An answer that stops coming is still let go.
+    Timer? idle;
+    void stillComing() {
+      idle?.cancel();
+      idle = Timer(timeout, () {
+        if (!finished.isCompleted) {
+          finished.completeError(TimeoutException('geen stuk meer'));
+        }
+      });
+    }
+
+    stillComing();
+    _streaming = finished;
     final subscription = _events(response.stream).listen(
       (chunk) {
+        stillComing();
         chunks.add(chunk);
         final piece = _textOf(chunk);
         if (piece.isNotEmpty) onText(piece);
@@ -1035,9 +1062,7 @@ class AiClient {
       cancelOnError: true,
     );
     try {
-      // One limit over the whole answer, twice that for a question: an
-      // answer that stops coming is let go, and the connection with it.
-      await finished.future.timeout(timeout * 2);
+      await finished.future;
     } on TimeoutException {
       // Not waited for: a stream that stopped may not hurry to say it has
       // stopped, and the answer is the error, now.
@@ -1053,6 +1078,10 @@ class AiClient {
       throw CoachException(
         'De verbinding werd afgebroken: ${_redact(error.message)}',
       );
+    } finally {
+      idle?.cancel();
+      _streaming = null;
+      unawaited(subscription.cancel());
     }
 
     return _geminiReply(_merged(chunks));

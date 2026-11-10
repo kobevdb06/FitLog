@@ -130,13 +130,36 @@ const String kSummarySystem =
     'sets, herhalingen, dagen), en wat nog open staat. Alleen wat in het '
     'gesprek staat: verzin niets.';
 
+/// How much of a conversation /samenvat sends at most, in characters: a
+/// few thousand tokens. Summing up is what a conversation that grew too
+/// expensive is for, and it used to send all of it (DECISIONS 251).
+const int kSummaryMaxChars = 24000;
+
 /// A conversation as the coach reads it for /samenvat: who said what, in
-/// order.
+/// order - the newest part, up to [maxChars], with a word on what was left
+/// out.
 String conversationText(
   String title,
-  Iterable<({String role, String text})> messages,
-) => [
-  'Het gesprek "$title":',
-  for (final message in messages)
-    '${message.role == 'user' ? 'Gebruiker' : 'Coach'}: ${message.text}',
-].join('\n\n');
+  Iterable<({String role, String text})> messages, {
+  int maxChars = kSummaryMaxChars,
+}) {
+  final lines = [
+    for (final message in messages)
+      '${message.role == 'user' ? 'Gebruiker' : 'Coach'}: ${message.text}',
+  ];
+  final kept = <String>[];
+  var used = 0;
+  for (final line in lines.reversed) {
+    if (kept.isNotEmpty && used + line.length > maxChars) break;
+    kept.insert(0, line);
+    used += line.length;
+  }
+  final left = lines.length - kept.length;
+  return [
+    'Het gesprek "$title":',
+    if (left > 0)
+      '(${left == 1 ? 'Het eerste bericht is' : 'De eerste $left berichten zijn'} '
+          'weggelaten; vat het deel hieronder samen.)',
+    ...kept,
+  ].join('\n\n');
+}

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -99,6 +100,21 @@ void main() {
     },
   );
 
+  test('Opnieuw sends the question again, without storing it twice '
+      '(DECISIONS 251)', () async {
+    answer = (_) async => throw const SocketException('weg');
+    await coach().ask(threadId: 't-1', question: 'Hoeveel sets?');
+    expect(container.read(coachControllerProvider).error, isNotNull);
+
+    answer = (_) async => ok('Drie.');
+    await coach().retry('t-1');
+
+    final messages = await db.chatDao.messages('t-1');
+    expect([for (final m in messages) m.role], ['user', 'assistant']);
+    expect(messages.last.content, 'Drie.');
+    expect(container.read(coachControllerProvider).error, isNull);
+  });
+
   test('an answer in a shape nobody expected is said too', () async {
     answer = (_) async => http.Response('{"candidates": 7}', 200);
 
@@ -177,6 +193,89 @@ void main() {
 
     expect(reply.text, 'Zonder die opzoeking: drie sets.');
     expect(bodies.last, contains('"ok":false'));
+  });
+
+  group('a long answer (DECISIONS 251)', () {
+    String sse(String text) =>
+        'data: ${jsonEncode({
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': text},
+                ],
+              },
+            },
+          ],
+        })}\n\n';
+
+    test(
+      'that keeps coming is not cut off by one limit over all of it',
+      () async {
+        final client = AiClient(
+          apiKey: 'AQ.Ab8RNiZhX2Mkg',
+          timeout: const Duration(milliseconds: 300),
+          client: MockClient.streaming((request, body) async {
+            final pieces = Stream<List<int>>.periodic(
+              const Duration(milliseconds: 150),
+              (i) => utf8.encode(sse('deel $i ')),
+            ).take(6);
+            return http.StreamedResponse(pieces, 200);
+          }),
+        );
+
+        final reply = await client.sendStreaming(
+          system: 'Coach.',
+          messages: [CoachMessage.user('Een schema?')],
+          tools: const [],
+          model: 'gemini-2.5-flash',
+          onText: (_) {},
+        );
+
+        expect(reply.text, contains('deel 5'));
+      },
+    );
+
+    test('Stoppen keeps what had come, and leaves the chat free', () async {
+      final pieces = StreamController<List<int>>();
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          appPathsProvider.overrideWith(
+            (ref) => AppPaths(Directory.systemTemp),
+          ),
+          coachClientFactoryProvider.overrideWithValue(
+            (apiKey, provider) => AiClient(
+              apiKey: apiKey,
+              provider: provider,
+              client: MockClient.streaming(
+                (request, body) async =>
+                    http.StreamedResponse(pieces.stream, 200),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      final asking = coach().ask(threadId: 't-1', question: 'Een schema?');
+      pieces.add(utf8.encode(sse('Week 1: drie dagen.')));
+      for (var i = 0; i < 50; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        if (container.read(coachControllerProvider).answer.isNotEmpty) break;
+      }
+
+      coach().stop();
+      await asking;
+
+      final state = container.read(coachControllerProvider);
+      expect(state.sending, isFalse);
+      expect(state.error, isNull);
+      final last = (await db.chatDao.messages('t-1')).last;
+      expect(last.content, contains('Week 1: drie dagen.'));
+      expect(last.content, contains('(gestopt)'));
+      await pieces.close();
+    });
   });
 }
 

@@ -85,4 +85,16 @@ void main() {
       'Coach: Tot parallel dan.',
     );
   });
+
+  test('a long conversation goes without its oldest part (DECISIONS 251)', () {
+    final text = conversationText('Lang', [
+      for (var i = 0; i < 10; i++)
+        (role: 'user', text: 'Bericht $i ${'x' * 90}'),
+    ], maxChars: 350);
+
+    expect(text, contains('Bericht 9'));
+    expect(text, isNot(contains('Bericht 0 ')));
+    expect(text, contains('berichten zijn weggelaten'));
+    expect(text.length, lessThan(600));
+  });
 }

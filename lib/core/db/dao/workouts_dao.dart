@@ -54,10 +54,16 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
 
   // --- The running session --------------------------------------------------
 
-  /// There can only ever be one workout with `ended_at IS NULL`.
-  Future<WorkoutRow?> getActiveWorkoutRow() => (select(
-    workoutsTable,
-  )..where((t) => t.endedAt.isNull())).getSingleOrNull();
+  /// There can only ever be one workout with `ended_at IS NULL`; the
+  /// database holds to that (DECISIONS 245). The newest, should a device
+  /// from before the guard have two: a lookup that threw on two stopped
+  /// ticking off, totals and hints altogether.
+  Future<WorkoutRow?> getActiveWorkoutRow() =>
+      (select(workoutsTable)
+            ..where((t) => t.endedAt.isNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)])
+            ..limit(1))
+          .getSingleOrNull();
 
   /// The workout finished most recently, by when it started.
   Future<WorkoutRow?> lastFinished() =>
@@ -102,15 +108,17 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     String? name,
     required int defaultRestSeconds,
   }) async {
-    final running = await getActiveWorkoutRow();
-    if (running != null) {
-      throw StateError('Er loopt al een workout (${running.id})');
-    }
-
     final id = _uuid.v4();
     final now = DateTime.now().millisecondsSinceEpoch;
 
     await transaction(() async {
+      // Asked inside the transaction that starts one: asked before it, two
+      // quick taps both heard "none" and both started (DECISIONS 245).
+      final running = await getActiveWorkoutRow();
+      if (running != null) {
+        throw StateError('Er loopt al een workout (${running.id})');
+      }
+
       RoutineRow? routine;
       if (routineId != null) {
         routine = await (select(
@@ -1367,6 +1375,13 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     String? notes,
   }) async {
     await transaction(() async {
+      // Finished already - a second tap on Afronden: the moment it ended
+      // stays the one it was.
+      final current = await (select(
+        workoutsTable,
+      )..where((t) => t.id.equals(workoutId))).getSingleOrNull();
+      if (current == null || current.endedAt != null) return;
+
       if (discardPending) {
         await customStatement(
           'DELETE FROM workout_sets WHERE is_completed = 0 AND '

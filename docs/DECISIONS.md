@@ -5668,3 +5668,38 @@ plateaus telde zo'n dag als vooruitgang.
   zou ook records vervangen die niets met deze regel te maken hebben, en
   een migratie mag alleen toevoegen. Een record van 30 herhalingen blijft
   een herhalingsrecord.
+
+## 245. Eén lopende workout, hoe snel je ook tikt
+
+Uit het Fable-rapport: T2, D14 en twee punten uit T10.
+
+- **Twee lopende workouts door dubbel tikken (T2).** "Loopt er al een?"
+  werd gevraagd vóór de transactie die er een start, en de startknoppen
+  op Start hadden geen blokkade. Twee snelle tikken hoorden allebei
+  "nee" en startten er allebei een. Met twee rijen gooide elke opzoeking
+  van de lopende workout een fout, en afvinken, totalen en hints werkten
+  niet meer. Nu:
+  - **De vraag zit in de transactie** die de workout start.
+  - **De opzoeking neemt de nieuwste**, mocht een toestel er van vroeger
+    twee hebben.
+  - **Elke start op Start loopt via `startSession`.** Die neemt geen tweede
+    tik aan terwijl hij start, en vraagt eerst als er al een loopt. Dat
+    deden de knoppen op Start niet: daar gebeurde dan zichtbaar niets. Of
+    er een loopt, vraagt hij nu aan de database, niet aan een provider die
+    misschien nog niet antwoordde.
+- **De database houdt het zelf vast (D14).** Een gedeeltelijke unieke
+  index, `idx_one_running_workout`, laat maar één rij zonder einde toe.
+  Hij wordt bij elke opening gemaakt, zolang dat al zo is. Een toestel
+  met twee van vroeger houdt ze tot er een afgerond is: een migratie die
+  er zelf een afrondt, zou gegevens herschrijven. Daarom is het geen
+  migratiestap, en blijft het schema v62.
+- **Een tweede tik op een afgevinkte set (T10)** startte de rust opnieuw.
+  `completeSet` doet nu niets bij een set die al afgevinkt is, ook niet
+  via de melding.
+- **Een tweede tik op Afronden (T10)** overschreef het einde. Nu blijft
+  een afgeronde workout afgerond met zijn eerste einde, en neemt de knop
+  geen tweede tik aan. Een fout bij het afronden laat het scherm niet
+  meer hangen: ze wordt gemeld, en de sessie blijft lopen.
+
+Op de emulator: twee tikken op *Start workout* gaven één sessie, en Start
+toonde daarna *Je workout loopt*.

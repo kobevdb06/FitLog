@@ -384,7 +384,20 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   // --- Finishing ------------------------------------------------------------
 
+  /// Afronden is under way: a second tap does nothing (DECISIONS 245).
+  bool _finishing = false;
+
   Future<void> _finish(WorkoutDetail workout) async {
+    if (_finishing) return;
+    _finishing = true;
+    try {
+      await _finishAsked(workout);
+    } finally {
+      _finishing = false;
+    }
+  }
+
+  Future<void> _finishAsked(WorkoutDetail workout) async {
     final pending = workout.pendingSets;
     var discard = false;
 
@@ -431,9 +444,19 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
     final id = workout.workout.id;
     _leaving = true;
-    await ref
-        .read(workoutControllerProvider)
-        .finish(id, discardPending: discard);
+    try {
+      await ref
+          .read(workoutControllerProvider)
+          .finish(id, discardPending: discard);
+    } on Object catch (error) {
+      // Said, and the session stays on screen: it is still running.
+      _leaving = false;
+      if (mounted) {
+        setState(() {});
+        showSnack(context, 'Afronden lukte niet: $error', isError: true);
+      }
+      return;
+    }
     if (mounted) context.pushReplacement(Routes.workoutSummary(id));
   }
 

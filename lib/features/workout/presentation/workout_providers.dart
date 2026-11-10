@@ -545,6 +545,9 @@ class WorkoutController {
       }
     }
     if (owner == null || row == null) return null;
+    // Ticked off already - a second tap, here or on the notification: no
+    // second rest, and nothing counted twice.
+    if (row.isCompleted) return null;
 
     final now = DateTime.now();
     var finalWeight = weightKg ?? row.weightKg;

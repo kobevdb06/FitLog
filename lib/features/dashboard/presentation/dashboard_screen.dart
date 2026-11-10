@@ -587,10 +587,7 @@ class _FavouriteRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Future<void> start() async {
-      await ref.read(workoutControllerProvider).startFromRoutine(routine.id);
-      if (context.mounted) context.push(Routes.workout);
-    }
+    Future<void> start() => startSession(context, ref, routineId: routine.id);
 
     if (compact) {
       return Column(
@@ -1040,12 +1037,8 @@ class _CompactPlanCard extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () async {
-                await ref
-                    .read(workoutControllerProvider)
-                    .startFromRoutine(lead.routine.id);
-                if (context.mounted) context.push(Routes.workout);
-              },
+              onPressed: () =>
+                  startSession(context, ref, routineId: lead.routine.id),
               icon: const Icon(Icons.play_arrow, size: 18),
               label: Text(lead.doneToday ? 'Nog een keer' : 'Start'),
             ),
@@ -1118,10 +1111,7 @@ class _NoRoutinesCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: FilledButton(
-                    onPressed: () async {
-                      await ref.read(workoutControllerProvider).startEmpty();
-                      if (context.mounted) context.push(Routes.workout);
-                    },
+                    onPressed: () => startSession(context, ref),
                     child: const Text('Lege workout'),
                   ),
                 ),

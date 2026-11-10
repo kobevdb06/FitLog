@@ -119,8 +119,24 @@ class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      await _guardOneRunningWorkout();
     },
   );
+
+  /// At most one workout without an end, held by the database itself
+  /// (DECISIONS 245). Made at every open while that is already so: a device
+  /// with two from before keeps them until one is finished, rather than a
+  /// migration ending one for you.
+  Future<void> _guardOneRunningWorkout() async {
+    final running = await customSelect(
+      'SELECT COUNT(*) AS n FROM workouts WHERE ended_at IS NULL',
+    ).getSingle();
+    if (running.read<int>('n') > 1) return;
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_one_running_workout '
+      'ON workouts (ended_at IS NULL) WHERE ended_at IS NULL',
+    );
+  }
 
   /// The steps from [from] to now, and the check after them, all in the one
   /// transaction: a check that fails undoes every step, so the file stays

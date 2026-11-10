@@ -403,6 +403,42 @@ void main() {
       },
     );
 
+    test('een nacht die na het rapport binnenkwam, maakt het opnieuw '
+        '(DECISIONS 256)', () async {
+      await db.recoveryDao.clearSleep(DateTime(2026, 3, 3));
+      final coach = gemini('Onmogelijk');
+      final before = await MorningReporter(
+        db,
+        clientFactory: coach.factory,
+      ).write(now: morning);
+      expect(before.facts.night, isNull);
+
+      // Het horloge geeft de nacht pas later door.
+      await db.healthDao.importNight(
+        fellAsleepAt: DateTime(2026, 3, 2, 23),
+        wokeAt: DateTime(2026, 3, 3, 6),
+        source: 'com.example.watch',
+      );
+      final renewed = await renewMorningForNight(
+        db,
+        now: morning.add(const Duration(hours: 1)),
+        clientFactory: coach.factory,
+      );
+
+      expect(renewed, isTrue);
+      final row = (await db.reportsDao.reportFor(morning))!;
+      expect(MorningReport.fromRow(row).facts.night, isNotNull);
+      // En met een nacht erin niet nog eens.
+      expect(
+        await renewMorningForNight(
+          db,
+          now: morning.add(const Duration(hours: 2)),
+          clientFactory: coach.factory,
+        ),
+        isFalse,
+      );
+    });
+
     test('zonder coach: de app zegt het zelf, en er gaat niets weg', () async {
       final coach = gemini('Onmogelijk');
 

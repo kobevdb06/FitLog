@@ -11,6 +11,29 @@ import '../../readiness/data/check_loader.dart';
 import '../../readiness/domain/training_check.dart';
 import '../domain/morning_facts.dart';
 
+/// Today's report, made again when it was made before the watch handed the
+/// night over - it said there was none - and the night is here now: it
+/// used to stay that way until the button was tapped (DECISIONS 256).
+/// Returns whether it was made again.
+Future<bool> renewMorningForNight(
+  AppDatabase db, {
+  required DateTime now,
+  ReportClientFactory? clientFactory,
+}) async {
+  final row = await db.reportsDao.reportFor(
+    DateTime(now.year, now.month, now.day),
+  );
+  if (row == null) return false;
+  final stored = MorningFacts.fromJson(
+    jsonDecode(row.facts) as Map<String, Object?>,
+  );
+  if (stored.night != null) return false;
+  final fresh = await loadMorningFacts(db, now, healthConnect: true);
+  if (fresh.night == null) return false;
+  await MorningReporter(db, clientFactory: clientFactory).write(now: now);
+  return true;
+}
+
 /// The morning at [at] as the report sees it: the night, what still
 /// recovers, and the check before today's session. Also what the coach is
 /// told about today before a workout, or when it had better wait.

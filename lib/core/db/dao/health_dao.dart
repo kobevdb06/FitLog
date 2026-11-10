@@ -45,6 +45,18 @@ class HealthDao extends DatabaseAccessor<AppDatabase> with _$HealthDaoMixin {
     )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (existing != null && existing.source == null) return false;
 
+    // The same night, imported before under another morning: the morning
+    // is the local day it ended on, and after a journey that is another day
+    // for the same moment. One night, one morning (DECISIONS 256). What you
+    // filled in yourself is never touched.
+    await (delete(sleepEntriesTable)..where(
+          (t) =>
+              t.source.isNotNull() &
+              t.wokeAt.equals(wokeAt.millisecondsSinceEpoch) &
+              t.id.equals(id).not(),
+        ))
+        .go();
+
     await into(sleepEntriesTable).insertOnConflictUpdate(
       SleepEntriesTableCompanion.insert(
         id: id,

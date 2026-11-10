@@ -9,6 +9,8 @@ import '../data/health_connect_source.dart';
 import '../data/health_import.dart';
 import '../data/health_importer.dart';
 import '../data/health_source.dart';
+import '../../chat/presentation/chat_providers.dart';
+import '../../morning/data/morning_reporter.dart';
 
 export '../data/health_import.dart'
     show
@@ -146,6 +148,20 @@ class HealthSync extends _$HealthSync {
     try {
       final summary = await import.fetch(from: window.from, to: window.to);
       state = HealthSyncState(summary: summary);
+      if (summary.nights > 0) {
+        // A night that came after this morning's report: the report is
+        // made again with it (DECISIONS 256). Never at the cost of the
+        // import.
+        try {
+          await renewMorningForNight(
+            ref.read(databaseProvider),
+            now: moment,
+            clientFactory: ref.read(coachClientFactoryProvider),
+          );
+        } on Object {
+          // The button on the report still does it.
+        }
+      }
     } on Object catch (error) {
       state = HealthSyncState(
         summary: state.summary,

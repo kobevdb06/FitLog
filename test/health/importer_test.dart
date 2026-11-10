@@ -191,4 +191,29 @@ void main() {
     expect(nights.single.source, isNull);
     expect(await db.select(db.dailyVitalsTable).get(), isEmpty);
   });
+
+  test('dezelfde nacht, na een reis onder een andere ochtend, blijft één nacht '
+      '(DECISIONS 256)', () async {
+    final woke = DateTime(2026, 3, 3, 6);
+    // Eerder ingelezen in een andere tijdzone: dezelfde ogenblikken, een
+    // andere dag als sleutel.
+    await db.customStatement(
+      'INSERT INTO sleep_entries (id, fell_asleep_at, woke_at, source) '
+      "VALUES ('2026-03-02', ?, ?, 'com.example.watch')",
+      [
+        DateTime(2026, 3, 2, 23).millisecondsSinceEpoch,
+        woke.millisecondsSinceEpoch,
+      ],
+    );
+
+    await db.healthDao.importNight(
+      fellAsleepAt: DateTime(2026, 3, 2, 23),
+      wokeAt: woke,
+      source: 'com.example.watch',
+    );
+
+    final nights = await db.select(db.sleepEntriesTable).get();
+    expect(nights, hasLength(1));
+    expect(nights.single.wokeAt, woke.millisecondsSinceEpoch);
+  });
 }

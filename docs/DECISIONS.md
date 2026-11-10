@@ -5919,3 +5919,21 @@ Uit het Fable-rapport: G5.
   op hun tijdstip, niet op hun bron. Een gsm en een horloge die allebei
   fasen schrijven, telden dezelfde slaap twee keer. Nu tellen alleen de
   fasen van de bron die de nacht schreef.
+
+## 256. Na een reis één nacht, en een rapport dat op de nacht wacht
+
+Uit het Fable-rapport: G6.
+
+- **Tijdzones.** Een nacht krijgt als sleutel de dag waarop ze eindigde, in
+  de tijdzone van het moment van inlezen. Na een reis is dat voor
+  hetzelfde ogenblik een andere dag, en dezelfde nacht stond er twee keer.
+  Nu ruimt `importNight` een eerder ingelezen nacht op met precies
+  hetzelfde ogenblik van wakker worden, onder een andere sleutel. Wat je
+  zelf invulde, raakt het nooit aan.
+- **Het ochtendrapport.** Synchroniseerde het horloge pas na het alarm, dan
+  bleef het rapport *geen nacht* zeggen tot je op de knop tikte. Nu maakt
+  een import in de app die een nacht binnenbrengt het rapport van vandaag
+  opnieuw, als dat er een zonder nacht was en de nacht er nu wel is
+  (`renewMorningForNight`). Met de coach aan kost dat één vraag, dezelfde
+  als de knop. Lukt het niet, dan staat de import er niet minder om, en de
+  knop doet het nog altijd.

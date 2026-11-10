@@ -11,7 +11,9 @@ import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/util/notification_service.dart';
+import '../../../routing/open_workout.dart';
 import '../../../routing/router.dart';
+import '../../../routing/routes.dart';
 import '../data/workout_notice_channel.dart';
 import '../domain/workout_notice.dart';
 import 'workout_coach.dart';
@@ -105,7 +107,11 @@ class WorkoutLiveUpdate extends _$WorkoutLiveUpdate {
       onTick: tick,
       onPanelState: panelState,
       onEdit: edit,
-      onOpen: (route) => ref.read(routerProvider).go(route),
+      // The session with Start under it (DECISIONS 246); anything else as
+      // asked.
+      onOpen: (route) => route == Routes.workout
+          ? openWorkoutFromOutside(ref.read(routerProvider))
+          : ref.read(routerProvider).go(route),
       onOther: (method, arguments) async {
         final answer = await ref
             .read(workoutCoachProvider)

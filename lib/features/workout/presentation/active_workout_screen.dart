@@ -475,12 +475,26 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     // Leave first, delete after. Waiting for the database put a pause between
     // the dialog closing and the page moving - two animations with a gap of
     // unknown length in the middle, which is what reads as stuttering. The
-    // delete does not need this screen, and the controller outlives it.
+    // delete does not need this screen, and the controller outlives it - and
+    // it happens however the leaving went (DECISIONS 246).
     final controller = ref.read(workoutControllerProvider);
     final id = workout.workout.id;
     _leaving = true;
-    if (mounted) context.pop();
-    await controller.cancel(id);
+    try {
+      if (mounted) _leave();
+    } finally {
+      await controller.cancel(id);
+    }
+  }
+
+  /// Back to the page under the session, or to Start when there is none -
+  /// opened from the shortcut or the notification of an older version.
+  void _leave() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(Routes.dashboard);
+    }
   }
 
   // --- Build ----------------------------------------------------------------
@@ -560,7 +574,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               leading: IconButton(
                 icon: const Icon(Icons.keyboard_arrow_down),
                 tooltip: 'Verbergen',
-                onPressed: () => context.pop(),
+                onPressed: _leave,
               ),
               title: InkWell(
                 onTap: () async {

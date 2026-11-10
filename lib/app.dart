@@ -28,6 +28,7 @@ import 'features/routines/domain/quick_start.dart';
 import 'features/routines/presentation/quick_start_providers.dart';
 import 'features/workout/presentation/workout_live_update.dart';
 import 'features/workout/presentation/workout_providers.dart';
+import 'routing/open_workout.dart';
 import 'routing/router.dart';
 import 'routing/routes.dart';
 
@@ -273,7 +274,7 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         if (await db.workoutsDao.getActiveWorkoutRow() == null) {
           await ref.read(workoutControllerProvider).startFromRoutine(routineId);
         }
-        ref.read(routerProvider).go(Routes.workout);
+        await openWorkoutFromOutside(ref.read(routerProvider));
       } finally {
         _startingFromShortcut = false;
       }

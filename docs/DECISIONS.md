@@ -5703,3 +5703,22 @@ Uit het Fable-rapport: T2, D14 en twee punten uit T10.
 
 Op de emulator: twee tikken op *Start workout* gaven één sessie, en Start
 toonde daarna *Je workout loopt*.
+
+## 246. De sessie van buitenaf geopend, met Start eronder
+
+Uit het Fable-rapport: T3. De snelkoppeling op het startscherm, de melding
+en het paneel (*Open FitLog*) openden de lopende sessie met `go`. Dat
+vervangt de hele stapel, dus er lag geen pagina onder de sessie.
+*Verbergen* gooide een fout. *Workout weggooien* stapte eerst terug met
+`context.pop()`, liep op dezelfde fout vast, en gooide de sessie niet weg.
+
+- **`openWorkoutFromOutside`** opent Start en zet de sessie erbovenop. Een
+  `push` bouwt op wat de router toont, en een `go` landt pas enkele frames
+  later; een `push` daarvoor werd erdoor overschreven. Daarom gaat het naar
+  Start alleen als Start nog niet in beeld is, en volgt de `push` zodra het
+  dat wel is. Is de app vergrendeld, dan komt Start niet, en neemt het
+  slotscherm de `push` over zoals elke andere.
+- **Het scherm zelf vertrekt veilig.** *Verbergen* stapt terug als dat
+  kan, en gaat anders naar Start. *Workout weggooien* vertrekt nog altijd
+  eerst, voor een vloeiende overgang (zie de opmerking in de code), maar
+  gooit de sessie weg hoe het vertrekken ook afloopt.

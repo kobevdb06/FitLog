@@ -7,7 +7,6 @@ import '../core/app/app_controller.dart';
 import '../core/app/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/common.dart';
-import '../core/widgets/dialogs.dart';
 import '../features/chat/presentation/chat_providers.dart';
 import '../features/chat/presentation/coach_screen.dart';
 import '../features/chat/presentation/coach_key_screen.dart';
@@ -22,8 +21,10 @@ import '../features/exercises/presentation/exercise_detail_screen.dart';
 import '../features/exercises/presentation/exercise_library_screen.dart';
 import '../features/history/presentation/history_screen.dart';
 import '../features/history/presentation/workout_detail_screen.dart';
+import '../features/lock/presentation/keys_lost_screen.dart';
 import '../features/lock/presentation/lock_screen.dart';
 import '../features/lock/presentation/recovery_unlock_screen.dart';
+import '../features/lock/presentation/start_over.dart';
 import '../features/measurements/presentation/measurements_screen.dart';
 import '../features/onboarding/presentation/onboarding_flow.dart';
 import '../features/photos/presentation/photo_compare_screen.dart';
@@ -87,6 +88,12 @@ GoRouter router(Ref ref) {
           return location == Routes.gate ? null : Routes.gate;
         case AppFailed():
           return location == Routes.failure ? null : Routes.failure;
+        case AppNeedsRecovery():
+          return location == Routes.keysLost ? null : Routes.keysLost;
+        case AppDatabaseMissing():
+          return location == Routes.databaseMissing
+              ? null
+              : Routes.databaseMissing;
         case AppNeedsOnboarding():
           return location.startsWith(Routes.onboarding)
               ? null
@@ -96,6 +103,8 @@ GoRouter router(Ref ref) {
         case AppReady():
           if (location == Routes.gate ||
               location == Routes.failure ||
+              location == Routes.keysLost ||
+              location == Routes.databaseMissing ||
               location.startsWith(Routes.lock) ||
               location.startsWith(Routes.onboarding)) {
             return Routes.dashboard;
@@ -113,6 +122,15 @@ GoRouter router(Ref ref) {
         path: Routes.failure,
         pageBuilder: (context, state) =>
             appPage(state, const StartupFailureScreen()),
+      ),
+      GoRoute(
+        path: Routes.keysLost,
+        pageBuilder: (context, state) => appPage(state, const KeysLostScreen()),
+      ),
+      GoRoute(
+        path: Routes.databaseMissing,
+        pageBuilder: (context, state) =>
+            appPage(state, const DatabaseMissingScreen()),
       ),
       GoRoute(
         path: Routes.onboarding,
@@ -540,7 +558,7 @@ class StartupFailureScreen extends ConsumerWidget {
               // because it takes everything with it either way.
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () => _startOver(context, ref),
+                onPressed: () => confirmStartOver(context, ref),
                 child: const Text(
                   'Opnieuw beginnen',
                   style: TextStyle(color: AppColors.danger),
@@ -551,33 +569,6 @@ class StartupFailureScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  /// Throws the unreadable database away and starts from the first screen.
-  ///
-  /// Two confirmations and the word typed out, the same as wiping from the
-  /// settings: there is no undo and no copy anywhere else.
-  Future<void> _startOver(BuildContext context, WidgetRef ref) async {
-    final first = await confirm(
-      context,
-      title: 'Opnieuw beginnen?',
-      message:
-          'Alles wat FitLog op dit toestel bewaart wordt gewist en je begint '
-          'bij het eerste scherm. Er is geen kopie elders.',
-      confirmLabel: 'Doorgaan',
-      destructive: true,
-    );
-    if (!first || !context.mounted) return;
-
-    final second = await confirmByTyping(
-      context,
-      title: 'Zeker weten?',
-      message: 'Typ WISSEN om te bevestigen. Dit kan niet ongedaan gemaakt.',
-      word: 'WISSEN',
-    );
-    if (!second) return;
-
-    await ref.read(appControllerProvider.notifier).wipeEverything();
   }
 }
 

@@ -5484,3 +5484,57 @@ routine van de sessie houdt het zolang ze bestaat - dus:
   sessies van de week heeft, en het gesprek van een lopend schema zegt
   hoe hernoemen en weghalen gaan. Een weigering noemt de sessies die
   ontbraken, zodat de coach het in dezelfde beurt goed doet.
+
+## 241. Sleutels kwijt is niet alles kwijt
+
+Uit het Fable-rapport (S1, en D15 "database weg, sleutel er nog"). De
+opslag van de sleutels, `flutter_secure_storage` 11.0.0, staat standaard
+op `resetOnError = true`: bij één waarde die Android niet ontsleutelt,
+bijvoorbeeld na een update van Android, wist de plugin álle waarden. Daar
+zaten elke kopie van de databasesleutel in, ook die onder de herstelzin.
+De app hield zichzelf dan voor nieuw, stuurde je naar de onboarding, en
+die maakte een nieuwe sleutel die de database die nog op de telefoon
+stond nooit opende. De twaalf woorden hadden niets meer om te openen,
+terwijl de tekst bij de herstelzin zei dat ze "de enige manier" waren.
+
+- **Nooit meer zelf wissen.** `resetOnError: false`. Een fout is een
+  fout, en de app zegt het: *Android geeft je sleutel niet vrij*, met
+  *Opnieuw proberen*, de herstelzin, en *Opnieuw beginnen* alleen na twee
+  bevestigingen. Dat geldt ook voor de alarmen, die dezelfde opties
+  gebruiken.
+- **Een tweede kopie van wat de herstelzin opent.** De sleutel ingepakt
+  onder de twaalf woorden staat nu ook in `fitlog.recovery`, naast de
+  database. Argon2 en de zin beschermen die, niet de Keystore, dus hij mag
+  op schijf liggen; `allowBackup` staat uit, dus hij gaat nergens heen.
+  Het bestand wordt in zijn geheel geschreven (eerst ernaast, dan erover).
+  Een toestel van vóór deze versie krijgt het bij de eerste start, zolang
+  de opslag nog leesbaar is. Wissen neemt het mee.
+- **Geen sleutels, wel een database: herstellen, geen eerste start.**
+  `startStepFor` beslist dat op één plek. *Je sleutel is weg, je gegevens
+  niet* vraagt de twaalf woorden. Die openen de kopie op schijf; de
+  database wordt gecontroleerd met die sleutel (`keyOpensDatabase`); pas
+  dan worden de sleutels opnieuw geschreven, zoals op een toestel zonder
+  pincode. De pincode ging mee met de rest; dat staat erbij.
+- **Een opslag die niet wil, wordt pas dan leeggemaakt.** Weigert de
+  opslag te schrijven, of blijft er een waarde staan die niet te lezen
+  is, dan maakt `restoreKeys` hem leeg en schrijft opnieuw. Dat is wat de
+  plugin vroeger op eigen houtje deed, maar nu pas als de sleutel in de
+  hand is, de database ermee opent en de kopie op schijf staat. Daarna
+  wordt de hele opslag teruggelezen, niet alleen de nieuwe sleutel.
+- **Database weg, sleutel er nog.** De app maakte dan stil een lege
+  database. Nu zegt hij het eerst, *Je gegevens staan niet meer op dit
+  toestel*, en begint pas met lege gegevens als je op *Verder met lege
+  gegevens* tikt. Alleen de onboarding en het herstel van een back-up
+  maken nog zonder vraag een nieuwe database.
+- **De eerste back-up.** De melding *Nog geen back-up* op Start, die er
+  vanaf de eerste workout staat, zegt nu waarom: zonder back-up is alles
+  weg als je gsm stuk of kwijt raakt. Een aparte melding na de onboarding
+  is er niet bij gekomen; voor de eerste workout is er niets te verliezen.
+
+Op de emulator nagespeeld met een echte versleutelde database. Eerst de
+opslag van de sleutels weggehaald: het nieuwe scherm verscheen, de twaalf
+woorden openden alles, en een koude start daarna ook. Daarna de waarden
+in de opslag onleesbaar gemaakt: de opslag bleef staan, *Opnieuw
+proberen* bleef op het scherm, en de woorden openden alles weer. Tot slot
+de database opzijgezet: het scherm verscheen, en er werd geen lege
+database gemaakt.

@@ -176,8 +176,9 @@ class _SecuritySettingsScreenState
           children: [
             const Text(
               'Deze twaalf woorden zijn de enige manier om je gegevens terug '
-              'te krijgen als je je pincode vergeet. Wij kunnen ze niet voor '
-              'je opzoeken.',
+              'te krijgen als je je pincode vergeet of Android de sleutels '
+              'van FitLog kwijtraakt, en ze openen je back-ups. Wij kunnen ze '
+              'niet voor je opzoeken.',
             ),
             const SizedBox(height: AppSpacing.lg),
             SelectableText(

@@ -211,6 +211,7 @@ void main() {
     await pump(tester, layout: defaultHomeLayout(), size: const Size(360, 400));
     await tester.pumpAndSettle();
     expect(find.text('Nog geen back-up'), findsOneWidget);
+    expect(find.textContaining('Zonder back-up is het weg'), findsOneWidget);
 
     final position = tester
         .state<ScrollableState>(find.byType(Scrollable).first)

@@ -7,6 +7,7 @@ import '../db/connection.dart';
 import '../db/database.dart';
 import '../db/seeder.dart';
 import '../security/biometric_service.dart';
+import '../security/key_file.dart';
 import '../security/key_manager.dart';
 import '../security/key_material.dart';
 import '../security/secret_store.dart';
@@ -21,8 +22,17 @@ part 'app_controller.g.dart';
 @Riverpod(keepAlive: true)
 SecretStore secretStore(Ref ref) => SecureStorageSecretStore();
 
+/// The copy on disk of the key under the twelve words (DECISIONS 241).
 @Riverpod(keepAlive: true)
-KeyManager keyManager(Ref ref) => KeyManager(ref.watch(secretStoreProvider));
+KeyFile recoveryKeyFile(Ref ref) => DiskKeyFile(
+  () async => (await ref.read(appPathsProvider.future)).recoveryKeyFile,
+);
+
+@Riverpod(keepAlive: true)
+KeyManager keyManager(Ref ref) => KeyManager(
+  ref.watch(secretStoreProvider),
+  recoveryFile: ref.watch(recoveryKeyFileProvider),
+);
 
 @Riverpod(keepAlive: true)
 BiometricService biometricService(Ref ref) => BiometricService();
@@ -39,6 +49,11 @@ const Duration kCloseForRestoreTimeout = Duration(seconds: 15);
 class AppController extends _$AppController {
   AppDatabase? _db;
   Uint8List? _dek;
+
+  /// The key and the protection of a database that was not there, kept
+  /// while the app asks whether to go on with an empty one.
+  Uint8List? _waitingDek;
+  SecurityStatus? _waitingSecurity;
 
   /// Cached so the lifecycle handler does not need a database read while the
   /// app is going to the background.
@@ -80,26 +95,46 @@ class AppController extends _$AppController {
       }
 
       final manager = ref.read(keyManagerProvider);
-      final security = await manager.status();
+      final paths = await ref.read(appPathsProvider.future);
+      final databaseExists = await paths.databaseFile.exists();
+
+      final SecurityStatus security;
+      Uint8List? dek;
+      try {
+        security = await manager.status();
+        if (security.initialised && security.mode == LockMode.none) {
+          dek = await manager.readDirectKey();
+        }
+      } on Object {
+        // The key store gave an error. It used to wipe itself on one, and
+        // every key with it; now it is said, and the twelve words offered.
+        final canUsePhrase = await manager.hasRecoveryFile();
+        if (!ref.mounted) return;
+        state = AppNeedsRecovery(unreadable: true, canUsePhrase: canUsePhrase);
+        return;
+      }
+      await manager.keepRecoveryFile();
       if (!ref.mounted) return;
 
-      if (!security.initialised) {
-        state = const AppNeedsOnboarding();
-        return;
-      }
-
-      if (security.mode == LockMode.none) {
-        final dek = await manager.readDirectKey();
-        if (!ref.mounted) return;
-        if (dek == null) {
+      switch (startStepFor(
+        security: security,
+        hasDirectKey: dek != null,
+        databaseExists: databaseExists,
+      )) {
+        case StartStep.onboarding:
           state = const AppNeedsOnboarding();
-          return;
-        }
-        await _openWith(dek, security);
-        return;
+        case StartStep.recovery:
+          final canUsePhrase = await manager.hasRecoveryFile();
+          if (!ref.mounted) return;
+          state = AppNeedsRecovery(
+            unreadable: false,
+            canUsePhrase: canUsePhrase,
+          );
+        case StartStep.locked:
+          state = AppLocked(security);
+        case StartStep.open:
+          await _openWith(dek!, security);
       }
-
-      state = AppLocked(security);
     } on Object catch (error) {
       if (ref.mounted) state = AppFailed('$error');
     }
@@ -148,24 +183,69 @@ class AppController extends _$AppController {
     }
   }
 
+  /// The twelve words, when the keys are gone or cannot be read. They open
+  /// the copy of the key kept next to the database; the database is checked
+  /// to open with it; and only then are the keys written anew, without the
+  /// PIN that went with the rest (DECISIONS 241).
+  Future<String?> recoverWithPhrase(String phrase) async {
+    final manager = ref.read(keyManagerProvider);
+    try {
+      final dek = await manager.unlockWithRecoveryPhrase(phrase);
+      final paths = await ref.read(appPathsProvider.future);
+      if (await paths.databaseFile.exists() &&
+          !keyOpensDatabase(paths.databaseFile, toHex(dek))) {
+        return 'Deze herstelzin opent de gegevens op dit toestel niet.';
+      }
+      await manager.restoreKeys(dek: dek, phrase: phrase);
+      await _openWith(dek, await manager.status());
+      return null;
+    } on InvalidSecretException {
+      return 'Deze herstelzin hoort niet bij de gegevens op dit toestel.';
+    } on StateError catch (error) {
+      return '${error.message}.';
+    } on Object catch (error) {
+      return '$error';
+    }
+  }
+
   /// Called at the end of onboarding, once the keys have been written.
   Future<void> completeSetupWith(Uint8List dek) async {
     final manager = ref.read(keyManagerProvider);
-    await _openWith(dek, await manager.status());
+    await _openWith(dek, await manager.status(), create: true);
   }
 
-  Future<void> _openWith(Uint8List dek, SecurityStatus security) async {
+  /// Goes on with an empty database after the app said it was missing.
+  Future<void> startEmpty() async {
+    final dek = _waitingDek;
+    final security = _waitingSecurity;
+    _waitingDek = null;
+    _waitingSecurity = null;
+    if (dek == null || security == null) return initialise();
+    await _openWith(dek, security, create: true);
+  }
+
+  /// [create]: a database that is not there may be made - at the end of
+  /// onboarding and of a restore. Anywhere else a missing one is said
+  /// first, rather than an empty one made without a word.
+  Future<void> _openWith(
+    Uint8List dek,
+    SecurityStatus security, {
+    bool create = false,
+  }) async {
     try {
       final paths = await ref.read(appPathsProvider.future);
+      if (_db == null && !create && !await paths.databaseFile.exists()) {
+        _waitingDek = dek;
+        _waitingSecurity = security;
+        if (ref.mounted) state = const AppDatabaseMissing();
+        return;
+      }
       await paths.ensurePhotosDirectory();
 
       final db =
           _db ??
           AppDatabase(
-            openEncryptedExecutor(
-              file: paths.databaseFile,
-              keyHex: toHex(dek),
-            ),
+            openEncryptedExecutor(file: paths.databaseFile, keyHex: toHex(dek)),
           );
 
       final settings = await db.settingsDao.ensureInitialized();

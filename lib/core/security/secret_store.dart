@@ -20,8 +20,15 @@ class SecureStorageSecretStore implements SecretStore {
 
   /// Since version 10 the Android implementation always uses Keystore-backed
   /// encrypted preferences, so there is no flag left to switch on.
+  ///
+  /// Never reset on an error. The plugin's default answers a value it
+  /// cannot decrypt - after an Android update, say - by deleting every
+  /// value, and with them every copy of the database key: the app then
+  /// took itself for new, and the twelve words had nothing left to open
+  /// (DECISIONS 241). An error is now an error, and the app says so.
   static const _android = AndroidOptions(
     storageNamespace: 'be.fitlog.app.keys',
+    resetOnError: false,
   );
 
   static const _ios = IOSOptions(
@@ -33,8 +40,12 @@ class SecureStorageSecretStore implements SecretStore {
       _storage.read(key: key, aOptions: _android, iOptions: _ios);
 
   @override
-  Future<void> write(String key, String value) =>
-      _storage.write(key: key, value: value, aOptions: _android, iOptions: _ios);
+  Future<void> write(String key, String value) => _storage.write(
+    key: key,
+    value: value,
+    aOptions: _android,
+    iOptions: _ios,
+  );
 
   @override
   Future<void> delete(String key) =>

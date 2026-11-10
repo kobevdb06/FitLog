@@ -8,6 +8,12 @@ abstract final class Routes {
   static const recovery = '/lock/herstel';
   static const failure = '/probleem';
 
+  /// The keys are gone while the data is not (DECISIONS 241).
+  static const keysLost = '/sleutel-weg';
+
+  /// The keys are here while the data is not.
+  static const databaseMissing = '/gegevens-weg';
+
   // Tabs
   static const dashboard = '/start';
   static const train = '/trainen';

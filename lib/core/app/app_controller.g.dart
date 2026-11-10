@@ -50,6 +50,52 @@ final class SecretStoreProvider
 
 String _$secretStoreHash() => r'22e5e6738525c9da914aec8831a503a8c095721e';
 
+/// The copy on disk of the key under the twelve words (DECISIONS 241).
+
+@ProviderFor(recoveryKeyFile)
+final recoveryKeyFileProvider = RecoveryKeyFileProvider._();
+
+/// The copy on disk of the key under the twelve words (DECISIONS 241).
+
+final class RecoveryKeyFileProvider
+    extends $FunctionalProvider<KeyFile, KeyFile, KeyFile>
+    with $Provider<KeyFile> {
+  /// The copy on disk of the key under the twelve words (DECISIONS 241).
+  RecoveryKeyFileProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'recoveryKeyFileProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$recoveryKeyFileHash();
+
+  @$internal
+  @override
+  $ProviderElement<KeyFile> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  KeyFile create(Ref ref) {
+    return recoveryKeyFile(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(KeyFile value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<KeyFile>(value),
+    );
+  }
+}
+
+String _$recoveryKeyFileHash() => r'a6a6e12e21867baf855259bc71ddd4164cf133ff';
+
 @ProviderFor(keyManager)
 final keyManagerProvider = KeyManagerProvider._();
 
@@ -89,7 +135,7 @@ final class KeyManagerProvider
   }
 }
 
-String _$keyManagerHash() => r'b0843abbbd3fd451c324446cd86dfa81ff8db41d';
+String _$keyManagerHash() => r'5a195868218a7242f151ffd637d63528d76f1108';
 
 @ProviderFor(biometricService)
 final biometricServiceProvider = BiometricServiceProvider._();
@@ -207,7 +253,7 @@ final class AppControllerProvider
   }
 }
 
-String _$appControllerHash() => r'6fb3a18225dd6daea53e6c99705aa2c869d74519';
+String _$appControllerHash() => r'0d66f1d3ec02bafd714d99dc98c38345cbe16f81';
 
 /// Owns the database handle and decides what the app is allowed to show.
 

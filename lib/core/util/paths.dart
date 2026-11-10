@@ -17,6 +17,11 @@ class AppPaths {
   /// The single encrypted SQLite file.
   File get databaseFile => File(p.join(documents.path, 'fitlog.db'));
 
+  /// The database key wrapped under the twelve words, a second time: what
+  /// the phrase still opens when the key store lost everything in it
+  /// (DECISIONS 241).
+  File get recoveryKeyFile => File(p.join(documents.path, 'fitlog.recovery'));
+
   /// Progress photos, one file per picture.
   Directory get photosDirectory => Directory(p.join(documents.path, 'photos'));
 

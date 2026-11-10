@@ -59,6 +59,20 @@ void applyKeyAndVerify(CommonDatabase db, String keyHex) {
   db.execute('PRAGMA foreign_keys = ON;');
 }
 
+/// Whether [keyHex] opens the database in [file]: checked before anything is
+/// written with a key recovered from the twelve words.
+bool keyOpensDatabase(File file, String keyHex) {
+  final db = sqlite3.open(file.path, mode: OpenMode.readOnly);
+  try {
+    applyKeyAndVerify(db, keyHex);
+    return true;
+  } on WrongDatabaseKeyException {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
 /// Opens the encrypted database file on a background isolate.
 QueryExecutor openEncryptedExecutor({
   required File file,

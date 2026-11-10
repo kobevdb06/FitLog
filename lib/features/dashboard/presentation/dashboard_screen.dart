@@ -1690,7 +1690,14 @@ class _BackupReminderBanner extends ConsumerWidget {
                       style: theme.textTheme.titleSmall,
                     ),
                     Text(
-                      'Alles staat alleen op dit toestel.',
+                      // The first one asked for in so many words: it is
+                      // what is left when Android loses the keys and the
+                      // twelve words are gone too (DECISIONS 241).
+                      reminder == BackupReminder.never
+                          ? 'Alles staat alleen op dit toestel. Zonder '
+                                'back-up is het weg als je gsm stuk of kwijt '
+                                'raakt.'
+                          : 'Alles staat alleen op dit toestel.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

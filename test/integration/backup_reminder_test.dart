@@ -92,7 +92,8 @@ void main() {
     test('a finished backup leaves one behind', () async {
       final before = DateTime.now().millisecondsSinceEpoch;
       await service.createBackup(
-        recoveryPhrase: 'abandon abandon abandon abandon abandon abandon '
+        recoveryPhrase:
+            'abandon abandon abandon abandon abandon abandon '
             'abandon abandon abandon abandon abandon about',
         dek: Uint8List(32),
       );
@@ -107,14 +108,24 @@ void main() {
         const AppSettingsTableCompanion(lastBackupAt: Value(1000)),
       );
 
-      // A directory where the snapshot file has to go: VACUUM INTO cannot
-      // write there, so the backup fails partway.
-      await Directory('${root.path}/export/snapshot.db').create(
-        recursive: true,
-      );
+      // A directory where the backup file itself has to go: everything is
+      // made, and the very last write fails - where a moment stamped before
+      // writing stayed (DECISIONS 258). For this minute and the next, so the
+      // clock turning over in between changes nothing.
+      String two(int n) => n.toString().padLeft(2, '0');
+      for (final at in [
+        DateTime.now(),
+        DateTime.now().add(const Duration(minutes: 1)),
+      ]) {
+        await Directory(
+          '${root.path}/export/fitlog-${at.year}${two(at.month)}${two(at.day)}'
+          '-${two(at.hour)}${two(at.minute)}.fitlog',
+        ).create(recursive: true);
+      }
       await expectLater(
         service.createBackup(
-          recoveryPhrase: 'abandon abandon abandon abandon abandon abandon '
+          recoveryPhrase:
+              'abandon abandon abandon abandon abandon abandon '
               'abandon abandon abandon abandon abandon about',
           dek: Uint8List(32),
         ),

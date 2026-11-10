@@ -56,7 +56,27 @@ void applyKeyAndVerify(CommonDatabase db, String keyHex) {
     rethrow;
   }
 
+  // Two connections at once - an alarm's isolate and the app starting -
+  // waited for nothing: the second got "database is locked" at once. Now it
+  // waits a few seconds for the first (DECISIONS 258).
+  db.execute('PRAGMA busy_timeout = 5000;');
   db.execute('PRAGMA foreign_keys = ON;');
+}
+
+/// The schema version of the database in [file], read without opening it
+/// for the app, or null when it does not open with [keyHex].
+int? databaseVersion(File file, String keyHex) {
+  if (!file.existsSync()) return null;
+  final db = sqlite3.open(file.path, mode: OpenMode.readOnly);
+  try {
+    applyKeyAndVerify(db, keyHex);
+    final version = db.select('PRAGMA user_version').first.values.first;
+    return version is int ? version : null;
+  } on Object {
+    return null;
+  } finally {
+    db.close();
+  }
 }
 
 /// Whether [keyHex] opens the database in [file]: checked before anything is

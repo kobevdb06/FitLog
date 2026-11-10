@@ -134,6 +134,24 @@ void main() {
       expect(notices.reviews.single.facts.start, DateTime(2026, 9, 28));
     });
 
+    test('een database die de app nog niet bijwerkte: niets, de app doet het '
+        '(DECISIONS 258)', () async {
+      await keys.setDirectKey(Uint8List(32));
+
+      final outcome = await WeekAlarmHandler(
+        schedule: WeekSchedule(alarm),
+        handOff: () async => false,
+        keys: keys,
+        openDatabase: (key) async => null,
+        notices: notices,
+        clock: () => sundayEvening,
+      ).handle();
+
+      expect(outcome, WeekOutcome.nothing);
+      expect(notices.reviews, isEmpty);
+      expect(alarm.at, DateTime(2026, 10, 11, 20), reason: 'next Sunday again');
+    });
+
     test('met een pincode blijft het logboek dicht', () async {
       await keys.setPin(dek: Uint8List(32), pin: '1234');
 

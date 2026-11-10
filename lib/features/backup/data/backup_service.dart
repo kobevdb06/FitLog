@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
@@ -52,37 +53,73 @@ class BackupService {
 
   // --- Backup ---------------------------------------------------------------
 
+  /// Backups run one after another: two at once shared one snapshot
+  /// file, and each could take the other's (DECISIONS 258).
+  static Future<void> _running = Future.value();
+
+  /// How long a file shared from the export folder is kept there: long
+  /// enough for the app it went to to read it, not for a copy of
+  /// everything to lie around (DECISIONS 258).
+  static const Duration exportsKept = Duration(hours: 1);
+
   /// Writes an encrypted backup and returns the file.
   Future<File> createBackup({
     required String recoveryPhrase,
     required Uint8List dek,
+  }) {
+    final made = _running.then(
+      (_) => _createBackup(recoveryPhrase: recoveryPhrase, dek: dek),
+    );
+    _running = made.then<void>((_) {}, onError: (Object _) {});
+    return made;
+  }
+
+  Future<File> _createBackup({
+    required String recoveryPhrase,
+    required Uint8List dek,
   }) async {
     final exportDir = await paths.exportDirectory();
-    final snapshot = File('${exportDir.path}/snapshot.db');
-    if (await snapshot.exists()) await snapshot.delete();
-
-    // Stamped before the snapshot rather than after the file is written, so
-    // the archive carries its own moment: restore it and the reminder is
-    // immediately right. Put back if anything below fails, because a backup
-    // that did not happen must not silence the reminder.
-    final previousStamp = (await db.settingsDao.getSettings()).lastBackupAt;
-    await db.settingsDao.updateSettings(
-      AppSettingsTableCompanion(
-        lastBackupAt: Value(DateTime.now().millisecondsSinceEpoch),
-      ),
+    await pruneExports(exportDir);
+    final at = DateTime.now();
+    final snapshot = File(
+      '${exportDir.path}/snapshot-${at.microsecondsSinceEpoch}.db',
     );
     try {
-      return await _writeBackup(
+      final file = await _writeBackup(
         exportDir: exportDir,
         snapshot: snapshot,
         recoveryPhrase: recoveryPhrase,
         dek: dek,
+        at: at,
       );
-    } on Object {
+      // Only now, with the file written: stamped before, an app Android
+      // killed halfway - with the whole archive in its memory - kept saying
+      // there was a backup, and the reminder stayed quiet for a week.
       await db.settingsDao.updateSettings(
-        AppSettingsTableCompanion(lastBackupAt: Value(previousStamp)),
+        AppSettingsTableCompanion(
+          lastBackupAt: Value(at.millisecondsSinceEpoch),
+        ),
       );
-      rethrow;
+      return file;
+    } finally {
+      if (await snapshot.exists()) await snapshot.delete();
+    }
+  }
+
+  /// Files shared from [dir] more than [exportsKept] ago, gone: a CSV of
+  /// every workout or a backup left behind after it was handed on.
+  static Future<void> pruneExports(Directory dir, {DateTime? now}) async {
+    if (!await dir.exists()) return;
+    final before = (now ?? DateTime.now()).subtract(exportsKept);
+    await for (final entity in dir.list()) {
+      if (entity is! File) continue;
+      try {
+        if ((await entity.lastModified()).isBefore(before)) {
+          await entity.delete();
+        }
+      } on FileSystemException {
+        // In use, or gone already: the next time.
+      }
     }
   }
 
@@ -91,40 +128,77 @@ class BackupService {
     required File snapshot,
     required String recoveryPhrase,
     required Uint8List dek,
+    required DateTime at,
   }) async {
     // VACUUM INTO writes a consistent copy that keeps the same encryption key,
     // which is safer than copying a file that may have a live WAL.
     await db.customStatement('VACUUM INTO ?', [snapshot.path]);
+    // The moment of this backup goes in its own copy: restored, the
+    // reminder is right at once.
+    _stamp(snapshot, dek, at);
 
-    final archive = Archive()
-      ..addFile(
-        ArchiveFile.string(
-          'manifest.json',
-          jsonEncode({
-            'format': _formatVersion,
-            'app': 'FitLog',
-            'created_at': DateTime.now().toIso8601String(),
-          }),
-        ),
-      )
-      ..addFile(ArchiveFile.string('key.hex', toHex(dek)))
-      ..addFile(ArchiveFile.bytes('fitlog.db', await snapshot.readAsBytes()));
-
+    final entries = <String, Uint8List>{
+      'manifest.json': utf8.encode(
+        jsonEncode({
+          'format': _formatVersion,
+          'app': 'FitLog',
+          'created_at': at.toIso8601String(),
+        }),
+      ),
+      'key.hex': utf8.encode(toHex(dek)),
+      'fitlog.db': await snapshot.readAsBytes(),
+    };
     final photosDir = paths.photosDirectory;
     if (await photosDir.exists()) {
       await for (final entity in photosDir.list()) {
         if (entity is! File) continue;
-        archive.addFile(
-          ArchiveFile.bytes(
-            'photos/${entity.uri.pathSegments.last}',
-            await entity.readAsBytes(),
-          ),
-        );
+        entries['photos/${entity.uri.pathSegments.last}'] = await entity
+            .readAsBytes();
       }
     }
 
+    // Packing and sealing on their own isolate: with many photos that took
+    // long enough to freeze the screen.
+    final sealed = await Isolate.run(() => _seal(entries, recoveryPhrase));
+
+    final file = File(
+      '${exportDir.path}/fitlog-'
+      '${at.year}${_two(at.month)}${_two(at.day)}-'
+      '${_two(at.hour)}${_two(at.minute)}.fitlog',
+    );
+    await file.writeAsBytes(sealed, flush: true);
+    return file;
+  }
+
+  /// The moment of the backup, written into its copy of the database.
+  ///
+  /// The copy is encrypted with [dek] whenever the database is, which in the
+  /// app it always is; a plain one - a test's - is stamped as it is.
+  static void _stamp(File snapshot, Uint8List dek, DateTime at) {
+    final head = snapshot.openSync()..setPositionSync(0);
+    final plain = String.fromCharCodes(head.readSync(15)) == 'SQLite format 3';
+    head.closeSync();
+    final copy = sqlite3.open(snapshot.path);
+    try {
+      if (!plain) applyKeyAndVerify(copy, toHex(dek));
+      copy.execute('UPDATE app_settings SET last_backup_at = ?', [
+        at.millisecondsSinceEpoch,
+      ]);
+    } finally {
+      copy.close();
+    }
+  }
+
+  /// [entries] zipped and sealed under [recoveryPhrase], header first.
+  static Future<Uint8List> _seal(
+    Map<String, Uint8List> entries,
+    String recoveryPhrase,
+  ) async {
+    final archive = Archive();
+    for (final MapEntry(:key, :value) in entries.entries) {
+      archive.addFile(ArchiveFile.bytes(key, value));
+    }
     final zipped = ZipEncoder().encodeBytes(archive);
-    await snapshot.delete();
 
     final salt = randomBytes(_saltLength);
     final nonce = randomBytes(_nonceLength);
@@ -135,31 +209,22 @@ class BackupService {
       nonce: nonce,
     );
 
-    final stamp = DateTime.now();
-    final file = File(
-      '${exportDir.path}/fitlog-'
-      '${stamp.year}${_two(stamp.month)}${_two(stamp.day)}-'
-      '${_two(stamp.hour)}${_two(stamp.minute)}.fitlog',
-    );
-
     // header: magic | version | memory (4 bytes) | iterations | parallelism |
     // saltLen | nonceLen | salt | nonce | mac | ct
     final memory = ByteData(4)..setUint32(0, kArgonMemoryKib);
-    final builder = BytesBuilder()
-      ..add(_magic)
-      ..addByte(_formatVersion)
-      ..add(memory.buffer.asUint8List())
-      ..addByte(kArgonIterations)
-      ..addByte(kArgonParallelism)
-      ..addByte(salt.length)
-      ..addByte(nonce.length)
-      ..add(salt)
-      ..add(nonce)
-      ..add(box.mac.bytes)
-      ..add(box.cipherText);
-
-    await file.writeAsBytes(builder.takeBytes(), flush: true);
-    return file;
+    return (BytesBuilder()
+          ..add(_magic)
+          ..addByte(_formatVersion)
+          ..add(memory.buffer.asUint8List())
+          ..addByte(kArgonIterations)
+          ..addByte(kArgonParallelism)
+          ..addByte(salt.length)
+          ..addByte(nonce.length)
+          ..add(salt)
+          ..add(nonce)
+          ..add(box.mac.bytes)
+          ..add(box.cipherText))
+        .takeBytes();
   }
 
   static String _two(int value) => value.toString().padLeft(2, '0');
@@ -383,6 +448,7 @@ class BackupService {
 
   /// A readable export of every finished workout and every set.
   Future<File> exportCsv({required Formatters formatters}) async {
+    await pruneExports(await paths.exportDirectory());
     final rows = await db
         .customSelect(
           'SELECT w.started_at AS started_at, w.name AS workout, '

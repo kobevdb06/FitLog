@@ -6,14 +6,12 @@ import 'dart:ui';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 import '../../plans/data/plan_week_check.dart';
-import '../../../core/db/connection.dart';
+import '../../../core/db/alarm_database.dart';
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/security/key_manager.dart';
-import '../../../core/security/key_material.dart';
 import '../../../core/security/secret_store.dart';
 import '../../../core/util/notification_service.dart';
-import '../../../core/util/paths.dart';
 import '../../../core/widgets/week_navigator.dart';
 import '../../morning/data/morning_alarm.dart' show handOffToOpenApp;
 import '../../morning/data/morning_reporter.dart' show ReportClientFactory;
@@ -126,12 +124,7 @@ Future<void> weekAlarm(int id, Map<String, dynamic> params) async {
     schedule: const WeekSchedule(AndroidWeekAlarm()),
     handOff: () => handOffToOpenApp(portName: kWeekPortName),
     keys: KeyManager(SecureStorageSecretStore()),
-    openDatabase: (key) async => AppDatabase(
-      openEncryptedExecutor(
-        file: (await AppPaths.resolve()).databaseFile,
-        keyHex: toHex(key),
-      ),
-    ),
+    openDatabase: openForAlarm,
     notices: const NotificationWeekNotices(),
   ).handle();
 }
@@ -245,7 +238,10 @@ class WeekAlarmHandler {
   final WeekSchedule schedule;
   final Future<bool> Function() handOff;
   final KeyManager keys;
-  final Future<AppDatabase> Function(Uint8List key) openDatabase;
+
+  /// Null when this is not a turn for the alarm: the app has not brought
+  /// the database to this version yet (DECISIONS 258).
+  final Future<AppDatabase?> Function(Uint8List key) openDatabase;
   final WeekNotices notices;
   final ReportClientFactory? clientFactory;
   final DateTime Function() _clock;
@@ -273,6 +269,7 @@ class WeekAlarmHandler {
     }
 
     final db = await openDatabase(key);
+    if (db == null) return WeekOutcome.nothing;
     try {
       final settings = await db.settingsDao.getSettings();
       if (!settings.weekReviewNotify) {

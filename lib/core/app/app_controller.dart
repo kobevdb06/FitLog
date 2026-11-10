@@ -410,6 +410,9 @@ class AppController extends _$AppController {
       paths.photosDirectory,
       restore.stagedPhotos,
       restore.previousPhotos,
+      // A CSV of every workout, or a backup, shared a moment ago: "alles
+      // wissen" said everything, and these stayed (DECISIONS 258).
+      Directory('${paths.documents.path}/export'),
     ]) {
       if (await dir.exists()) await dir.delete(recursive: true);
     }

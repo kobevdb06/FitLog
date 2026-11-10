@@ -409,4 +409,114 @@ void main() {
     await db.close();
     expect(keyOpensDatabase(plain, toHex(generateDek())), isFalse);
   });
+
+  group('making one (DECISIONS 258)', () {
+    late AppDatabase db;
+    late Uint8List dek;
+    late String phrase;
+
+    setUp(() async {
+      dek = generateDek();
+      phrase = generateRecoveryPhrase();
+      db = AppDatabase(
+        openEncryptedExecutor(file: paths.databaseFile, keyHex: toHex(dek)),
+      );
+      await db.settingsDao.ensureInitialized();
+    });
+
+    tearDown(() => db.close());
+
+    test(
+      'its copy of the database is encrypted, and carries its moment',
+      () async {
+        final service = BackupService(db: db, paths: paths);
+
+        final file = await service.createBackup(
+          recoveryPhrase: phrase,
+          dek: dek,
+        );
+
+        final stamped = (await db.settingsDao.getSettings()).lastBackupAt;
+        expect(stamped, isNotNull);
+        final read = await BackupService.readBackup(
+          file: file,
+          recoveryPhrase: phrase,
+        );
+        expect(
+          String.fromCharCodes(read.databaseBytes.take(15)),
+          isNot('SQLite format 3'),
+          reason: 'VACUUM INTO keeps the key',
+        );
+        final copy = sqlite3.open(
+          (File(
+            '${home.path}/kopie.db',
+          )..writeAsBytesSync(read.databaseBytes)).path,
+        );
+        applyKeyAndVerify(copy, toHex(dek));
+        expect(
+          copy
+              .select('SELECT last_backup_at FROM app_settings')
+              .first
+              .values
+              .first,
+          stamped,
+        );
+        copy.close();
+      },
+      timeout: _timeout,
+    );
+
+    test('two at once both come out whole', () async {
+      final service = BackupService(db: db, paths: paths);
+
+      final files = await Future.wait([
+        service.createBackup(recoveryPhrase: phrase, dek: dek),
+        service.createBackup(recoveryPhrase: phrase, dek: dek),
+      ]);
+
+      for (final file in files) {
+        final read = await BackupService.readBackup(
+          file: file,
+          recoveryPhrase: phrase,
+        );
+        expect(read.databaseBytes, isNotEmpty);
+      }
+      expect(
+        (await paths.exportDirectory()).listSync().where(
+          (f) => f.path.endsWith('.db'),
+        ),
+        isEmpty,
+        reason: 'no snapshot left behind',
+      );
+    }, timeout: _timeout);
+  });
+
+  test('what was shared more than an hour ago goes from the export folder '
+      '(DECISIONS 258)', () async {
+    final dir = await paths.exportDirectory();
+    final old = File('${dir.path}/fitlog-workouts.csv')..writeAsStringSync('x');
+    old.setLastModifiedSync(DateTime.now().subtract(const Duration(hours: 2)));
+    final fresh = File('${dir.path}/fitlog-20261111.fitlog')
+      ..writeAsStringSync('y');
+
+    await BackupService.pruneExports(dir);
+
+    expect(old.existsSync(), isFalse);
+    expect(fresh.existsSync(), isTrue);
+  });
+
+  test(
+    'the version of a database, read without opening it for the app',
+    () async {
+      final dek = generateDek();
+      await database(paths.databaseFile, dek, 'Oud');
+
+      expect(
+        databaseVersion(paths.databaseFile, toHex(dek)),
+        AppDatabase.currentSchemaVersion,
+      );
+      expect(databaseVersion(paths.databaseFile, toHex(generateDek())), isNull);
+    },
+    timeout: _timeout,
+  );
 }

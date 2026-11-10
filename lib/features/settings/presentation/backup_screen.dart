@@ -201,13 +201,24 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
 
     await _run(() async {
+      final words = normalizeRecoveryPhrase(phrase);
       _at('Back-up openen');
       final backup = await BackupService.readBackup(
         file: file,
-        recoveryPhrase: normalizeRecoveryPhrase(phrase),
+        recoveryPhrase: words,
       );
 
-      if (!mounted) return;
+      // Written next to the app's own files and checked - its key, whether
+      // it is whole, its version - before anything of the app's is touched
+      // and before the user is asked (DECISIONS 242).
+      _at('Back-up controleren');
+      final paths = await ref.read(appPathsProvider.future);
+      final staged = await BackupService.stageRestore(
+        backup: backup,
+        paths: paths,
+      );
+
+      if (!mounted) return staged.discard();
       final first = await confirm(
         context,
         title: 'Huidige gegevens overschrijven?',
@@ -217,7 +228,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         confirmLabel: 'Doorgaan',
         destructive: true,
       );
-      if (!first || !mounted) return;
+      if (!first || !mounted) return staged.discard();
 
       final second = await confirmByTyping(
         context,
@@ -225,34 +236,39 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         message: 'Typ HERSTEL om de back-up terug te zetten.',
         word: 'HERSTEL',
       );
-      if (!second) return;
+      if (!second) return staged.discard();
 
+      // Held from here on: the screen goes away as soon as the database is
+      // let go.
       final controller = ref.read(appControllerProvider.notifier);
-      final paths = await ref.read(appPathsProvider.future);
       final manager = ref.read(keyManagerProvider);
 
       _at('Database sluiten');
-      await controller.closeForRestore();
+      if (!await controller.closeForRestore()) {
+        await staged.discard();
+        controller.restoreFailed(
+          'de database sloot niet; sluit FitLog helemaal af en probeer '
+          'opnieuw',
+        );
+        return;
+      }
 
-      _at('Gegevens terugzetten');
-      await BackupService.applyRestore(backup: backup, paths: paths);
+      try {
+        // The backup's keys go in before its files: a restore that stops
+        // after this is finished at the next start, one that stops before
+        // it is undone - the key there is decides (RestoreFiles.settle).
+        _at('Sleutels klaarzetten');
+        await manager.restoreKeys(dek: backup.dek, phrase: words);
 
-      // The restored database is encrypted with the key from the archive, so
-      // every wrapped copy on this device is replaced.
-      _at('Sleutels wissen');
-      await manager.wipe();
+        _at('Gegevens terugzetten');
+        await BackupService.applyRestore(staged);
 
-      _at('Herstelzin koppelen');
-      await manager.setRecoveryPhrase(
-        dek: backup.dek,
-        phrase: normalizeRecoveryPhrase(phrase),
-      );
-
-      _at('Sleutel opbergen');
-      await manager.setDirectKey(backup.dek);
-
-      _at('Database openen');
-      await controller.completeSetupWith(backup.dek);
+        _at('Database openen');
+        await controller.completeSetupWith(backup.dek);
+      } on Object catch (error) {
+        controller.restoreFailed(error);
+        return;
+      }
       _at('Klaar');
       if (mounted) {
         setState(

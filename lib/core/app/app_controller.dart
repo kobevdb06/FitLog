@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../db/connection.dart';
 import '../db/database.dart';
+import '../db/restore_files.dart';
 import '../db/seeder.dart';
 import '../security/biometric_service.dart';
 import '../security/key_file.dart';
@@ -232,21 +233,27 @@ class AppController extends _$AppController {
     SecurityStatus security, {
     bool create = false,
   }) async {
+    AppDatabase? opened;
     try {
       final paths = await ref.read(appPathsProvider.future);
-      if (_db == null && !create && !await paths.databaseFile.exists()) {
-        _waitingDek = dek;
-        _waitingSecurity = security;
-        if (ref.mounted) state = const AppDatabaseMissing();
-        return;
+      if (_db == null) {
+        // A restore that stopped halfway is finished or undone first, by the
+        // key in hand (DECISIONS 242).
+        await RestoreFiles(paths).settle(toHex(dek));
+        if (!create && !await paths.databaseFile.exists()) {
+          _waitingDek = dek;
+          _waitingSecurity = security;
+          if (ref.mounted) state = const AppDatabaseMissing();
+          return;
+        }
       }
       await paths.ensurePhotosDirectory();
 
       final db =
           _db ??
-          AppDatabase(
+          (opened = AppDatabase(
             openEncryptedExecutor(file: paths.databaseFile, keyHex: toHex(dek)),
-          );
+          ));
 
       final settings = await db.settingsDao.ensureInitialized();
       _autoLockSeconds = settings.autoLockSeconds;
@@ -280,6 +287,7 @@ class AppController extends _$AppController {
 
       _db = db;
       _dek = dek;
+      opened = null;
       if (!ref.mounted) return;
       state = AppReady(db: db, security: security);
     } on EncryptionUnavailableException catch (e) {
@@ -290,9 +298,26 @@ class AppController extends _$AppController {
         'De sleutel past niet op de database op dit toestel. Herstel een '
         'back-up of wis de gegevens om opnieuw te beginnen.',
       );
+    } on NewerDatabaseException catch (e) {
+      if (ref.mounted) state = AppFailed('$e', canRetry: false);
     } on Object catch (error) {
       if (ref.mounted) state = AppFailed('$error');
+    } finally {
+      // A connection made here that did not make it to the app is closed:
+      // "Opnieuw proberen" used to open a second one next to it.
+      await opened?.close();
     }
+  }
+
+  /// A restore that went wrong after the database was let go: said, and
+  /// "Opnieuw proberen" opens whichever data the keys now open - the files
+  /// are put right on the way (DECISIONS 242).
+  void restoreFailed(Object error) {
+    if (!ref.mounted) return;
+    state = AppFailed(
+      'Het terugzetten van de back-up is niet gelukt ($error). Tik op '
+      'Opnieuw proberen om FitLog te openen.',
+    );
   }
 
   // --- Locking --------------------------------------------------------------
@@ -336,23 +361,31 @@ class AppController extends _$AppController {
     _db = null;
     _dek = null;
 
-    if (await paths.databaseFile.exists()) {
-      await paths.databaseFile.delete();
+    final restore = RestoreFiles(paths);
+    for (final file in [
+      paths.databaseFile,
+      restore.stagedDatabase,
+      restore.previousDatabase,
+    ]) {
+      // The journal too: SQLite keeps one next to the file by default, and
+      // left behind it is played back into the next database of that name.
+      for (final suffix in ['', ...RestoreFiles.sidecars]) {
+        final f = File('${file.path}$suffix');
+        if (await f.exists()) await f.delete();
+      }
     }
-    for (final suffix in ['-wal', '-shm']) {
-      final f = File('${paths.databaseFile.path}$suffix');
-      if (await f.exists()) await f.delete();
-    }
-    if (await paths.photosDirectory.exists()) {
-      await paths.photosDirectory.delete(recursive: true);
+    for (final dir in [
+      paths.photosDirectory,
+      restore.stagedPhotos,
+      restore.previousPhotos,
+    ]) {
+      if (await dir.exists()) await dir.delete(recursive: true);
     }
     await ref.read(keyManagerProvider).wipe();
 
     state = const AppNeedsOnboarding();
   }
 
-  /// Closes and forgets the current database so a restore can replace the
-  /// file underneath it.
   /// Lets go of the database so the restore can replace the file underneath.
   ///
   /// The state goes first, not last. Everything that watches the database -
@@ -362,30 +395,33 @@ class AppController extends _$AppController {
   /// connection asked to close. Closing first, with the app still watching,
   /// is what left a restore sitting on "Database sluiten" forever.
   ///
-  /// And it does not wait indefinitely either way. A close that never returns
-  /// must not take the restore with it: the database file is deleted and
-  /// written fresh straight after this, and on Android a handle to a deleted
-  /// file keeps the old inode and cannot touch the new one.
-  Future<void> closeForRestore() async {
+  /// And it does not wait indefinitely either way: it returns whether the
+  /// connection really closed. A restore does not go on past one that did
+  /// not, since it could still write a journal next to the file that is
+  /// about to be put in its place (DECISIONS 242).
+  Future<bool> closeForRestore() async {
     final db = _db;
     _db = null;
     _dek = null;
     state = const AppLoading();
-    if (db == null) return;
+    if (db == null) return true;
 
     // One turn of the event loop, so the listeners are actually gone before
     // the connection is closed rather than during.
     await Future<void>.delayed(Duration.zero);
 
+    var closed = true;
     await db.close().timeout(
       kCloseForRestoreTimeout,
       onTimeout: () {
+        closed = false;
         debugPrint(
           'FitLog: de database sloot niet binnen '
-          '${kCloseForRestoreTimeout.inSeconds}s; het herstel gaat door.',
+          '${kCloseForRestoreTimeout.inSeconds}s; het herstel stopt.',
         );
       },
     );
+    return closed;
   }
 
   /// The open database, or null while locked. Onboarding needs this to write

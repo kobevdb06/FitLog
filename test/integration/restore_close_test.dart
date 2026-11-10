@@ -24,7 +24,7 @@ void main() {
       'lib/core/app/app_controller.dart',
     ).readAsStringSync();
     final body = source.substring(
-      source.indexOf('Future<void> closeForRestore()'),
+      source.indexOf('Future<bool> closeForRestore()'),
       source.indexOf('/// The open database, or null while locked'),
     );
 
@@ -54,10 +54,11 @@ void main() {
     addTearDown(container.dispose);
 
     final controller = container.read(appControllerProvider.notifier);
-    await controller.closeForRestore().timeout(
+    final closed = await controller.closeForRestore().timeout(
       const Duration(seconds: 30),
       onTimeout: () => fail('closeForRestore bleef zelf hangen'),
     );
+    expect(closed, isTrue, reason: 'nothing was open, so nothing stayed open');
 
     expect(container.read(appControllerProvider), isA<AppLoading>());
     expect(controller.databaseOrNull, isNull);

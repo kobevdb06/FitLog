@@ -88,8 +88,12 @@ part 'database.drift.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
+  /// The version of the schema this build writes; a restore refuses a
+  /// backup from a later one.
+  static const int currentSchemaVersion = 61;
+
   @override
-  int get schemaVersion => 61;
+  int get schemaVersion => currentSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -97,526 +101,552 @@ class AppDatabase extends _$AppDatabase {
       await m.createAll();
     },
     onUpgrade: (m, from, to) async {
+      // drift calls this for a file from a later version as well, and stamps
+      // it with this one afterwards: the steps of that later version were
+      // then run again at the next update, and stopped on a column that was
+      // already there. Refused before anything is written (DECISIONS 242).
+      if (from > to) throw NewerDatabaseException(found: from, known: to);
+
       // Foreign keys are enabled on every connection, and sqlite's twelve step
       // table rebuild needs them off. This has to happen outside a
       // transaction, which is why the pragmas sit around it rather than in it.
       await customStatement('PRAGMA foreign_keys = OFF');
-      await transaction(() async {
-        if (from < 2) {
-          // v1 stored personal_records.workout_set_id without any constraint,
-          // so deleting a workout left records pointing at sets that no longer
-          // existed. Rebuilding the table adds ON DELETE SET NULL; the rows
-          // themselves are copied over untouched.
-          await m.alterTable(TableMigration(personalRecordsTable));
-
-          // Anything already dangling from before the constraint existed is
-          // cleared here, once.
-          await customStatement(
-            'UPDATE personal_records SET workout_set_id = NULL '
-            'WHERE workout_set_id IS NOT NULL AND workout_set_id NOT IN '
-            '(SELECT id FROM workout_sets)',
-          );
-        }
-        if (from < 3) {
-          // Purely additive: existing rows keep the default of 0, which is
-          // the behaviour they had before the setting existed.
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.defaultWarmupSets,
-          );
-        }
-        if (from < 4) {
-          // PR attempts. Additive again: existing workout_exercises rows are
-          // ordinary exercises, which is exactly what the defaults say.
-          await m.addColumn(
-            workoutExercisesTable,
-            workoutExercisesTable.isPrAttempt,
-          );
-          await m.addColumn(
-            workoutExercisesTable,
-            workoutExercisesTable.prTargetWeightKg,
-          );
-          await m.addColumn(
-            workoutExercisesTable,
-            workoutExercisesTable.prResult,
-          );
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.prDefaultWarmupSets,
-          );
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.prDefaultExtraAttempts,
-          );
-        }
-        if (from < 5) {
-          // The two frames of a user-made exercise. Additive: every existing
-          // exercise has no pictures of its own, which is what null says.
-          await m.addColumn(exercisesTable, exercisesTable.startImageFile);
-          await m.addColumn(exercisesTable, exercisesTable.endImageFile);
-        }
-        if (from < 6) {
-          // How heavy a session felt. Additive: a session from before the
-          // rating existed is simply unrated, which the estimate treats as
-          // neutral.
-          await m.addColumn(workoutsTable, workoutsTable.perceivedEffort);
-        }
-        if (from < 7) {
-          // When the last backup was made. Null means never, which is exactly
-          // what was true for every database before this column existed.
-          await m.addColumn(appSettingsTable, appSettingsTable.lastBackupAt);
-        }
-        if (from < 8) {
-          // The note that survives Android killing the app mid-pick. Null on
-          // every existing row, which means nothing is pending - true, since
-          // the app was not picking anything while it was closed.
-          await m.addColumn(appSettingsTable, appSettingsTable.pendingPickKind);
-          await m.addColumn(appSettingsTable, appSettingsTable.pendingPickRef);
-        }
-        if (from < 9) {
-          // A colour for a routine, and the copy a session keeps of it.
-          // Additive: everything that exists has no colour, which is what null
-          // says and what the lists already draw.
-          await m.addColumn(routinesTable, routinesTable.colorIndex);
-          await m.addColumn(workoutsTable, workoutsTable.colorIndex);
-        }
-        if (from < 10) {
-          // Training one arm at a time. Additive: every exercise that exists
-          // was done with both hands, and every set has no side, which is
-          // exactly what the defaults say.
-          await m.addColumn(
-            workoutExercisesTable,
-            workoutExercisesTable.isUnilateral,
-          );
-          await m.addColumn(workoutSetsTable, workoutSetsTable.side);
-        }
-        if (from < 11) {
-          // Sets you deliberately skipped. Additive: every set that exists was
-          // either done or simply never got to, and neither is a skip, which
-          // is what the default of false says.
-          await m.addColumn(workoutSetsTable, workoutSetsTable.isSkipped);
-        }
-        if (from < 12) {
-          // Which build of the catalogue this database holds. Zero for
-          // everything that exists, which is exactly right: those were seeded
-          // before corrections were tracked, so they all need the first pass.
-          await m.addColumn(appSettingsTable, appSettingsTable.seedVersion);
-        }
-        if (from < 13) {
-          // A distance a routine can aim at, and the mark that says the user
-          // chose an exercise's type themselves. Both additive: no routine
-          // asked for a distance before this, and nobody had made that choice
-          // yet, which is what the defaults say.
-          await m.addColumn(routineSetsTable, routineSetsTable.targetDistanceM);
-          await m.addColumn(exercisesTable, exercisesTable.categoryOverridden);
-        }
-        if (from < 14) {
-          // Starred routines, which the home-screen shortcuts are picked from.
-          // Additive: nothing was starred before the star existed.
-          await m.addColumn(routinesTable, routinesTable.isFavourite);
-        }
-        if (from < 15) {
-          // Asking for an RPE per set. Additive and off: nobody was being
-          // asked before the question existed.
-          await m.addColumn(appSettingsTable, appSettingsTable.trackRpe);
-        }
-        if (from < 16) {
-          // The weekdays a routine is planned on. Additive and empty: nothing
-          // was planned before there was anywhere to plan it, and zero is what
-          // the dashboard reads as "no schedule", which is the behaviour these
-          // databases already had.
-          await m.addColumn(routinesTable, routinesTable.scheduledDays);
-        }
-        if (from < 17) {
-          // How the user arranged the Start tab. Additive and null, which is
-          // "never changed" - and that is the layout these databases were
-          // already showing.
-          await m.addColumn(appSettingsTable, appSettingsTable.homeLayout);
-        }
-        if (from < 18) {
-          // The session a progress photo belongs to. Additive and null, which
-          // says what is true of every picture taken before you could point at
-          // one: nobody knows what was done that day.
-          await m.addColumn(progressPhotosTable, progressPhotosTable.workoutId);
-        }
-        if (from < 19) {
-          // Muscle groups and kit the user adds themselves. New and empty:
-          // until now the pickers offered only what the catalogue happened to
-          // contain, which is exactly what these are here to widen.
-          await m.createTable(customMusclesTable);
-          await m.createTable(customEquipmentTable);
-        }
-        if (from < 20) {
-          // Categories of the user's own. Additive: the new column is null
-          // for every exercise that exists, which means "this exercise is
-          // simply its category", exactly as before.
-          await m.createTable(customCategoriesTable);
-          await m.addColumn(exercisesTable, exercisesTable.customCategory);
-        }
-        if (from < 21) {
-          // The coach. Empty and switched off: without an API key - and there
-          // is none until the user types one in - nothing here is ever read.
-          await m.createTable(chatThreadsTable);
-          await m.createTable(chatMessagesTable);
-          await m.addColumn(appSettingsTable, appSettingsTable.anthropicApiKey);
-          await m.addColumn(appSettingsTable, appSettingsTable.chatModel);
-        }
-        if (from < 22) {
-          // Which service a key belongs to, when the user says so. Null - what
-          // every existing row gets - means the app works it out from the key,
-          // which is what it did before this column existed.
-          await m.addColumn(appSettingsTable, appSettingsTable.chatProvider);
-        }
-        if (from >= 21 && from < 23) {
-          // A photo sent along with a question. Null for every message that
-          // exists, which is what "no photo" has always meant.
-          //
-          // Only for a database that already had the table: one migrating
-          // from before v21 gets it created above, from today's definition,
-          // with this column already in it.
-          await m.addColumn(chatMessagesTable, chatMessagesTable.imageFile);
-        }
-        if (from >= 21 && from < 24) {
-          // How many calls an answer took. Null for answers from before the
-          // app counted, which the meter reads as one call - the least it can
-          // have been.
-          await m.addColumn(chatMessagesTable, chatMessagesTable.requests);
-        }
-        if (from < 24) {
-          await m.addColumn(appSettingsTable, appSettingsTable.coachDailyLimit);
-        }
-        if (from >= 21 && from < 25) {
-          // What the coach offered to add. Null for every answer so far, which
-          // is what "offered nothing" means.
-          await m.addColumn(chatMessagesTable, chatMessagesTable.proposals);
-        }
-        if (from < 26) {
-          // A token for drawing an illustration, and a mark on the exercises
-          // that got one. Both empty: no key means no picture, which is what
-          // every database so far has been doing.
-          await m.addColumn(appSettingsTable, appSettingsTable.imageApiKey);
-          await m.addColumn(exercisesTable, exercisesTable.imagesGenerated);
-        }
-        if (from < 27) {
-          // A second drawing service next to the first, not instead of it.
-          // Null means Hugging Face - the only one there was, and what anyone
-          // who already filled in a token is still using.
-          await m.addColumn(appSettingsTable, appSettingsTable.imageProvider);
-          await m.addColumn(appSettingsTable, appSettingsTable.imageAccountId);
-        }
-        if (from < 28) {
-          // Whether the kit may be drawn along with the movement. Null means
-          // yes: that is what every drawing so far tried to do.
-          await m.addColumn(appSettingsTable, appSettingsTable.imageEquipment);
-        }
-        if (from < 29) {
-          // How a muscle felt, in your own words. Empty: nobody was asked
-          // before, and an estimate without an answer is what every database
-          // so far has had.
-          await m.createTable(sorenessChecksTable);
-        }
-        if (from < 30) {
-          // Nights, and whether to ask for their stages. No nights yet, and
-          // the stages off: nobody filled any in before there was a place.
-          await m.createTable(sleepEntriesTable);
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.trackSleepStages,
-          );
-        }
-        if (from < 31) {
-          // Drinks per day, and the switch that asks for them - off, as it
-          // was for everyone before there was a place to put them.
-          await m.createTable(drinkDaysTable);
-          await m.addColumn(appSettingsTable, appSettingsTable.trackAlcohol);
-        }
-        if (from < 32) {
-          // Stars on exercises. None yet: there was nowhere to put one.
-          await m.addColumn(exercisesTable, exercisesTable.isFavourite);
-        }
-        if (from < 33) {
-          // Health Connect: where a night or a weight came from (null is what
-          // you entered, which is everything so far), the watch's daily
-          // readings, the runs and rides, and whether to ask at all - off.
-          // Only for a database that already had the nights: one migrating
-          // from before v30 gets the table created above, from today's
-          // definition, with this column already in it.
-          if (from >= 30) {
-            await m.addColumn(sleepEntriesTable, sleepEntriesTable.source);
-          }
-          await m.addColumn(
-            bodyMeasurementsTable,
-            bodyMeasurementsTable.source,
-          );
-          await m.createTable(dailyVitalsTable);
-          await m.createTable(cardioSessionsTable);
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.healthConnectEnabled,
-          );
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.healthConnectSyncedAt,
-          );
-        }
-        if (from < 34) {
-          // Writing sessions to Health Connect: off, and nothing written yet.
-          await m.addColumn(workoutsTable, workoutsTable.healthConnectId);
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.healthConnectWriteWorkouts,
-          );
-        }
-        if (from < 35) {
-          // Morning reports. None yet: there was nothing that wrote one.
-          await m.createTable(morningReportsTable);
-        }
-        if (from < 36) {
-          // Making them on their own, at an hour: off, and seven o'clock.
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.morningReportEnabled,
-          );
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.morningReportMinutes,
-          );
-        }
-        if (from < 37) {
-          // Heart rate during a session, from a watch. Nothing yet: nothing
-          // read it before.
-          await m.addColumn(workoutsTable, workoutsTable.avgHeartRate);
-          await m.addColumn(workoutsTable, workoutsTable.maxHeartRate);
-        }
-        if (from < 38) {
-          // Resting heart rates worked out from the night. Every one stored
-          // so far came from a watch. Only for a database that already had
-          // the table: one migrating from before v33 gets it created above,
-          // from today's definition, with this column already in it.
-          if (from >= 33) {
-            await m.addColumn(
-              dailyVitalsTable,
-              dailyVitalsTable.restingHrDerived,
-            );
-          }
-        }
-        if (from < 39) {
-          // Oxygen during the night and steps per day. Same rule: a table
-          // created by a migration from before v33 has them already.
-          if (from >= 33) {
-            await m.addColumn(dailyVitalsTable, dailyVitalsTable.spo2Avg);
-            await m.addColumn(dailyVitalsTable, dailyVitalsTable.spo2Min);
-            await m.addColumn(dailyVitalsTable, dailyVitalsTable.steps);
-          }
-        }
-        if (from < 40) {
-          // Telling the coach your age, sex and height: off.
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.coachSeesProfile,
-          );
-        }
-        if (from < 41) {
-          // Where you train, for the coach. Nothing yet.
-          await m.addColumn(appSettingsTable, appSettingsTable.coachGym);
-        }
-        if (from < 42) {
-          // The coach's folder, and earlier versions of a routine. No folder
-          // is the coach's yet, and there is nothing to have a version of.
-          await m.addColumn(routineFoldersTable, routineFoldersTable.isCoach);
-          await m.createTable(routineVersionsTable);
-          await m.createIndex(idxRoutineVersionsRoutine);
-        }
-        if (from < 43) {
-          // What to try today, per exercise: on, as it is for a new install.
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.progressionHints,
-          );
-        }
-        if (from < 44) {
-          // The indexes a migration never made. createTable makes a table
-          // without them, so the soreness checks (v29), the nights (v30) and
-          // the runs (v33) of a database from before those versions have
-          // none. Every index the schema declares is made where it is
-          // missing, which also leaves alone the ones that are there.
-          for (final index in allSchemaEntities.whereType<Index>()) {
-            await customStatement(
-              index.createStatementsByDialect[SqlDialect.sqlite]!.replaceFirst(
-                'CREATE INDEX ',
-                'CREATE INDEX IF NOT EXISTS ',
-              ),
-            );
-          }
-        }
-        if (from < 45) {
-          // What the coach wrote about a week. Nothing yet.
-          await m.createTable(weekReviewsTable);
-        }
-        if (from < 46) {
-          // The Sunday notification of the weekly review: on, as for a new
-          // install.
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.weekReviewNotify,
-          );
-        }
-        if (from < 47) {
-          // Folders that fold shut on the Trainen tab: every one open, the
-          // way they always were.
-          await m.addColumn(
-            routineFoldersTable,
-            routineFoldersTable.isCollapsed,
-          );
-        }
-        if (from < 48) {
-          // Where the weekly backup goes. Nowhere yet: you pick the folder.
-          await m.addColumn(
-            appSettingsTable,
-            appSettingsTable.autoBackupFolder,
-          );
-        }
-        if (from >= 21 && from < 49) {
-          // Up to four photos with a question, where there was room for one.
-          // An empty list for every message that exists; the one photo of an
-          // older question stays in image_file, where it was, and is read
-          // from there.
-          await m.addColumn(chatMessagesTable, chatMessagesTable.imageFiles);
-        }
-        if (from < 50) {
-          // Health Connect data for the coach: off, also for someone whose
-          // coach could read it until now. Sharing it is something you
-          // choose, not something an update chose for you.
-          await m.addColumn(appSettingsTable, appSettingsTable.coachSeesHealth);
-        }
-        if (from < 51) {
-          // Deloads: none yet, no session was one, and the settings as a new
-          // install has them - proposals on.
-          await m.createTable(deloadWeeksTable);
-          await m.addColumn(workoutsTable, workoutsTable.isDeload);
-          for (final column in [
-            appSettingsTable.deloadSetsPercent,
-            appSettingsTable.deloadWeightPercent,
-            appSettingsTable.deloadRepsPercent,
-            appSettingsTable.deloadDropHardSets,
-            appSettingsTable.deloadPrAttempts,
-            appSettingsTable.deloadDays,
-            appSettingsTable.deloadStart,
-            appSettingsTable.deloadSuggest,
-            appSettingsTable.deloadSuggestWeeks,
-            appSettingsTable.deloadSuggestStalled,
-            appSettingsTable.deloadLaterDays,
-            appSettingsTable.deloadSnoozedUntil,
-          ]) {
-            await m.addColumn(appSettingsTable, column);
-          }
-        }
-        if (from >= 21 && from < 52) {
-          // A conversation can belong to a workout. None did yet. Before v21
-          // there were no conversations, and the table is made whole above.
-          await m.addColumn(chatThreadsTable, chatThreadsTable.workoutId);
-        }
-        if (from < 53) {
-          // The coach's notebook: empty, and on - as for a new install.
-          await m.createTable(coachNotesTable);
-          await m.addColumn(appSettingsTable, appSettingsTable.coachMemory);
-        }
-        if (from < 54) {
-          // Schema's: none yet, so no routine is a session of one.
-          await m.createTable(trainingPlansTable);
-          await m.addColumn(routinesTable, routinesTable.planId);
-          await m.addColumn(routinesTable, routinesTable.planWeekday);
-          // Before v21 there were no conversations; the table is made whole
-          // above.
-          if (from >= 21) {
-            await m.addColumn(chatThreadsTable, chatThreadsTable.planId);
-          }
-        }
-        if (from >= 54 && from < 55) {
-          // A schema built step by step: an outline, and a state per
-          // session. Every schema there was, was whole: approved. Before v54
-          // the table is made whole above.
-          await m.addColumn(trainingPlansTable, trainingPlansTable.volume);
-          await m.addColumn(
-            trainingPlansTable,
-            trainingPlansTable.outlineApproved,
-          );
-          await m.addColumn(trainingPlansTable, trainingPlansTable.outlineAt);
-        }
-        if (from < 55) {
-          await m.addColumn(routinesTable, routinesTable.planFocus);
-          await m.addColumn(routinesTable, routinesTable.planState);
-        }
-        if (from < 56) {
-          // A session started lighter on its own: none was.
-          await m.addColumn(workoutsTable, workoutsTable.isLight);
-        }
-        if (from < 57) {
-          // Geplande prompts: every moment as it comes, no answer yet.
-          await m.createTable(coachPromptsTable);
-          await m.createTable(workoutAnswersTable);
-        }
-        if (from >= 57 && from < 58) {
-          // Before v57 the table is made whole above.
-          await m.addColumn(coachPromptsTable, coachPromptsTable.option);
-        }
-        if (from < 58) {
-          // The other moments, and questions of your own: none yet.
-          await m.createTable(momentAnswersTable);
-          await m.createTable(quickQuestionsTable);
-        }
-        if (from >= 21 && from < 59) {
-          // Pinned and in folders: none was. Before v21 the table is made
-          // whole above.
-          await m.addColumn(chatThreadsTable, chatThreadsTable.folderId);
-          await m.addColumn(chatThreadsTable, chatThreadsTable.pinned);
-        }
-        if (from < 59) {
-          await m.createTable(chatFoldersTable);
-        }
-        if (from >= 58 && from < 60) {
-          // Your own questions as commands: none was one yet. Before v58 the
-          // table is made whole above.
-          await m.addColumn(quickQuestionsTable, quickQuestionsTable.command);
-        }
-        if (from < 61) {
-          // A workout keeps the session of a schema it was done for. Every
-          // session still there knows its own; one the coach threw away and
-          // made again under the same name, while the schema ran, lost it
-          // (DECISIONS 240) and gets the one of that name now. Before v54
-          // there were no schema's, and nothing matches.
-          await m.addColumn(workoutsTable, workoutsTable.planSessionId);
-          await customStatement(
-            'UPDATE workouts SET plan_session_id = routine_id '
-            'WHERE routine_id IN '
-            '(SELECT id FROM routines WHERE plan_id IS NOT NULL)',
-          );
-          await customStatement(
-            'UPDATE workouts SET plan_session_id = ('
-            'SELECT r.id FROM routines r '
-            'JOIN training_plans p ON p.id = r.plan_id '
-            'WHERE lower(r.name) = lower(workouts.name) '
-            'AND p.start_day IS NOT NULL '
-            'AND workouts.started_at >= p.start_day '
-            'AND (p.ended_at IS NULL OR workouts.started_at < p.ended_at) '
-            'LIMIT 1) '
-            'WHERE routine_id IS NULL AND plan_session_id IS NULL '
-            'AND ended_at IS NOT NULL',
-          );
-        }
-      });
-
-      final broken = await customSelect('PRAGMA foreign_key_check').get();
-      if (broken.isNotEmpty) {
-        throw StateError(
-          'Migratie liet ${broken.length} kapotte verwijzing(en) achter: '
-          '${broken.map((row) => row.data).toList()}',
-        );
+      try {
+        await transaction(() => _upgrade(m, from));
+      } finally {
+        await customStatement('PRAGMA foreign_keys = ON');
       }
-      await customStatement('PRAGMA foreign_keys = ON');
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// The steps from [from] to now, and the check after them, all in the one
+  /// transaction: a check that fails undoes every step, so the file stays
+  /// as it was and opens with the version it came from. The check used to
+  /// run after the commit, and a failure left the steps done but the version
+  /// not raised - the next start ran them again and stopped on the first
+  /// column already there, for good (DECISIONS 242).
+  Future<void> _upgrade(Migrator m, int from) async {
+    // References that were already broken are not this migration's doing,
+    // and stopping on them kept an app from ever opening again. Only ones
+    // it adds stop it.
+    final before = await _brokenReferences();
+
+    if (from < 2) {
+      // v1 stored personal_records.workout_set_id without any constraint,
+      // so deleting a workout left records pointing at sets that no longer
+      // existed. Rebuilding the table adds ON DELETE SET NULL; the rows
+      // themselves are copied over untouched.
+      await m.alterTable(TableMigration(personalRecordsTable));
+
+      // Anything already dangling from before the constraint existed is
+      // cleared here, once.
+      await customStatement(
+        'UPDATE personal_records SET workout_set_id = NULL '
+        'WHERE workout_set_id IS NOT NULL AND workout_set_id NOT IN '
+        '(SELECT id FROM workout_sets)',
+      );
+    }
+    if (from < 3) {
+      // Purely additive: existing rows keep the default of 0, which is
+      // the behaviour they had before the setting existed.
+      await m.addColumn(appSettingsTable, appSettingsTable.defaultWarmupSets);
+    }
+    if (from < 4) {
+      // PR attempts. Additive again: existing workout_exercises rows are
+      // ordinary exercises, which is exactly what the defaults say.
+      await m.addColumn(
+        workoutExercisesTable,
+        workoutExercisesTable.isPrAttempt,
+      );
+      await m.addColumn(
+        workoutExercisesTable,
+        workoutExercisesTable.prTargetWeightKg,
+      );
+      await m.addColumn(workoutExercisesTable, workoutExercisesTable.prResult);
+      await m.addColumn(appSettingsTable, appSettingsTable.prDefaultWarmupSets);
+      await m.addColumn(
+        appSettingsTable,
+        appSettingsTable.prDefaultExtraAttempts,
+      );
+    }
+    if (from < 5) {
+      // The two frames of a user-made exercise. Additive: every existing
+      // exercise has no pictures of its own, which is what null says.
+      await m.addColumn(exercisesTable, exercisesTable.startImageFile);
+      await m.addColumn(exercisesTable, exercisesTable.endImageFile);
+    }
+    if (from < 6) {
+      // How heavy a session felt. Additive: a session from before the
+      // rating existed is simply unrated, which the estimate treats as
+      // neutral.
+      await m.addColumn(workoutsTable, workoutsTable.perceivedEffort);
+    }
+    if (from < 7) {
+      // When the last backup was made. Null means never, which is exactly
+      // what was true for every database before this column existed.
+      await m.addColumn(appSettingsTable, appSettingsTable.lastBackupAt);
+    }
+    if (from < 8) {
+      // The note that survives Android killing the app mid-pick. Null on
+      // every existing row, which means nothing is pending - true, since
+      // the app was not picking anything while it was closed.
+      await m.addColumn(appSettingsTable, appSettingsTable.pendingPickKind);
+      await m.addColumn(appSettingsTable, appSettingsTable.pendingPickRef);
+    }
+    if (from < 9) {
+      // A colour for a routine, and the copy a session keeps of it.
+      // Additive: everything that exists has no colour, which is what null
+      // says and what the lists already draw.
+      await m.addColumn(routinesTable, routinesTable.colorIndex);
+      await m.addColumn(workoutsTable, workoutsTable.colorIndex);
+    }
+    if (from < 10) {
+      // Training one arm at a time. Additive: every exercise that exists
+      // was done with both hands, and every set has no side, which is
+      // exactly what the defaults say.
+      await m.addColumn(
+        workoutExercisesTable,
+        workoutExercisesTable.isUnilateral,
+      );
+      await m.addColumn(workoutSetsTable, workoutSetsTable.side);
+    }
+    if (from < 11) {
+      // Sets you deliberately skipped. Additive: every set that exists was
+      // either done or simply never got to, and neither is a skip, which
+      // is what the default of false says.
+      await m.addColumn(workoutSetsTable, workoutSetsTable.isSkipped);
+    }
+    if (from < 12) {
+      // Which build of the catalogue this database holds. Zero for
+      // everything that exists, which is exactly right: those were seeded
+      // before corrections were tracked, so they all need the first pass.
+      await m.addColumn(appSettingsTable, appSettingsTable.seedVersion);
+    }
+    if (from < 13) {
+      // A distance a routine can aim at, and the mark that says the user
+      // chose an exercise's type themselves. Both additive: no routine
+      // asked for a distance before this, and nobody had made that choice
+      // yet, which is what the defaults say.
+      await m.addColumn(routineSetsTable, routineSetsTable.targetDistanceM);
+      await m.addColumn(exercisesTable, exercisesTable.categoryOverridden);
+    }
+    if (from < 14) {
+      // Starred routines, which the home-screen shortcuts are picked from.
+      // Additive: nothing was starred before the star existed.
+      await m.addColumn(routinesTable, routinesTable.isFavourite);
+    }
+    if (from < 15) {
+      // Asking for an RPE per set. Additive and off: nobody was being
+      // asked before the question existed.
+      await m.addColumn(appSettingsTable, appSettingsTable.trackRpe);
+    }
+    if (from < 16) {
+      // The weekdays a routine is planned on. Additive and empty: nothing
+      // was planned before there was anywhere to plan it, and zero is what
+      // the dashboard reads as "no schedule", which is the behaviour these
+      // databases already had.
+      await m.addColumn(routinesTable, routinesTable.scheduledDays);
+    }
+    if (from < 17) {
+      // How the user arranged the Start tab. Additive and null, which is
+      // "never changed" - and that is the layout these databases were
+      // already showing.
+      await m.addColumn(appSettingsTable, appSettingsTable.homeLayout);
+    }
+    if (from < 18) {
+      // The session a progress photo belongs to. Additive and null, which
+      // says what is true of every picture taken before you could point at
+      // one: nobody knows what was done that day.
+      await m.addColumn(progressPhotosTable, progressPhotosTable.workoutId);
+    }
+    if (from < 19) {
+      // Muscle groups and kit the user adds themselves. New and empty:
+      // until now the pickers offered only what the catalogue happened to
+      // contain, which is exactly what these are here to widen.
+      await m.createTable(customMusclesTable);
+      await m.createTable(customEquipmentTable);
+    }
+    if (from < 20) {
+      // Categories of the user's own. Additive: the new column is null
+      // for every exercise that exists, which means "this exercise is
+      // simply its category", exactly as before.
+      await m.createTable(customCategoriesTable);
+      await m.addColumn(exercisesTable, exercisesTable.customCategory);
+    }
+    if (from < 21) {
+      // The coach. Empty and switched off: without an API key - and there
+      // is none until the user types one in - nothing here is ever read.
+      await m.createTable(chatThreadsTable);
+      await m.createTable(chatMessagesTable);
+      await m.addColumn(appSettingsTable, appSettingsTable.anthropicApiKey);
+      await m.addColumn(appSettingsTable, appSettingsTable.chatModel);
+    }
+    if (from < 22) {
+      // Which service a key belongs to, when the user says so. Null - what
+      // every existing row gets - means the app works it out from the key,
+      // which is what it did before this column existed.
+      await m.addColumn(appSettingsTable, appSettingsTable.chatProvider);
+    }
+    if (from >= 21 && from < 23) {
+      // A photo sent along with a question. Null for every message that
+      // exists, which is what "no photo" has always meant.
+      //
+      // Only for a database that already had the table: one migrating
+      // from before v21 gets it created above, from today's definition,
+      // with this column already in it.
+      await m.addColumn(chatMessagesTable, chatMessagesTable.imageFile);
+    }
+    if (from >= 21 && from < 24) {
+      // How many calls an answer took. Null for answers from before the
+      // app counted, which the meter reads as one call - the least it can
+      // have been.
+      await m.addColumn(chatMessagesTable, chatMessagesTable.requests);
+    }
+    if (from < 24) {
+      await m.addColumn(appSettingsTable, appSettingsTable.coachDailyLimit);
+    }
+    if (from >= 21 && from < 25) {
+      // What the coach offered to add. Null for every answer so far, which
+      // is what "offered nothing" means.
+      await m.addColumn(chatMessagesTable, chatMessagesTable.proposals);
+    }
+    if (from < 26) {
+      // A token for drawing an illustration, and a mark on the exercises
+      // that got one. Both empty: no key means no picture, which is what
+      // every database so far has been doing.
+      await m.addColumn(appSettingsTable, appSettingsTable.imageApiKey);
+      await m.addColumn(exercisesTable, exercisesTable.imagesGenerated);
+    }
+    if (from < 27) {
+      // A second drawing service next to the first, not instead of it.
+      // Null means Hugging Face - the only one there was, and what anyone
+      // who already filled in a token is still using.
+      await m.addColumn(appSettingsTable, appSettingsTable.imageProvider);
+      await m.addColumn(appSettingsTable, appSettingsTable.imageAccountId);
+    }
+    if (from < 28) {
+      // Whether the kit may be drawn along with the movement. Null means
+      // yes: that is what every drawing so far tried to do.
+      await m.addColumn(appSettingsTable, appSettingsTable.imageEquipment);
+    }
+    if (from < 29) {
+      // How a muscle felt, in your own words. Empty: nobody was asked
+      // before, and an estimate without an answer is what every database
+      // so far has had.
+      await m.createTable(sorenessChecksTable);
+    }
+    if (from < 30) {
+      // Nights, and whether to ask for their stages. No nights yet, and
+      // the stages off: nobody filled any in before there was a place.
+      await m.createTable(sleepEntriesTable);
+      await m.addColumn(appSettingsTable, appSettingsTable.trackSleepStages);
+    }
+    if (from < 31) {
+      // Drinks per day, and the switch that asks for them - off, as it
+      // was for everyone before there was a place to put them.
+      await m.createTable(drinkDaysTable);
+      await m.addColumn(appSettingsTable, appSettingsTable.trackAlcohol);
+    }
+    if (from < 32) {
+      // Stars on exercises. None yet: there was nowhere to put one.
+      await m.addColumn(exercisesTable, exercisesTable.isFavourite);
+    }
+    if (from < 33) {
+      // Health Connect: where a night or a weight came from (null is what
+      // you entered, which is everything so far), the watch's daily
+      // readings, the runs and rides, and whether to ask at all - off.
+      // Only for a database that already had the nights: one migrating
+      // from before v30 gets the table created above, from today's
+      // definition, with this column already in it.
+      if (from >= 30) {
+        await m.addColumn(sleepEntriesTable, sleepEntriesTable.source);
+      }
+      await m.addColumn(bodyMeasurementsTable, bodyMeasurementsTable.source);
+      await m.createTable(dailyVitalsTable);
+      await m.createTable(cardioSessionsTable);
+      await m.addColumn(
+        appSettingsTable,
+        appSettingsTable.healthConnectEnabled,
+      );
+      await m.addColumn(
+        appSettingsTable,
+        appSettingsTable.healthConnectSyncedAt,
+      );
+    }
+    if (from < 34) {
+      // Writing sessions to Health Connect: off, and nothing written yet.
+      await m.addColumn(workoutsTable, workoutsTable.healthConnectId);
+      await m.addColumn(
+        appSettingsTable,
+        appSettingsTable.healthConnectWriteWorkouts,
+      );
+    }
+    if (from < 35) {
+      // Morning reports. None yet: there was nothing that wrote one.
+      await m.createTable(morningReportsTable);
+    }
+    if (from < 36) {
+      // Making them on their own, at an hour: off, and seven o'clock.
+      await m.addColumn(
+        appSettingsTable,
+        appSettingsTable.morningReportEnabled,
+      );
+      await m.addColumn(
+        appSettingsTable,
+        appSettingsTable.morningReportMinutes,
+      );
+    }
+    if (from < 37) {
+      // Heart rate during a session, from a watch. Nothing yet: nothing
+      // read it before.
+      await m.addColumn(workoutsTable, workoutsTable.avgHeartRate);
+      await m.addColumn(workoutsTable, workoutsTable.maxHeartRate);
+    }
+    if (from < 38) {
+      // Resting heart rates worked out from the night. Every one stored
+      // so far came from a watch. Only for a database that already had
+      // the table: one migrating from before v33 gets it created above,
+      // from today's definition, with this column already in it.
+      if (from >= 33) {
+        await m.addColumn(dailyVitalsTable, dailyVitalsTable.restingHrDerived);
+      }
+    }
+    if (from < 39) {
+      // Oxygen during the night and steps per day. Same rule: a table
+      // created by a migration from before v33 has them already.
+      if (from >= 33) {
+        await m.addColumn(dailyVitalsTable, dailyVitalsTable.spo2Avg);
+        await m.addColumn(dailyVitalsTable, dailyVitalsTable.spo2Min);
+        await m.addColumn(dailyVitalsTable, dailyVitalsTable.steps);
+      }
+    }
+    if (from < 40) {
+      // Telling the coach your age, sex and height: off.
+      await m.addColumn(appSettingsTable, appSettingsTable.coachSeesProfile);
+    }
+    if (from < 41) {
+      // Where you train, for the coach. Nothing yet.
+      await m.addColumn(appSettingsTable, appSettingsTable.coachGym);
+    }
+    if (from < 42) {
+      // The coach's folder, and earlier versions of a routine. No folder
+      // is the coach's yet, and there is nothing to have a version of.
+      await m.addColumn(routineFoldersTable, routineFoldersTable.isCoach);
+      await m.createTable(routineVersionsTable);
+      await m.createIndex(idxRoutineVersionsRoutine);
+    }
+    if (from < 43) {
+      // What to try today, per exercise: on, as it is for a new install.
+      await m.addColumn(appSettingsTable, appSettingsTable.progressionHints);
+    }
+    if (from < 44) {
+      // The indexes a migration never made. createTable makes a table
+      // without them, so the soreness checks (v29), the nights (v30) and
+      // the runs (v33) of a database from before those versions have
+      // none. Every index the schema declares is made where it is
+      // missing, which also leaves alone the ones that are there.
+      for (final index in allSchemaEntities.whereType<Index>()) {
+        await customStatement(
+          index.createStatementsByDialect[SqlDialect.sqlite]!.replaceFirst(
+            'CREATE INDEX ',
+            'CREATE INDEX IF NOT EXISTS ',
+          ),
+        );
+      }
+    }
+    if (from < 45) {
+      // What the coach wrote about a week. Nothing yet.
+      await m.createTable(weekReviewsTable);
+    }
+    if (from < 46) {
+      // The Sunday notification of the weekly review: on, as for a new
+      // install.
+      await m.addColumn(appSettingsTable, appSettingsTable.weekReviewNotify);
+    }
+    if (from < 47) {
+      // Folders that fold shut on the Trainen tab: every one open, the
+      // way they always were.
+      await m.addColumn(routineFoldersTable, routineFoldersTable.isCollapsed);
+    }
+    if (from < 48) {
+      // Where the weekly backup goes. Nowhere yet: you pick the folder.
+      await m.addColumn(appSettingsTable, appSettingsTable.autoBackupFolder);
+    }
+    if (from >= 21 && from < 49) {
+      // Up to four photos with a question, where there was room for one.
+      // An empty list for every message that exists; the one photo of an
+      // older question stays in image_file, where it was, and is read
+      // from there.
+      await m.addColumn(chatMessagesTable, chatMessagesTable.imageFiles);
+    }
+    if (from < 50) {
+      // Health Connect data for the coach: off, also for someone whose
+      // coach could read it until now. Sharing it is something you
+      // choose, not something an update chose for you.
+      await m.addColumn(appSettingsTable, appSettingsTable.coachSeesHealth);
+    }
+    if (from < 51) {
+      // Deloads: none yet, no session was one, and the settings as a new
+      // install has them - proposals on.
+      await m.createTable(deloadWeeksTable);
+      await m.addColumn(workoutsTable, workoutsTable.isDeload);
+      for (final column in [
+        appSettingsTable.deloadSetsPercent,
+        appSettingsTable.deloadWeightPercent,
+        appSettingsTable.deloadRepsPercent,
+        appSettingsTable.deloadDropHardSets,
+        appSettingsTable.deloadPrAttempts,
+        appSettingsTable.deloadDays,
+        appSettingsTable.deloadStart,
+        appSettingsTable.deloadSuggest,
+        appSettingsTable.deloadSuggestWeeks,
+        appSettingsTable.deloadSuggestStalled,
+        appSettingsTable.deloadLaterDays,
+        appSettingsTable.deloadSnoozedUntil,
+      ]) {
+        await m.addColumn(appSettingsTable, column);
+      }
+    }
+    if (from >= 21 && from < 52) {
+      // A conversation can belong to a workout. None did yet. Before v21
+      // there were no conversations, and the table is made whole above.
+      await m.addColumn(chatThreadsTable, chatThreadsTable.workoutId);
+    }
+    if (from < 53) {
+      // The coach's notebook: empty, and on - as for a new install.
+      await m.createTable(coachNotesTable);
+      await m.addColumn(appSettingsTable, appSettingsTable.coachMemory);
+    }
+    if (from < 54) {
+      // Schema's: none yet, so no routine is a session of one.
+      await m.createTable(trainingPlansTable);
+      await m.addColumn(routinesTable, routinesTable.planId);
+      await m.addColumn(routinesTable, routinesTable.planWeekday);
+      // Before v21 there were no conversations; the table is made whole
+      // above.
+      if (from >= 21) {
+        await m.addColumn(chatThreadsTable, chatThreadsTable.planId);
+      }
+    }
+    if (from >= 54 && from < 55) {
+      // A schema built step by step: an outline, and a state per
+      // session. Every schema there was, was whole: approved. Before v54
+      // the table is made whole above.
+      await m.addColumn(trainingPlansTable, trainingPlansTable.volume);
+      await m.addColumn(trainingPlansTable, trainingPlansTable.outlineApproved);
+      await m.addColumn(trainingPlansTable, trainingPlansTable.outlineAt);
+    }
+    if (from < 55) {
+      await m.addColumn(routinesTable, routinesTable.planFocus);
+      await m.addColumn(routinesTable, routinesTable.planState);
+    }
+    if (from < 56) {
+      // A session started lighter on its own: none was.
+      await m.addColumn(workoutsTable, workoutsTable.isLight);
+    }
+    if (from < 57) {
+      // Geplande prompts: every moment as it comes, no answer yet.
+      await m.createTable(coachPromptsTable);
+      await m.createTable(workoutAnswersTable);
+    }
+    if (from >= 57 && from < 58) {
+      // Before v57 the table is made whole above.
+      await m.addColumn(coachPromptsTable, coachPromptsTable.option);
+    }
+    if (from < 58) {
+      // The other moments, and questions of your own: none yet.
+      await m.createTable(momentAnswersTable);
+      await m.createTable(quickQuestionsTable);
+    }
+    if (from >= 21 && from < 59) {
+      // Pinned and in folders: none was. Before v21 the table is made
+      // whole above.
+      await m.addColumn(chatThreadsTable, chatThreadsTable.folderId);
+      await m.addColumn(chatThreadsTable, chatThreadsTable.pinned);
+    }
+    if (from < 59) {
+      await m.createTable(chatFoldersTable);
+    }
+    if (from >= 58 && from < 60) {
+      // Your own questions as commands: none was one yet. Before v58 the
+      // table is made whole above.
+      await m.addColumn(quickQuestionsTable, quickQuestionsTable.command);
+    }
+    if (from < 61) {
+      // A workout keeps the session of a schema it was done for. Every
+      // session still there knows its own; one the coach threw away and
+      // made again under the same name, while the schema ran, lost it
+      // (DECISIONS 240) and gets the one of that name now. Before v54
+      // there were no schema's, and nothing matches.
+      await m.addColumn(workoutsTable, workoutsTable.planSessionId);
+      await customStatement(
+        'UPDATE workouts SET plan_session_id = routine_id '
+        'WHERE routine_id IN '
+        '(SELECT id FROM routines WHERE plan_id IS NOT NULL)',
+      );
+      await customStatement(
+        'UPDATE workouts SET plan_session_id = ('
+        'SELECT r.id FROM routines r '
+        'JOIN training_plans p ON p.id = r.plan_id '
+        'WHERE lower(r.name) = lower(workouts.name) '
+        'AND p.start_day IS NOT NULL '
+        'AND workouts.started_at >= p.start_day '
+        'AND (p.ended_at IS NULL OR workouts.started_at < p.ended_at) '
+        'LIMIT 1) '
+        'WHERE routine_id IS NULL AND plan_session_id IS NULL '
+        'AND ended_at IS NOT NULL',
+      );
+    }
+
+    final added = addedBrokenReferences(
+      before: before,
+      after: await _brokenReferences(),
+    );
+    if (added.isNotEmpty) {
+      throw StateError(
+        'Migratie liet kapotte verwijzing(en) achter: '
+        '${added.entries.map((e) => '${e.value} in ${e.key}').join(', ')}',
+      );
+    }
+  }
+
+  /// How many references dangle, per table and the table it points to.
+  Future<Map<String, int>> _brokenReferences() async {
+    final counts = <String, int>{};
+    for (final row in await customSelect('PRAGMA foreign_key_check').get()) {
+      final key =
+          '${row.read<String>('table')} -> ${row.read<String>('parent')}';
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  }
+}
+
+/// The references a migration broke: more dangling ones from a table to a
+/// table than there were before it. Counted rather than matched row by row,
+/// because a table rebuilt by a step can give its rows other row ids.
+Map<String, int> addedBrokenReferences({
+  required Map<String, int> before,
+  required Map<String, int> after,
+}) => {
+  for (final MapEntry(:key, :value) in after.entries)
+    if (value > (before[key] ?? 0)) key: value - (before[key] ?? 0),
+};
+
+/// The database comes from a later version of FitLog than this one: nothing
+/// is changed, and nothing is opened.
+class NewerDatabaseException implements Exception {
+  const NewerDatabaseException({required this.found, required this.known});
+
+  final int found;
+  final int known;
+
+  @override
+  String toString() =>
+      'Deze gegevens komen uit een nieuwere versie van FitLog (schema '
+      '$found; deze versie kent er tot $known). Installeer die versie '
+      'opnieuw; deze verandert er niets aan.';
 }

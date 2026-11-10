@@ -73,7 +73,9 @@ void main() {
     expect(restored.dek, equals(dek));
 
     final targetPaths = AppPaths(target);
-    await BackupService.applyRestore(backup: restored, paths: targetPaths);
+    await BackupService.applyRestore(
+      await BackupService.stageRestore(backup: restored, paths: targetPaths),
+    );
 
     final restoredDb = AppDatabase(
       openEncryptedExecutor(

@@ -5538,3 +5538,85 @@ in de opslag onleesbaar gemaakt: de opslag bleef staan, *Opnieuw
 proberen* bleef op het scherm, en de woorden openden alles weer. Tot slot
 de database opzijgezet: het scherm verscheen, en er werd geen lege
 database gemaakt.
+
+## 242. Herstellen en migreren zonder halve toestand
+
+Uit het Fable-rapport: D1, D2, D3, D9, D12, S8, en de padcontrole uit D15.
+
+**Herstellen (D1).** `applyRestore` wiste eerst de database en de
+fotomap, en schreef pas daarna de back-up. Daarna wiste het herstel de
+sleutels en zette het de nieuwe. Of de back-up opende, heel was of uit
+een nieuwere versie kwam, werd nergens gecontroleerd. Een volle schijf,
+een crash of zo'n back-up liet je zonder database achter, of met een
+database zonder sleutel. Nu:
+
+- **Eerst klaarzetten en controleren** (`stageRestore`), vóór de twee
+  bevestigingen. De database van de back-up komt naast de app te staan
+  (`fitlog.db.restore-tmp`, de foto's in `photos.restore-tmp`). Ze wordt
+  alleen-lezen geopend met haar eigen sleutel, `PRAGMA integrity_check`
+  moet `ok` zeggen, en haar `user_version` mag niet hoger zijn dan deze
+  versie kent. Een fout ruimt op wat er klaargezet was; aan de gegevens
+  van de app is dan niets veranderd.
+- **De sleutels van de back-up gaan erin vóór de bestanden.** Via
+  `restoreKeys` (uit 241): de nieuwe sleutels worden geschreven en
+  teruggelezen, zonder eerst alles te wissen.
+- **Daarna alleen nog hernoemen** (`RestoreFiles.swap`). De database van
+  de app gaat naar `.pre-restore`, die van de back-up op haar plaats, en
+  hetzelfde voor de fotomap.
+- **Een herstel dat halverwege stopte, rechtzetten bij de start.** Dat
+  doet `RestoreFiles.settle`, vóór het openen, met de sleutel die er is.
+  Opent die de eigen database, dan gaan de resten weg. Opent hij de oude
+  (`.pre-restore`), dan stopte het herstel vóór de sleutels wisselden, en
+  wordt alles teruggezet. Opent hij die van de back-up (`.restore-tmp`),
+  dan wisselden de sleutels al, en wordt het herstel afgemaakt. Opent hij
+  geen van de drie, dan blijft alles staan. Op de emulator nagespeeld met
+  achtergebleven resten en met een database die opzij stond.
+- **Sluiten moet echt gelukt zijn (D9).** `closeForRestore` geeft terug of
+  de verbinding sloot. Zo niet, dan stopt het herstel: een verbinding die
+  nog openstaat, kan een journal schrijven naast een bestand dat net
+  vervangen is.
+- **Het journal reist mee.** Nergens wordt een `journal_mode` gezet, dus
+  SQLite gebruikt `fitlog.db-journal`, en de code ruimde alleen `-wal` en
+  `-shm` op. Een achtergebleven journal wordt teruggespeeld in de volgende
+  database met die naam. Nu verhuist het mee met zijn database, en
+  `wipeEverything` wist het, samen met de resten van een herstel.
+- **Een mislukt herstel zegt het.** Het scherm is weg zodra de database
+  sluit, dus een fout daarna verdween stil, en de app bleef laden. Nu
+  zegt `restoreFailed` wat er misging, en *Opnieuw proberen* opent wat de
+  sleutels openen.
+
+**Het bestand lezen (S8, padcontrole).** Formaat 2 bewaart de
+Argon2-instellingen in de kop: geheugen, rondes en parallelisme. Ze kunnen
+ooit omhoog zonder dat oude back-ups onleesbaar worden; formaat 1 wordt
+gelezen met de instellingen van altijd. Instellingen die deze app nooit
+schrijft, zoals een gigabyte geheugen of honderden rondes, worden
+geweigerd voor Argon2 begint. Zout en nonce moeten 16 en 12 bytes zijn, en
+een afgekapt bestand geeft een melding in plaats van een crash.
+`key.hex` moet 64 hextekens zijn. Een foto heet een kale bestandsnaam;
+`photos/../x` of een pad wordt geweigerd. Gevolg: een back-up uit deze
+versie opent niet in een oudere versie. Die zegt dat netjes ("nieuwere
+versie van FitLog").
+
+**Migreren (D2).** De migratiestappen liepen in één transactie, maar
+`PRAGMA foreign_key_check` kwam pas na de commit. Eén kapotte verwijzing
+ergens in de database, ook een oude, liet de stappen gedaan maar de
+versie niet opgehoogd. De volgende start deed ze opnieuw, liep vast op
+de eerste kolom die er al was, en de app opende nooit meer. Nu zit de
+controle in de transactie, dus een fout draait elke stap terug. En ze
+telt alleen verwijzingen die de migratie zelf brak: per tabel en
+doeltabel na meer dan ervoor (`addedBrokenReferences`). Rijen worden niet
+vergeleken, want een stap die een tabel herbouwt, kan rowids veranderen.
+Oude kapotte verwijzingen blijven onaangeroerd. Herstellen of wissen in
+een migratie doen we niet: de controle moet net de fouten van een stap
+vangen, niet verbergen.
+
+**Downgrade (D3).** drift roept `onUpgrade` ook aan voor een bestand van
+een latere versie, en stempelt het daarna met de huidige. De stappen van
+die latere versie liepen bij de volgende update dan nog eens. Nu gooit
+`onUpgrade` meteen `NewerDatabaseException`, voor er iets geschreven is,
+en het bestand houdt zijn versie. De app zegt dat de gegevens uit een
+nieuwere versie komen en dat je die opnieuw installeert.
+
+**Een open die mislukt (D12).** Een verbinding die in `_openWith` gemaakt
+werd en de app niet haalde, wordt gesloten. *Opnieuw proberen* opende er
+anders een tweede naast.

@@ -840,6 +840,86 @@ void main() {
     await db.close();
   });
 
+  test(
+    'a database from a later version is refused, and left as it is',
+    () async {
+      final path = '${dir.path}/later.db';
+      final fresh = AppDatabase(NativeDatabase(File(path)));
+      await fresh.settingsDao.ensureInitialized();
+      await fresh.close();
+      final later = AppDatabase.currentSchemaVersion + 1;
+      sqlite3.open(path)
+        ..execute('PRAGMA user_version = $later')
+        ..close();
+
+      final db = AppDatabase(NativeDatabase(File(path)));
+      await expectLater(
+        db.settingsDao.ensureInitialized(),
+        throwsA(isA<NewerDatabaseException>()),
+      );
+      await db.close();
+
+      // drift stamped it with this version afterwards, and the next update
+      // ran the later steps again on top of themselves (DECISIONS 242).
+      final raw = sqlite3.open(path);
+      expect(raw.select('PRAGMA user_version').first.values.first, later);
+      raw.close();
+    },
+  );
+
+  test('a reference that was already broken does not stop a migration, and '
+      'is left alone', () async {
+    final path = '${dir.path}/orphan.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.close();
+
+    // A set whose exercise row is gone, from before: foreign keys are off
+    // in a raw connection, as they were in the step that once let it slip.
+    sqlite3.open(path)
+      ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
+      ..execute(
+        'INSERT INTO workout_sets (id, workout_exercise_id, sort_order) '
+        "VALUES ('ws-wees', 'we-weg', 0)",
+      )
+      ..execute('PRAGMA user_version = 60')
+      ..close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    await db.settingsDao.ensureInitialized();
+    final kept = await db
+        .customSelect("SELECT id FROM workout_sets WHERE id = 'ws-wees'")
+        .get();
+    expect(kept, hasLength(1));
+    await db.close();
+    final raw = sqlite3.open(path);
+    expect(
+      raw.select('PRAGMA user_version').first.values.first,
+      AppDatabase.currentSchemaVersion,
+    );
+    raw.close();
+  });
+
+  test('only references a migration adds count against it', () {
+    expect(
+      addedBrokenReferences(
+        before: {'workout_sets -> workout_exercises': 2},
+        after: {'workout_sets -> workout_exercises': 2},
+      ),
+      isEmpty,
+    );
+    expect(
+      addedBrokenReferences(
+        before: {'workout_sets -> workout_exercises': 2},
+        after: {
+          'workout_sets -> workout_exercises': 3,
+          'workouts -> routines': 1,
+        },
+      ),
+      {'workout_sets -> workout_exercises': 1, 'workouts -> routines': 1},
+    );
+  });
+
   test('a database from v53 gets no schemas, and no routine is a '
       'session of one', () async {
     final path = '${dir.path}/v53.db';

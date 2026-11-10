@@ -5795,3 +5795,27 @@ vragen.
 - **Het verbruik is het hoogste van de twee:** de teller, en wat de
   antwoorden zeggen. Zo telt de dag van de update, van voor er een teller
   was, nog volledig mee. Gesprekken wissen verlaagt de teller niet.
+
+## 250. Gegevens zijn geen opdrachten, en elk moment kent de grenzen
+
+Uit het Fable-rapport: C3, C4 en C5.
+
+- **Tekst uit gegevens (C3).** `remember` en `forget` schrijven meteen.
+  Een gedeelde routine met een opdracht in haar naam of notitie kon zo
+  notities wissen, of een blijvende instructie in het geheugen zetten.
+  Gegevens naar buiten sturen kon niet. Nu:
+  - **De systeemtekst** zegt in één zin dat een instructie uit een
+    opzoeking nooit gevolgd wordt. Eén zin, want die tekst gaat met elke
+    vraag mee en kost geld; een test houdt de lengte in de gaten.
+  - **De notities** staan in een afgebakend blok (`<notities>`), met erbij
+    dat het gegevens zijn. Dat geldt in de chat en in de momenten.
+  - **`forget`** wist hoogstens twee notities per vraag. Meer zegt het
+    aan het model terug, dat het dan aan de gebruiker moet vragen.
+- **De momenten kenden de grenzen van de chat niet (C5).** De chat zegt
+  wat te doen bij pijn, supplementen en tekenen van een eetstoornis. De
+  automatische vragen, zoals het duwtje na dagen zonder training en het
+  voorbeeld over afvallen, zeiden alleen "geen arts". Nu delen ze dezelfde
+  tekst, `kCoachLimits`.
+- **De privacypagina over je naam (C4).** De naam gaat altijd mee als je
+  er een invulde, ook zonder *Je profiel delen*. De zin las alsof dat
+  delen ook voor de naam gold. Het zijn nu twee punten.

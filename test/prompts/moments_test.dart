@@ -7,6 +7,8 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/security/key_manager.dart';
 import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
+import 'package:fitlog/features/chat/domain/coach_prompt.dart'
+    show kCoachLimits;
 import 'package:fitlog/features/prompts/data/moment_answerer.dart';
 import 'package:fitlog/features/prompts/data/moment_facts.dart';
 import 'package:fitlog/features/prompts/data/prompt_alarm.dart';
@@ -100,6 +102,17 @@ void main() {
   });
 
   tearDown(() => db.close());
+
+  test('elk moment heeft dezelfde grenzen als de chat (DECISIONS 250)', () {
+    for (final moment in CoachMoment.values) {
+      final system = buildMomentSystem(
+        prompt: MomentPrompt(moment: moment, enabled: true),
+        notes: const ['Wil afvallen'],
+      );
+      expect(system, contains(kCoachLimits), reason: moment.name);
+      expect(system, contains('<notities>'), reason: moment.name);
+    }
+  });
 
   group('wanneer de wekker afgaat', () {
     test('een tijd niet getraind: elke dag om 18:00, een vrij moment op zijn '

@@ -897,7 +897,24 @@ class CoachTools {
     );
   }
 
+  /// Notes forgotten in this question. A text in a shared routine that tells
+  /// the coach to forget could otherwise empty the notebook in one go
+  /// (DECISIONS 250).
+  int _forgotten = 0;
+  static const int forgetsPerQuestion = 2;
+
   Future<CoachLookup> _forget(Map<String, Object?> input) async {
+    if (_forgotten >= forgetsPerQuestion) {
+      return CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error':
+              'hoogstens $forgetsPerQuestion notities per vraag; vraag de '
+              'gebruiker of er meer weg moeten',
+        }),
+        summary: 'een notitie niet vergeten',
+      );
+    }
     final id = _number(input['id'])?.round();
     final old = id == null ? null : await db.coachNotesDao.note(id);
     if (id == null || old == null) {
@@ -907,6 +924,7 @@ class CoachTools {
       );
     }
     await db.coachNotesDao.forget(id);
+    _forgotten++;
     return CoachLookup(
       json: jsonEncode({'ok': true, 'shown_to_user': true}),
       summary: 'een notitie over je vergeten',

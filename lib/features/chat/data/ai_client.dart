@@ -800,8 +800,13 @@ class AiClient {
     CoachProvider? provider,
     http.Client? client,
     this.timeout = kCoachTimeout,
+    this.onRequest,
   }) : provider = provider ?? CoachProvider.forKey(apiKey),
        _client = client ?? http.Client();
+
+  /// Called before every request goes out: what the day limit counts
+  /// (DECISIONS 249).
+  final Future<void> Function()? onRequest;
 
   final String apiKey;
   final CoachProvider provider;
@@ -875,6 +880,7 @@ class AiClient {
     required String model,
     int maxTokens = 1024,
   }) async {
+    await onRequest?.call();
     final anthropic = provider == CoachProvider.anthropic;
     final uri = Uri.parse(
       anthropic
@@ -974,6 +980,7 @@ class AiClient {
       return reply;
     }
 
+    await onRequest?.call();
     final request =
         http.Request(
             'POST',

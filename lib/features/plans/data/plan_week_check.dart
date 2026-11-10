@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/database.dart';
 import '../../chat/data/ai_client.dart';
+import '../../chat/data/counted_client.dart';
 import '../../chat/data/coach.dart';
 import '../../chat/data/coach_tools.dart';
 import '../../chat/domain/coach_budget.dart';
@@ -47,7 +48,7 @@ class PlanWeekCheck {
   PlanWeekCheck(this.db, {ReportClientFactory? clientFactory})
     : _clientFactory =
           clientFactory ??
-          ((key, provider) => AiClient(apiKey: key, provider: provider));
+          ((key, provider) => countedClient(db, key, provider));
 
   final AppDatabase db;
   final ReportClientFactory _clientFactory;

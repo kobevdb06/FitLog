@@ -20953,6 +20953,190 @@ class ChatFoldersTableCompanion extends UpdateCompanion<ChatFolderRow> {
   }
 }
 
+class $CoachRequestsTableTable extends CoachRequestsTable
+    with TableInfo<$CoachRequestsTableTable, CoachRequestRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CoachRequestsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _atMeta = const VerificationMeta('at');
+  @override
+  late final GeneratedColumn<int> at = GeneratedColumn<int>(
+    'at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, at];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'coach_requests';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CoachRequestRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('at')) {
+      context.handle(_atMeta, at.isAcceptableOrUnknown(data['at']!, _atMeta));
+    } else if (isInserting) {
+      context.missing(_atMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CoachRequestRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CoachRequestRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      at: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}at'],
+      )!,
+    );
+  }
+
+  @override
+  $CoachRequestsTableTable createAlias(String alias) {
+    return $CoachRequestsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CoachRequestRow extends DataClass implements Insertable<CoachRequestRow> {
+  final int id;
+  final int at;
+  const CoachRequestRow({required this.id, required this.at});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['at'] = Variable<int>(at);
+    return map;
+  }
+
+  CoachRequestsTableCompanion toCompanion(bool nullToAbsent) {
+    return CoachRequestsTableCompanion(id: Value(id), at: Value(at));
+  }
+
+  factory CoachRequestRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CoachRequestRow(
+      id: serializer.fromJson<int>(json['id']),
+      at: serializer.fromJson<int>(json['at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'at': serializer.toJson<int>(at),
+    };
+  }
+
+  CoachRequestRow copyWith({int? id, int? at}) =>
+      CoachRequestRow(id: id ?? this.id, at: at ?? this.at);
+  CoachRequestRow copyWithCompanion(CoachRequestsTableCompanion data) {
+    return CoachRequestRow(
+      id: data.id.present ? data.id.value : this.id,
+      at: data.at.present ? data.at.value : this.at,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoachRequestRow(')
+          ..write('id: $id, ')
+          ..write('at: $at')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, at);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CoachRequestRow && other.id == this.id && other.at == this.at);
+}
+
+class CoachRequestsTableCompanion extends UpdateCompanion<CoachRequestRow> {
+  final Value<int> id;
+  final Value<int> at;
+  const CoachRequestsTableCompanion({
+    this.id = const Value.absent(),
+    this.at = const Value.absent(),
+  });
+  CoachRequestsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required int at,
+  }) : at = Value(at);
+  static Insertable<CoachRequestRow> custom({
+    Expression<int>? id,
+    Expression<int>? at,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (at != null) 'at': at,
+    });
+  }
+
+  CoachRequestsTableCompanion copyWith({Value<int>? id, Value<int>? at}) {
+    return CoachRequestsTableCompanion(id: id ?? this.id, at: at ?? this.at);
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (at.present) {
+      map['at'] = Variable<int>(at.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoachRequestsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('at: $at')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -21030,6 +21214,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ChatFoldersTableTable chatFoldersTable = $ChatFoldersTableTable(
     this,
   );
+  late final $CoachRequestsTableTable coachRequestsTable =
+      $CoachRequestsTableTable(this);
   late final Index idxRoutineExercisesRoutine = Index(
     'idx_routine_exercises_routine',
     'CREATE INDEX idx_routine_exercises_routine ON routine_exercises (routine_id)',
@@ -21136,6 +21322,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     momentAnswersTable,
     quickQuestionsTable,
     chatFoldersTable,
+    coachRequestsTable,
     idxRoutineExercisesRoutine,
     idxRoutineSetsRoutineExercise,
     idxRoutineVersionsRoutine,
@@ -34582,6 +34769,142 @@ typedef $$ChatFoldersTableTableProcessedTableManager =
       ChatFolderRow,
       PrefetchHooks Function()
     >;
+typedef $$CoachRequestsTableTableCreateCompanionBuilder =
+    CoachRequestsTableCompanion Function({Value<int> id, required int at});
+typedef $$CoachRequestsTableTableUpdateCompanionBuilder =
+    CoachRequestsTableCompanion Function({Value<int> id, Value<int> at});
+
+class $$CoachRequestsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CoachRequestsTableTable> {
+  $$CoachRequestsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CoachRequestsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CoachRequestsTableTable> {
+  $$CoachRequestsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get at => $composableBuilder(
+    column: $table.at,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CoachRequestsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CoachRequestsTableTable> {
+  $$CoachRequestsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get at =>
+      $composableBuilder(column: $table.at, builder: (column) => column);
+}
+
+class $$CoachRequestsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CoachRequestsTableTable,
+          CoachRequestRow,
+          $$CoachRequestsTableTableFilterComposer,
+          $$CoachRequestsTableTableOrderingComposer,
+          $$CoachRequestsTableTableAnnotationComposer,
+          $$CoachRequestsTableTableCreateCompanionBuilder,
+          $$CoachRequestsTableTableUpdateCompanionBuilder,
+          (
+            CoachRequestRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CoachRequestsTableTable,
+              CoachRequestRow
+            >,
+          ),
+          CoachRequestRow,
+          PrefetchHooks Function()
+        > {
+  $$CoachRequestsTableTableTableManager(
+    _$AppDatabase db,
+    $CoachRequestsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CoachRequestsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CoachRequestsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CoachRequestsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> at = const Value.absent(),
+          }) => CoachRequestsTableCompanion(id: id, at: at),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int at,
+          }) => CoachRequestsTableCompanion.insert(id: id, at: at),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CoachRequestsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CoachRequestsTableTable,
+      CoachRequestRow,
+      $$CoachRequestsTableTableFilterComposer,
+      $$CoachRequestsTableTableOrderingComposer,
+      $$CoachRequestsTableTableAnnotationComposer,
+      $$CoachRequestsTableTableCreateCompanionBuilder,
+      $$CoachRequestsTableTableUpdateCompanionBuilder,
+      (
+        CoachRequestRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CoachRequestsTableTable,
+          CoachRequestRow
+        >,
+      ),
+      CoachRequestRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -34654,4 +34977,6 @@ class $AppDatabaseManager {
       $$QuickQuestionsTableTableTableManager(_db, _db.quickQuestionsTable);
   $$ChatFoldersTableTableTableManager get chatFoldersTable =>
       $$ChatFoldersTableTableTableManager(_db, _db.chatFoldersTable);
+  $$CoachRequestsTableTableTableManager get coachRequestsTable =>
+      $$CoachRequestsTableTableTableManager(_db, _db.coachRequestsTable);
 }

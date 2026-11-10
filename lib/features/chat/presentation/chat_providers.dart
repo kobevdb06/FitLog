@@ -24,6 +24,7 @@ import '../../prompts/data/moment_asker.dart';
 import '../../prompts/domain/coach_moments.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../data/ai_client.dart';
+import '../data/counted_client.dart';
 import '../data/coach.dart';
 import '../data/coach_tools.dart';
 import '../data/links.dart';
@@ -53,9 +54,12 @@ typedef CoachClientFactory = AiClient Function(
   CoachProvider provider,
 );
 
+/// Every request counted as it goes out (DECISIONS 249); the database read
+/// when a question is asked, when it is open.
 @riverpod
 CoachClientFactory coachClientFactory(Ref ref) =>
-    (apiKey, provider) => AiClient(apiKey: apiKey, provider: provider);
+    (apiKey, provider) =>
+        countedClient(ref.read(databaseProvider), apiKey, provider);
 
 @riverpod
 String? coachApiKey(Ref ref) {
@@ -412,6 +416,20 @@ class CoachController extends _$CoachController {
       content: text,
       imageFiles: photos,
     );
+
+    // The day limit holds for the chat as well: it stopped only the
+    // automatic questions, while it is called the day's limit (DECISIONS
+    // 249). The question stays, as with any answer that does not come.
+    final limit =
+        (await db.settingsDao.getSettings()).coachDailyLimit ??
+        kDefaultDailyLimit;
+    final spent = await db.chatDao.usageSince(
+      coachDayStart(DateTime.now(), ref.read(coachProviderProvider)),
+    );
+    if (limit > 0 && spent.requests >= limit) {
+      state = const CoachState(error: _atLimit);
+      return;
+    }
 
     final paths = await ref.read(appPathsProvider.future);
     // Everything before, but the question just stored - by its id: by its

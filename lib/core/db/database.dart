@@ -68,6 +68,7 @@ part 'database.drift.dart';
     MomentAnswersTable,
     QuickQuestionsTable,
     ChatFoldersTable,
+    CoachRequestsTable,
   ],
   daos: [
     SettingsDao,
@@ -90,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The version of the schema this build writes; a restore refuses a
   /// backup from a later one.
-  static const int currentSchemaVersion = 62;
+  static const int currentSchemaVersion = 63;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -623,6 +624,11 @@ class AppDatabase extends _$AppDatabase {
       // the other sets give; every other record, and every set you logged,
       // stays as it is (DECISIONS 244).
       await recordsDao.replaceUnreliableOneRms();
+    }
+
+    if (from < 63) {
+      // The day limit's own count: nothing counted yet (DECISIONS 249).
+      await m.createTable(coachRequestsTable);
     }
 
     final added = addedBrokenReferences(

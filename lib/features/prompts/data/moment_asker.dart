@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../../core/db/database.dart';
 import '../../chat/data/ai_client.dart';
+import '../../chat/data/counted_client.dart';
 import '../../chat/domain/coach_budget.dart';
 import '../../chat/domain/coach_prompt.dart';
 import '../domain/coach_moments.dart';
@@ -104,7 +105,11 @@ Future<MomentAnswer?> askOnce(
     return MomentAnswer(error: atLimit);
   }
 
-  final client = (clientFactory ?? _defaultClient)(key, provider);
+  final client =
+      (clientFactory ?? (key, provider) => countedClient(db, key, provider))(
+        key,
+        provider,
+      );
   try {
     final reply = await client.send(
       system: system,
@@ -128,6 +133,3 @@ Future<MomentAnswer?> askOnce(
     client.close();
   }
 }
-
-AiClient _defaultClient(String key, CoachProvider provider) =>
-    AiClient(apiKey: key, provider: provider);

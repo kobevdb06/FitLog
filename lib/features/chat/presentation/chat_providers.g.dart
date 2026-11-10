@@ -8,9 +8,14 @@ part of 'chat_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Every request counted as it goes out (DECISIONS 249); the database read
+/// when a question is asked, when it is open.
 
 @ProviderFor(coachClientFactory)
 final coachClientFactoryProvider = CoachClientFactoryProvider._();
+
+/// Every request counted as it goes out (DECISIONS 249); the database read
+/// when a question is asked, when it is open.
 
 final class CoachClientFactoryProvider
     extends
@@ -20,6 +25,8 @@ final class CoachClientFactoryProvider
           CoachClientFactory
         >
     with $Provider<CoachClientFactory> {
+  /// Every request counted as it goes out (DECISIONS 249); the database read
+  /// when a question is asked, when it is open.
   CoachClientFactoryProvider._()
     : super(
         from: null,
@@ -55,7 +62,7 @@ final class CoachClientFactoryProvider
 }
 
 String _$coachClientFactoryHash() =>
-    r'74c5013af5fa09c6ac9640f9340622d92f966942';
+    r'f32f51b2ed70ab87fba062daf6f75b03fcebbfff';
 
 @ProviderFor(coachApiKey)
 final coachApiKeyProvider = CoachApiKeyProvider._();
@@ -1247,7 +1254,7 @@ final class CoachControllerProvider
   }
 }
 
-String _$coachControllerHash() => r'c47e7146106364b190150c395ee364f3971885a7';
+String _$coachControllerHash() => r'd859a73d922ca53f8bdfbcd0830028f38e9753bc';
 
 /// Asking a question, from the first keystroke to the answer on screen.
 

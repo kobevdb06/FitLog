@@ -253,7 +253,7 @@ final class AppControllerProvider
   }
 }
 
-String _$appControllerHash() => r'0d66f1d3ec02bafd714d99dc98c38345cbe16f81';
+String _$appControllerHash() => r'd4b30ac43ca5ded8f2389b34c9bd98c843b59662';
 
 /// Owns the database handle and decides what the app is allowed to show.
 

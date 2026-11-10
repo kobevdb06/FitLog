@@ -163,7 +163,7 @@ final class WorkoutLiveUpdateProvider
   }
 }
 
-String _$workoutLiveUpdateHash() => r'27800297eae3498d5ab0193b8fc632ff7aa5f2fa';
+String _$workoutLiveUpdateHash() => r'54475c27c39ebbccf8b54b473797c634fca611aa';
 
 /// Keeps the standing notification - the island, on a phone that has one -
 /// in step with the running workout, also while FitLog is out of sight.

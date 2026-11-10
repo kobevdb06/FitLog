@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import '../../../core/db/database.dart';
-import '../../chat/data/ai_client.dart';
+import '../../chat/data/counted_client.dart';
 import '../../morning/data/morning_reporter.dart' show ReportClientFactory;
 import '../../prompts/data/moment_asker.dart';
 import '../../prompts/domain/coach_moments.dart';
@@ -49,7 +49,7 @@ class WeekReviewer {
   WeekReviewer(this.db, {ReportClientFactory? clientFactory})
     : _clientFactory =
           clientFactory ??
-          ((key, provider) => AiClient(apiKey: key, provider: provider));
+          ((key, provider) => countedClient(db, key, provider));
 
   final AppDatabase db;
   final ReportClientFactory _clientFactory;

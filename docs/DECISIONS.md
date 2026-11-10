@@ -5772,3 +5772,26 @@ Uit het Fable-rapport: C1, en twee punten uit C6.
   de geschiedenis gehaald op haar tekst. Twee keer "ok" haalde zo elke
   eerdere "ok" uit het gesprek dat meeging. Nu gebeurt dat op het id van
   de zojuist bewaarde rij.
+
+## 249. De daglimiet geldt voor elke vraag
+
+Uit het Fable-rapport: C2. Beslissing van Kobe: de limiet geldt voor alle
+vragen.
+
+- **Ook de chat houdt zich eraan.** De instelling heet *Daglimiet* en hield
+  elke automatische vraag tegen (de momenten, het ochtendrapport, de
+  zondagscheck), maar de chat keek er niet naar. DECISIONS 131 beschreef
+  alleen een balk. Nu stuurt de chat niets aan de limiet, en zegt waarom.
+  De vraag blijft staan, zoals bij elk antwoord dat niet komt. Eén vraag
+  kan een paar opzoekingen doen voor ze klaar is; de limiet wordt
+  bekeken voor ze vertrekt, dus de laatste vraag van de dag kan er een
+  paar calls over gaan.
+- **Een eigen teller.** De telling kwam uit de bewaarde antwoorden. Een
+  verzoek dat misliep, telde niet, en *Alle gesprekken wissen* zette de
+  balk op nul. Nu krijgt elke call een rij in `coach_requests` (v63) op
+  het moment dat ze vertrekt, via `AiClient.onRequest`. Elke client van de
+  app komt uit `countedClient`, dus ook die van de alarmen. Alleen de
+  laatste drie dagen blijven bewaard.
+- **Het verbruik is het hoogste van de twee:** de teller, en wat de
+  antwoorden zeggen. Zo telt de dag van de update, van voor er een teller
+  was, nog volledig mee. Gesprekken wissen verlaagt de teller niet.

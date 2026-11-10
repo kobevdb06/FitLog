@@ -23,6 +23,7 @@ const _uuid = Uuid();
     WeekReviewsTable,
     WorkoutAnswersTable,
     MomentAnswersTable,
+    CoachRequestsTable,
   ],
 )
 class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
@@ -347,9 +348,14 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
   /// Every answer since a moment, from the chat, the morning reports, the
   /// weeks and the workouts alike: a report the coach wrote is a request on
   /// the same key, and the daily bar has to count it.
+  ///
+  /// The requests are the higher of what the answers say and what was
+  /// counted as it was sent: a request that failed, or a conversation
+  /// deleted since, is in the second (DECISIONS 249).
   static const String _usageSql =
       'SELECT COUNT(*) AS answers, '
-      'COALESCE(SUM(requests), 0) AS requests, '
+      'MAX(COALESCE(SUM(requests), 0), '
+      '(SELECT COUNT(*) FROM coach_requests WHERE at >= ?)) AS requests, '
       'COALESCE(SUM(input_tokens), 0) AS input_tokens, '
       'COALESCE(SUM(output_tokens), 0) AS output_tokens FROM ('
       'SELECT COALESCE(requests, 1) AS requests, '
@@ -372,10 +378,28 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
 
   /// One [since] for each part of [_usageSql].
   static List<Variable<int>> _usageVariables(DateTime since) => [
-    for (var i = 0; i < 5; i++) Variable.withInt(since.millisecondsSinceEpoch),
+    for (var i = 0; i < 6; i++) Variable.withInt(since.millisecondsSinceEpoch),
   ];
 
+  /// How long a counted request is kept: a day limit needs no more than the
+  /// day, wherever the service's day begins.
+  static const Duration _requestsKept = Duration(days: 3);
+
+  /// One request to the coach's service, counted as it is sent.
+  Future<void> noteRequest(DateTime at) => transaction(() async {
+    await into(
+      coachRequestsTable,
+    ).insert(CoachRequestsTableCompanion.insert(at: at.millisecondsSinceEpoch));
+    await (delete(coachRequestsTable)..where(
+          (t) => t.at.isSmallerThanValue(
+            at.subtract(_requestsKept).millisecondsSinceEpoch,
+          ),
+        ))
+        .go();
+  });
+
   Set<TableInfo> get _usageTables => {
+    coachRequestsTable,
     chatMessagesTable,
     morningReportsTable,
     weekReviewsTable,

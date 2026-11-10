@@ -425,6 +425,19 @@ class ChatThreadsTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// One request to the coach's service, the moment it was sent: what the
+/// day limit counts (DECISIONS 249). Kept apart from what was answered, so a
+/// request that failed counts as well, and deleting the conversations does
+/// not reset the day. Only the last few days are kept.
+@DataClassName('CoachRequestRow')
+class CoachRequestsTable extends Table {
+  @override
+  String get tableName => 'coach_requests';
+
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get at => integer()();
+}
+
 /// A folder of conversations you come back to, in the panel of the coach.
 @DataClassName('ChatFolderRow')
 class ChatFoldersTable extends Table {

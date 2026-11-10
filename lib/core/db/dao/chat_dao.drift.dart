@@ -21,6 +21,8 @@ mixin _$ChatDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.workoutAnswersTable;
   $MomentAnswersTableTable get momentAnswersTable =>
       attachedDatabase.momentAnswersTable;
+  $CoachRequestsTableTable get coachRequestsTable =>
+      attachedDatabase.coachRequestsTable;
   ChatDaoManager get managers => ChatDaoManager(this);
 }
 
@@ -70,5 +72,10 @@ class ChatDaoManager {
       $$MomentAnswersTableTableTableManager(
         _db.attachedDatabase,
         _db.momentAnswersTable,
+      );
+  $$CoachRequestsTableTableTableManager get coachRequestsTable =>
+      $$CoachRequestsTableTableTableManager(
+        _db.attachedDatabase,
+        _db.coachRequestsTable,
       );
 }

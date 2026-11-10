@@ -845,6 +845,11 @@ void main() {
       for (final (key, secret) in [
         ('sk-ant-geheim-abc123', 'sk-ant-geheim-abc123'),
         ('AIzaSyGeheim123', 'AIzaSyGeheim123'),
+        // Google's newer keys, and a format nobody knows yet: the key
+        // itself is taken out too (DECISIONS 261).
+        ('AQ.Ab8RNiZhX2MkgGeheim', 'AQ.Ab8RNiZhX2MkgGeheim'),
+        ('nieuw-formaat-Geheim-998877', 'nieuw-formaat-Geheim-998877'),
+        ('AIzaSyGeheim123', 'AQ.AnderGeheim456'),
       ]) {
         final client = clientThatAnswers(400, {
           'error': {'message': 'bad request met $secret erin'},

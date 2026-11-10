@@ -399,9 +399,20 @@ class CoachException implements Exception {
 }
 
 /// Never let an API key travel out of this file inside an error message.
-String _redact(String text) => text
-    .replaceAll(RegExp(r'sk-ant-[A-Za-z0-9_\-]+'), 'sk-ant-...')
-    .replaceAll(RegExp(r'AIza[A-Za-z0-9_\-]+'), 'AIza...');
+///
+/// By its prefix, and - for Google's newer `AQ.` keys, a Cloudflare token
+/// with no prefix at all, or a format that does not exist yet - by [key]
+/// itself, the one this client was given (DECISIONS 261).
+String _redact(String text, [String? key]) {
+  var out = text;
+  final own = key?.trim() ?? '';
+  // Not a value that short: it would cut ordinary words out of the message.
+  if (own.length >= 8) out = out.replaceAll(own, '...');
+  return out
+      .replaceAll(RegExp(r'sk-ant-[A-Za-z0-9_\-]+'), 'sk-ant-...')
+      .replaceAll(RegExp(r'AIza[A-Za-z0-9_\-]+'), 'AIza...')
+      .replaceAll(RegExp(r'\bAQ\.[A-Za-z0-9_\-]+'), 'AQ....');
+}
 
 /// Draws one picture, for an exercise the user is making.
 ///
@@ -641,7 +652,7 @@ class ImageGenerator {
       );
     } on http.ClientException catch (error) {
       throw CoachException(
-        'De verbinding werd afgebroken: ${_redact(error.message)}',
+        'De verbinding werd afgebroken: ${_redact(error.message, apiKey)}',
       );
     }
 
@@ -766,14 +777,14 @@ class ImageGenerator {
         .trim();
   }
 
-  static String _detailOf(String body) {
+  String _detailOf(String body) {
     try {
       final json = jsonDecode(body);
       if (json is Map) {
         final error = json['error'];
-        if (error is String && error.isNotEmpty) return _redact(error);
+        if (error is String && error.isNotEmpty) return _redact(error, apiKey);
         if (error is Map && error['message'] is String) {
-          return _redact(error['message']! as String);
+          return _redact(error['message']! as String, apiKey);
         }
         // Cloudflare says it in a list, with a number next to it. That number
         // is the difference between "wait until tomorrow" (3036, the day's
@@ -783,7 +794,7 @@ class ImageGenerator {
           final first = errors.first;
           if (first is Map && first['message'] is String) {
             final code = first['code'];
-            final message = _tidy(_redact(first['message']! as String));
+            final message = _tidy(_redact(first['message']! as String, apiKey));
             return code == null ? message : '$message ($code)';
           }
         }
@@ -934,7 +945,7 @@ class AiClient {
       );
     } on http.ClientException catch (error) {
       throw CoachException(
-        'De verbinding werd afgebroken: ${_redact(error.message)}',
+        'De verbinding werd afgebroken: ${_redact(error.message, apiKey)}',
       );
     }
 
@@ -1020,7 +1031,7 @@ class AiClient {
       );
     } on http.ClientException catch (error) {
       throw CoachException(
-        'De verbinding werd afgebroken: ${_redact(error.message)}',
+        'De verbinding werd afgebroken: ${_redact(error.message, apiKey)}',
       );
     }
 
@@ -1076,7 +1087,7 @@ class AiClient {
       );
     } on http.ClientException catch (error) {
       throw CoachException(
-        'De verbinding werd afgebroken: ${_redact(error.message)}',
+        'De verbinding werd afgebroken: ${_redact(error.message, apiKey)}',
       );
     } finally {
       idle?.cancel();
@@ -1226,7 +1237,7 @@ class AiClient {
       );
     } on http.ClientException catch (error) {
       throw CoachException(
-        'De verbinding werd afgebroken: ${_redact(error.message)}',
+        'De verbinding werd afgebroken: ${_redact(error.message, apiKey)}',
       );
     }
 
@@ -1555,7 +1566,9 @@ class AiClient {
       final json = jsonDecode(body);
       if (json is Map && json['error'] is Map) {
         final message = (json['error'] as Map)['message'];
-        if (message is String && message.isNotEmpty) return _redact(message);
+        if (message is String && message.isNotEmpty) {
+          return _redact(message, apiKey);
+        }
       }
     } on FormatException {
       // An unreadable body is not worth a second failure.

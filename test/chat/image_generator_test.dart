@@ -383,6 +383,39 @@ void main() {
       );
     });
 
+    test('en het token zelf gaat er nooit in mee', () async {
+      // A Cloudflare token has no prefix to know it by: the value itself is
+      // taken out (DECISIONS 261).
+      const token = 'cf-geheim-token-0123456789';
+      container = containerThatDraws(
+        cloudflare: true,
+        status: 500,
+        body: {
+          'errors': [
+            {'code': 10000, 'message': 'Authentication error for $token'},
+          ],
+        },
+      );
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          imageProvider: Value('cloudflare'),
+          imageAccountId: Value('acc-123'),
+          imageApiKey: Value(token),
+        ),
+      );
+
+      await expectLater(
+        container!
+            .read(exerciseEditorProvider)
+            .drawFrame(name: 'Sledepush', start: true),
+        throwsA(
+          isA<CoachException>()
+              .having((e) => e.message, 'message', contains('Authentication'))
+              .having((e) => e.message, 'message', isNot(contains(token))),
+        ),
+      );
+    });
+
     test('een geweigerd token ook', () async {
       container = containerThatDraws(status: 401, body: {'error': 'nope'});
 

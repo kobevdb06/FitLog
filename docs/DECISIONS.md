@@ -6059,3 +6059,18 @@ Uit het Fable-rapport: S6.
   bedoeld: de back-up gaat versleuteld met de herstelzin naar de eigen
   map van de app. De uitleg bij `KeyManager` zei dat de sleutel alleen
   bestaat terwijl de app ontgrendeld is. Dat klopte niet en is aangepast.
+
+## 261. Een foutmelding draagt de sleutel nooit mee, in welk formaat ook
+
+Uit het Fable-rapport: S9, de afscherming van sleutels.
+
+Een foutmelding van een dienst kan de sleutel herhalen waarmee gevraagd
+werd. Die melding komt op het scherm, en een gebruiker deelt ze. De app
+haalde er sleutels uit op hun voorvoegsel: `sk-ant-` en `AIza`. De nieuwere
+sleutels van Google beginnen met `AQ.` en kwamen er ongeschonden door. Een
+token van Cloudflare heeft helemaal geen voorvoegsel. Nu gaat ook `AQ.`
+eruit, en daarnaast de sleutel zelf die de client meekreeg, letterlijk,
+welk formaat die ook heeft. Een waarde korter dan acht tekens blijft
+staan: die zou gewone woorden uit de melding knippen, en zo kort is geen
+echte sleutel. Dat een ruwe uitzondering bij de momenten nooit meer op het
+scherm komt, was al zo sinds 248.

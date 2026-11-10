@@ -381,8 +381,15 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
       into(exercisesTable).insert(exercise);
 
   /// Inserts the whole bundled catalogue in one transaction.
+  /// The catalogue in; an exercise that is there already stays as it is.
   Future<void> insertSeed(List<ExercisesTableCompanion> exercises) async {
-    await batch((b) => b.insertAll(exercisesTable, exercises));
+    await batch(
+      (b) => b.insertAll(
+        exercisesTable,
+        exercises,
+        mode: InsertMode.insertOrIgnore,
+      ),
+    );
   }
 
   Future<void> updateExercise(

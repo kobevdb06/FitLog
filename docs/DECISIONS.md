@@ -5976,3 +5976,50 @@ gevoeligste wat FitLog bewaart.
   in `core/security`, de `ImageProvider` in `core/widgets`.
 - **De teksten.** De privacypagina en de handleiding zeggen nu waar de
   foto's staan: naast de database, met dezelfde sleutel.
+
+## 258. Back-up en opstart zonder vastloper
+
+Uit het Fable-rapport: D5, D6, D7, D8, D10 en D11.
+
+- **De catalogus en zijn vlag (D5).** De ongeveer 800 oefeningen gingen in
+  één transactie, de vlag *ingelezen* in een aparte schrijfactie. Viel de
+  app daartussen weg, dan liep de volgende start vast op dubbele sleutels,
+  en de app opende niet meer. Nu gaan ze in één transactie, en een
+  oefening die er al is, blijft zoals ze is (`insertOrIgnore`).
+- **Een foto zonder bestand (D6).** Bij de start verdween een rij waarvan
+  het bestand weg was. Na een herstel dat niet alle foto's terugbracht,
+  verdwenen zo ook houding, datum, notitie en gekoppelde workout. Nu
+  blijft de rij staan, en het scherm toont *Bestand weg*. Hetzelfde voor
+  de beelden van een oefening. Wegdoen is aan de gebruiker; een bestand
+  zonder rij gaat wel nog weg.
+- **Het tijdstip van de back-up (D7).** Het werd gezet vóór het schrijven,
+  en alleen bij een opgevangen fout teruggezet. Doodde Android de app
+  halverwege (het hele archief zat in het geheugen), dan bleef het staan,
+  en de herinnering en de wekelijkse back-up zwegen een week zonder dat er
+  een back-up was. Nu gaat het tijdstip eerst alleen in de kopie van de
+  database in de back-up, zodat een herstel meteen klopt, en pas als het
+  bestand geschreven is in de database van de app. Inpakken en versleutelen
+  gebeuren op een eigen isolate, zodat het scherm niet bevriest. Het
+  archief zit nog altijd in één stuk in het geheugen. Het als stroom
+  verwerken vraagt een nieuw formaat in stukken, met een plaats voor de
+  sleutel buiten het zip-bestand. Dat is een eigen stap, met eigen tests,
+  voor als foto's ooit honderden megabytes beslaan.
+- **Twee back-ups tegelijk (D8)** deelden één `snapshot.db`, en de een kon
+  die van de ander wissen. Nu heeft elke kopie een eigen naam, en lopen
+  back-ups na elkaar.
+- **De exportmap (D10).** Een CSV met de hele geschiedenis, of een
+  back-up, bleef staan na het delen, ook na *Alles wissen*. Nu verdwijnt
+  wat er langer dan een uur ligt, bij elke nieuwe export of back-up.
+  Meteen na het delen kan niet: de app waarnaar het ging, leest het
+  bestand soms pas later. *Alles wissen* neemt de hele map mee.
+- **Twee verbindingen tegelijk (D11).** Een alarm opent de database in
+  zijn eigen isolate als de app niet antwoordt. Startte de app op dat
+  moment, dan kreeg de tweede meteen *database is locked*. Nu wacht elke
+  verbinding tot vijf seconden (`busy_timeout`). En na een update
+  migreert een alarm niet meer zelf (`openForAlarm`): staat de database
+  nog niet op deze versie, dan slaat het alarm die beurt over, en doet de
+  app het werk. Vroeger konden ze dezelfde migratie tegelijk proberen,
+  waarna de tweede vastliep op een kolom die er al was.
+- **`VACUUM INTO` met SQLCipher** (het nog open punt uit het rapport): een
+  test bewijst nu dat de kopie in een back-up versleuteld is, en het
+  tijdstip van die back-up draagt.

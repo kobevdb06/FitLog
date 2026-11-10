@@ -34,16 +34,21 @@ class ExerciseSeeder {
     if (settings.exercisesSeeded) return 0;
 
     final raw = await rootBundle.loadString(assetKey);
-    final inserted = await seedFromJson(raw);
-
-    await db.settingsDao.updateSettings(
-      const AppSettingsTableCompanion(
-        exercisesSeeded: Value(true),
-        // Freshly imported, so it is already the newest catalogue.
-        seedVersion: Value(kSeedVersion),
-      ),
-    );
-    return inserted;
+    // The catalogue and its flag in one go: a start that died between the
+    // two hit every key twice the next time, and never opened again
+    // (DECISIONS 258). And what is there already is left: a catalogue from
+    // before the flag was one with it.
+    return db.transaction(() async {
+      final inserted = await seedFromJson(raw);
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(
+          exercisesSeeded: Value(true),
+          // Freshly imported, so it is already the newest catalogue.
+          seedVersion: Value(kSeedVersion),
+        ),
+      );
+      return inserted;
+    });
   }
 
   /// Brings an already-seeded catalogue up to [kSeedVersion].

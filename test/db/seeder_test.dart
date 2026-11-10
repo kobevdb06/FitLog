@@ -4,6 +4,7 @@ import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/db/models.dart';
 import 'package:fitlog/core/db/seeder.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -23,6 +24,20 @@ void main() {
     final seeded = await ExerciseSeeder(db).seedIfNeeded();
     expect(seeded, greaterThan(800));
     expect(await db.exercisesDao.countExercises(), greaterThan(800));
+  });
+
+  test('a start that died between the catalogue and its flag starts again '
+      '(DECISIONS 258)', () async {
+    // The catalogue in, the flag not yet: the next start hit every key
+    // twice, and the app never opened again.
+    final raw = await rootBundle.loadString(kExerciseSeedAsset);
+    final seeder = ExerciseSeeder(db);
+    await seeder.seedFromJson(raw);
+
+    final again = await seeder.seedIfNeeded();
+
+    expect(again, isNonNegative);
+    expect((await db.settingsDao.getSettings()).exercisesSeeded, isTrue);
   });
 
   test('seeding runs only once', () async {

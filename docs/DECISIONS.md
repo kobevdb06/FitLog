@@ -5746,3 +5746,29 @@ en de coach stuurde het bewaarde bestand zoals het was naar Google.
   onderbrak en die de app bij de volgende start alsnog plaatst. Alleen een
   bestand in de eigen cache van de app wordt aangeraakt, nooit een foto
   die de gebruiker ergens anders bewaart.
+
+## 248. De coach na iets onverwachts
+
+Uit het Fable-rapport: C1, en twee punten uit C6.
+
+- **Een onverwachte fout liet de chat hangen (C1).** Alleen de eigen
+  `CoachException` werd opgevangen. Een TLS-fout (hotelwifi, een klok die
+  niet klopt), een fout halverwege de tekenstroom, of een antwoord in een
+  vorm die niemand verwachtte, ontsnapte. `sending` bleef aan, en elke
+  volgende vraag werd stil genegeerd tot de app herstartte. Nu:
+  - **Aan de rand van de client** (`AiClient.send` en `sendStreaming`)
+    wordt elke fout een `CoachException` met een zin in gewoon Nederlands
+    (`asCoachException`). Die zegt nooit de ruwe fout, want daar kan een
+    stuk van het verzoek in staan. Dat geldt meteen voor elke beller, ook
+    de geplande momenten, die de ruwe fout toonden.
+  - **`ask`, `askAbout` en `summarize`** vangen daarbovenop alles op en
+    zetten de toestand terug, ook bij een fout van de database.
+  - **Een opzoeking die faalt** gaat als `{'ok': false}` terug naar het
+    model, dat het anders kan proberen. Vroeger beëindigde ze de vraag.
+- **Dubbel versturen (C6).** De controle op `sending` stond vóór een
+  `await`, maar `sending` ging pas daarna aan. Twee snelle tikken stuurden
+  de vraag twee keer. Nu gaat `sending` aan vóór de eerste `await`.
+- **Dezelfde woorden opnieuw (C6).** De vraag die net bewaard was, werd uit
+  de geschiedenis gehaald op haar tekst. Twee keer "ok" haalde zo elke
+  eerdere "ok" uit het gesprek dat meeging. Nu gebeurt dat op het id van
+  de zojuist bewaarde rij.

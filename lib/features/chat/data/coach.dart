@@ -9,6 +9,8 @@
 /// file's: the conversation is kept in the app's own shape.
 library;
 
+import 'dart:convert';
+
 import 'ai_client.dart';
 import 'coach_tools.dart';
 import '../domain/coach_proposal.dart';
@@ -223,7 +225,7 @@ class Coach {
 
       final results = <CoachToolResult>[];
       for (final call in reply.toolCalls) {
-        final lookup = await tools.run(call.name, call.input);
+        final lookup = await _run(call);
         onLookup?.call(lookup.summary);
         if (!lookups.contains(lookup.summary)) lookups.add(lookup.summary);
         if (lookup.proposal case final proposal?) proposals.add(proposal);
@@ -234,5 +236,22 @@ class Coach {
 
     // Unreachable: the loop returns on its last round.
     throw StateError('coach loop ended without an answer');
+  }
+
+  /// One lookup. A lookup that throws - input in a shape it did not expect -
+  /// is told to the model as one that failed, so it can try another way; it
+  /// used to end the question, and leave the chat busy (DECISIONS 248).
+  Future<CoachLookup> _run(CoachToolCall call) async {
+    try {
+      return await tools.run(call.name, call.input);
+    } on Object {
+      return CoachLookup(
+        json: jsonEncode({
+          'ok': false,
+          'error': 'deze opzoeking liep fout; probeer het anders',
+        }),
+        summary: 'een opzoeking die misliep (${call.name})',
+      );
+    }
   }
 }

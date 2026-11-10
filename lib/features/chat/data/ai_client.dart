@@ -818,6 +818,62 @@ class AiClient {
     required List<Map<String, Object?>> tools,
     required String model,
     int maxTokens = 1024,
+  }) => _said(
+    () => _send(
+      system: system,
+      messages: messages,
+      tools: tools,
+      model: model,
+      maxTokens: maxTokens,
+    ),
+  );
+
+  /// Whatever goes wrong on the way, said as the coach says it: as a
+  /// [CoachException], never as the error it was.
+  ///
+  /// A TLS failure - a hotel wifi, a clock that is off - a stream that broke,
+  /// an answer in a shape nobody expected: these escaped as they were, and
+  /// the chat stayed busy until the app was restarted (DECISIONS 248).
+  static Future<T> _said<T>(Future<T> Function() call) async {
+    try {
+      return await call();
+    } on Object catch (error) {
+      throw asCoachException(error);
+    }
+  }
+
+  /// [error] as something the coach can say, without the error itself: that
+  /// may hold a key or a piece of the request.
+  static CoachException asCoachException(Object error) => switch (error) {
+    CoachException() => error,
+    HandshakeException() || TlsException() => const CoachException(
+      'De beveiligde verbinding met de coach mislukte. Klopt de klok van je '
+      'gsm? Op een wifi-netwerk waar je eerst moet inloggen, lukt het pas '
+      'daarna.',
+    ),
+    SocketException() ||
+    HttpException() ||
+    http.ClientException() => const CoachException(
+      'De verbinding met de coach viel weg. Probeer het opnieuw.',
+    ),
+    TimeoutException() => const CoachException(
+      'De coach antwoordde niet op tijd. Probeer het opnieuw.',
+    ),
+    FormatException() || TypeError() => const CoachException(
+      'Het antwoord van de coach kon niet gelezen worden. Probeer het '
+      'opnieuw.',
+    ),
+    _ => const CoachException(
+      'Er ging iets mis met de coach. Probeer het opnieuw.',
+    ),
+  };
+
+  Future<CoachReply> _send({
+    required String system,
+    required List<CoachMessage> messages,
+    required List<Map<String, Object?>> tools,
+    required String model,
+    int maxTokens = 1024,
   }) async {
     final anthropic = provider == CoachProvider.anthropic;
     final uri = Uri.parse(
@@ -881,6 +937,24 @@ class AiClient {
   /// piece: it is not on offer, and a stream of its own shape would be code
   /// nobody runs.
   Future<CoachReply> sendStreaming({
+    required String system,
+    required List<CoachMessage> messages,
+    required List<Map<String, Object?>> tools,
+    required String model,
+    required void Function(String text) onText,
+    int maxTokens = 1024,
+  }) => _said(
+    () => _sendStreaming(
+      system: system,
+      messages: messages,
+      tools: tools,
+      model: model,
+      onText: onText,
+      maxTokens: maxTokens,
+    ),
+  );
+
+  Future<CoachReply> _sendStreaming({
     required String system,
     required List<CoachMessage> messages,
     required List<Map<String, Object?>> tools,

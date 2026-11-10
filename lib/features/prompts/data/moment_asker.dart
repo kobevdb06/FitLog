@@ -122,7 +122,8 @@ Future<MomentAnswer?> askOnce(
   } on CoachException catch (e) {
     return MomentAnswer(error: e.message);
   } on Object catch (e) {
-    return MomentAnswer(error: 'De coach was niet bereikbaar: $e');
+    // Said as the coach says it, never as the raw error (DECISIONS 248).
+    return MomentAnswer(error: AiClient.asCoachException(e).message);
   } finally {
     client.close();
   }

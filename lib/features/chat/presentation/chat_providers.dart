@@ -358,7 +358,38 @@ class CoachController extends _$CoachController {
     final text = question.trim();
     final photos = imageFiles.take(photosPerQuestion).toList();
     if (text.isEmpty || state.sending) return;
+    // Busy before the first wait: a second tap in between passed the check
+    // above and sent the question twice (DECISIONS 248).
+    state = const CoachState(sending: true);
+    try {
+      await _ask(
+        threadId: threadId,
+        text: text,
+        photos: photos,
+        situation: situation,
+        sent: sent,
+      );
+    } on Object catch (error) {
+      // Anything at all: the chat used to stay busy until the app restarted,
+      // and every next question was quietly ignored.
+      if (state.sending) state = _failed(error);
+    }
+  }
 
+  /// [error] as the chat shows it, with the key's own flag when it was the
+  /// key.
+  CoachState _failed(Object error) {
+    final said = AiClient.asCoachException(error);
+    return CoachState(error: _say(said), keyRejected: said.badKey);
+  }
+
+  Future<void> _ask({
+    required String threadId,
+    required String text,
+    required List<String> photos,
+    required String? situation,
+    required List<String> sent,
+  }) async {
     final db = ref.read(databaseProvider);
     // Straight from the database rather than from the stream: on a cold start
     // the first question can arrive before the settings have been delivered,
@@ -373,9 +404,9 @@ class CoachController extends _$CoachController {
       return;
     }
 
-    state = const CoachState(sending: true);
+    final asked = _uuid.v4();
     await db.chatDao.addMessage(
-      id: _uuid.v4(),
+      id: asked,
       threadId: threadId,
       role: 'user',
       content: text,
@@ -383,9 +414,11 @@ class CoachController extends _$CoachController {
     );
 
     final paths = await ref.read(appPathsProvider.future);
+    // Everything before, but the question just stored - by its id: by its
+    // words, "ok" asked twice took every earlier "ok" out of the history.
     final earlier = [
       for (final row in await db.chatDao.messages(threadId))
-        if (row.content != text || row.role != 'user') row,
+        if (row.id != asked) row,
     ];
 
     // Only the newest photos of a conversation ride along with a follow-up
@@ -523,8 +556,6 @@ class CoachController extends _$CoachController {
         outputTokens: answer.usage.outputTokens,
       );
       state = const CoachState();
-    } on CoachException catch (error) {
-      state = CoachState(error: _say(error), keyRejected: error.badKey);
     } finally {
       client.close();
     }
@@ -548,8 +579,28 @@ class CoachController extends _$CoachController {
     bool withWeightUnit = false,
   }) async {
     if (state.sending) return;
-    final db = ref.read(databaseProvider);
     state = const CoachState(sending: true);
+    try {
+      await _askAbout(
+        threadId: threadId,
+        prompt: prompt,
+        facts: facts,
+        sent: sent,
+        withWeightUnit: withWeightUnit,
+      );
+    } on Object catch (error) {
+      if (state.sending) state = _failed(error);
+    }
+  }
+
+  Future<void> _askAbout({
+    required String threadId,
+    required MomentPrompt prompt,
+    required Map<String, Object?> facts,
+    required String sent,
+    required bool withWeightUnit,
+  }) async {
+    final db = ref.read(databaseProvider);
     await db.chatDao.addMessage(
       id: _uuid.v4(),
       threadId: threadId,
@@ -588,12 +639,24 @@ class CoachController extends _$CoachController {
   /// stays. The new one's id, or null when there is none: [state] says why.
   Future<String?> summarize(String threadId) async {
     if (state.sending) return null;
+    state = const CoachState(sending: true);
+    try {
+      return await _summarize(threadId);
+    } on Object catch (error) {
+      if (state.sending) state = _failed(error);
+      return null;
+    }
+  }
+
+  Future<String?> _summarize(String threadId) async {
     final db = ref.read(databaseProvider);
     final thread = await db.chatDao.thread(threadId);
     final messages = await db.chatDao.messages(threadId);
-    if (thread == null || messages.isEmpty) return null;
+    if (thread == null || messages.isEmpty) {
+      state = const CoachState();
+      return null;
+    }
 
-    state = const CoachState(sending: true);
     final answer = await askOnce(
       db,
       system: kSummarySystem,

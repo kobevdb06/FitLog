@@ -7,6 +7,7 @@ import '../../../core/db/database.dart';
 import '../../../core/util/paths.dart';
 import 'photo_library.dart';
 import 'photo_store.dart';
+import 'picked_copy.dart';
 
 /// Picks up a photo Android threw away.
 ///
@@ -78,6 +79,10 @@ class PickRecovery {
 
     final outcome = await _complete(pick, file);
     await forget();
+    // Placed, it goes; one that could not be placed is left where it is.
+    if (outcome == PickRecoveryOutcome.recovered) {
+      await forgetPickedCopy(file.path);
+    }
     return outcome;
   }
 

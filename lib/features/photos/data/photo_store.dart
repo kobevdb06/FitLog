@@ -91,7 +91,12 @@ class PhotoStore {
       Isolate.run(() => processBytes(bytes, maxLongEdge: maxLongEdge));
 
   /// Bakes the EXIF orientation into the pixels, scales the long edge down to
-  /// [maxLongEdge] and re-encodes as JPEG.
+  /// [maxLongEdge] and re-encodes as JPEG - without any of the camera's
+  /// metadata.
+  ///
+  /// Baking kept every EXIF tag but the orientation, and the encoder wrote
+  /// them back: where the photo was taken went along to the coach, and to
+  /// Google (DECISIONS 247).
   ///
   /// Camera photos carry their rotation in an EXIF tag that `Image.file` does
   /// not apply, so without baking they show up on their side.
@@ -119,6 +124,7 @@ class PhotoStore {
             interpolation: img.Interpolation.average,
           );
 
+    sized.exif = img.ExifData();
     return img.encodeJpg(sized, quality: jpegQuality);
   }
 
@@ -170,4 +176,35 @@ class PhotoCleanupResult {
   final Set<String> missingFiles;
 
   bool get isClean => deletedFiles.isEmpty && missingFiles.isEmpty;
+}
+
+/// [jpeg] without its metadata: every APP1 segment - EXIF, with where the
+/// photo was taken, and XMP - and every comment taken out, the picture
+/// itself copied byte for byte. For photos stored before metadata was taken
+/// out at the import, as they leave the phone (DECISIONS 247).
+///
+/// Anything that is not a JPEG it can read to the image comes back as it
+/// was.
+Uint8List stripJpegMetadata(Uint8List jpeg) {
+  if (jpeg.length < 4 || jpeg[0] != 0xFF || jpeg[1] != 0xD8) return jpeg;
+  final out = BytesBuilder(copy: false)..add(const [0xFF, 0xD8]);
+  var at = 2;
+  while (at + 4 <= jpeg.length) {
+    if (jpeg[at] != 0xFF) return jpeg;
+    final marker = jpeg[at + 1];
+    // The image data starts here and runs to the end: copied whole.
+    if (marker == 0xDA) {
+      out.add(Uint8List.sublistView(jpeg, at));
+      return out.takeBytes();
+    }
+    final length = (jpeg[at + 2] << 8) | jpeg[at + 3];
+    if (length < 2 || at + 2 + length > jpeg.length) return jpeg;
+    final end = at + 2 + length;
+    // APP1 holds EXIF and XMP; COM a free comment.
+    if (marker != 0xE1 && marker != 0xFE) {
+      out.add(Uint8List.sublistView(jpeg, at, end));
+    }
+    at = end;
+  }
+  return jpeg;
 }

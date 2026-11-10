@@ -17,6 +17,7 @@ import '../../../core/util/paths.dart';
 import '../../chat/data/ai_client.dart';
 import '../../chat/presentation/chat_providers.dart';
 import '../../photos/data/photo_store.dart';
+import '../../photos/data/picked_copy.dart';
 import '../../photos/data/pick_recovery.dart';
 
 part 'exercise_providers.g.dart';
@@ -445,8 +446,12 @@ class ExerciseEditor {
       );
       if (picked == null) return null;
 
-      return await PhotoStore(paths)
-          .import(File(picked.path), maxLongEdge: frameLongEdge);
+      try {
+        return await PhotoStore(paths)
+            .import(File(picked.path), maxLongEdge: frameLongEdge);
+      } finally {
+        await forgetPickedCopy(picked.path);
+      }
     } finally {
       await recovery.forget();
     }

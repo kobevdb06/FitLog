@@ -8,6 +8,7 @@ import '../../../core/db/database.dart';
 import '../../../core/util/paths.dart';
 import '../data/photo_library.dart';
 import '../data/photo_store.dart';
+import '../data/picked_copy.dart';
 import '../data/pick_recovery.dart';
 import '../domain/photo_window.dart';
 
@@ -87,12 +88,16 @@ class PhotoActions {
       if (picked == null) return null;
 
       final library = await _library();
-      return await library.importPhoto(
-        source: File(picked.path),
-        pose: pose,
-        takenAt: takenAt,
-        note: note,
-      );
+      try {
+        return await library.importPhoto(
+          source: File(picked.path),
+          pose: pose,
+          takenAt: takenAt,
+          note: note,
+        );
+      } finally {
+        await forgetPickedCopy(picked.path);
+      }
     } finally {
       // The note is only useful while the app is not running. Once the pick
       // has come back - or been cancelled, or thrown - it has to go, or the

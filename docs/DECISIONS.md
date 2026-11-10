@@ -5722,3 +5722,27 @@ vervangt de hele stapel, dus er lag geen pagina onder de sessie.
   kan, en gaat anders naar Start. *Workout weggooien* vertrekt nog altijd
   eerst, voor een vloeiende overgang (zie de opmerking in de code), maar
   gooit de sessie weg hoe het vertrekken ook afloopt.
+
+## 247. Waar een foto genomen is, verlaat de telefoon niet
+
+Uit het Fable-rapport: S3. In `image` 4.9.2 kopieert `bakeOrientation` alle
+EXIF behalve de oriëntatie, en de JPEG-encoder schrijft die terug, gps
+inbegrepen. Een voortgangs- of coachfoto bewaarde zo waar ze genomen was,
+en de coach stuurde het bewaarde bestand zoals het was naar Google.
+
+- **Bij het bewaren** gaat alle metadata eruit: `processBytes` geeft het
+  beeld lege EXIF voor het codeert. Dat geldt voor elke foto die de app
+  bewaart: voortgang, oefening en coach.
+- **Een foto van vroeger** heeft die metadata nog. Op weg naar de coach
+  haalt `stripJpegMetadata` elk APP1-segment (EXIF en XMP) en elk
+  commentaar eruit. De beeldgegevens worden byte voor byte overgenomen,
+  dus zonder kwaliteitsverlies. Wat geen leesbare JPEG is, gaat zoals het
+  was. De bestanden op de telefoon zelf herschrijven we niet: ze gaan
+  nergens heen zonder die stap, en het voorstel om ze te versleutelen
+  (S2) komt apart.
+- **De kopie van de fotokiezer** bleef in de cache van de app staan, met
+  alles erin. `forgetPickedCopy` verwijdert ze zodra de foto bewaard is,
+  op elke plek waar een foto gekozen wordt, ook bij een keuze die Android
+  onderbrak en die de app bij de volgende start alsnog plaatst. Alleen een
+  bestand in de eigen cache van de app wordt aangeraakt, nooit een foto
+  die de gebruiker ergens anders bewaart.

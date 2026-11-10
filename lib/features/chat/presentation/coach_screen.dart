@@ -27,6 +27,7 @@ import '../../../core/widgets/dialogs.dart';
 import '../../deload/presentation/deload_providers.dart';
 import '../../deload/presentation/deload_start_sheet.dart';
 import '../../photos/data/photo_store.dart';
+import '../../photos/data/picked_copy.dart';
 import '../../plans/presentation/plan_build_cards.dart';
 import '../../plans/presentation/plan_card.dart';
 import '../../plans/presentation/plan_panel.dart';
@@ -498,9 +499,15 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
 
     final coach = ref.read(coachControllerProvider.notifier);
     final stored = <String>[];
-    for (final file in picked.take(room)) {
-      if (await coach.importPhoto(File(file.path)) case final name?) {
-        stored.add(name);
+    for (final file in picked) {
+      try {
+        if (stored.length < room) {
+          if (await coach.importPhoto(File(file.path)) case final name?) {
+            stored.add(name);
+          }
+        }
+      } finally {
+        await forgetPickedCopy(file.path);
       }
     }
     if (mounted) setState(() => _photos.addAll(stored));

@@ -666,7 +666,11 @@ class CoachController extends _$CoachController {
   Future<CoachImage?> _encode(AppPaths paths, String fileName) async {
     final file = PhotoStore(paths).fileFor(fileName);
     if (!await file.exists()) return null;
-    return CoachImage(base64: base64Encode(await file.readAsBytes()));
+    // A photo stored before the metadata came out at the import still has
+    // it: it is taken out on the way (DECISIONS 247).
+    return CoachImage(
+      base64: base64Encode(stripJpegMetadata(await file.readAsBytes())),
+    );
   }
 
   /// [_encode] for each, leaving out the ones that are gone.

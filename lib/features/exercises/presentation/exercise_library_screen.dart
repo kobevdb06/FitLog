@@ -287,12 +287,15 @@ class _FilterChips extends ConsumerWidget {
         if (choice.isOwn) choice,
     ];
 
+    // As high as the chips are at this text size: at 1,4 a row of 40 cut
+    // them off (DECISIONS 294).
+    final scale = MediaQuery.textScalerOf(context);
     return SizedBox(
-      height: 104,
+      height: scale.scale(104),
       child: ListView(
         children: [
           SizedBox(
-            height: 40,
+            height: scale.scale(40),
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -334,7 +337,7 @@ class _FilterChips extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           SizedBox(
-            height: 40,
+            height: scale.scale(40),
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [

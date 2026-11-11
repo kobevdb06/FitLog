@@ -36,6 +36,13 @@ void main() {
                 GoRoute(
                   path: '/een',
                   builder: (context, state) => tab('Een', firstKey),
+                  routes: [
+                    GoRoute(
+                      path: 'onder',
+                      builder: (context, state) =>
+                          const Scaffold(body: Center(child: Text('Onder'))),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -108,6 +115,21 @@ void main() {
       '/twee',
       reason: 'de route volgt de pagina, niet alleen het beeld',
     );
+  });
+
+  testWidgets('on a page under a tab, a swipe stays on that page', (
+    tester,
+  ) async {
+    // It moved to the next tab, with the page under it still open there,
+    // and fought a row that is swiped away (DECISIONS 294).
+    await pump(tester);
+    router.go('/een/onder');
+    await tester.pumpAndSettle();
+
+    await swipeForward(tester);
+
+    expect(find.text('Onder'), findsOneWidget);
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/een/onder');
   });
 
   testWidgets('swiping the other way goes back', (tester) async {

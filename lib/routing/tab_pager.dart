@@ -149,12 +149,25 @@ class _TabPagerState extends ConsumerState<TabPager> {
     super.dispose();
   }
 
+  /// Whether the tab shows its own first page. On a page under it - a
+  /// workout from the history, an exercise from the library - a swipe
+  /// moved to the next tab with that page left open, and fought a row you
+  /// swipe away (DECISIONS 294).
+  bool get _atTabRoot {
+    final branch = widget.shell.route.branches[widget.shell.currentIndex];
+    final root = branch.defaultRoute?.path;
+    if (root == null) return true;
+    final here = GoRouter.of(context).state.uri.path;
+    return here == root;
+  }
+
   @override
   Widget build(BuildContext context) {
     return PageView(
       // A new controller is a new pager, not the old one told to move.
       key: ObjectKey(_controller),
       controller: _controller,
+      physics: _atTabRoot ? null : const NeverScrollableScrollPhysics(),
       // Where you let go is where you meant to be; the router is told after
       // the page has settled rather than during the drag, so a swipe you pull
       // back does not leave a trail of branch switches behind it.

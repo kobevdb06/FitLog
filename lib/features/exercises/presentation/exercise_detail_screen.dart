@@ -518,7 +518,8 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
           const SizedBox(height: AppSpacing.lg),
         ],
         SizedBox(
-          height: 40,
+          // As high as the chips are at this text size (DECISIONS 294).
+          height: MediaQuery.textScalerOf(context).scale(40),
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [

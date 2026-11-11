@@ -6666,3 +6666,15 @@ Uit het Fable-rapport: U10.
   steppers, twee gewichtstegels, twee tekstballonnen) horen bij de
   architectuur (B5) en worden daar samengevoegd.
 
+## 294. Chips op hun eigen hoogte, en vegen op een onderpagina
+
+Uit het Fable-rapport: punten 4 en 5 om op de emulator na te gaan.
+
+- **De filterrijen in de bibliotheek** en bij een oefening waren 40 dp
+  hoog. Een chip wordt bij grote tekst hoger en werd dan afgesneden. Nu
+  groeien de rijen mee met de tekstgrootte.
+- **Zijwaarts vegen op een onderpagina**, zoals een workout uit de
+  geschiedenis of een oefening uit de bibliotheek, schoof naar het
+  volgende tabblad. De onderpagina bleef daar open staan, en het vegen
+  vocht met een rij die je wegveegt. Nu veeg je alleen tussen tabbladen
+  op hun eigen eerste pagina. Een test opent een onderpagina en veegt.

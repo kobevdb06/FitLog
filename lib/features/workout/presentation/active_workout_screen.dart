@@ -2193,13 +2193,21 @@ class _Cell extends StatelessWidget {
           child: SizedBox(
             height: AppSpacing.minTouch,
             child: Center(
-              child: Text(
-                text ?? placeholder,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: text == null
-                      ? theme.colorScheme.onSurfaceVariant
-                      : theme.colorScheme.onSurface,
-                  fontWeight: text == null ? FontWeight.w400 : FontWeight.w600,
+              // Smaller rather than in two: with RPE on and large letters a
+              // cell is about 43 dp, and "102,5" broke in two with its bottom
+              // half cut off (DECISIONS 289).
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  text ?? placeholder,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: text == null
+                        ? theme.colorScheme.onSurfaceVariant
+                        : theme.colorScheme.onSurface,
+                    fontWeight: text == null
+                        ? FontWeight.w400
+                        : FontWeight.w600,
+                  ),
                 ),
               ),
             ),

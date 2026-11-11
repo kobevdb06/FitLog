@@ -12,6 +12,7 @@ import 'package:fitlog/core/widgets/exercise_avatar.dart';
 import 'package:fitlog/core/theme/app_colors.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -190,6 +191,37 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
     });
+  });
+
+  testWidgets('a cell stays on one line, with RPE on, on 360 dp at 1,4', (
+    tester,
+  ) async {
+    // About 43 dp a cell is left, and "102,5" needs about 58 at 1,4: it
+    // broke in two and the bottom half was cut off (DECISIONS 289).
+    await db.settingsDao.updateSettings(
+      const AppSettingsTableCompanion(trackRpe: Value(true)),
+    );
+    final set = (await db.workoutsDao.getWorkoutDetail(workoutId))!
+        .exercises
+        .single
+        .sets
+        .single;
+    await db.workoutsDao.updateSet(set.id, weightKg: const Value(102.5));
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpScreen(tester);
+
+    final cell = tester.renderObject<RenderParagraph>(find.text('102,5'));
+    // The whole number gets the room it needs, on one line.
+    expect(
+      cell.size.width,
+      greaterThanOrEqualTo(cell.getMaxIntrinsicWidth(double.infinity) - 0.5),
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('the card has the picture before the name, in plain text', (

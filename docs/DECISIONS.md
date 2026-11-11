@@ -6582,3 +6582,12 @@ wordt een naam kleiner in plaats van af te lopen, zoals het paneel van
 een schema al deed (`FittedBox`). Een test kijkt op 360 dp bij 1,4 dat
 geen naam vervaagt.
 
+## 289. Een cel van een set blijft op één regel
+
+Uit het Fable-rapport: U2.
+
+Met RPE aan blijft er na de vaste breedtes ongeveer 43 dp per cel over.
+*102,5* is bij schaal 1,4 ongeveer 58 dp breed, brak in twee regels, en
+de onderste helft viel weg onder de hoogte van 48. Nu wordt het getal in
+de cel kleiner, zoals in een tegel (`FittedBox`), en blijft het heel.
+

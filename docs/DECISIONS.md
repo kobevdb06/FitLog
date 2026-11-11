@@ -6812,3 +6812,29 @@ die sqlite3 nodig heeft.
 Gecontroleerd: alle tests, en op de emulator een nieuwe build over de oude
 heen geïnstalleerd. De database van de vorige build opende, met wat erin
 stond.
+
+## 303. flutter_secure_storage 11.2.0
+
+Uit het Fable-rapport: B7.
+
+`flutter_secure_storage` ging van 11.0.0 naar 11.2.0. Daarin zit de
+sleutel van de database, dus is eerst de Android-code van beide versies
+naast elkaar gelegd.
+
+- `deleteAll` wist nu alleen de waarden met het voorvoegsel van de
+  plugin, niet meer het hele bestand. Elke waarde van FitLog heeft dat
+  voorvoegsel, dus het herstel met de twaalf woorden (241) ruimt nog
+  hetzelfde op. De algoritmemarkeringen van de plugin blijven nu staan.
+  Dat is veiliger.
+- Nieuw is een herstel dat een sleutel verplaatst als een app van
+  `sharedPreferencesName` naar `storageNamespace` overstapt. FitLog
+  bewaart zijn sleutel al sinds oktober onder zijn eigen naamruimte. Dan
+  doet die code niets. Ze laat de bron ook staan.
+- De fix in 11.1.1 gaat over opslag die de plugin zelf met biometrie
+  beschermt. FitLog gebruikt die niet: de biometrie zit in de app.
+
+Gecontroleerd: alle tests. En op de emulator: met de oude versie een
+pincode gezet, de nieuwe versie erover geïnstalleerd, en ontgrendeld met
+die pincode, met alle gegevens erbij. Daarna met de nieuwe versie de
+pincode uitgezet, wat de sleutel opnieuw wegschrijft, en koud gestart.
+De app opende meteen, met dezelfde gegevens.

@@ -46,7 +46,7 @@ dependencies:
   flutter_riverpod: ^3.4.2
   riverpod_annotation: ^4.0.6
   go_router: ^18.0.0
-  flutter_secure_storage: ^11.0.0
+  flutter_secure_storage: ^11.2.0
   cryptography: ^2.9.0
   bip39: ^1.0.6
   local_auth: ^3.0.2

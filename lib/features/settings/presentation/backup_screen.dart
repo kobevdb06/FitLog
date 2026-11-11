@@ -146,7 +146,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final second = await confirmByTyping(
       context,
       title: 'Zeker weten?',
-      message: 'Typ WISSEN om te bevestigen. Dit kan niet ongedaan gemaakt.',
+      message: 'Typ WISSEN om te bevestigen. Dit kan niet ongedaan gemaakt worden.',
       word: 'WISSEN',
     );
     if (!second) return;

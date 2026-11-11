@@ -387,7 +387,7 @@ void main() {
     await pumpScreen(tester);
 
     // Not a dash, which would read as "no data": last time you left it out.
-    expect(find.text('Geskipt'), findsOneWidget);
+    expect(find.text('Overgeslagen'), findsOneWidget);
   });
 
   group('the note line', () {

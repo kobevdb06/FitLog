@@ -37,7 +37,10 @@ class ProgressScreen extends ConsumerWidget {
       // back empty while they loaded again, and the page jumped to the top
       // on the way back up. Six sections are no list to save work on.
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 32),
+        // Clear of the system's bar at the bottom (DECISIONS 293).
+        padding: EdgeInsets.only(
+          bottom: 32 + MediaQuery.paddingOf(context).bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

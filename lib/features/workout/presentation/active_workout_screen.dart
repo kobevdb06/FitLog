@@ -288,7 +288,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   ///
   /// The second tap used to clear the tick. It now marks the set as one you
   /// deliberately left out, which is a thing worth keeping - the next session
-  /// says "Geskipt" in that row instead of showing a dash. Clearing is still
+  /// says "Overgeslagen" in that row instead of showing a dash. Clearing is still
   /// one gesture away: a long press, see [_resetSet].
   Future<void> _toggleSet(WorkoutSetRow row, AppSettingsRow? settings) async {
     final controller = ref.read(workoutControllerProvider);
@@ -2108,7 +2108,7 @@ class SetRow extends StatelessWidget {
                         // Last time you left this one out on purpose. A dash
                         // would read as "no data"; this says which of the two
                         // it is.
-                        ? 'Geskipt'
+                        ? 'Overgeslagen'
                         : formatters.setSummary(
                             weightKg: previous!.weightKg,
                             reps: previous!.reps,

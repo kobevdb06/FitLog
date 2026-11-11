@@ -93,7 +93,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           final day = _day;
 
           return ListView(
-            padding: const EdgeInsets.only(bottom: 32),
+            // Clear of the system's bar at the bottom: a list given its own
+            // padding no longer adds it (DECISIONS 293).
+            padding: EdgeInsets.only(
+              bottom: 32 + MediaQuery.paddingOf(context).bottom,
+            ),
             children: [
               _MonthCalendar(
                 month: _month,

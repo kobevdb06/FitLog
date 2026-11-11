@@ -66,11 +66,14 @@ abstract final class AppTheme {
       // they would drift apart if each one decided for itself. The screens
       // that rise from the bottom carry their own page and are untouched by
       // this.
-      pageTransitionsTheme: PageTransitionsTheme(
+      //
+      // With less motion asked for in Android's settings, a page just
+      // appears: that was respected in two places only (DECISIONS 293).
+      pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: _FromTheRight(),
+          TargetPlatform.iOS: _FromTheRight(),
+          TargetPlatform.macOS: _FromTheRight(),
         },
       ),
     );
@@ -294,5 +297,31 @@ abstract final class AppTheme {
           labelLarge: base.labelLarge?.copyWith(fontWeight: FontWeight.w600),
         )
         .apply(bodyColor: onSurface, displayColor: onSurface);
+  }
+}
+
+/// From the right, as a chevron says - or, with less motion asked for, no
+/// movement at all.
+class _FromTheRight extends PageTransitionsBuilder {
+  const _FromTheRight();
+
+  static const _slide = CupertinoPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return child;
+    return _slide.buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
+    );
   }
 }

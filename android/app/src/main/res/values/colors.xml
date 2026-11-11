@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FitLog's own background: the app opens dark unless you chose light,
+         and a white screen flashed before it (DECISIONS 293). -->
+    <color name="fitlog_background">#FF0E0F12</color>
+</resources>

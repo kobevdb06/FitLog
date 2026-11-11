@@ -160,12 +160,16 @@ class _ActiveWorkoutBarState extends ConsumerState<_ActiveWorkoutBar> {
 
   Timer? _reveal;
 
-  @override
-  void initState() {
-    super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
+  /// The bar's clock ticks only while a workout shows in it: it ticked
+  /// every second all day (DECISIONS 293).
+  void _tickWhile(bool shown) {
+    if (shown == (_ticker != null)) return;
+    _ticker?.cancel();
+    _ticker = shown
+        ? Timer.periodic(const Duration(seconds: 1), (_) {
+            if (mounted) setState(() {});
+          })
+        : null;
   }
 
   @override
@@ -210,6 +214,7 @@ class _ActiveWorkoutBarState extends ConsumerState<_ActiveWorkoutBar> {
       });
     });
 
+    _tickWhile(workout != null && _showing);
     if (workout == null || !_showing) return const SizedBox.shrink();
 
     final elapsed = DateTime.now()

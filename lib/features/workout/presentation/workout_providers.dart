@@ -737,7 +737,7 @@ class WorkoutController {
     if (workingIndex >= previous.length) return null;
     final match = previous[workingIndex];
     // A skipped set holds no numbers worth taking over; the grey placeholder
-    // reads "Geskipt" there rather than a weight, so there is nothing on
+    // reads "Overgeslagen" there rather than a weight, so there is nothing on
     // screen for the empty cell to adopt.
     return match.isSkipped ? null : match;
   }

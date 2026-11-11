@@ -6636,3 +6636,33 @@ Uit het Fable-rapport: U9.
 - **Foto's en kalenderdagen** zeggen wat ze zijn: de houding en de datum,
   de dag en of je toen trainde.
 
+## 293. Kleine punten bij het uitzicht
+
+Uit het Fable-rapport: U10.
+
+- **Taal:** *kan niet ongedaan gemaakt* wordt *kan niet ongedaan gemaakt
+  worden*. *Geskipt* wordt *overgeslagen*, zoals elders. De kolom in de
+  CSV-export heet nog *geskipt*: die naam lezen spreadsheets van
+  gebruikers. *Reps* blijft in de korte kolomkoppen, *herhalingen* in
+  zinnen. Dat is een keuze, geen slordigheid.
+- **De as van een grafiek** is zo breed als de getallen bij deze
+  tekstgrootte. *12.500* paste bij 1,4 niet in 44 dp.
+- **Het startscherm** flitste wit op een telefoon in lichte modus, voor een
+  app die donker opent. Nu is het venster bij het opstarten in de kleur
+  van FitLog zelf. Wie in de app voor licht koos, ziet heel kort donker.
+  Dat is rustiger dan een witte flits voor de meesten.
+- **De onderrand:** de lijsten van de geschiedenis en van Voortgang hielden
+  geen rekening met de systeembalk onderaan. Nu wel, zoals *Nieuw schema*
+  al deed.
+- **Minder beweging:** wie dat in Android vraagt, ziet een nieuwe pagina nu
+  meteen verschijnen in plaats van inschuiven. Dat werd maar op twee
+  plaatsen gerespecteerd.
+- **De klok in de workoutbalk** van de schil tikte elke seconde, ook zonder
+  workout. Nu tikt ze alleen terwijl er een workout in de balk staat.
+- **De handleiding:** de indeelstand op Start staat nu twee keer hetzelfde
+  beschreven, met de bolletjes. Bij het wegvegen van een sessie staat dat
+  er eerst een vraag komt.
+- **Dubbele widgets** (vier eigen kopjes naast `SectionHeader`, twee
+  steppers, twee gewichtstegels, twee tekstballonnen) horen bij de
+  architectuur (B5) en worden daar samengevoegd.
+

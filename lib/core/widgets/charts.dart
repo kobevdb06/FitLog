@@ -118,7 +118,9 @@ class TrendLineChart extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 44,
+                // As wide as the numbers are at this text size: "12.500" at
+                // 1,4 did not fit in 44 (DECISIONS 293).
+                reservedSize: MediaQuery.textScalerOf(context).scale(44),
                 interval: tick,
                 getTitlesWidget: (value, meta) => Text(
                   valueLabel?.call(value) ?? Formatters.number(value),

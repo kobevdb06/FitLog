@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +11,7 @@ import '../../../core/providers/core_providers.dart';
 import '../../../core/security/key_manager.dart';
 import '../../../core/security/key_material.dart';
 import '../../../core/security/recovery_phrase.dart';
+import '../../../core/security/screen_guard.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
@@ -37,6 +40,9 @@ class _SecuritySettingsScreenState
 
   Future<void> _refresh() async {
     final status = await ref.read(keyManagerProvider).status();
+    // A PIN set or taken off here: the picture in the recent apps follows
+    // at once (DECISIONS 265).
+    unawaited(ScreenGuard.followPin(pin: status.mode == LockMode.pin));
     final available = await ref.read(biometricServiceProvider).isAvailable();
     if (!mounted) return;
     setState(() {
@@ -173,42 +179,55 @@ class _SecuritySettingsScreenState
 
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Je herstelzin'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Deze twaalf woorden zijn de enige manier om je gegevens terug '
-              'te krijgen als je je pincode vergeet of Android de sleutels '
-              'van FitLog kwijtraakt, en ze openen je back-ups. Wij kunnen ze '
-              'niet voor je opzoeken.',
+      builder: (context) => SecureScreen(
+        child: AlertDialog(
+          title: const Text('Je herstelzin'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Deze twaalf woorden zijn de enige manier om je gegevens terug '
+                'te krijgen als je je pincode vergeet of Android de sleutels '
+                'van FitLog kwijtraakt, en ze openen je back-ups. Wij kunnen ze '
+                'niet voor je opzoeken.',
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              // Not selectable: a selection copied with the system menu went
+              // on the clipboard as it was (DECISIONS 265).
+              Text(
+                recoveryWords(phrase)
+                    .asMap()
+                    .entries
+                    .map((e) => '${e.key + 1}. ${e.value}')
+                    .join('\n'),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // Marked as sensitive, and gone again after a minute
+                // (DECISIONS 265).
+                await ScreenGuard.copySecret(phrase);
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+                if (!mounted) return;
+                showSnack(
+                  this.context,
+                  'Herstelzin gekopieerd. Over een minuut is ze weer van het '
+                  'klembord.',
+                );
+              },
+              child: const Text('Kopiëren'),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            SelectableText(
-              recoveryWords(phrase)
-                  .asMap()
-                  .entries
-                  .map((e) => '${e.key + 1}. ${e.value}')
-                  .join('\n'),
-              style: Theme.of(context).textTheme.bodyMedium,
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Sluiten'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: phrase));
-              if (context.mounted) Navigator.of(context).pop();
-            },
-            child: const Text('Kopiëren'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Sluiten'),
-          ),
-        ],
       ),
     );
   }

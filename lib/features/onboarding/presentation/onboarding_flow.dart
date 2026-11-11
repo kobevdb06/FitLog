@@ -7,6 +7,7 @@ import '../../../core/app/app_controller.dart';
 import '../../../core/calc/units.dart';
 import '../../../core/db/database.dart';
 import '../../../core/security/recovery_phrase.dart';
+import '../../../core/security/screen_guard.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
@@ -575,6 +576,10 @@ class _RecoveryShowStep extends StatelessWidget {
     final theme = Theme.of(context);
     final words = recoveryWords(phrase);
 
+    return SecureScreen(child: _words(context, theme, words));
+  }
+
+  Widget _words(BuildContext context, ThemeData theme, List<String> words) {
     return Column(
       children: [
         Expanded(
@@ -640,9 +645,15 @@ class _RecoveryShowStep extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               OutlinedButton.icon(
                 onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: phrase));
+                  // Marked as sensitive, and gone again after a minute
+                  // (DECISIONS 265).
+                  await ScreenGuard.copySecret(phrase);
                   if (context.mounted) {
-                    showSnack(context, 'Herstelzin gekopieerd');
+                    showSnack(
+                      context,
+                      'Herstelzin gekopieerd. Over een minuut is ze weer '
+                      'van het klembord.',
+                    );
                   }
                 },
                 icon: const Icon(Icons.copy_all_outlined),
@@ -682,6 +693,10 @@ class _RecoveryVerifyStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    return SecureScreen(child: _check(theme));
+  }
+
+  Widget _check(ThemeData theme) {
     return Column(
       children: [
         Expanded(

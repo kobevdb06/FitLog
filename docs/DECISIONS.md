@@ -6138,3 +6138,31 @@ Uit het Fable-rapport: S9, de kleine punten.
 - **`Info.plist`** had `CFBundleDisplayName` twee keer, als *Fitlog* en
   als *FitLog*. *FitLog* blijft.
 
+## 265. De pincode en de herstelzin blijven van andermans scherm
+
+Uit het Fable-rapport: S4.
+
+- **Schermbeveiliging.** Zolang een pincodeveld of de twaalf woorden op
+  het scherm staan, zet FitLog `FLAG_SECURE` op het venster: geen
+  schermafdruk, geen schermopname, en een leeg beeld bij de recente apps.
+  Dat geldt voor het slotscherm, de onboarding, de pincode en de
+  herstelzin in Instellingen, het herstel met de twaalf woorden, en de
+  pincode van de coach in het paneel boven een andere app. Ligt er een
+  dialoog over zo'n scherm, dan laat die de beveiliging niet los als hij
+  sluit.
+- **De recente apps.** Met een pincode toont het overzicht van de recente
+  apps geen beeld van FitLog (`setRecentsScreenshotEnabled`, Android 13 en
+  later). Wat op het scherm stond toen de app naar de achtergrond ging,
+  een workout of een gewicht, bleef daar voor iedereen te zien, ook achter
+  het slot.
+- **Het klembord.** *Kopieer naar klembord* zette de twaalf woorden er
+  gewoon op, en daar bleven ze tot de volgende kopie. Andere apps en
+  toetsenborden konden ze lezen. Nu staan ze er als gevoelig gemarkeerd:
+  Android 13 en later tonen ze niet in de preview na het kopiëren. Na een
+  minuut gaan ze er weer af. In de achtergrond mag FitLog niet zien wat er
+  op het klembord staat, dus het wist wat er dan staat, ook als je
+  intussen in een andere app iets anders kopieerde. Dat verlies is kleiner
+  dan twaalf woorden die blijven liggen. De herstelzin in Instellingen is
+  niet meer selecteerbaar, want een selectie ging via het systeemmenu toch
+  nog ongemarkeerd naar het klembord. *Kopiëren* blijft bestaan: wie de
+  woorden in een wachtwoordbeheerder bewaart, heeft het nodig.

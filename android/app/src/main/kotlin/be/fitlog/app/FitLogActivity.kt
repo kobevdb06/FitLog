@@ -95,6 +95,7 @@ class FitLogActivity : FlutterFragmentActivity() {
             .setMethodCallHandler(::onGestureCall)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/phone")
             .setMethodCallHandler(::onPhoneCall)
+        ScreenGuard.attach(this, flutterEngine.dartExecutor.binaryMessenger)
         val workout = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "be.fitlog.app/workout")
         workout.setMethodCallHandler(::onWorkoutCall)
         WorkoutLiveNotice.dart = workout

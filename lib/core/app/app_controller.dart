@@ -14,6 +14,7 @@ import '../security/key_file.dart';
 import '../security/key_manager.dart';
 import '../security/key_material.dart';
 import '../security/photo_crypto.dart';
+import '../security/screen_guard.dart';
 import '../security/secret_store.dart';
 import '../../features/photos/data/photo_library.dart';
 import '../../features/photos/data/photo_store.dart';
@@ -276,6 +277,8 @@ class AppController extends _$AppController {
 
       final settings = await db.settingsDao.ensureInitialized();
       _autoLockSeconds = settings.autoLockSeconds;
+      // With a PIN, no picture of FitLog in the recent apps (DECISIONS 265).
+      unawaited(ScreenGuard.followPin(pin: security.mode == LockMode.pin));
       // The photos' key from here on: a photo the start below puts back is
       // sealed like any other (DECISIONS 257).
       PhotoKey.current = dek;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/security/screen_guard.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/feedback_service.dart';
@@ -9,6 +10,9 @@ const int kPinLength = 6;
 
 /// The six dots plus the digit pad. Used by onboarding, the lock screen and
 /// the "change PIN" flow, so there is only one PIN interaction in the app.
+///
+/// While it is on screen, the window is kept secure: no screenshots, no
+/// recording, a blank picture in the recent apps (DECISIONS 265).
 class PinPad extends StatelessWidget {
   const PinPad({
     super.key,
@@ -39,6 +43,10 @@ class PinPad extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    return SecureScreen(child: _pad(theme));
+  }
+
+  Widget _pad(ThemeData theme) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -161,7 +169,9 @@ class _Pad extends StatelessWidget {
                       )
                     : const SizedBox(height: 72),
               ),
-              Expanded(child: _PinKey(label: '0', onTap: () => onDigit('0'))),
+              Expanded(
+                child: _PinKey(label: '0', onTap: () => onDigit('0')),
+              ),
               Expanded(
                 child: _PinKey(
                   icon: Icons.backspace_outlined,

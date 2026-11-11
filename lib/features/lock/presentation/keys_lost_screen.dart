@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/common.dart';
 import 'start_over.dart';
+import '../../../core/security/screen_guard.dart';
 
 /// The keys are gone, or Android will not hand them over, while the data is
 /// still on this device. The twelve words open it again (DECISIONS 241).
@@ -62,100 +63,103 @@ class _KeysLostScreenState extends ConsumerState<KeysLostScreen> {
     final unreadable = state is AppNeedsRecovery && state.unreadable;
     final canUsePhrase = state is! AppNeedsRecovery || state.canUsePhrase;
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: [
-            const SizedBox(height: AppSpacing.xl),
-            Icon(
-              Icons.key_off_outlined,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              unreadable
-                  ? 'Android geeft je sleutel niet vrij'
-                  : 'Je sleutel is weg, je gegevens niet',
-              style: theme.textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              unreadable
-                  ? 'Je gegevens staan nog op dit toestel, maar Android kan '
-                        'de sleutel ervan nu niet lezen. Probeer het opnieuw, '
-                        'of open ze met je herstelzin van twaalf woorden.'
-                  : 'Android heeft de sleutels van FitLog gewist, maar je '
-                        'gegevens staan nog op dit toestel. Met je herstelzin '
-                        'van twaalf woorden open je ze weer.',
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            if (canUsePhrase) ...[
-              TextField(
-                controller: _controller,
-                maxLines: 3,
-                autocorrect: false,
-                enableSuggestions: false,
-                textCapitalization: TextCapitalization.none,
-                decoration: const InputDecoration(
-                  labelText: 'Herstelzin',
-                  hintText: 'woord1 woord2 woord3 ...',
-                ),
-                onChanged: (_) {
-                  if (_error != null) setState(() => _error = null);
-                },
+    return SecureScreen(
+      child: Scaffold(
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              const SizedBox(height: AppSpacing.xl),
+              Icon(
+                Icons.key_off_outlined,
+                size: 48,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              if (_error != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                unreadable
+                    ? 'Android geeft je sleutel niet vrij'
+                    : 'Je sleutel is weg, je gegevens niet',
+                style: theme.textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                unreadable
+                    ? 'Je gegevens staan nog op dit toestel, maar Android kan '
+                          'de sleutel ervan nu niet lezen. Probeer het opnieuw, '
+                          'of open ze met je herstelzin van twaalf woorden.'
+                    : 'Android heeft de sleutels van FitLog gewist, maar je '
+                          'gegevens staan nog op dit toestel. Met je herstelzin '
+                          'van twaalf woorden open je ze weer.',
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              if (canUsePhrase) ...[
+                TextField(
+                  controller: _controller,
+                  maxLines: 3,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textCapitalization: TextCapitalization.none,
+                  decoration: const InputDecoration(
+                    labelText: 'Herstelzin',
+                    hintText: 'woord1 woord2 woord3 ...',
+                  ),
+                  onChanged: (_) {
+                    if (_error != null) setState(() => _error = null);
+                  },
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  InfoBanner(
+                    message: _error!,
+                    icon: Icons.error_outline,
+                    color: theme.colorScheme.error,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton(
+                  onPressed: _busy ? null : _open,
+                  child: Text(_busy ? 'Bezig...' : 'Openen met herstelzin'),
+                ),
                 const SizedBox(height: AppSpacing.md),
-                InfoBanner(
-                  message: _error!,
-                  icon: Icons.error_outline,
-                  color: theme.colorScheme.error,
+                const InfoBanner(
+                  message:
+                      'Daarna staat er geen pincode op FitLog. Stel er opnieuw '
+                      'een in bij Profiel, Beveiliging.',
+                ),
+              ] else
+                const InfoBanner(
+                  icon: Icons.info_outline,
+                  message:
+                      'Op dit toestel staat geen kopie van de sleutel die je '
+                      'herstelzin kan openen. Heb je een back-up (een '
+                      '.fitlog-bestand), begin dan opnieuw en zet ze terug bij '
+                      'Profiel, Back-up.',
+                ),
+              if (unreadable) ...[
+                const SizedBox(height: AppSpacing.md),
+                OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => ref
+                            .read(appControllerProvider.notifier)
+                            .initialise(),
+                  child: const Text('Opnieuw proberen'),
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
-              FilledButton(
-                onPressed: _busy ? null : _open,
-                child: Text(_busy ? 'Bezig...' : 'Openen met herstelzin'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const InfoBanner(
-                message:
-                    'Daarna staat er geen pincode op FitLog. Stel er opnieuw '
-                    'een in bij Profiel, Beveiliging.',
-              ),
-            ] else
-              const InfoBanner(
-                icon: Icons.info_outline,
-                message:
-                    'Op dit toestel staat geen kopie van de sleutel die je '
-                    'herstelzin kan openen. Heb je een back-up (een '
-                    '.fitlog-bestand), begin dan opnieuw en zet ze terug bij '
-                    'Profiel, Back-up.',
-              ),
-            if (unreadable) ...[
-              const SizedBox(height: AppSpacing.md),
-              OutlinedButton(
-                onPressed: _busy
-                    ? null
-                    : () =>
-                          ref.read(appControllerProvider.notifier).initialise(),
-                child: const Text('Opnieuw proberen'),
+              TextButton(
+                onPressed: _busy ? null : () => confirmStartOver(context, ref),
+                child: const Text(
+                  'Opnieuw beginnen',
+                  style: TextStyle(color: AppColors.danger),
+                ),
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
-            TextButton(
-              onPressed: _busy ? null : () => confirmStartOver(context, ref),
-              child: const Text(
-                'Opnieuw beginnen',
-                style: TextStyle(color: AppColors.danger),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

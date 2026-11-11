@@ -33,6 +33,8 @@ class WorkoutPanelActivity : FlutterFragmentActivity() {
         channel.setMethodCallHandler(::onPanelCall)
         panel = channel
         current = channel
+        // The coach's PIN pad is here too (DECISIONS 265).
+        ScreenGuard.attach(this, flutterEngine.dartExecutor.binaryMessenger)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {

@@ -8,6 +8,32 @@ void main() {
 
   const manifest = 'android/app/src/main/AndroidManifest.xml';
 
+  test('no link from outside opens a screen of its own', () {
+    // Recent Flutter versions follow deep links unless told not to. FitLog
+    // has none, and a link that lands on a route skips nothing the router
+    // does not guard (DECISIONS 264).
+    final xml = read(manifest);
+    final meta = RegExp(
+      r'<meta-data\s+android:name="flutter_deeplinking_enabled"\s+'
+      r'android:value="false"\s*/>',
+    );
+    expect(meta.hasMatch(xml), isTrue);
+  });
+
+  test('a fingerprint or a face, not the code of the phone', () {
+    // Settings says "met je vingerafdruk of gezicht": the phone's screen
+    // code, which more people know, did as well (DECISIONS 264).
+    final source = read('lib/core/security/biometric_service.dart');
+    expect(source, contains('biometricOnly: true'));
+    expect(source, isNot(contains('biometricOnly: false')));
+  });
+
+  test('the app has one name on an iPhone too', () {
+    final plist = read('ios/Runner/Info.plist');
+    expect('CFBundleDisplayName'.allMatches(plist), hasLength(1));
+    expect(plist, contains('<string>FitLog</string>'));
+  });
+
   test('no exact alarms by right: that is for alarm clocks and calendars', () {
     // USE_EXACT_ALARM is granted at install and Play keeps it for apps whose
     // core is an alarm or a calendar. A rest timer is neither, so the user

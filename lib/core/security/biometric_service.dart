@@ -37,7 +37,9 @@ class BiometricService {
     try {
       return await _auth.authenticate(
         localizedReason: reason,
-        biometricOnly: false,
+        // A fingerprint or a face, as Settings says: the phone's own screen
+        // code, which more people know, opened it as well (DECISIONS 264).
+        biometricOnly: true,
         // The prompt stays up when the system briefly backgrounds the app.
         persistAcrossBackgrounding: true,
       );

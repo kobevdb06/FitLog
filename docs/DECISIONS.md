@@ -6115,3 +6115,26 @@ vingerafdruk per set. Zonder pincode blijft afvinken vanaf het slot zoals
 het was. Wat de melding toont, verandert niet: een lopende workout is
 geen geheim op de plek waar je traint.
 
+## 264. Biometrie zonder schermcode, geen deep links, en wat niet in git hoort
+
+Uit het Fable-rapport: S9, de kleine punten.
+
+- **Biometrie** liet ook de schermcode van de telefoon toe
+  (`biometricOnly: false`). Instellingen zegt *met je vingerafdruk of
+  gezicht*, en de schermcode kennen meer mensen. Nu telt alleen een
+  vingerafdruk of een gezicht. Wie geen van beide heeft ingesteld, kan de
+  schakelaar al niet aanzetten.
+- **Deep links.** Recente Flutter-versies volgen links van buitenaf, tenzij
+  het manifest dat uitzet. FitLog heeft er geen. De router bewaakt slot en
+  onboarding, dus de schade was klein, maar een deur die niemand gebruikt,
+  gaat dicht (`flutter_deeplinking_enabled = false`).
+- **`released.apk`** (93 MB) stond sinds 13 september per vergissing in
+  git, met een commit over documentatie. Het bestand is uit git gehaald,
+  niet van de schijf. In de geschiedenis blijft het staan: die herschrijven
+  vraagt een force-push, en dat is de keuze van de eigenaar. `.gitignore`
+  negeert nu `/*.apk` en `*.hprof`. Een heap-dump van Gradle kan de
+  wachtwoorden van de handtekeningsleutel bevatten. `signing_test`
+  controleert ook `.hprof`, `.apk` en `.aab`.
+- **`Info.plist`** had `CFBundleDisplayName` twee keer, als *Fitlog* en
+  als *FitLog*. *FitLog* blijft.
+

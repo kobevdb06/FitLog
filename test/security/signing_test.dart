@@ -24,6 +24,15 @@ void main() {
     expect(ignore, contains('android/key.properties'));
   });
 
+  test('and what a build leaves behind: a heap dump, an APK', () {
+    // Gradle writes a heap dump when it runs out of memory, and that can
+    // hold the passwords it had read. An APK in the root is a build to
+    // hand out, not source: one of 93 MB went in by mistake (DECISIONS
+    // 264).
+    expect(ignore, contains('*.hprof'));
+    expect(ignore, contains('/*.apk'));
+  });
+
   test('but the example that holds none is not', () {
     expect(ignore, contains('!**/android/key.properties.example'));
     expect(File('android/key.properties.example').existsSync(), isTrue);
@@ -55,7 +64,10 @@ void main() {
           (path) =>
               path.endsWith('.jks') ||
               path.endsWith('.keystore') ||
-              path.endsWith('key.properties'),
+              path.endsWith('key.properties') ||
+              path.endsWith('.hprof') ||
+              path.endsWith('.apk') ||
+              path.endsWith('.aab'),
         );
     expect(offenders, isEmpty);
   });

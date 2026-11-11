@@ -70,3 +70,8 @@ app.*.map.json
 
 # Built APKs staged for a release upload; never in the repository.
 dist/
+
+# A heap dump from Gradle can hold the signing passwords it had read, and
+# an APK in the root is a build to hand out, not source (DECISIONS 264).
+*.hprof
+/*.apk

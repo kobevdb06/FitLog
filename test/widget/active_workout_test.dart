@@ -126,6 +126,72 @@ void main() {
     expect(find.text('REPS'), findsOneWidget);
   });
 
+  group('een set wegvegen (DECISIONS 280)', () {
+    // The row lies next to the cells you tap and scroll all the time, and a
+    // swipe took it at once: no question, no way back.
+    testWidgets('kan ongedaan gemaakt worden, op dezelfde plek', (
+      tester,
+    ) async {
+      final detail = await db.workoutsDao.getWorkoutDetail(workoutId);
+      final exercise = detail!.exercises.single.workoutExercise.id;
+      await db.workoutsDao.addSet(exercise, weightKg: 105, reps: 5);
+      await pumpScreen(tester);
+      expect(find.byType(SetRow), findsNWidgets(2));
+
+      await tester.drag(find.byType(SetRow).first, const Offset(-600, 0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(SetRow), findsOneWidget);
+      expect(find.text('Set verwijderd'), findsOneWidget);
+      // The bar slides in first.
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      await tester.tap(find.text('Ongedaan maken'));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      expect(find.byType(SetRow), findsNWidgets(2));
+
+      final sets = (await db.workoutsDao.getWorkoutDetail(workoutId))!
+          .exercises
+          .single
+          .sets;
+      expect(sets, hasLength(2));
+      expect(sets.first.weightKg, 100, reason: 'back in its own place');
+      expect(sets.map((s) => s.sortOrder), [0, 1]);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('en ook zonder vegen, in het venster van het settype', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+
+      await tester.tap(find.text('1').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Set verwijderen'), findsOneWidget);
+
+      await tester.tap(find.text('Set verwijderen'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        (await db.workoutsDao.getWorkoutDetail(workoutId))!
+            .exercises
+            .single
+            .sets,
+        isEmpty,
+      );
+      expect(find.text('Set verwijderd'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    });
+  });
+
   testWidgets('the card has the picture before the name, in plain text', (
     tester,
   ) async {

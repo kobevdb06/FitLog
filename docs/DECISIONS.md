@@ -6418,3 +6418,20 @@ staat de nieuwe schakelaar *Ook tijdens een workout*. Standaard staat
 die uit, zoals Kobe vroeg. Wie wil dat FitLog ook dan vergrendelt, zet
 hem aan. Daarvoor kwam er een kolom bij in de instellingen
 (`lock_during_workout`, schema 64). Die stap telt alleen op.
+
+## 280. Een weggeveegde set komt terug met *Ongedaan maken*
+
+Uit het Fable-rapport: T5.
+
+Een set verdween meteen als je hem naar links veegde, zonder vraag en
+zonder weg terug. De rij ligt naast de cellen waar je de hele tijd in
+tikt en scrolt. De geschiedenis vroeg bij dezelfde actie wel eerst.
+
+Nu verschijnt na het vegen *Set verwijderd* met *Ongedaan maken*, zoals
+bij het verwijderen van een workout. Ongedaan maken zet de set terug op
+zijn eigen plek, met alles wat hij telde (`restoreSet`). Ook zijn record
+telt dan weer mee. Wie liever niet veegt: het venster van het settype
+(tik op het nummer van de set) heeft nu onderaan *Set verwijderen*. Het
+vegen zelf blijft zonder vraag. Een vraag bij elke set zou het afvinken
+trager maken dan het verlies dat ze voorkomt, en *Ongedaan maken* dekt
+dat al.

@@ -1031,9 +1031,8 @@ class _ExerciseCard extends ConsumerWidget {
                       _previousFor(previousBySide[labels[i].side], labels[i]),
                       columns,
                     ),
-                    onDelete: () => ref
-                        .read(workoutControllerProvider)
-                        .deleteSet(detail.sets[i].id),
+                    onDelete: () =>
+                        deleteSetWithUndo(context, ref, detail.sets[i].id),
                     onSetType: (type) => ref
                         .read(workoutControllerProvider)
                         .setSetType(detail.sets[i].id, type),
@@ -1993,7 +1992,11 @@ class SetRow extends StatelessWidget {
   final ValueChanged<SetType> onSetType;
 
   Future<void> _chooseType(BuildContext context, SetType current) async {
-    final type = await pickSetType(context, current: current);
+    final type = await pickSetType(
+      context,
+      current: current,
+      onDelete: onDelete,
+    );
     if (type != null && type != current) onSetType(type);
   }
 
@@ -2251,4 +2254,28 @@ class _CheckBox extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Deletes the set, and offers it back for a few seconds: a swipe next to
+/// the cells you tap all the time took it at once (DECISIONS 280).
+Future<void> deleteSetWithUndo(
+  BuildContext context,
+  WidgetRef ref,
+  String setId,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final controller = ref.read(workoutControllerProvider);
+  final removed = await controller.deleteSet(setId);
+  if (removed == null) return;
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: const Text('Set verwijderd'),
+        action: SnackBarAction(
+          label: 'Ongedaan maken',
+          onPressed: () => unawaited(controller.restoreSet(removed)),
+        ),
+      ),
+    );
 }

@@ -835,9 +835,11 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  Future<void> deleteSet(String setId) async {
+  /// Deletes the set and closes the gap after it. Returns what it was, so
+  /// it can be put back ([restoreSet]).
+  Future<WorkoutSetRow?> deleteSet(String setId) async {
     final row = await getSet(setId);
-    if (row == null) return;
+    if (row == null) return null;
     await transaction(() async {
       await (delete(workoutSetsTable)..where((t) => t.id.equals(setId))).go();
       final remaining =
@@ -857,7 +859,32 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
         }
       });
     });
+    return row;
   }
+
+  /// A set swiped away, back in its own place: the sets from there on move
+  /// up one (DECISIONS 280). Nothing when its exercise is gone by now.
+  Future<void> restoreSet(WorkoutSetRow row) => transaction(() async {
+    final exercise = await (select(
+      workoutExercisesTable,
+    )..where((t) => t.id.equals(row.workoutExerciseId))).getSingleOrNull();
+    if (exercise == null) return;
+    final after =
+        await (select(workoutSetsTable)
+              ..where(
+                (t) =>
+                    t.workoutExerciseId.equals(row.workoutExerciseId) &
+                    t.sortOrder.isBiggerOrEqualValue(row.sortOrder),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.sortOrder)]))
+            .get();
+    for (final set in after) {
+      await (update(workoutSetsTable)..where((t) => t.id.equals(set.id))).write(
+        WorkoutSetsTableCompanion(sortOrder: Value(set.sortOrder + 1)),
+      );
+    }
+    await into(workoutSetsTable).insert(row, mode: InsertMode.insertOrIgnore);
+  });
 
   // --- Previous performance -------------------------------------------------
 

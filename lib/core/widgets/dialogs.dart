@@ -458,7 +458,13 @@ void showSnack(BuildContext context, String message, {bool isError = false}) {
 ///
 /// Reached by tapping the set number, which is the primary route, and by
 /// long-pressing it, which keeps working for people who learned that first.
-Future<SetType?> pickSetType(BuildContext context, {required SetType current}) {
+/// With [onDelete], the sheet also has a way to delete the set: without a
+/// swipe, which goes too easily next to the cells you tap (DECISIONS 280).
+Future<SetType?> pickSetType(
+  BuildContext context, {
+  required SetType current,
+  VoidCallback? onDelete,
+}) {
   return showAppSheet<SetType>(
     context: context,
     title: 'Type set',
@@ -483,6 +489,23 @@ Future<SetType?> pickSetType(BuildContext context, {required SetType current}) {
             selected: type == current,
             onTap: () => Navigator.of(context).pop(type),
           ),
+        if (onDelete != null) ...[
+          const Divider(height: 1),
+          ListTile(
+            leading: const SizedBox(
+              width: 28,
+              child: Icon(Icons.delete_outline, color: AppColors.danger),
+            ),
+            title: const Text(
+              'Set verwijderen',
+              style: TextStyle(color: AppColors.danger),
+            ),
+            onTap: () {
+              Navigator.of(context).pop();
+              onDelete();
+            },
+          ),
+        ],
       ],
     ),
   );

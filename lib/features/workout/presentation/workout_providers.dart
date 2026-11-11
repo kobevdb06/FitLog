@@ -349,14 +349,27 @@ class WorkoutController {
       .workoutsDao
       .addSet(workoutExerciseId, setType: setType ?? SetType.normal);
 
-  Future<void> deleteSet(String setId) async {
+  /// Returns the set as it was, for [restoreSet].
+  Future<WorkoutSetRow?> deleteSet(String setId) async {
     final row = await _db.workoutsDao.getSet(setId);
     final exercise = row != null && row.isCompleted
         ? await _db.workoutsDao.exerciseOfSet(setId)
         : null;
-    await _db.workoutsDao.deleteSet(setId);
+    final deleted = await _db.workoutsDao.deleteSet(setId);
     await _recalculate();
     // 1000 kg typed by mistake and swiped away stayed the record.
+    await _rebuildRecords([?exercise]);
+    return deleted;
+  }
+
+  /// "Ongedaan maken" after a swipe: the set back where it was, and what it
+  /// counted for counted again (DECISIONS 280).
+  Future<void> restoreSet(WorkoutSetRow row) async {
+    await _db.workoutsDao.restoreSet(row);
+    final exercise = row.isCompleted
+        ? await _db.workoutsDao.exerciseOfSet(row.id)
+        : null;
+    await _recalculate();
     await _rebuildRecords([?exercise]);
   }
 

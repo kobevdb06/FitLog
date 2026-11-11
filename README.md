@@ -339,7 +339,8 @@ van een database die op je eigen toestel versleuteld staat.
 
 Auto-vergrendelen is instelbaar op meteen, 1, 5 of 15 minuten, of nooit. De
 teller loopt vanaf het moment dat de app naar de achtergrond gaat. **Tijdens een
-lopende workout vergrendelt de app nooit.**
+lopende workout vergrendelt de app niet**, tenzij je *Ook tijdens een workout*
+aanzet bij Beveiliging.
 
 ## Back-up
 

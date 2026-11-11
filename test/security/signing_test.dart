@@ -103,6 +103,16 @@ void main() {
     expect(text, contains('never to hand out'));
   });
 
+  test('without the release key, a release build stops, unless asked', () {
+    // It fell back to the debug key without a sound but a line in the log:
+    // exactly what a build in a worktree did (DECISIONS 298).
+    final text = gradle.replaceAll('\r\n', '\n');
+    expect(text, contains('allow-debug-signing'));
+    expect(text, contains('requireReleaseKey'));
+    expect(text, contains('preReleaseBuild'));
+    expect(text, contains('GradleException'));
+  });
+
   test('the key is read from a file, not written in the build', () {
     expect(gradle, contains('key.properties'));
     for (final secret in ['storePassword = "', 'keyPassword = "']) {

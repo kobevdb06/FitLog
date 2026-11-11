@@ -8,6 +8,27 @@ val keystoreProperties = Properties().apply {
 }
 val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
 
+// Without the release key a release build stops, unless you ask for one signed
+// with the debug key: -Pallow-debug-signing=true. It fell back to the debug key
+// with only a line in the log, which is exactly what a build in a worktree did
+// - and an APK signed with it must never reach anyone (DECISIONS 298).
+val allowDebugSigning = project.findProperty("allow-debug-signing") == "true"
+val requireReleaseKey = tasks.register("requireReleaseKey") {
+    doLast {
+        if (!hasReleaseKey && !allowDebugSigning) {
+            throw GradleException(
+                "FitLog: no android/key.properties, so no release key. A release " +
+                    "build signed with the debug key is never to hand out; to build " +
+                    "one anyway, for yourself, pass -Pallow-debug-signing=true. " +
+                    "See android/key.properties.example."
+            )
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(requireReleaseKey)
+}
+
 // The processors an APK is built for, from Flutter's --target-platform. Flutter
 // leaves its own code for the others out, but the libraries other packages
 // bring - the QR scanner's model, sqlcipher - came along for every processor:
@@ -85,11 +106,15 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             } else {
                 signingConfig = signingConfigs.getByName("debug")
-                println("")
-                println("  !! FitLog: no android/key.properties. This release APK is signed")
-                println("     with the debug key: fine to run, never to hand out.")
-                println("     See android/key.properties.example.")
-                println("")
+                // Said when it is asked for; without the flag the build stops
+                // anyway (requireReleaseKey).
+                if (allowDebugSigning) {
+                    println("")
+                    println("  !! FitLog: no android/key.properties. This release APK is signed")
+                    println("     with the debug key: fine to run, never to hand out.")
+                    println("     See android/key.properties.example.")
+                    println("")
+                }
             }
             isMinifyEnabled = false
             isShrinkResources = false
@@ -98,7 +123,8 @@ android {
 
     packaging {
         jniLibs {
-            // sqlcipher_flutter_libs ships prebuilt .so files that must not be stripped.
+            // The SQLCipher build that sqlite3 brings ships prebuilt .so files that
+            // must not be stripped.
             useLegacyPackaging = false
             if (targetAbis.isNotEmpty()) {
                 excludes += allAbis.filterNot { it in targetAbis }.map { "lib/$it/**" }

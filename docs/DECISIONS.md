@@ -6727,3 +6727,19 @@ iOS-build, en die draaide geen tests. Nu draait `.github/workflows/ci.yml`
 beide bij elke push naar `main`, bij elke pull request en met de hand.
 De tests draaien in de tijdzone `Europe/Brussels`. Sommige vallen alleen
 om in een zone met zomertijd (268), en daar draait de app ook.
+
+## 298. Zonder de releasesleutel stopt een releasebuild
+
+Uit het Fable-rapport: B3.
+
+Zonder `android/key.properties` viel een releasebuild terug op de
+debugsleutel. Het enige teken was een regel in het log, en dat is precies
+wat een build in een worktree overkwam. Een APK die zo getekend is, mag
+nooit iemand bereiken: die sleutel is openbaar, en Android laat alles wat
+ermee getekend is de app vervangen, met de versleutelde database erbij.
+
+Nu stopt de build met een duidelijke melding (`requireReleaseKey`, vóór
+`preReleaseBuild`). Wie er voor zichzelf toch een wil, geeft
+`-Pallow-debug-signing=true` mee, en krijgt dan de waarschuwing zoals
+vroeger. In een worktree zonder sleutel stopte een releasebuild zo, met de
+melding. In de gewone map, met de sleutel, gaat ze door zoals altijd.

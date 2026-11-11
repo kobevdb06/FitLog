@@ -14,6 +14,7 @@
 library;
 
 import '../db/enums.dart';
+import 'rpe.dart';
 
 /// How much of a set's load a secondary muscle takes.
 ///
@@ -44,7 +45,7 @@ const double kMaxLoadRatio = 1.5;
 /// Deliberately small. An RPE is one person's impression of one set, given
 /// while out of breath; it deserves a nudge, not a verdict. Two full points
 /// above a normal day - every set at 10 - stretches the estimate by a tenth,
-/// which is about three hours on a leg day.
+/// which is about seven hours on a leg day of 72.
 const double kNeutralRpe = 8;
 const double kRpeHoursPerPoint = 0.05;
 
@@ -1176,7 +1177,9 @@ class _Accumulator {
     exerciseIds.add(exerciseId);
     hadFailureSets |= failure;
     wasPrAttempt |= prAttempt;
-    if (rpe != null && load > 0) {
+    // Below 6 the scale says nothing (rpe.dart), and one such set outweighed
+    // the rating of the whole session (DECISIONS 277).
+    if (rpe != null && rpe >= kMinUsableRpe && load > 0) {
       rpeWeighted += rpe * load;
       rpeLoad += load;
     }

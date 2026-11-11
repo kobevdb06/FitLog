@@ -197,11 +197,13 @@ void main() {
     test('the heavier set weighs more in the average', () {
       final session = muscleSessions([
         lift(muscle: 'borst', weightKg: 100, reps: 5, rpe: 10),
-        lift(muscle: 'borst', weightKg: 20, reps: 5, rpe: 5),
+        lift(muscle: 'borst', weightKg: 20, reps: 5, rpe: 6),
       ]).single;
 
-      // A flat average would be 7,5; the heavy set is five times the load.
-      expect(session.averageRpe, closeTo(9.17, 0.01));
+      // A flat average would be 8; the heavy set is five times the load.
+      // At 6, the lowest that still counts: under it, a set says nothing
+      // (DECISIONS 277).
+      expect(session.averageRpe, closeTo(9.33, 0.01));
     });
 
     test('sets you did not score are left out, not counted as zero', () {

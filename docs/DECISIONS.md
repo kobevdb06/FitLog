@@ -6374,3 +6374,15 @@ Uit het Fable-rapport: F8.
   aanvaardden *NaN* en *Infinity*. Beide nemen nu alleen eindige getallen
   aan, en anders niets.
 
+## 277. Een RPE onder 6 zegt niets over je herstel
+
+Uit het Fable-rapport: F8.
+
+`rpe.dart` noemt een RPE onder 6 betekenisloos: niemand voelt het
+verschil tussen vier en zes herhalingen over. Het herstel gebruikte ze
+toch. Eén set op RPE 5 haalde *Alles gegeven* van de hele sessie onderuit,
+want de RPE wint van je beoordeling achteraf. Nu telt een RPE onder 6 niet
+mee. Zijn er alleen zulke sets, dan beslist je beoordeling. Het
+commentaar bij de RPE zei dat twee punten boven normaal *ongeveer drie
+uur* scheelt op een beendag. Dat is 7,2 uur, en dat staat er nu.
+

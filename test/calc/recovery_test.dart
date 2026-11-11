@@ -19,11 +19,13 @@ void main() {
     double? weightKg = 100,
     int? reps = 5,
     String name = '',
+    double? rpe,
   }) => RecoverySet(
     workoutId: workoutId,
     startedAt: at ?? monday,
     exerciseId: exerciseId,
     exerciseName: name,
+    rpe: rpe,
     primaryMuscle: primary,
     secondaryMuscles: secondary,
     category: category,
@@ -141,6 +143,21 @@ void main() {
 
     test('is nothing for work without reps', () {
       expect(setLoadKg(set(category: ExerciseCategory.cardio, reps: null)), 0);
+    });
+  });
+
+  group('een RPE onder 6', () {
+    test('zegt niets, en laat "Alles gegeven" staan', () {
+      // The scale stops meaning anything below 6 (rpe.dart); one set at 5
+      // still overrode the rating of the whole session (DECISIONS 277).
+      final low = muscleSessions([set(rpe: 5)]).single;
+      expect(low.averageRpe, isNull);
+
+      final mixed = muscleSessions([
+        set(rpe: 5, weightKg: 100),
+        set(rpe: 9, weightKg: 100),
+      ]).single;
+      expect(mixed.averageRpe, 9);
     });
   });
 

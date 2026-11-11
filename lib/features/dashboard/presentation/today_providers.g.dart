@@ -373,7 +373,7 @@ final class PlanTodayProvider
   }
 }
 
-String _$planTodayHash() => r'9c37fbdf728c7e399cbe6b54eb6f6983b6ecc06d';
+String _$planTodayHash() => r'a6be085570b5cd5689b2fc51eb0540d890968baa';
 
 /// The three of them read as one answer.
 ///
@@ -431,4 +431,4 @@ final class TodayPlanProvider
   }
 }
 
-String _$todayPlanHash() => r'91c8a255b2e2c957e9132edd023953d66f32e03b';
+String _$todayPlanHash() => r'66df42045900a57ee00783b95612a8602da9b2e5';

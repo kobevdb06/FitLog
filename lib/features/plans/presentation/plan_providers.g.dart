@@ -365,7 +365,7 @@ final class PlanThisWeekProvider
   }
 }
 
-String _$planThisWeekHash() => r'227673dcb577ddf2df42ea25fefd03a7a1a289d2';
+String _$planThisWeekHash() => r'70aa413f2bdbc209c66761e7f724551546d7c303';
 
 /// How the current week of [planId] stands: its sessions in order, and
 /// which were done this week, on any day.
@@ -454,7 +454,7 @@ final class PlanWeekStandingProvider
   }
 }
 
-String _$planWeekStandingHash() => r'63d2ebaf27abb94d2fcfe13d2b77bfb223b0b184';
+String _$planWeekStandingHash() => r'497c84367f277c9f25f45a3f5e1ab164be3b4595';
 
 /// How [week] of [planId] stands: its sessions in order, and which were
 /// done in it, on any day. Nothing done before the schema began.

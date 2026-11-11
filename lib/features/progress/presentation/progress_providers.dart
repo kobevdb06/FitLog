@@ -8,6 +8,7 @@ import '../../../core/calc/progress_period.dart';
 import '../../../core/calc/streak.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../history/presentation/history_providers.dart';
 import '../data/plateau_loader.dart';
 
@@ -61,6 +62,7 @@ List<TrainingBucket> _sumPerBucket(
 /// Volume, workouts and sets per calendar week, oldest bucket first.
 @riverpod
 Stream<List<TrainingBucket>> weeklyBuckets(Ref ref, {int weeks = 8}) {
+  ref.watch(currentDayProvider);
   final db = ref.watch(databaseProvider);
   final now = DateTime.now();
   final thisWeek = startOfWeek(now);
@@ -111,6 +113,7 @@ class TrainingMeasureChoice extends _$TrainingMeasureChoice {
 /// Volume, workouts and sets per bar of [period], oldest first.
 @riverpod
 Stream<List<TrainingBucket>> trainingBuckets(Ref ref, ProgressPeriod period) {
+  ref.watch(currentDayProvider);
   final db = ref.watch(databaseProvider);
   final now = DateTime.now();
   final starts = period.bucketStarts(now);
@@ -133,6 +136,7 @@ class MainLift {
 /// A stream: the session you just finished is the newest point of the line.
 @riverpod
 Stream<List<MainLift>> mainLifts(Ref ref, ProgressPeriod period) {
+  ref.watch(currentDayProvider);
   final db = ref.watch(databaseProvider);
   return db.workoutsDao
       .watchProgressSets(since: period.start(DateTime.now()))
@@ -163,6 +167,7 @@ Stream<List<MainLift>> mainLifts(Ref ref, ProgressPeriod period) {
 /// as long before it.
 @riverpod
 Stream<List<MuscleSets>> muscleSets(Ref ref, ProgressPeriod period) {
+  ref.watch(currentDayProvider);
   final db = ref.watch(databaseProvider);
   final now = DateTime.now();
   final start = period.start(now);
@@ -176,6 +181,7 @@ Stream<List<MuscleSets>> muscleSets(Ref ref, ProgressPeriod period) {
 /// The current training streak.
 @riverpod
 Future<StreakResult> streak(Ref ref) async {
+  ref.watch(currentDayProvider);
   final dates = await ref.watch(finishedWorkoutDatesProvider.future);
   return computeStreak(dates);
 }
@@ -183,6 +189,7 @@ Future<StreakResult> streak(Ref ref) async {
 /// This calendar week in numbers.
 @riverpod
 Stream<WeekStats> thisWeekStats(Ref ref) {
+  ref.watch(currentDayProvider);
   final from = startOfWeek(DateTime.now());
   return ref
       .watch(databaseProvider)
@@ -226,6 +233,7 @@ Stream<List<RecordWithExercise>> latestRecords(Ref ref, {int limit = 3}) =>
 /// A stream: finishing a workout can end a plateau as easily as start one.
 @riverpod
 Stream<List<ExercisePlateau>> plateaus(Ref ref) {
+  ref.watch(currentDayProvider);
   final db = ref.watch(databaseProvider);
   return db.workoutsDao
       .watchProgressSets(since: DateTime.now().subtract(kPlateauLookback))

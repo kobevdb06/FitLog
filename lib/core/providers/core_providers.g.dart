@@ -8,6 +8,87 @@ part of 'core_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The training day it is - from four in the morning to four the next -
+/// for what shows "today" or "this week".
+///
+/// "Now" was read once, when such a provider was built: left open on
+/// Sunday evening, the card on Monday morning still said "week klaar" with
+/// last week's numbers. They watch this now, and it turns when the app
+/// comes back and at four (DECISIONS 282).
+
+@ProviderFor(CurrentDay)
+final currentDayProvider = CurrentDayProvider._();
+
+/// The training day it is - from four in the morning to four the next -
+/// for what shows "today" or "this week".
+///
+/// "Now" was read once, when such a provider was built: left open on
+/// Sunday evening, the card on Monday morning still said "week klaar" with
+/// last week's numbers. They watch this now, and it turns when the app
+/// comes back and at four (DECISIONS 282).
+final class CurrentDayProvider extends $NotifierProvider<CurrentDay, DateTime> {
+  /// The training day it is - from four in the morning to four the next -
+  /// for what shows "today" or "this week".
+  ///
+  /// "Now" was read once, when such a provider was built: left open on
+  /// Sunday evening, the card on Monday morning still said "week klaar" with
+  /// last week's numbers. They watch this now, and it turns when the app
+  /// comes back and at four (DECISIONS 282).
+  CurrentDayProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentDayProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentDayHash();
+
+  @$internal
+  @override
+  CurrentDay create() => CurrentDay();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DateTime value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DateTime>(value),
+    );
+  }
+}
+
+String _$currentDayHash() => r'4950afd324f9e2cee574e617067c8258885e6fc5';
+
+/// The training day it is - from four in the morning to four the next -
+/// for what shows "today" or "this week".
+///
+/// "Now" was read once, when such a provider was built: left open on
+/// Sunday evening, the card on Monday morning still said "week klaar" with
+/// last week's numbers. They watch this now, and it turns when the app
+/// comes back and at four (DECISIONS 282).
+
+abstract class _$CurrentDay extends $Notifier<DateTime> {
+  DateTime build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<DateTime, DateTime>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<DateTime, DateTime>,
+              DateTime,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// The one settings row, as a stream so every screen reacts to a unit change.
 
 @ProviderFor(settings)

@@ -82,6 +82,7 @@ Stream<List<RoutineRow>> favouriteRoutines(Ref ref) => ref
 /// week: what the top of the ladder offers.
 @riverpod
 PlanToday? planToday(Ref ref) {
+  ref.watch(currentDayProvider);
   final plan = ref.watch(runningPlanProvider).value;
   if (plan == null) return null;
   final now = DateTime.now();
@@ -105,10 +106,13 @@ PlanToday? planToday(Ref ref) {
 /// states while they do, so a part that is still loading counts as empty and
 /// the ladder simply falls through to the rung below until it lands.
 @riverpod
-TodayPlan todayPlan(Ref ref) => buildTodayPlan(
-  scheduled: ref.watch(scheduledRoutinesProvider).value ?? const [],
-  favourites: ref.watch(favouriteRoutinesProvider).value ?? const [],
-  suggested: ref.watch(suggestedRoutineProvider).value,
-  now: DateTime.now(),
-  schema: ref.watch(planTodayProvider),
-);
+TodayPlan todayPlan(Ref ref) {
+  ref.watch(currentDayProvider);
+  return buildTodayPlan(
+    scheduled: ref.watch(scheduledRoutinesProvider).value ?? const [],
+    favourites: ref.watch(favouriteRoutinesProvider).value ?? const [],
+    suggested: ref.watch(suggestedRoutineProvider).value,
+    now: DateTime.now(),
+    schema: ref.watch(planTodayProvider),
+  );
+}

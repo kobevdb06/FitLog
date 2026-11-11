@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/calc/plan_weeks.dart';
 import '../../../core/db/database.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../chat/domain/coach_proposal.dart';
 
 part 'plan_providers.g.dart';
@@ -35,6 +36,7 @@ Stream<List<ChatThreadRow>> planThreads(Ref ref) =>
 /// which were done this week, on any day.
 @riverpod
 Stream<PlanWeekStanding> planThisWeek(Ref ref, String planId) async* {
+  ref.watch(currentDayProvider);
   final plan = await ref.watch(planProvider(planId).future);
   final sessions = await ref.watch(planSessionsProvider(planId).future);
   final ids = [for (final session in sessions) session.id];

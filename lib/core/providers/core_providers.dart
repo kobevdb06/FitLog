@@ -4,11 +4,37 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../app/app_controller.dart';
 import '../calc/plates.dart';
+import '../calc/schedule.dart';
 import '../db/database.dart';
 import '../formatting/formatters.dart';
 import '../widgets/exercise_image.dart';
 
 part 'core_providers.g.dart';
+
+/// The training day it is - from four in the morning to four the next -
+/// for what shows "today" or "this week".
+///
+/// "Now" was read once, when such a provider was built: left open on
+/// Sunday evening, the card on Monday morning still said "week klaar" with
+/// last week's numbers. They watch this now, and it turns when the app
+/// comes back and at four (DECISIONS 282).
+@Riverpod(keepAlive: true)
+class CurrentDay extends _$CurrentDay {
+  @override
+  DateTime build() => trainingDay(DateTime.now());
+
+  /// Checks the clock: a new day is a new state, the same day is nothing.
+  void refresh([DateTime? now]) {
+    final day = trainingDay(now ?? DateTime.now());
+    if (day != state) state = day;
+  }
+}
+
+/// When the training day after [now] begins.
+DateTime nextDayTurn(DateTime now) {
+  final day = trainingDay(now);
+  return DateTime(day.year, day.month, day.day + 1, kDayStartHour);
+}
 
 /// The one settings row, as a stream so every screen reacts to a unit change.
 @Riverpod(keepAlive: true)

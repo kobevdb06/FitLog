@@ -61,9 +61,14 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
   /// The weekly backup, waiting for the app to settle after an unlock.
   Timer? _autoBackup;
 
+  /// Turns the training day at four in the morning, for an app left open
+  /// overnight (DECISIONS 282).
+  Timer? _dayTurn;
+
   @override
   void initState() {
     super.initState();
+    _scheduleDayTurn();
     WidgetsBinding.instance.addObserver(this);
 
     IsolateNameServer.removePortNameMapping(kMorningPortName);
@@ -118,6 +123,7 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
   @override
   void dispose() {
     _autoBackup?.cancel();
+    _dayTurn?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     IsolateNameServer.removePortNameMapping(kMorningPortName);
     _morningPort.close();
@@ -127,6 +133,21 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     _promptsPort.close();
     NotificationService.instance.onTapped = null;
     super.dispose();
+  }
+
+  void _scheduleDayTurn() {
+    _dayTurn?.cancel();
+    final now = DateTime.now();
+    _dayTurn = Timer(
+      nextDayTurn(now).difference(now) + const Duration(seconds: 1),
+      _turnDay,
+    );
+  }
+
+  void _turnDay() {
+    if (!mounted) return;
+    ref.read(currentDayProvider.notifier).refresh();
+    _scheduleDayTurn();
   }
 
   void _openFromNotification(String payload) {
@@ -217,6 +238,8 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         ref.read(coachSessionControllerProvider.notifier).left(DateTime.now());
       case AppLifecycleState.resumed:
         controller.onResumed();
+        // A new day since you left: today's card and this week's numbers.
+        _turnDay();
         // Away for a while: the coach starts afresh.
         unawaited(
           ref

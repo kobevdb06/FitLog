@@ -70,7 +70,7 @@ final class WeeklyBucketsProvider
   }
 }
 
-String _$weeklyBucketsHash() => r'93a2d00ae3612a144360f95e91227db518158c45';
+String _$weeklyBucketsHash() => r'b7a8ba73a1c6ce8d9e9c8d784b83a32b2de41869';
 
 /// Volume, workouts and sets per calendar week, oldest bucket first.
 
@@ -294,7 +294,7 @@ final class TrainingBucketsProvider
   }
 }
 
-String _$trainingBucketsHash() => r'b3f6c505e232b1be57be33cf16aba06202a1b131';
+String _$trainingBucketsHash() => r'97747107a3c843e9cd1096c48d3c7ad3894818db';
 
 /// Volume, workouts and sets per bar of [period], oldest first.
 
@@ -388,7 +388,7 @@ final class MainLiftsProvider
   }
 }
 
-String _$mainLiftsHash() => r'80dac12a6b59166830d8f2b191dff5d4dda34169';
+String _$mainLiftsHash() => r'101ed00e637a1ec20460de6159975fa747ddb0c4';
 
 /// The exercises you did most in [period], at most [kMainLifts].
 ///
@@ -479,7 +479,7 @@ final class MuscleSetsProvider
   }
 }
 
-String _$muscleSetsHash() => r'b9fe7b2ccb805eedf8e9677a71a12e6380d75d9d';
+String _$muscleSetsHash() => r'6dfbf4cb7ad8a19ab91d6538f4e4fe8462427bc5';
 
 /// The working sets per muscle per week of [period], against the stretch
 /// as long before it.
@@ -547,7 +547,7 @@ final class StreakProvider
   }
 }
 
-String _$streakHash() => r'a0caef91bf4cf4a1a047b02cc2c898b86a7e3b6b';
+String _$streakHash() => r'93ad398b910dd1d6193e92673dccf69f773daed6';
 
 /// This calendar week in numbers.
 
@@ -586,7 +586,7 @@ final class ThisWeekStatsProvider
   }
 }
 
-String _$thisWeekStatsHash() => r'692bd8fbdcc17590bc40d5a8b1cc6e8d77633e98';
+String _$thisWeekStatsHash() => r'a7c77116eb64c831e9b5fa50c3ac7bd4bb387071';
 
 @ProviderFor(lifetimeStats)
 final lifetimeStatsProvider = LifetimeStatsProvider._();
@@ -875,7 +875,7 @@ final class PlateausProvider
   }
 }
 
-String _$plateausHash() => r'3ebaf477131992ad9e32da737ffa8927f42d078a';
+String _$plateausHash() => r'f9cdecc01a49ab8b59c7d2ee46810cbb4bbf7da8';
 
 /// The plateau of [exerciseId], or null while it is still going forward.
 

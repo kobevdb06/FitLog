@@ -71,12 +71,11 @@ class _PrAttemptScreenState extends ConsumerState<PrAttemptScreen> {
       );
     }
 
-    final config =
-        _config ??= initialPrConfig(
-          baseline: baseline,
-          settings: settings,
-          setup: setup,
-        );
+    final config = _config ??= initialPrConfig(
+      baseline: baseline,
+      settings: settings,
+      setup: setup,
+    );
     final ramp = config.ramp;
 
     return Scaffold(
@@ -90,9 +89,8 @@ class _PrAttemptScreenState extends ConsumerState<PrAttemptScreen> {
           _TargetField(
             config: config,
             formatters: formatters,
-            onChanged: (value) => setState(
-              () => _config = config.copyWith(targetKg: value),
-            ),
+            onChanged: (value) =>
+                setState(() => _config = config.copyWith(targetKg: value)),
           ),
           const SizedBox(height: AppSpacing.sm),
           _BaselineLine(baseline: baseline, formatters: formatters),
@@ -127,36 +125,28 @@ class _PrAttemptScreenState extends ConsumerState<PrAttemptScreen> {
 
           const SectionHeader(
             'Opbouw',
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom: AppSpacing.sm,
-            ),
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
           ),
           _Stepper(
             label: 'Opwarmsets',
             value: config.warmupSets,
             min: kMinPrWarmupSets,
             max: kMaxPrWarmupSets,
-            onChanged: (value) => setState(
-              () => _config = config.copyWith(warmupSets: value),
-            ),
+            onChanged: (value) =>
+                setState(() => _config = config.copyWith(warmupSets: value)),
           ),
           _Stepper(
             label: 'Extra pogingen bij succes',
             value: config.extraAttempts,
             min: 0,
             max: 3,
-            onChanged: (value) => setState(
-              () => _config = config.copyWith(extraAttempts: value),
-            ),
+            onChanged: (value) =>
+                setState(() => _config = config.copyWith(extraAttempts: value)),
           ),
 
           const SectionHeader(
             'Stang en schijven',
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom: AppSpacing.sm,
-            ),
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -197,9 +187,7 @@ class _PrAttemptScreenState extends ConsumerState<PrAttemptScreen> {
                     final next = [...config.platesKg];
                     selected ? next.add(plate) : next.remove(plate);
                     if (next.isEmpty) return;
-                    setState(
-                      () => _config = config.copyWith(platesKg: next),
-                    );
+                    setState(() => _config = config.copyWith(platesKg: next));
                   },
                 ),
             ],
@@ -207,10 +195,7 @@ class _PrAttemptScreenState extends ConsumerState<PrAttemptScreen> {
 
           const SectionHeader(
             'Zo ziet je poging eruit',
-            padding: EdgeInsets.only(
-              top: AppSpacing.xl,
-              bottom: AppSpacing.sm,
-            ),
+            padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
           ),
           if (ramp == null)
             const InfoBanner(
@@ -353,6 +338,7 @@ class _Stepper extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
+            tooltip: '$label minder',
             onPressed: value > min ? () => onChanged(value - 1) : null,
             icon: const Icon(Icons.remove_circle_outline),
           ),
@@ -365,6 +351,7 @@ class _Stepper extends StatelessWidget {
             ),
           ),
           IconButton(
+            tooltip: '$label meer',
             onPressed: value < max ? () => onChanged(value + 1) : null,
             icon: const Icon(Icons.add_circle_outline),
           ),

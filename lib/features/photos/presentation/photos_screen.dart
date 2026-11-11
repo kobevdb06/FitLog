@@ -285,103 +285,113 @@ class _PhotoTile extends ConsumerWidget {
     final file = paths.photoFile(photo.fileName);
     final choosing = chosen != null;
 
-    return GestureDetector(
-      onTap: choosing
-          ? onChoose
-          : () => showPhotoDetail(
-              context,
-              photoId: photo.id,
-              takenAt: DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
-            ),
-      // Deleting stays on the long press it has always been on, and steps
-      // aside entirely while you are choosing: one tick away from a
-      // confirmation you did not ask for is too close.
-      onLongPress: choosing
-          ? null
-          : () async {
-              final ok = await confirm(
+    return Semantics(
+      label:
+          'Foto, ${PhotoPose.fromWire(photo.pose).label}, '
+          '${Formatters.date(DateTime.fromMillisecondsSinceEpoch(photo.takenAt))}',
+      button: true,
+      selected: chosen ?? false,
+      child: GestureDetector(
+        onTap: choosing
+            ? onChoose
+            : () => showPhotoDetail(
                 context,
-                title: 'Foto verwijderen?',
-                message: 'De foto wordt van je toestel verwijderd.',
-                confirmLabel: 'Verwijderen',
-                destructive: true,
-              );
-              if (ok) await ref.read(photoActionsProvider).delete(photo);
-            },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: (chosen ?? false)
-              ? Border.all(color: AppColors.accent, width: 3)
-              : null,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            photoImage(
-              file,
-              fit: BoxFit.cover,
-              cacheWidth: 320,
-              errorBuilder: (context, error, stack) =>
-                  const MissingPhotoPlaceholder(),
-            ),
-            if (choosing)
-              Container(
-                color: Colors.black.withValues(alpha: chosen! ? 0.0 : 0.45),
+                photoId: photo.id,
+                takenAt: DateTime.fromMillisecondsSinceEpoch(photo.takenAt),
               ),
-            if (choosing)
-              Positioned(
-                top: 4,
-                right: 4,
-                child: Icon(
-                  chosen! ? Icons.check_circle : Icons.radio_button_unchecked,
-                  size: 22,
-                  color: chosen! ? AppColors.accent : Colors.white,
+        // Deleting stays on the long press it has always been on, and steps
+        // aside entirely while you are choosing: one tick away from a
+        // confirmation you did not ask for is too close.
+        onLongPress: choosing
+            ? null
+            : () async {
+                final ok = await confirm(
+                  context,
+                  title: 'Foto verwijderen?',
+                  message: 'De foto wordt van je toestel verwijderd.',
+                  confirmLabel: 'Verwijderen',
+                  destructive: true,
+                );
+                if (ok) await ref.read(photoActionsProvider).delete(photo);
+              },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: (chosen ?? false)
+                ? Border.all(color: AppColors.accent, width: 3)
+                : null,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              photoImage(
+                file,
+                fit: BoxFit.cover,
+                cacheWidth: 320,
+                errorBuilder: (context, error, stack) =>
+                    const MissingPhotoPlaceholder(),
+              ),
+              if (choosing)
+                Container(
+                  color: Colors.black.withValues(alpha: chosen! ? 0.0 : 0.45),
                 ),
-              ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                color: Colors.black.withValues(alpha: 0.55),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        // The date is gone: the day above the grid already
-                        // says it, on every tile underneath it.
-                        PhotoPose.fromWire(photo.pose).label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
+              if (choosing)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Icon(
+                    chosen! ? Icons.check_circle : Icons.radio_button_unchecked,
+                    size: 22,
+                    color: chosen! ? AppColors.accent : Colors.white,
+                  ),
+                ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  color: Colors.black.withValues(alpha: 0.55),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          // The date is gone: the day above the grid already
+                          // says it, on every tile underneath it.
+                          PhotoPose.fromWire(photo.pose).label,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
-                    ),
-                    // Small marks for what is behind the picture, so a note
-                    // you wrote is not invisible until you open it.
-                    if (photo.workoutId != null)
-                      const Icon(
-                        Icons.fitness_center,
-                        size: 12,
-                        color: Colors.white70,
-                      ),
-                    if (photo.note != null && photo.note!.trim().isNotEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 3),
-                        child: Icon(
-                          Icons.sticky_note_2_outlined,
+                      // Small marks for what is behind the picture, so a note
+                      // you wrote is not invisible until you open it.
+                      if (photo.workoutId != null)
+                        const Icon(
+                          Icons.fitness_center,
                           size: 12,
                           color: Colors.white70,
                         ),
-                      ),
-                  ],
+                      if (photo.note != null && photo.note!.trim().isNotEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 3),
+                          child: Icon(
+                            Icons.sticky_note_2_outlined,
+                            size: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -38,8 +38,16 @@ class MuscleBars extends StatelessWidget {
 
   final List<MuscleBar> bars;
 
+  // What TalkBack says: a chart was a picture without words
+  // (DECISIONS 292).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Semantics(
+    label: 'Per spier: ${bars.map((b) => '${b.muscle} ${b.label}').join(', ')}',
+    excludeSemantics: true,
+    child: _chart(context),
+  );
+
+  Widget _chart(BuildContext context) {
     final theme = Theme.of(context);
     final scale = bars
         .expand((m) => [m.value, m.usual])

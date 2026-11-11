@@ -19,8 +19,18 @@ class MuscleMap extends StatelessWidget {
 
   final double height;
 
+  // What TalkBack says: a chart was a picture without words
+  // (DECISIONS 292).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Semantics(
+    label:
+        'Spierkaart: ${[for (final e in intensityByMuscle.entries.toList()..sort((a, b) => b.value.compareTo(a.value)))
+          if (e.value > 0) e.key].join(', ')}',
+    excludeSemantics: true,
+    child: _chart(context),
+  );
+
+  Widget _chart(BuildContext context) {
     final theme = Theme.of(context);
     return SizedBox(
       height: height,
@@ -75,9 +85,8 @@ class _MuscleMapPainter extends CustomPainter {
     }
     if (bestMuscle == null || best <= 0) return baseColor;
     // Scale the alpha so a lightly worked group still reads as touched.
-    return AppColors.forMuscle(
-      bestMuscle,
-    ).withValues(alpha: (0.35 + best * 0.65).clamp(0.35, 1.0));
+    return AppColors.forMuscle(bestMuscle)
+        .withValues(alpha: (0.35 + best * 0.65).clamp(0.35, 1.0));
   }
 
   void _paintBody(Canvas canvas, Rect area, {required bool front}) {

@@ -167,6 +167,7 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                     suffixIcon: filter.query.isEmpty
                         ? null
                         : IconButton(
+                            tooltip: 'Zoekterm wissen',
                             icon: const Icon(Icons.close),
                             onPressed: () {
                               _searchController.clear();
@@ -400,7 +401,6 @@ class _ExerciseTile extends ConsumerWidget {
         exercise.isFavourite ? Icons.star : Icons.star_border,
         color: exercise.isFavourite ? Colors.amber : null,
       ),
-      visualDensity: VisualDensity.compact,
     );
 
     return ListTile(
@@ -425,7 +425,6 @@ class _ExerciseTile extends ConsumerWidget {
                   tooltip: 'Bekijk de oefening',
                   onPressed: onPreview,
                   icon: const Icon(Icons.info_outline),
-                  visualDensity: VisualDensity.compact,
                 ),
                 Icon(
                   selected ? Icons.check_circle : Icons.circle_outlined,

@@ -205,6 +205,7 @@ class _MonthCalendar extends StatelessWidget {
             Row(
               children: [
                 IconButton(
+                  tooltip: 'Vorige maand',
                   onPressed: onPrevious,
                   icon: const Icon(Icons.chevron_left),
                 ),
@@ -216,6 +217,7 @@ class _MonthCalendar extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Volgende maand',
                   onPressed: onNext,
                   icon: const Icon(Icons.chevron_right),
                 ),
@@ -241,10 +243,13 @@ class _MonthCalendar extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: firstWeekday - 1 + daysInMonth,
+              // Days 48 high: square they were 41 on a narrow phone, under
+              // what a finger needs (DECISIONS 292).
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 7,
                 mainAxisSpacing: 2,
                 crossAxisSpacing: 2,
+                mainAxisExtent: 48,
               ),
               itemBuilder: (context, index) {
                 if (index < firstWeekday - 1) return const SizedBox.shrink();
@@ -299,11 +304,20 @@ class _MonthCalendar extends StatelessWidget {
                   ),
                 );
 
-                if (volume == null) return cell;
-                return GestureDetector(
-                  onTap: () => onSelect(DateTime(month.year, month.month, day)),
-                  behavior: HitTestBehavior.opaque,
-                  child: cell,
+                final said = '$day ${Formatters.monthYear(month)}';
+                if (volume == null) {
+                  return Semantics(label: said, child: cell);
+                }
+                return Semantics(
+                  label: '$said, getraind',
+                  button: true,
+                  selected: isSelected,
+                  child: GestureDetector(
+                    onTap: () =>
+                        onSelect(DateTime(month.year, month.month, day)),
+                    behavior: HitTestBehavior.opaque,
+                    child: cell,
+                  ),
                 );
               },
             ),

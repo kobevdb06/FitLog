@@ -98,7 +98,7 @@ class NumericKeypad extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _DragHandle(onDismiss: onDone),
+              KeypadHandle(onDismiss: onDone),
               _Header(
                 title: title ?? kind.label,
                 subtitle: subtitle,
@@ -220,8 +220,8 @@ class _Header extends StatelessWidget {
 /// The same handle every bottom sheet in the app has, and the same gesture.
 /// The tick in the corner does the same thing, but it is a small target in the
 /// far corner and this one is a whole edge you do not have to aim at.
-class _DragHandle extends StatelessWidget {
-  const _DragHandle({required this.onDismiss});
+class KeypadHandle extends StatelessWidget {
+  const KeypadHandle({super.key, required this.onDismiss});
 
   final VoidCallback onDismiss;
 
@@ -234,9 +234,13 @@ class _DragHandle extends StatelessWidget {
       onVerticalDragEnd: (details) {
         if ((details.primaryVelocity ?? 0) > 120) onDismiss();
       },
+      // It says it is a button that closes the pad: a tap does that now,
+      // with TalkBack too (DECISIONS 292).
+      onTap: onDismiss,
       child: Semantics(
         label: 'Toetsenblok sluiten',
         button: true,
+        onTap: onDismiss,
         child: Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.xs),
           child: Center(

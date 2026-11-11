@@ -222,6 +222,7 @@ class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
             ? null
             : AppBar(
                 leading: IconButton(
+                  tooltip: 'Terug',
                   icon: const Icon(Icons.arrow_back),
                   onPressed: _back,
                 ),

@@ -69,6 +69,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: 'Sluiten',
           icon: const Icon(Icons.keyboard_arrow_down),
           onPressed: () => Navigator.of(context).pop(),
         ),

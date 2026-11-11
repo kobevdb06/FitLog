@@ -1085,25 +1085,43 @@ class _WeekdayChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Material(
-        color: selected ? AppColors.accent : scheme.surfaceContainerHighest,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Center(
-            // Two letters always fit: on the narrowest screen with the
-            // largest text they get a size smaller, never cut.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                Formatters.weekdayShort(weekday),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: selected ? Colors.white : scheme.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+    // 48 high to hit, the circle as it was: a day was 42 on a narrow phone
+    // (DECISIONS 292).
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: size,
+        height: math.max(size, 48),
+        child: Center(
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Material(
+              color: selected
+                  ? AppColors.accent
+                  : scheme.surfaceContainerHighest,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: Center(
+                  // Two letters always fit: on the narrowest screen with the
+                  // largest text they get a size smaller, never cut.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      Formatters.weekdayShort(weekday),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: selected
+                            ? Colors.white
+                            : scheme.onSurfaceVariant,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),

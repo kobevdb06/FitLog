@@ -36,8 +36,23 @@ class TrendLineChart extends StatelessWidget {
   /// What stands where the line would be, when there are no points.
   final String emptyMessage;
 
+  String _said() {
+    if (points.length < 2) return 'Grafiek: nog te weinig gegevens';
+    final say = valueLabel ?? Formatters.number;
+    final highest = points.map((p) => p.value).reduce((a, b) => a > b ? a : b);
+    return 'Grafiek van ${Formatters.dayMonth(points.first.at)} tot '
+        '${Formatters.dayMonth(points.last.at)}: van '
+        '${say(points.first.value)} naar ${say(points.last.value)}, '
+        'hoogste ${say(highest)}';
+  }
+
+  // What TalkBack says: a chart was a picture without words
+  // (DECISIONS 292).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Semantics(label: _said(), excludeSemantics: true, child: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final theme = Theme.of(context);
     if (points.length < 2) {
       return SizedBox(
@@ -208,8 +223,19 @@ class SimpleBarChart extends StatelessWidget {
   /// newest always has one. Thirteen dates in a row do not fit on a phone.
   final int labelEvery;
 
+  String _said() {
+    if (values.isEmpty) return 'Staafdiagram: nog geen gegevens';
+    final say = valueLabel ?? Formatters.number;
+    return 'Staafdiagram: ${[for (var i = 0; i < values.length; i++) '${i < labels.length ? labels[i] : ''} ${say(values[i])}'.trim()].join(', ')}';
+  }
+
+  // What TalkBack says: a chart was a picture without words
+  // (DECISIONS 292).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Semantics(label: _said(), excludeSemantics: true, child: _chart(context));
+
+  Widget _chart(BuildContext context) {
     final theme = Theme.of(context);
     if (values.isEmpty) {
       return SizedBox(
@@ -312,8 +338,19 @@ class Sparkline extends StatelessWidget {
   final double height;
   final Color color;
 
+  // What TalkBack says: a chart was a picture without words
+  // (DECISIONS 292).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Semantics(
+    label: values.length < 2
+        ? 'Verloop: nog te weinig gegevens'
+        : 'Verloop van ${Formatters.number(values.first)} naar '
+              '${Formatters.number(values.last)}',
+    excludeSemantics: true,
+    child: _chart(context),
+  );
+
+  Widget _chart(BuildContext context) {
     return SizedBox(
       height: height,
       width: double.infinity,
@@ -389,8 +426,16 @@ class MiniBarChart extends StatelessWidget {
   final double height;
   final Color color;
 
+  // What TalkBack says: a chart was a picture without words
+  // (DECISIONS 292).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Semantics(
+    label: 'Staafjes: ${values.map(Formatters.number).join(', ')}',
+    excludeSemantics: true,
+    child: _chart(context),
+  );
+
+  Widget _chart(BuildContext context) {
     final theme = Theme.of(context);
     final maxValue = values.isEmpty
         ? 0.0

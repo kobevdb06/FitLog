@@ -1905,21 +1905,27 @@ class _PickedPhotos extends ConsumerWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
+                    // Room above and beside the photo for its button: it hung
+                    // out of the frame, and only about 30 by 30 of it could
+                    // be hit (DECISIONS 292).
                     if (paths != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusSm,
-                        ),
-                        child: photoImage(
-                          PhotoStore(paths).fileFor(name),
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14, right: 14),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusSm,
+                          ),
+                          child: photoImage(
+                            PhotoStore(paths).fileFor(name),
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     Positioned(
-                      top: -10,
-                      right: -10,
+                      top: 0,
+                      right: 0,
                       child: IconButton.filledTonal(
                         tooltip: 'Foto ${index + 1} toch niet',
                         visualDensity: VisualDensity.compact,

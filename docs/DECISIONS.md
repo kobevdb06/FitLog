@@ -6613,3 +6613,26 @@ allemaal `ErrorState`: *Dit lukte niet*, een zin in het Nederlands, de
 fout zelf klein eronder voor wie een probleem meldt, en *Opnieuw
 proberen*. Die laadt de gegevens van dat scherm opnieuw. Een test kijkt
 dat geen scherm nog alleen de ruwe fout toont.
+
+## 292. Wat TalkBack hoort, en wat een vinger raakt
+
+Uit het Fable-rapport: U9.
+
+- **Grafieken** waren voor TalkBack een prent zonder woorden. Elke grafiek
+  zegt nu in één zin wat ze toont. Een lijn zegt van wanneer tot wanneer,
+  van hoeveel naar hoeveel en het hoogste punt. Een staafdiagram noemt
+  elke staaf met haar waarde. Het verloop zegt van waar naar waar, de
+  spierkaart welke spieren en de balken per spier hun getal.
+- **Knoppen zonder naam** hebben er een: vorige en volgende maand, terug,
+  sluiten, de zoekterm wissen, en meer of minder bij een PR-poging.
+- **Te kleine raakvlakken:** de dagen in de kalender zijn 48 hoog (ze waren
+  41), de ster en de ⓘ in de bibliotheek hebben hun volle 48 terug, en een
+  weekdag is 48 hoog om te raken, met de cirkel zoals hij was. Een foto
+  bij een vraag aan de coach heeft haar knop om haar weg te halen nu
+  binnen haar kader. Hij stak erbuiten, en maar ongeveer 30 op 30 dp ervan
+  was raakbaar.
+- **De greep van het toetsenblok** zei *Toetsenblok sluiten* en dat hij een
+  knop was, maar deed niets. Nu sluit een tik het blok, ook met TalkBack.
+- **Foto's en kalenderdagen** zeggen wat ze zijn: de houding en de datum,
+  de dag en of je toen trainde.
+

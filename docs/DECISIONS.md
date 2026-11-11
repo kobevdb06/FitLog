@@ -6705,3 +6705,15 @@ Uit het Fable-rapport: B4, en de APK-groottes uit B7.
   zijn.
 - **DECISIONS 132** (*alles wat het logboek in gaat, is een handeling van
   jou*) verwijst nu naar 176 en 218, die dat bijstelden.
+
+## 296. iOS telt niet mee, en bouwt niet meer bij elke push
+
+Uit het Fable-rapport: B6. Kobe besliste op 10 november: *iOS mag
+uitgezet worden.*
+
+In `lib/features/health` staat geen enkele platformcontrole, `Info.plist`
+mist de sleutels voor HealthKit, en de app heeft nooit op een iPhone
+gedraaid. Toch bouwde GitHub haar bij elke push op een Mac, en dat
+suggereerde een iOS-versie die er niet is. De workflow draait nu alleen
+nog met de hand. Hij blijft staan voor wie het wil proberen. De
+iOS-handleiding zegt bovenaan hoe het zit.

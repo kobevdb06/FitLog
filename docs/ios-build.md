@@ -1,5 +1,9 @@
 # FitLog op een iPhone
 
+> **iOS telt niet mee** (DECISIONS 296). De app is nooit op een iPhone
+> getest, en de build draait niet meer vanzelf. Wie het toch wil proberen,
+> start hem met de hand, zoals hieronder.
+
 Dit project wordt op Windows ontwikkeld. Een iOS-build heeft een Mac nodig, en
 die staat hier niet — dus draait hij op een Mac van GitHub.
 `.github/workflows/ios.yml` bouwt de app en hangt het resultaat als
@@ -10,7 +14,7 @@ gepubliceerd. Zie de README.
 
 ## De build starten
 
-Hij draait vanzelf bij elke push naar `main`. Met de hand:
+Hij draait niet vanzelf. Met de hand:
 
 1. Ga naar het tabblad **Actions** in de repository.
 2. Kies links de workflow **iOS**.

@@ -1,13 +1,16 @@
 # Builds the iOS app on a Mac runner, because there is no Mac here.
 #
-# The unsigned job runs on every push to main and produces an .ipa you can
-# sideload. The signed job is switched off until the repository variable
-# IOS_SIGNING is set to "true"; see the comments above it for what it needs.
+# Off: iOS does not count for FitLog (DECISIONS 296). The health code has no
+# platform checks, Info.plist lacks the HealthKit keys, and the app has never
+# run on an iPhone - a build on every push said otherwise. It still runs by
+# hand (Actions -> iOS -> Run workflow), for whoever wants to try.
+#
+# The unsigned job produces an .ipa you can sideload. The signed job is
+# switched off until the repository variable IOS_SIGNING is set to "true";
+# see the comments above it for what it needs.
 name: iOS
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # One build at a time per branch; a newer push makes an older run pointless.

@@ -318,7 +318,7 @@ class _PhotoTile extends ConsumerWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
             border: (chosen ?? false)
-                ? Border.all(color: AppColors.accent, width: 3)
+                ? Border.all(color: AppColors.accentOf(context), width: 3)
                 : null,
           ),
           clipBehavior: Clip.antiAlias,
@@ -343,7 +343,7 @@ class _PhotoTile extends ConsumerWidget {
                   child: Icon(
                     chosen! ? Icons.check_circle : Icons.radio_button_unchecked,
                     size: 22,
-                    color: chosen! ? AppColors.accent : Colors.white,
+                    color: chosen! ? AppColors.accentOf(context) : Colors.white,
                   ),
                 ),
               Positioned(

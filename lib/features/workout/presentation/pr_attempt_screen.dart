@@ -104,7 +104,7 @@ class _PrAttemptScreenState extends ConsumerState<PrAttemptScreen> {
             const SizedBox(height: AppSpacing.md),
             InfoBanner(
               icon: Icons.trending_up,
-              color: AppColors.record,
+              color: AppColors.recordOf(context),
               message:
                   'Dat is ${((config.targetKg / baseline.estimatedOneRmKg! - 1) * 100).round()}% '
                   'boven je geschatte 1RM. Een grote sprong; kleiner mikken '
@@ -198,9 +198,9 @@ class _PrAttemptScreenState extends ConsumerState<PrAttemptScreen> {
             padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
           ),
           if (ramp == null)
-            const InfoBanner(
+            InfoBanner(
               icon: Icons.error_outline,
-              color: AppColors.danger,
+              color: AppColors.dangerOf(context),
               message:
                   'Dit doelgewicht ligt onder het gewicht van de lege stang. '
                   'Kies iets zwaarders.',
@@ -394,7 +394,7 @@ class PrRampPreview extends StatelessWidget {
                       ramp.sets[i].isAttempt ? 'PR' : 'W${i + 1}',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: ramp.sets[i].isAttempt
-                            ? AppColors.record
+                            ? AppColors.recordOf(context)
                             : theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w700,
                       ),

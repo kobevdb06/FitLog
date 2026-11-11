@@ -132,7 +132,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                 trailing: Text(
                   _value(record, formatters),
                   style: Theme.of(context).textTheme.titleSmall
-                      ?.copyWith(color: AppColors.record),
+                      ?.copyWith(color: AppColors.recordOf(context)),
                 ),
               );
             },

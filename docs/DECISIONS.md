@@ -6879,3 +6879,38 @@ verwisselen en schrappen stukken, en veranderen de kop. Een tweede
 sealer, los van de app geschreven in de test, maakt bestanden met een
 foute inhoud: een foto met een pad, geen database, geen eindteken, iets
 na het eindteken.
+
+## 305. Kleuren die je kunt lezen, ook in de lichte modus
+
+Uit het Fable-rapport: U3, U4 en U5. De kleuren zijn die van de mockup
+die de eigenaar op 11 november goedkeurde.
+
+- **Gevulde knoppen** zijn `#2F6BEB`, rode knoppen `#D93036`. Wit erop
+  haalt 4,8:1 en 4,7:1. Op het oude accent en rood was dat 3,8:1 en
+  3,9:1. Hetzelfde geldt voor de andere vlakken met witte tekst: de balk
+  van een lopende workout, de toetsen van het numpad, de foutmelding
+  onderaan (die nu zelf witte tekst heeft) en een paar cirkels.
+- **In de lichte modus** zijn accent, groen, amber en rood donkerder als
+  ze tekst, een icoon of een lijn zijn: `#2563EB`, `#1B7F49`, `#9A5B00`
+  en `#CF2C32`. De heldere kolommen haalden op wit 3,8, 2,4, 2,0 en 3,9.
+  Rood als tekst is een tint donkerder dan de rode knop: `#D93036` gaf
+  als tekst op de grijze achtergrond 4,4:1. Dat rood stond niet als
+  tekst in de mockup. `AppColors.accentOf(context)` en de drie andere
+  kiezen per thema. Een lichte tint (met doorzichtigheid) houdt de
+  heldere kleur. Het thema zelf (`primary`, `tertiary`, `error`) volgt
+  dezelfde keuze.
+- **De donkere modus** houdt zijn kleuren voor tekst, zoals in de
+  mockup.
+- **Randen van velden en schakelaars** zijn `#6B7280` (donker) en
+  `#7D838E` (licht). Ze haalden 1,2:1 tegen de vulling, en een
+  uitgeschakelde schakelaar 1,1:1. Kaarten en scheidingslijnen houden
+  hun zachte rand: die zijn versiering, geen bediening.
+- **Ook in U3, buiten de mockup:** de dagcijfers in de kalender zijn in
+  de lichte modus donker in plaats van wit (wit was 1,3:1 tot 3,2:1). En
+  de letters van een spieravatar worden in de lichte modus donkerder tot
+  ze 4,5:1 halen (`AppColors.readableOn`). Ze behouden hun eigen kleur.
+- Grafieken en het logo houden het heldere accent. Een lijn heeft 3:1
+  nodig, en die haalt ze.
+
+`test/widget/contrast_test.dart` rekent de verhoudingen na met de
+formule van WCAG, in beide modi. De kalender heeft er een eigen test bij.

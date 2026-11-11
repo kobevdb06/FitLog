@@ -140,7 +140,9 @@ class _Done extends StatelessWidget {
         Icon(
           ok ? Icons.check_circle : Icons.history,
           size: 18,
-          color: ok ? AppColors.success : theme.colorScheme.onSurfaceVariant,
+          color: ok
+              ? AppColors.successOf(context)
+              : theme.colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: AppSpacing.xs),
         Expanded(child: Text(text, style: theme.textTheme.bodySmall)),

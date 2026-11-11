@@ -447,7 +447,7 @@ class _EditableSetRow extends StatelessWidget {
                 setType.marker ?? '$number',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: setType == SetType.warmup
-                      ? AppColors.record
+                      ? AppColors.recordOf(context)
                       : theme.colorScheme.onSurfaceVariant,
                 ),
               ),

@@ -357,7 +357,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
               const SizedBox(height: AppSpacing.md),
               InfoBanner(
                 icon: Icons.info_outline,
-                color: AppColors.accent,
+                color: AppColors.accentOf(context),
                 message: _message!,
               ),
             ],
@@ -368,13 +368,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       // cannot be undone does not sit between what you use often.
       const SectionHeader('Gevarenzone'),
       ListTile(
-        leading: const Icon(
+        leading: Icon(
           Icons.delete_forever_outlined,
-          color: AppColors.danger,
+          color: AppColors.dangerOf(context),
         ),
-        title: const Text(
+        title: Text(
           'Alle gegevens wissen',
-          style: TextStyle(color: AppColors.danger),
+          style: TextStyle(color: AppColors.dangerOf(context)),
         ),
         subtitle: const Text(
           'Alles van dit toestel verwijderen. Maak eerst een back-up '

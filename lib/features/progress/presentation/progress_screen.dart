@@ -242,7 +242,7 @@ class _LiftRow extends ConsumerWidget {
                     child: Text(
                       moved,
                       style: muted?.copyWith(
-                        color: up ? AppColors.success : null,
+                        color: up ? AppColors.successOf(context) : null,
                       ),
                     ),
                   ),

@@ -121,7 +121,9 @@ class _PhotoEditorScreenState extends ConsumerState<PhotoEditorScreen> {
           const SizedBox(height: AppSpacing.xl),
           OutlinedButton.icon(
             onPressed: _delete,
-            style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.dangerOf(context),
+            ),
             icon: const Icon(Icons.delete_outline),
             label: const Text('Foto verwijderen'),
           ),

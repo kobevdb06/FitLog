@@ -153,9 +153,9 @@ class _KeysLostScreenState extends ConsumerState<KeysLostScreen> {
               const SizedBox(height: AppSpacing.lg),
               TextButton(
                 onPressed: _busy ? null : () => confirmStartOver(context, ref),
-                child: const Text(
+                child: Text(
                   'Opnieuw beginnen',
-                  style: TextStyle(color: AppColors.danger),
+                  style: TextStyle(color: AppColors.dangerOf(context)),
                 ),
               ),
             ],

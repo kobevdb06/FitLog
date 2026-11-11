@@ -39,7 +39,7 @@ class DeloadBanner extends ConsumerWidget {
           ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        side: const BorderSide(color: AppColors.accent),
+        side: BorderSide(color: AppColors.accentOf(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -50,7 +50,10 @@ class DeloadBanner extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.battery_charging_full, color: AppColors.accent),
+            Icon(
+              Icons.battery_charging_full,
+              color: AppColors.accentOf(context),
+            ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
@@ -148,7 +151,7 @@ class DeloadSuggestionCard extends ConsumerWidget {
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        side: const BorderSide(color: AppColors.record),
+        side: BorderSide(color: AppColors.recordOf(context)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -158,7 +161,7 @@ class DeloadSuggestionCard extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.battery_2_bar, color: AppColors.record),
+                Icon(Icons.battery_2_bar, color: AppColors.recordOf(context)),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(

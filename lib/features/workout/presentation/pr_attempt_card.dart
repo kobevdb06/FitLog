@@ -68,10 +68,10 @@ class PrAttemptHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.emoji_events_outlined,
                 size: 16,
-                color: AppColors.record,
+                color: AppColors.recordOf(context),
               ),
               const SizedBox(width: AppSpacing.xs),
               Expanded(
@@ -80,7 +80,7 @@ class PrAttemptHeader extends StatelessWidget {
                       ? 'PR-poging'
                       : 'PR-poging · doel ${formatters.weight(target)}',
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.record,
+                    color: AppColors.recordOf(context),
                   ),
                 ),
               ),
@@ -89,7 +89,7 @@ class PrAttemptHeader extends StatelessWidget {
                   result.label,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: result == PrAttemptResult.success
-                        ? AppColors.success
+                        ? AppColors.successOf(context)
                         : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -107,7 +107,7 @@ class PrAttemptHeader extends StatelessWidget {
                       minHeight: 4,
                       backgroundColor:
                           theme.colorScheme.surfaceContainerHighest,
-                      color: AppColors.record,
+                      color: AppColors.recordOf(context),
                     ),
                   ),
                 ),
@@ -127,7 +127,7 @@ class PrAttemptHeader extends StatelessWidget {
               Text(
                 'Nog een opwarmer, dan de poging.',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.record,
+                  color: AppColors.recordOf(context),
                 ),
               ),
             ],
@@ -182,9 +182,9 @@ Future<void> showPrOutcomeSheet(
           if (result == PrAttemptResult.success) ...[
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.emoji_events,
-                  color: AppColors.record,
+                  color: AppColors.recordOf(context),
                   size: 32,
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -231,9 +231,7 @@ Future<void> showPrOutcomeSheet(
                   barKg: setup.barKg,
                 );
               },
-              child: Text(
-                'Back-off single op ${formatters.weight(backoff)}',
-              ),
+              child: Text('Back-off single op ${formatters.weight(backoff)}'),
             ),
           ],
           const SizedBox(height: AppSpacing.sm),

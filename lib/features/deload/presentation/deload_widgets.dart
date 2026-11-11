@@ -22,7 +22,9 @@ class DeloadTag extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         child: Text(
           light ? 'Lichter' : 'Deload',
-          style: theme.textTheme.labelSmall?.copyWith(color: AppColors.record),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: AppColors.recordOf(context),
+          ),
         ),
       ),
     );

@@ -469,7 +469,9 @@ class _WeekTabState extends ConsumerState<_WeekTab> {
             child: Text(
               change,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: plan.weekPlan(week).isDeload ? AppColors.record : null,
+                color: plan.weekPlan(week).isDeload
+                    ? AppColors.recordOf(context)
+                    : null,
               ),
             ),
           ),
@@ -512,9 +514,9 @@ class _WeekSession extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     final (icon, color, state) = done
-        ? (Icons.check_circle, AppColors.success, 'gedaan')
+        ? (Icons.check_circle, AppColors.successOf(context), 'gedaan')
         : past
-        ? (Icons.cancel_outlined, AppColors.danger, 'gemist')
+        ? (Icons.cancel_outlined, AppColors.dangerOf(context), 'gemist')
         : (Icons.radio_button_unchecked, muted, now ? 'open' : null);
     final line = [
       if (session.planWeekday case final weekday?)
@@ -698,7 +700,7 @@ class _WeeksTab extends StatelessWidget {
                     planWeekChange(week) ?? 'De sessies zoals ze staan',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: week.isDeload
-                          ? AppColors.record
+                          ? AppColors.recordOf(context)
                           : planWeekChange(week) == null
                           ? muted
                           : null,

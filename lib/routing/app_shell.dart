@@ -224,7 +224,7 @@ class _ActiveWorkoutBarState extends ConsumerState<_ActiveWorkoutBar> {
         .inSeconds;
 
     return Material(
-      color: AppColors.accent,
+      color: AppColors.accentFill,
       child: InkWell(
         onTap: () => context.push(Routes.workout),
         child: SizedBox(

@@ -18,6 +18,67 @@ abstract final class AppColors {
 
   static const danger = Color(0xFFE5484D);
 
+  /// What a filled button is filled with, white on it: 4.8:1 and 4.7:1,
+  /// where the accent and the red gave 3.8:1 and 3.9:1 (DECISIONS 305).
+  static const accentFill = Color(0xFF2F6BEB);
+  static const dangerFill = Color(0xFFD93036);
+
+  /// The accent, green, amber and red as text, icons and lines on the light
+  /// background, where the bright ones fell to 2:1 - the record amber to
+  /// 1.8:1. Dark mode keeps the bright ones (DECISIONS 305).
+  static const lightAccent = Color(0xFF2563EB);
+  static const lightSuccess = Color(0xFF1B7F49);
+  static const lightRecord = Color(0xFF9A5B00);
+
+  /// A shade darker than [dangerFill]: as text that one was 4.4:1 on the
+  /// grey background.
+  static const lightDanger = Color(0xFFCF2C32);
+
+  /// The edge of a field or a switch: 3:1 against what it holds and what
+  /// it sits on, where the outline of a card gave 1.2:1 (DECISIONS 305).
+  static const darkEdge = Color(0xFF6B7280);
+  static const lightEdge = Color(0xFF7D838E);
+
+  static bool _light(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.light;
+
+  /// [accent] as text, an icon or a line, in the theme of [context].
+  static Color accentOf(BuildContext context) =>
+      _light(context) ? lightAccent : accent;
+
+  /// [success] as text, an icon or a line, in the theme of [context].
+  static Color successOf(BuildContext context) =>
+      _light(context) ? lightSuccess : success;
+
+  /// [record] as text, an icon or a line, in the theme of [context].
+  static Color recordOf(BuildContext context) =>
+      _light(context) ? lightRecord : record;
+
+  /// [danger] as text, an icon or a line, in the theme of [context].
+  static Color dangerOf(BuildContext context) =>
+      _light(context) ? lightDanger : danger;
+
+  /// [colour] darkened until it reads at 4.5:1 on [ground]: for letters in
+  /// a colour that has to stay recognisable, like a muscle's.
+  static Color readableOn(Color colour, Color ground) {
+    var readable = colour;
+    for (
+      var step = 1;
+      step <= 20 && _contrast(readable, ground) < 4.5;
+      step++
+    ) {
+      readable = Color.lerp(colour, const Color(0xFF000000), step / 20)!;
+    }
+    return readable;
+  }
+
+  /// WCAG's contrast ratio.
+  static double _contrast(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+  }
+
   /// Superset marker colours, indexed by superset group.
   static const supersets = <Color>[
     Color(0xFF7C5CFF),

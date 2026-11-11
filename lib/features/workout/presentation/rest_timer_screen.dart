@@ -95,7 +95,9 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
                           strokeWidth: 10,
                           backgroundColor:
                               theme.colorScheme.surfaceContainerHighest,
-                          color: done ? AppColors.success : AppColors.accent,
+                          color: done
+                              ? AppColors.successOf(context)
+                              : AppColors.accentOf(context),
                         ),
                       ),
                       Column(
@@ -104,7 +106,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
                           Text(
                             done ? 'Klaar' : Formatters.duration(remaining),
                             style: theme.textTheme.displaySmall?.copyWith(
-                              color: done ? AppColors.success : null,
+                              color: done ? AppColors.successOf(context) : null,
                             ),
                           ),
                           if (state.totalSeconds > 0)

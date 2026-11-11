@@ -393,7 +393,7 @@ class _AboutPlan extends StatelessWidget {
                           : _capital(week.note!),
                       style: week.isDeload
                           ? theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.record,
+                              color: AppColors.recordOf(context),
                             )
                           : week.note == null
                           ? muted
@@ -636,6 +636,7 @@ class _WeekRing extends StatelessWidget {
             reached: reached,
             done: theme.colorScheme.primary,
             ahead: theme.colorScheme.outlineVariant,
+            deloadColour: theme.colorScheme.tertiary,
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.sm + 2),
@@ -661,6 +662,7 @@ class _WeekRingPainter extends CustomPainter {
     required this.reached,
     required this.done,
     required this.ahead,
+    required this.deloadColour,
   });
 
   /// Per week, whether it is a deload.
@@ -668,6 +670,10 @@ class _WeekRingPainter extends CustomPainter {
   final int reached;
   final Color done;
   final Color ahead;
+
+  /// The record amber of the theme: on white the bright one was 2:1
+  /// (DECISIONS 305).
+  final Color deloadColour;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -682,7 +688,7 @@ class _WeekRingPainter extends CustomPainter {
     for (final (i, deload) in deloads.indexed) {
       final behind = i < reached;
       paint.color = deload
-          ? AppColors.record.withValues(alpha: behind ? 1 : 0.4)
+          ? deloadColour.withValues(alpha: behind ? 1 : 0.4)
           : behind
           ? done
           : ahead;
@@ -701,6 +707,7 @@ class _WeekRingPainter extends CustomPainter {
       old.reached != reached ||
       old.done != done ||
       old.ahead != ahead ||
+      old.deloadColour != deloadColour ||
       old.deloads.length != deloads.length;
 }
 
@@ -841,7 +848,7 @@ class _SessionRow extends ConsumerWidget {
     return ListTile(
       leading: Icon(
         done ? Icons.check_circle : Icons.radio_button_unchecked,
-        color: done ? AppColors.success : muted,
+        color: done ? AppColors.successOf(context) : muted,
         semanticLabel: done ? 'Gedaan' : null,
       ),
       title: Text(
@@ -874,7 +881,7 @@ class _CheckChip extends ConsumerWidget {
         CheckVerdict.note => 'let op',
         CheckVerdict.wait => 'beter wachten',
       },
-      color: checkColor(check.verdict),
+      color: checkColor(context, check.verdict),
     ),
   );
 }

@@ -2037,7 +2037,7 @@ class SetRow extends StatelessWidget {
           color: AppColors.danger.withValues(alpha: 0.20),
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
-        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+        child: Icon(Icons.delete_outline, color: AppColors.dangerOf(context)),
       ),
       onDismissed: (_) => onDelete(),
       child: Container(
@@ -2077,10 +2077,10 @@ class SetRow extends StatelessWidget {
                           ),
                           if (isRecord) ...[
                             const SizedBox(width: 2),
-                            const Icon(
+                            Icon(
                               Icons.emoji_events,
                               size: 11,
-                              color: AppColors.record,
+                              color: AppColors.recordOf(context),
                             ),
                           ],
                         ],
@@ -2243,9 +2243,9 @@ class _CheckBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final filled = completed
-        ? AppColors.success
+        ? AppColors.successOf(context)
         : skipped
-        ? AppColors.danger
+        ? AppColors.dangerOf(context)
         : null;
 
     return Semantics(

@@ -204,7 +204,7 @@ class ReportBody extends ConsumerWidget {
                   CheckVerdict.note => '${check.session}: let op',
                   CheckVerdict.wait => '${check.session}: beter wachten',
                 },
-                color: checkColor(check.verdict),
+                color: checkColor(context, check.verdict),
               ),
           ],
         ),

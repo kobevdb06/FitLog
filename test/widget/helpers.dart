@@ -24,10 +24,12 @@ AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
 ///
 /// With the app's own builder, so a screen behaves here as it does on the
 /// phone - letting go of a text field included.
-Widget appFrame(Widget child) {
+///
+/// Dark, as the app starts, unless [theme] says otherwise.
+Widget appFrame(Widget child, {ThemeData? theme}) {
   return MaterialApp(
     builder: appBuilder,
-    theme: AppTheme.dark,
+    theme: theme ?? AppTheme.dark,
     locale: const Locale('nl'),
     supportedLocales: const [Locale('nl')],
     localizationsDelegates: const [
@@ -59,9 +61,13 @@ Widget wrapForTest(
 
 /// Same as [wrapForTest], but driven by a container the test owns so it can
 /// read providers directly.
-Widget wrapWithContainer(ProviderContainer container, Widget child) {
+Widget wrapWithContainer(
+  ProviderContainer container,
+  Widget child, {
+  ThemeData? theme,
+}) {
   return UncontrolledProviderScope(
     container: container,
-    child: appFrame(child),
+    child: appFrame(child, theme: theme),
   );
 }

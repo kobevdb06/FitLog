@@ -59,7 +59,7 @@ class PinPad extends StatelessWidget {
               : Text(
                   errorText!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.danger,
+                    color: theme.colorScheme.error,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -110,11 +110,13 @@ class _Dots extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: i < filled
-                    ? (hasError ? AppColors.danger : AppColors.accent)
+                    ? (hasError
+                          ? AppColors.dangerOf(context)
+                          : AppColors.accentOf(context))
                     : Colors.transparent,
                 border: Border.all(
                   color: hasError
-                      ? AppColors.danger
+                      ? AppColors.dangerOf(context)
                       : theme.colorScheme.outline,
                   width: 1.5,
                 ),

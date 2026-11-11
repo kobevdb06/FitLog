@@ -128,7 +128,7 @@ class _PlateCalculatorSheetState extends ConsumerState<PlateCalculatorSheet> {
               const SizedBox(height: AppSpacing.md),
               InfoBanner(
                 icon: Icons.report_problem_outlined,
-                color: AppColors.record,
+                color: AppColors.recordOf(context),
                 message:
                     'Met deze schijven kom je niet exact uit: '
                     '${solution.differenceKg > 0 ? '+' : ''}'
@@ -221,8 +221,10 @@ class _BarView extends StatelessWidget {
                       child: Center(
                         child: Container(
                           width: 22,
-                          height: (28 + 62 * (stack.weightKg / heaviest))
-                              .clamp(28, 90),
+                          height: (28 + 62 * (stack.weightKg / heaviest)).clamp(
+                            28,
+                            90,
+                          ),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: AppColors.accent.withValues(alpha: 0.85),

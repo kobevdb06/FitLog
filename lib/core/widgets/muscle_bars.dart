@@ -107,7 +107,7 @@ class MuscleBars extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, box) {
                       final colour = m.lagging
-                          ? AppColors.record
+                          ? AppColors.recordOf(context)
                           : theme.colorScheme.primary;
                       return SizedBox(
                         height: 14,
@@ -152,7 +152,8 @@ class MuscleBars extends StatelessWidget {
                     m.label,
                     textAlign: TextAlign.right,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: m.lagging ? AppColors.record : null,
+                      // The record amber of this theme (DECISIONS 305).
+                      color: m.lagging ? theme.colorScheme.tertiary : null,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),

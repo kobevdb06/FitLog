@@ -328,7 +328,9 @@ class _StepButton extends StatelessWidget {
             child: Text(
               label,
               style: theme.textTheme.labelLarge?.copyWith(
-                color: accent ? AppColors.accent : theme.colorScheme.onSurface,
+                color: accent
+                    ? AppColors.accentOf(context)
+                    : theme.colorScheme.onSurface,
               ),
             ),
           ),
@@ -468,7 +470,7 @@ class _Key extends StatelessWidget {
     final theme = Theme.of(context);
 
     final background = switch (tone) {
-      _KeyTone.accent => AppColors.accent,
+      _KeyTone.accent => AppColors.accentFill,
       _KeyTone.neutral => theme.colorScheme.surfaceContainerHighest,
       _KeyTone.normal => theme.colorScheme.surfaceContainerHighest,
     };

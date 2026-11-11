@@ -34,7 +34,7 @@ Future<bool> confirm(
         ),
         FilledButton(
           style: destructive
-              ? FilledButton.styleFrom(backgroundColor: AppColors.danger)
+              ? FilledButton.styleFrom(backgroundColor: AppColors.dangerFill)
               : null,
           onPressed: () => Navigator.of(context).pop(true),
           child: Text(confirmLabel),
@@ -391,7 +391,7 @@ class _TypeToConfirmDialogState extends State<_TypeToConfirmDialog> {
           child: const Text('Annuleren'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.dangerFill),
           onPressed: _matches ? () => Navigator.of(context).pop(true) : null,
           child: const Text('Definitief wissen'),
         ),
@@ -447,8 +447,13 @@ void showSnack(BuildContext context, String message, {bool isError = false}) {
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.danger : null,
+        // White on the darker red: the snack's own text colour was 3.3:1
+        // on the red in dark mode, and less in light (DECISIONS 305).
+        content: Text(
+          message,
+          style: isError ? const TextStyle(color: Colors.white) : null,
+        ),
+        backgroundColor: isError ? AppColors.dangerFill : null,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -492,13 +497,16 @@ Future<SetType?> pickSetType(
         if (onDelete != null) ...[
           const Divider(height: 1),
           ListTile(
-            leading: const SizedBox(
+            leading: SizedBox(
               width: 28,
-              child: Icon(Icons.delete_outline, color: AppColors.danger),
+              child: Icon(
+                Icons.delete_outline,
+                color: AppColors.dangerOf(context),
+              ),
             ),
-            title: const Text(
+            title: Text(
               'Set verwijderen',
-              style: TextStyle(color: AppColors.danger),
+              style: TextStyle(color: AppColors.dangerOf(context)),
             ),
             onTap: () {
               Navigator.of(context).pop();
@@ -906,7 +914,7 @@ PopupMenuItem<T> menuItem<T>({
     child: Builder(
       builder: (context) {
         final colour = destructive
-            ? AppColors.danger
+            ? AppColors.dangerOf(context)
             : Theme.of(context).colorScheme.onSurface;
         return Row(
           children: [
@@ -914,7 +922,7 @@ PopupMenuItem<T> menuItem<T>({
               icon,
               size: 20,
               color: destructive
-                  ? AppColors.danger
+                  ? AppColors.dangerOf(context)
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: AppSpacing.md),
@@ -1099,7 +1107,7 @@ class _WeekdayChip extends StatelessWidget {
             height: size,
             child: Material(
               color: selected
-                  ? AppColors.accent
+                  ? AppColors.accentOf(context)
                   : scheme.surfaceContainerHighest,
               shape: const CircleBorder(),
               clipBehavior: Clip.antiAlias,
@@ -1148,8 +1156,8 @@ Color setTypeColor(BuildContext context, SetType type) => switch (type) {
   // Muted: a warm-up is not the work, and should not draw the eye.
   SetType.warmup => Theme.of(context).colorScheme.onSurfaceVariant,
   SetType.normal => Theme.of(context).colorScheme.onSurface,
-  SetType.drop => AppColors.accent,
-  SetType.failure => AppColors.record,
+  SetType.drop => AppColors.accentOf(context),
+  SetType.failure => AppColors.recordOf(context),
 };
 
 String setTypeDescription(SetType type) => switch (type) {

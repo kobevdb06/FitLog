@@ -64,7 +64,7 @@ class ProfileScreen extends ConsumerWidget {
                         ? profile!.displayName!.trim()[0].toUpperCase()
                         : '?',
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      color: AppColors.accent,
+                      color: AppColors.accentOf(context),
                     ),
                   ),
                 ),
@@ -386,7 +386,7 @@ class _MilestoneRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: earned ? AppColors.record : muted),
+        Icon(icon, color: earned ? AppColors.recordOf(context) : muted),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
@@ -409,7 +409,7 @@ class _MilestoneRow extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: milestone.progress,
                   minHeight: 6,
-                  color: AppColors.record,
+                  color: AppColors.recordOf(context),
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
               ),

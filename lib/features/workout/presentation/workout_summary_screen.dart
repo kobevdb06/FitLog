@@ -194,7 +194,7 @@ class WorkoutSummaryScreen extends ConsumerWidget {
                     trailing: Text(
                       _recordValue(record, formatters),
                       style: Theme.of(context).textTheme.titleSmall
-                          ?.copyWith(color: AppColors.record),
+                          ?.copyWith(color: AppColors.recordOf(context)),
                     ),
                   ),
               ],

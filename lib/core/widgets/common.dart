@@ -264,7 +264,7 @@ class StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final style = theme.textTheme.headlineSmall?.copyWith(
-      color: emphasis ? AppColors.accent : null,
+      color: emphasis ? AppColors.accentOf(context) : null,
     );
 
     // A full line high, whatever the number shrinks to, and a shrunk one at
@@ -366,7 +366,19 @@ class MuscleAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final color = AppColors.forMuscle(muscle);
+    // On the light background the muscle's own colour was 1.8:1 to 2.9:1:
+    // the letters go darker until they read (DECISIONS 305).
+    final letters = theme.brightness == Brightness.light
+        ? AppColors.readableOn(
+            color,
+            Color.alphaBlend(
+              color.withValues(alpha: 0.18),
+              theme.colorScheme.surface,
+            ),
+          )
+        : color;
     final text =
         label ??
         (muscle == null || muscle!.isEmpty
@@ -385,7 +397,7 @@ class MuscleAvatar extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          color: color,
+          color: letters,
           fontWeight: FontWeight.w700,
           fontSize: size * 0.34,
         ),
@@ -468,13 +480,13 @@ class PrBadge extends StatelessWidget {
           Icon(
             Icons.emoji_events_outlined,
             size: compact ? 11 : 14,
-            color: AppColors.record,
+            color: AppColors.recordOf(context),
           ),
           const SizedBox(width: 3),
           Text(
             label,
             style: TextStyle(
-              color: AppColors.record,
+              color: AppColors.recordOf(context),
               fontWeight: FontWeight.w700,
               fontSize: compact ? 10 : 12,
             ),

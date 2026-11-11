@@ -216,7 +216,7 @@ class _CoachPanelState extends State<CoachPanel> {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: AppColors.accent,
+              backgroundColor: AppColors.accentFill,
               child: const Icon(
                 Icons.smart_toy_outlined,
                 size: 18,

@@ -20,7 +20,7 @@ class FavouriteStar extends ConsumerWidget {
       tooltip: starred ? 'Uit favorieten halen' : 'Favoriet maken',
       icon: Icon(
         starred ? Icons.star : Icons.star_border,
-        color: starred ? AppColors.record : null,
+        color: starred ? AppColors.recordOf(context) : null,
       ),
       onPressed: () async {
         await ref

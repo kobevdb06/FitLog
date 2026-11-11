@@ -416,7 +416,11 @@ class _MuscleState extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Row(
               children: [
-                const Icon(Icons.check, size: 16, color: AppColors.success),
+                Icon(
+                  Icons.check,
+                  size: 16,
+                  color: AppColors.successOf(context),
+                ),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(child: Text('Bewaard: $kept', style: muted)),
               ],

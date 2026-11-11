@@ -360,7 +360,11 @@ class _StepPicture extends StatelessWidget {
       _Picture.account => Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.account_circle, size: 30, color: AppColors.accent),
+          Icon(
+            Icons.account_circle,
+            size: 30,
+            color: AppColors.accentOf(context),
+          ),
           const SizedBox(height: 4),
           bar(44),
         ],
@@ -368,7 +372,11 @@ class _StepPicture extends StatelessWidget {
       _Picture.key => Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.vpn_key_outlined, size: 20, color: AppColors.accent),
+          Icon(
+            Icons.vpn_key_outlined,
+            size: 20,
+            color: AppColors.accentOf(context),
+          ),
           const SizedBox(width: 4),
           bar(28),
           const SizedBox(width: 4),
@@ -378,7 +386,11 @@ class _StepPicture extends StatelessWidget {
               color: AppColors.accent.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(Icons.copy, size: 14, color: AppColors.accent),
+            child: Icon(
+              Icons.copy,
+              size: 14,
+              color: AppColors.accentOf(context),
+            ),
           ),
         ],
       ),
@@ -459,7 +471,9 @@ class _Paste extends StatelessWidget {
         if (clipboardHasText) ...[
           Text(
             'Er staat iets op je klembord.',
-            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.accent),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.accentOf(context),
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
         ],
@@ -491,7 +505,7 @@ class _Paste extends StatelessWidget {
           Text(
             failure!,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.danger,
+              color: AppColors.dangerOf(context),
             ),
           ),
         ],
@@ -521,7 +535,7 @@ class _Done extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(Icons.check_circle, size: 48, color: AppColors.success),
+        Icon(Icons.check_circle, size: 48, color: AppColors.successOf(context)),
         const SizedBox(height: AppSpacing.md),
         Text(
           'Je coach staat aan',

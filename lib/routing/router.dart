@@ -560,9 +560,9 @@ class StartupFailureScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => confirmStartOver(context, ref),
-                child: const Text(
+                child: Text(
                   'Opnieuw beginnen',
-                  style: TextStyle(color: AppColors.danger),
+                  style: TextStyle(color: AppColors.dangerOf(context)),
                 ),
               ),
             ],

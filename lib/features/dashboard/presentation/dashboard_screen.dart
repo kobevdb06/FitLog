@@ -713,7 +713,7 @@ class _RecordsBlock extends ConsumerWidget {
             Text(
               _recordValue(newest, formatters),
               style: theme.textTheme.headlineSmall?.copyWith(
-                color: AppColors.record,
+                color: AppColors.recordOf(context),
               ),
             ),
             Text(
@@ -751,7 +751,7 @@ class _RecordsBlock extends ConsumerWidget {
               trailing: Text(
                 _recordValue(record, formatters),
                 style: theme.textTheme.titleSmall?.copyWith(
-                  color: AppColors.record,
+                  color: AppColors.recordOf(context),
                 ),
               ),
             ),
@@ -871,7 +871,7 @@ class _Greeting extends StatelessWidget {
               Icons.local_fire_department_outlined,
               size: 16,
               color: (streak?.isActive ?? false)
-                  ? AppColors.record
+                  ? AppColors.recordOf(context)
                   : theme.colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: AppSpacing.xs),
@@ -969,7 +969,7 @@ class _PlanWeekDoneCard extends ConsumerWidget {
                       'week ${schema.week + 1}.'
                 : 'Alle sessies zijn gedaan: dit was de laatste week.',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.success,
+              color: AppColors.successOf(context),
             ),
           ),
         ],
@@ -1000,7 +1000,9 @@ class _CompactPlanCard extends ConsumerWidget {
         onTap: () => _toPlans(context, ref),
         child: Text(
           'Deze week is klaar.',
-          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.success),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: AppColors.successOf(context),
+          ),
         ),
       );
     }
@@ -1056,11 +1058,11 @@ class _RunningCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AppCard(
-      borderColor: AppColors.accent,
+      borderColor: AppColors.accentOf(context),
       onTap: () => context.push(Routes.workout),
       child: Row(
         children: [
-          const Icon(Icons.play_circle_fill, color: AppColors.accent),
+          Icon(Icons.play_circle_fill, color: AppColors.accentOf(context)),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -1241,7 +1243,7 @@ class _PlanCard extends ConsumerWidget {
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
               color: lead.doneToday
-                  ? AppColors.success
+                  ? AppColors.successOf(context)
                   : theme.colorScheme.onSurfaceVariant,
             ),
           ),
@@ -1514,12 +1516,15 @@ class _OtherRoutineRow extends StatelessWidget {
           ? Text(
               'Gedaan',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.success,
+                color: AppColors.successOf(context),
               ),
             )
           : null,
       trailing: planned.doneToday
-          ? const Icon(Icons.check_circle_outline, color: AppColors.success)
+          ? Icon(
+              Icons.check_circle_outline,
+              color: AppColors.successOf(context),
+            )
           : IconButton(
               tooltip: 'Starten',
               onPressed: onStart,
@@ -1566,10 +1571,10 @@ class _RecoveryBlock extends ConsumerWidget {
         child: recovering.isEmpty
             ? Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.check_circle_outline,
                     size: 18,
-                    color: AppColors.success,
+                    color: AppColors.successOf(context),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(

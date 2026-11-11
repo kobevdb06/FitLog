@@ -79,7 +79,9 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
               value: state.progress(),
               minHeight: 3,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              color: done ? AppColors.success : AppColors.accent,
+              color: done
+                  ? AppColors.successOf(context)
+                  : AppColors.accentOf(context),
             ),
             InkWell(
               onTap: () => context.push(Routes.restTimer),
@@ -94,13 +96,15 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
                   children: [
                     Icon(
                       done ? Icons.check_circle : Icons.timer_outlined,
-                      color: done ? AppColors.success : AppColors.accent,
+                      color: done
+                          ? AppColors.successOf(context)
+                          : AppColors.accentOf(context),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
                       done ? 'Rust voorbij' : Formatters.duration(remaining),
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: done ? AppColors.success : null,
+                        color: done ? AppColors.successOf(context) : null,
                       ),
                     ),
                     const Spacer(),

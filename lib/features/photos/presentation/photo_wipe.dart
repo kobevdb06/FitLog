@@ -87,7 +87,7 @@ class _PhotoWipeState extends State<PhotoWipe> {
                     width: 36,
                     height: 36,
                     decoration: const BoxDecoration(
-                      color: AppColors.accent,
+                      color: AppColors.accentFill,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

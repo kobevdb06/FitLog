@@ -27,18 +27,22 @@ abstract final class AppTheme {
     final onSurfaceMuted = isDark
         ? AppColors.darkOnSurfaceMuted
         : AppColors.lightOnSurfaceMuted;
+    // In light mode the darker accent, green, amber and red, which read on
+    // white; in the dark the bright ones (DECISIONS 305).
+    final accent = isDark ? AppColors.accent : AppColors.lightAccent;
+    final edge = isDark ? AppColors.darkEdge : AppColors.lightEdge;
 
     final scheme = ColorScheme(
       brightness: brightness,
-      primary: AppColors.accent,
+      primary: accent,
       onPrimary: Colors.white,
       primaryContainer: isDark ? AppColors.accentDim : const Color(0xFFDCE7FF),
       onPrimaryContainer: isDark ? Colors.white : AppColors.accentDim,
-      secondary: AppColors.accent,
+      secondary: accent,
       onSecondary: Colors.white,
-      tertiary: AppColors.record,
-      onTertiary: Colors.black,
-      error: AppColors.danger,
+      tertiary: isDark ? AppColors.record : AppColors.lightRecord,
+      onTertiary: isDark ? Colors.black : Colors.white,
+      error: isDark ? AppColors.danger : AppColors.lightDanger,
       onError: Colors.white,
       surface: surface,
       onSurface: onSurface,
@@ -137,7 +141,7 @@ abstract final class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => text.labelMedium?.copyWith(
             color: states.contains(WidgetState.selected)
-                ? AppColors.accent
+                ? accent
                 : onSurfaceMuted,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w600
@@ -148,13 +152,16 @@ abstract final class AppTheme {
           (states) => IconThemeData(
             size: 24,
             color: states.contains(WidgetState.selected)
-                ? AppColors.accent
+                ? accent
                 : onSurfaceMuted,
           ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          // White on the accent was 3.8:1 (DECISIONS 305).
+          backgroundColor: AppColors.accentFill,
+          foregroundColor: Colors.white,
           minimumSize: const Size(0, AppSpacing.minTouch),
           textStyle: text.labelLarge,
           shape: RoundedRectangleBorder(
@@ -202,17 +209,19 @@ abstract final class AppTheme {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
         ),
+        // The card's outline was 1.2:1 against the fill: a field you could
+        // hardly see (DECISIONS 305).
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          borderSide: BorderSide(color: outline),
+          borderSide: BorderSide(color: edge),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          borderSide: BorderSide(color: outline),
+          borderSide: BorderSide(color: edge),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          borderSide: const BorderSide(color: AppColors.accent, width: 2),
+          borderSide: BorderSide(color: accent, width: 2),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -241,12 +250,10 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         ),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.accent,
-      ),
-      sliderTheme: const SliderThemeData(
-        activeTrackColor: AppColors.accent,
-        thumbColor: AppColors.accent,
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: accent),
+      sliderTheme: SliderThemeData(
+        activeTrackColor: accent,
+        thumbColor: accent,
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -254,14 +261,17 @@ abstract final class AppTheme {
               s.contains(WidgetState.selected) ? Colors.white : onSurfaceMuted,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (s) =>
-              s.contains(WidgetState.selected) ? AppColors.accent : surfaceHigh,
+          (s) => s.contains(WidgetState.selected) ? accent : surfaceHigh,
+        ),
+        // Off, it was 1.1:1 against the card (DECISIONS 305).
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? accent : edge,
         ),
       ),
       tabBarTheme: TabBarThemeData(
         labelColor: onSurface,
         unselectedLabelColor: onSurfaceMuted,
-        indicatorColor: AppColors.accent,
+        indicatorColor: accent,
         dividerColor: outline,
         labelStyle: text.labelLarge,
         unselectedLabelStyle: text.labelLarge,

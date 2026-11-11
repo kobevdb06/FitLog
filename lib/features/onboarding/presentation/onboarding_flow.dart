@@ -477,14 +477,14 @@ class _ChoiceCard extends StatelessWidget {
     final theme = Theme.of(context);
     return AppCard(
       onTap: onTap,
-      borderColor: selected ? AppColors.accent : null,
+      borderColor: selected ? AppColors.accentOf(context) : null,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
             color: selected
-                ? AppColors.accent
+                ? AppColors.accentOf(context)
                 : theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: AppSpacing.md),
@@ -506,7 +506,7 @@ class _ChoiceCard extends StatelessWidget {
           Icon(
             selected ? Icons.check_circle : Icons.circle_outlined,
             color: selected
-                ? AppColors.accent
+                ? AppColors.accentOf(context)
                 : theme.colorScheme.onSurfaceVariant,
           ),
         ],

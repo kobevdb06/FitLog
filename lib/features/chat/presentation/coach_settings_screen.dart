@@ -51,7 +51,7 @@ class _DailyBar extends ConsumerWidget {
                 child: Text(
                   '${usage.requests} van $limit',
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    color: over ? AppColors.danger : null,
+                    color: over ? AppColors.dangerOf(context) : null,
                   ),
                 ),
               ),
@@ -71,7 +71,9 @@ class _DailyBar extends ConsumerWidget {
               value: usage.fractionOf(limit),
               minHeight: 10,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              color: over ? AppColors.danger : AppColors.accent,
+              color: over
+                  ? AppColors.dangerOf(context)
+                  : AppColors.accentOf(context),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),

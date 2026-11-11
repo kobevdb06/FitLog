@@ -291,15 +291,22 @@ class _MonthCalendar extends StatelessWidget {
                             width: 2,
                           )
                         : isToday
-                        ? Border.all(color: AppColors.accent, width: 1.5)
+                        ? Border.all(
+                            color: AppColors.accentOf(context),
+                            width: 1.5,
+                          )
                         : null,
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     '$day',
                     style: theme.textTheme.bodySmall?.copyWith(
+                      // White on a light tint was 1.3:1 to 3.2:1 in light
+                      // mode (DECISIONS 305).
                       color: volume == null
                           ? theme.colorScheme.onSurfaceVariant
+                          : theme.brightness == Brightness.light
+                          ? theme.colorScheme.onSurface
                           : Colors.white,
                       fontWeight: volume == null
                           ? FontWeight.w400
@@ -351,7 +358,7 @@ class _WorkoutTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: AppSpacing.lg),
         color: AppColors.danger.withValues(alpha: 0.20),
-        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+        child: Icon(Icons.delete_outline, color: AppColors.dangerOf(context)),
       ),
       confirmDismiss: (_) => confirmWorkoutDeletion(context),
       onDismissed: (_) => deleteWorkoutWithUndo(context, ref, summary.workout),

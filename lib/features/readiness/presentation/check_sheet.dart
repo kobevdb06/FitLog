@@ -16,8 +16,10 @@ import '../domain/training_check.dart';
 import '../../../core/formatting/formatters.dart';
 
 /// The colour of a verdict: green when ready, amber otherwise.
-Color checkColor(CheckVerdict verdict) =>
-    verdict == CheckVerdict.ready ? AppColors.success : AppColors.record;
+Color checkColor(BuildContext context, CheckVerdict verdict) =>
+    verdict == CheckVerdict.ready
+    ? AppColors.successOf(context)
+    : AppColors.recordOf(context);
 
 /// The check's one line on a card, with a tap for where it comes from.
 class CheckLine extends StatelessWidget {
@@ -29,7 +31,7 @@ class CheckLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colour = checkColor(check.verdict);
+    final colour = checkColor(context, check.verdict);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
@@ -155,7 +157,7 @@ class _CheckSheet extends ConsumerWidget {
               CheckVerdict.wait => 'Beter wachten',
             },
             style: theme.textTheme.titleSmall?.copyWith(
-              color: checkColor(verdict),
+              color: checkColor(context, verdict),
             ),
           ),
           if (today.noneReady) ...[
@@ -189,9 +191,9 @@ class _CheckSheet extends ConsumerWidget {
                     : '${(muscle.progress * 100).round()}% · nog '
                           '${(muscle.left.inMinutes / 60).ceil()} u',
                 colour: muscle.left == Duration.zero
-                    ? AppColors.success
+                    ? AppColors.successOf(context)
                     : muscle.holdsBack
-                    ? AppColors.record
+                    ? AppColors.recordOf(context)
                     : null,
               ),
           heading('Jij, vannacht'),
@@ -208,7 +210,7 @@ class _CheckSheet extends ConsumerWidget {
               ].join(' · '),
               null => 'geen nacht bekend',
             },
-            colour: body.shortNight ? AppColors.record : null,
+            colour: body.shortNight ? AppColors.recordOf(context) : null,
           ),
           if (body.hrvMs case final hrv?)
             _CheckRow(
@@ -216,7 +218,7 @@ class _CheckSheet extends ConsumerWidget {
               detail: 'gewoonlijk ${body.usualHrvMs!.round()}',
               value: '${hrv.round()} ms',
               colour: (body.hrvDrop ?? 0) > kHrvDropNoEffect
-                  ? AppColors.record
+                  ? AppColors.recordOf(context)
                   : null,
             ),
           if (body.restingHr case final heart?)
@@ -225,7 +227,7 @@ class _CheckSheet extends ConsumerWidget {
               detail: 'gewoonlijk ${body.usualRestingHr!.round()}',
               value: '${heart.round()}',
               colour: (body.restingHrRise ?? 0) > kRestingHrRiseNoEffect
-                  ? AppColors.record
+                  ? AppColors.recordOf(context)
                   : null,
             ),
           const SizedBox(height: AppSpacing.md),

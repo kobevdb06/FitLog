@@ -322,9 +322,9 @@ class PanelBar extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(3),
                 color: i == justDone
-                    ? AppColors.success
+                    ? AppColors.successOf(context)
                     : switch (marks[i]) {
-                        'done' => AppColors.accent,
+                        'done' => AppColors.accentOf(context),
                         'skipped' => scheme.outline,
                         _ => scheme.outlineVariant,
                       },
@@ -378,8 +378,8 @@ class _TickedState extends State<_Ticked> {
           child: Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(
-              color: AppColors.success,
+            decoration: BoxDecoration(
+              color: AppColors.successOf(context),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.check, color: Colors.white, size: 36),

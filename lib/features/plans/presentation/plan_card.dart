@@ -136,7 +136,7 @@ class _PlanProposalCardState extends ConsumerState<PlanProposalCard> {
               : Icons.flag_outlined,
           size: 18,
           color: plan.state == PlanStatus.running
-              ? AppColors.success
+              ? AppColors.successOf(context)
               : theme.colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -315,10 +315,10 @@ class _PlanChangeCardState extends ConsumerState<PlanChangeCard> {
             if (proposal.appliedId != null)
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.check_circle,
                     size: 18,
-                    color: AppColors.success,
+                    color: AppColors.successOf(context),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Text('Aangepast', style: theme.textTheme.bodySmall),

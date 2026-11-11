@@ -1,11 +1,14 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
+import 'package:fitlog/core/theme/app_colors.dart';
+import 'package:fitlog/core/theme/app_theme.dart';
 import 'package:fitlog/features/history/presentation/history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'contrast_test.dart' show contrast;
 import 'helpers.dart';
 
 /// The month grid was a picture. Tapping a day now filters the list under it,
@@ -56,7 +59,7 @@ void main() {
   final first = DateTime(now.year, now.month, 4, 18);
   final second = DateTime(now.year, now.month, 12, 18);
 
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(WidgetTester tester, {ThemeData? theme}) async {
     // A tall window, because the month grid fills the default one on its own
     // and a ListView does not build what is below the fold.
     tester.view.physicalSize = const Size(1000, 2600);
@@ -65,10 +68,33 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      wrapWithContainer(container, const HistoryScreen()),
+      wrapWithContainer(container, const HistoryScreen(), theme: theme),
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('a day you trained reads at 4.5:1 in light mode too '
+      '(DECISIONS 305)', (tester) async {
+    // White on a light tint was 1.3:1 to 3.2:1.
+    await session('Push', first);
+    await pump(tester, theme: AppTheme.light);
+
+    final day = find.text('${first.day}').first;
+    final text = tester.widget<Text>(day);
+    final cell = tester.widget<Container>(
+      find.ancestor(of: day, matching: find.byType(Container)).first,
+    );
+    final fill = (cell.decoration! as BoxDecoration).color!;
+    for (final ground in [
+      AppTheme.light.colorScheme.surface,
+      AppColors.lightBackground,
+    ]) {
+      expect(
+        contrast(text.style!.color!, Color.alphaBlend(fill, ground)),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
 
   testWidgets('the oldest wait behind a button (DECISIONS 286)', (
     tester,

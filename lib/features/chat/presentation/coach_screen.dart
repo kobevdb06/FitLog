@@ -1451,7 +1451,11 @@ class _ProposalCardState extends ConsumerState<_ProposalCard> {
             if (proposal.appliedId case final id?) ...[
               Row(
                 children: [
-                  Icon(Icons.check_circle, size: 18, color: AppColors.success),
+                  Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: AppColors.successOf(context),
+                  ),
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(switch (proposal.kind) {
@@ -2452,7 +2456,7 @@ class _CommandRow extends StatelessWidget {
               child: Text(
                 asks ? '1 vraag' : 'gratis',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: asks ? muted : AppColors.success,
+                  color: asks ? muted : AppColors.successOf(context),
                 ),
               ),
             ),

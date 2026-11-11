@@ -631,9 +631,9 @@ class _RecordsTab extends ConsumerWidget {
             for (final record in list)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(
+                leading: Icon(
                   Icons.emoji_events_outlined,
-                  color: AppColors.record,
+                  color: AppColors.recordOf(context),
                 ),
                 title: Text(PrType.fromWire(record.recordType).label),
                 subtitle: Text(

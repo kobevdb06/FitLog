@@ -500,7 +500,7 @@ class _HomeGridState extends State<HomeGrid> {
                 _outline(
                   geometry.rectOf(spot),
                   color: _layout.fits(_chipBlock!, spot)
-                      ? AppColors.success
+                      ? AppColors.successOf(context)
                       : theme.colorScheme.error,
                 ),
               if (selected != null &&
@@ -519,7 +519,7 @@ class _HomeGridState extends State<HomeGrid> {
                 _outline(
                   geometry.rectOf(targetSpot),
                   color: switch (_drop) {
-                    HomeDrop.fits => AppColors.success,
+                    HomeDrop.fits => AppColors.successOf(context),
                     HomeDrop.swaps => theme.colorScheme.primary,
                     HomeDrop.blocked => theme.colorScheme.error,
                   },

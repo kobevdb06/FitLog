@@ -171,7 +171,7 @@ class _Week extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: AppSpacing.sm),
                 child: _Line(
                   icon: Icons.battery_charging_full,
-                  colour: AppColors.accent,
+                  colour: AppColors.accentOf(context),
                   label: days >= 7
                       ? 'Deloadweek: minder was de bedoeling'
                       : 'Deload: minder was de bedoeling',
@@ -216,7 +216,7 @@ class _Week extends ConsumerWidget {
               for (final record in week.records)
                 _Line(
                   icon: Icons.emoji_events_outlined,
-                  colour: AppColors.record,
+                  colour: AppColors.recordOf(context),
                   label: record.exercise,
                   value: recordValue(record, formatters),
                 ),
@@ -232,7 +232,7 @@ class _Week extends ConsumerWidget {
               for (final name in week.movingAgain)
                 _Line(
                   icon: Icons.trending_up,
-                  colour: AppColors.success,
+                  colour: AppColors.successOf(context),
                   label: name,
                   value: 'weer vooruit',
                 ),

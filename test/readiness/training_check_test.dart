@@ -145,6 +145,33 @@ void main() {
       expect(body.heartOff, isTrue);
     });
 
+    test('een slechte HRV is één sein, niet ook nog een korte nacht', () {
+      // 6 u 30 en HRV 15% onder je gewone. With the heart part in it, the
+      // night scored 55 - under 60, a second sign from the same reading
+      // (DECISIONS 267). Without it the night is 63: one sign.
+      final body = checkBody(
+        now: now,
+        nights: [
+          for (var d = 1; d <= 7; d++)
+            night(
+              DateTime(2026, 3, 3 - d - 1, 23),
+              DateTime(2026, 3, 3 - d, 7),
+            ),
+          night(DateTime(2026, 3, 3, 0, 10), DateTime(2026, 3, 3, 6, 40)),
+        ],
+        vitals: [
+          for (var d = 1; d <= 7; d++)
+            VitalsDay(day: DateTime(2026, 3, 3 - d), hrvMs: 50, restingHr: 54),
+          VitalsDay(day: DateTime(2026, 3, 3), hrvMs: 42.5, restingHr: 54),
+        ],
+      );
+      expect(body.slept, const Duration(hours: 6, minutes: 30));
+      expect(body.score, 55, reason: 'the score shown stays the whole score');
+      expect(body.heartOff, isTrue);
+      expect(body.shortNight, isFalse);
+      expect(check({'quadriceps': 9}, body: body).signs, {CheckSign.heart});
+    });
+
     test('zonder nacht en zonder horloge weet de check niets over jou', () {
       final body = checkBody(now: now, nights: const [], vitals: const []);
       expect(body.known, isFalse);

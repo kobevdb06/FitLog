@@ -6187,3 +6187,17 @@ werkt zoals voordien: zijn model zit in de app, en de transportlaag
 diende alleen voor die metingen. Wat een oudere versie al had opgeslagen,
 gaat bij de volgende poging weg zonder dat het vertrekt. Een test bewaakt
 de regel in het manifest. De zin op de privacypagina klopt weer.
+
+## 267. Eén lage HRV is één sein
+
+Uit het Fable-rapport: F1.
+
+De check voor een training telt drie soorten seinen, elk één keer: je
+spieren, je nacht en je hart. De score van de nacht had een hersteldeel
+uit HRV en rusthartslag. Precies die meting is ook het aparte hartsein.
+Na een nacht van 6 u 30 met een HRV 15% onder je gewone kwam de score op
+55. Dat is onder 60, dus een nachtsein, en het hartsein ging ook af: twee
+seinen uit één meting, en het oordeel werd *beter wachten*. Nu beslist
+de score zonder het hersteldeel over het nachtsein. Die nacht is 63, dus
+één sein. De score die je ziet, blijft de hele score, zoals op het
+herstelscherm.

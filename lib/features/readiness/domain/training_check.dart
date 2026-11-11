@@ -68,6 +68,7 @@ class CheckBody {
   const CheckBody({
     this.slept,
     this.score,
+    this.nightScore,
     this.usualSleep,
     this.hrvMs,
     this.usualHrvMs,
@@ -78,6 +79,12 @@ class CheckBody {
   /// The night that ended today, and its score.
   final Duration? slept;
   final int? score;
+
+  /// The same score without its heart part - HRV and resting heart rate,
+  /// which are a sign of their own: one low HRV counted as a short night
+  /// as well, two signs from one reading (DECISIONS 267). Null where only
+  /// [score] is known.
+  final int? nightScore;
 
   /// Your usual night over the four weeks before, when there are enough.
   final Duration? usualSleep;
@@ -97,7 +104,10 @@ class CheckBody {
 
   bool get shortNight =>
       (slept != null && slept! < kCheckShortNight) ||
-      (score != null && score! < kCheckLowScore);
+      switch (nightScore ?? score) {
+        final night? => night < kCheckLowScore,
+        null => false,
+      };
 
   /// The same lines the recovery estimate starts to count from.
   bool get heartOff =>
@@ -295,6 +305,13 @@ CheckBody checkBody({
             remMinutes: last.remMinutes,
             hrvDrop: drop,
             restingHrRise: rise,
+          ).value,
+    nightScore: last == null
+        ? null
+        : sleepScore(
+            asleep: slept!,
+            deepMinutes: last.deepMinutes,
+            remMinutes: last.remMinutes,
           ).value,
     usualSleep: before.length < kVitalsForBaseline
         ? null

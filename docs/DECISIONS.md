@@ -6717,3 +6717,13 @@ gedraaid. Toch bouwde GitHub haar bij elke push op een Mac, en dat
 suggereerde een iOS-versie die er niet is. De workflow draait nu alleen
 nog met de hand. Hij blijft staan voor wie het wil proberen. De
 iOS-handleiding zegt bovenaan hoe het zit.
+
+## 297. Elke push wordt nagekeken en getest
+
+Uit het Fable-rapport: B2.
+
+Er was geen CI voor `flutter analyze` en `flutter test`. Alleen de
+iOS-build, en die draaide geen tests. Nu draait `.github/workflows/ci.yml`
+beide bij elke push naar `main`, bij elke pull request en met de hand.
+De tests draaien in de tijdzone `Europe/Brussels`. Sommige vallen alleen
+om in een zone met zomertijd (268), en daar draait de app ook.

@@ -26,6 +26,7 @@ import 'features/review/data/week_alarm.dart';
 import 'features/review/presentation/review_providers.dart';
 import 'features/routines/domain/quick_start.dart';
 import 'features/routines/presentation/quick_start_providers.dart';
+import 'features/workout/presentation/rest_timer_bar.dart';
 import 'features/workout/presentation/workout_live_update.dart';
 import 'features/workout/presentation/workout_providers.dart';
 import 'routing/open_workout.dart';
@@ -235,11 +236,15 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
     switch (state) {
       case AppLifecycleState.paused:
         controller.onPaused();
+        // Out of sight: the end of a rest is the notification's to say.
+        unawaited(ref.read(restTimerProvider.notifier).background());
         ref.read(coachSessionControllerProvider.notifier).left(DateTime.now());
       case AppLifecycleState.resumed:
         controller.onResumed();
         // A new day since you left: today's card and this week's numbers.
         _turnDay();
+        // In sight again: the app says when a rest is over (DECISIONS 285).
+        unawaited(ref.read(restTimerProvider.notifier).foreground());
         // Away for a while: the coach starts afresh.
         unawaited(
           ref
@@ -359,7 +364,8 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: appBuilder,
+      builder: (context, child) =>
+          RestSignal(child: appBuilder(context, child)),
     );
   }
 }

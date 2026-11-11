@@ -359,18 +359,71 @@ final class WorkoutRecordsFamily extends $Family
   String toString() => r'workoutRecordsProvider';
 }
 
+@ProviderFor(restNotices)
+final restNoticesProvider = RestNoticesProvider._();
+
+final class RestNoticesProvider
+    extends $FunctionalProvider<RestNotices, RestNotices, RestNotices>
+    with $Provider<RestNotices> {
+  RestNoticesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'restNoticesProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$restNoticesHash();
+
+  @$internal
+  @override
+  $ProviderElement<RestNotices> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  RestNotices create(Ref ref) {
+    return restNotices(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RestNotices value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RestNotices>(value),
+    );
+  }
+}
+
+String _$restNoticesHash() => r'a45b86cabf290107540674caa948f87ec09bb1e9';
+
 /// Drives the rest timer. Kept alive so it survives navigation between the
 /// workout screen and the full screen countdown.
+///
+/// The end of a rest is said once: in the app by [RestSignal] while FitLog
+/// is in sight, by a notification while it is not. Both went off at once
+/// (DECISIONS 285).
 
 @ProviderFor(RestTimer)
 final restTimerProvider = RestTimerProvider._();
 
 /// Drives the rest timer. Kept alive so it survives navigation between the
 /// workout screen and the full screen countdown.
+///
+/// The end of a rest is said once: in the app by [RestSignal] while FitLog
+/// is in sight, by a notification while it is not. Both went off at once
+/// (DECISIONS 285).
 final class RestTimerProvider
     extends $NotifierProvider<RestTimer, RestTimerState> {
   /// Drives the rest timer. Kept alive so it survives navigation between the
   /// workout screen and the full screen countdown.
+  ///
+  /// The end of a rest is said once: in the app by [RestSignal] while FitLog
+  /// is in sight, by a notification while it is not. Both went off at once
+  /// (DECISIONS 285).
   RestTimerProvider._()
     : super(
         from: null,
@@ -398,10 +451,14 @@ final class RestTimerProvider
   }
 }
 
-String _$restTimerHash() => r'ef9c8a2f4388f107b884cb1b2bcb6cea37ed9ac7';
+String _$restTimerHash() => r'3cd4bd1d3b5e41ee6ec850f473809369eb4d54a8';
 
 /// Drives the rest timer. Kept alive so it survives navigation between the
 /// workout screen and the full screen countdown.
+///
+/// The end of a rest is said once: in the app by [RestSignal] while FitLog
+/// is in sight, by a notification while it is not. Both went off at once
+/// (DECISIONS 285).
 
 abstract class _$RestTimer extends $Notifier<RestTimerState> {
   RestTimerState build();

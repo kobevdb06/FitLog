@@ -6487,3 +6487,22 @@ Dat herschrijft een kolom, maar geen gebruikersdata: `total_sets` is de
 som die de app zelf van je sets maakt, niets wat je invulde. De sets, het
 volume en al de rest van een workout blijven zoals ze waren. Het is
 dezelfde soort gerichte correctie als die van de geschatte maxima in 62.
+
+## 285. Het einde van een rust klinkt één keer, waar je ook bent
+
+Uit het Fable-rapport: T10 (het rustsignaal) en het derde punt om op de
+emulator na te gaan.
+
+- **Met het toetsenblok open hoorde je niets.** Het geluid en de trilling
+  zaten in de rustbalk, en die maakt plaats voor het toetsenblok. Ook op
+  het volledige aftelscherm, of op een ander tabblad terwijl de workout
+  liep, klonk er niets. Nu zegt `RestSignal`, rond de hele app, wanneer de
+  rust voorbij is, welk scherm er ook open staat. De rustbalk toont het
+  alleen nog.
+- **Twee keer tegelijk.** De melding *Rust voorbij* werd altijd gepland,
+  ook als de app in beeld was en zelf al geluid maakte. Nu wordt ze alleen
+  gepland als FitLog uit beeld gaat, en weer weggehaald als het terugkomt.
+  In beeld zegt de app het, uit beeld de melding. Een set die je afvinkt
+  vanuit de melding terwijl de app uit beeld is, plant ze ook. De melding
+  loopt via `RestNotices`, zodat een test kan zien wat er gepland wordt.
+

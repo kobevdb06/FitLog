@@ -77,10 +77,49 @@ Future<Set<String>> workoutRecordSetIds(Ref ref, String workoutId) =>
 Future<List<RecordWithExercise>> workoutRecords(Ref ref, String workoutId) =>
     ref.watch(databaseProvider).recordsDao.recordsForWorkout(workoutId);
 
+/// Where "Rust voorbij" goes when FitLog is out of sight. Overridden in
+/// tests.
+abstract interface class RestNotices {
+  Future<void> schedule({
+    required DateTime endsAt,
+    required String exerciseName,
+    required bool withSound,
+  });
+  Future<void> cancel();
+}
+
+class _SystemRestNotices implements RestNotices {
+  const _SystemRestNotices();
+
+  @override
+  Future<void> schedule({
+    required DateTime endsAt,
+    required String exerciseName,
+    required bool withSound,
+  }) => NotificationService.instance.scheduleRestFinished(
+    endsAt: endsAt,
+    exerciseName: exerciseName,
+    withSound: withSound,
+  );
+
+  @override
+  Future<void> cancel() => NotificationService.instance.cancelRestFinished();
+}
+
+@Riverpod(keepAlive: true)
+RestNotices restNotices(Ref ref) => const _SystemRestNotices();
+
 /// Drives the rest timer. Kept alive so it survives navigation between the
 /// workout screen and the full screen countdown.
+///
+/// The end of a rest is said once: in the app by [RestSignal] while FitLog
+/// is in sight, by a notification while it is not. Both went off at once
+/// (DECISIONS 285).
 @Riverpod(keepAlive: true)
 class RestTimer extends _$RestTimer {
+  bool _outOfSight = false;
+  bool _withSound = true;
+
   @override
   RestTimerState build() => const RestTimerState.idle();
 
@@ -90,31 +129,50 @@ class RestTimer extends _$RestTimer {
     bool withSound = true,
   }) async {
     if (seconds <= 0) return;
+    _withSound = withSound;
     state = RestTimerState.start(
       seconds: seconds,
       from: DateTime.now(),
       exerciseName: exerciseName,
     );
-    await NotificationService.instance.scheduleRestFinished(
-      endsAt: state.endsAt!,
-      exerciseName: exerciseName ?? 'je volgende set',
-      withSound: withSound,
-    );
+    await _scheduleIfOutOfSight();
   }
 
   Future<void> adjust(int deltaSeconds, {bool withSound = true}) async {
     if (!state.isActive) return;
+    _withSound = withSound;
     state = state.adjust(deltaSeconds);
-    await NotificationService.instance.scheduleRestFinished(
-      endsAt: state.endsAt!,
-      exerciseName: state.exerciseName ?? 'je volgende set',
-      withSound: withSound,
-    );
+    await _scheduleIfOutOfSight();
   }
 
   Future<void> skip() async {
     state = const RestTimerState.idle();
-    await NotificationService.instance.cancelRestFinished();
+    await ref.read(restNoticesProvider).cancel();
+  }
+
+  /// FitLog went out of sight: from here on the notification says it.
+  Future<void> background() async {
+    _outOfSight = true;
+    await _scheduleIfOutOfSight();
+  }
+
+  /// Back in sight: the app says it, and the notification is not needed.
+  Future<void> foreground() async {
+    _outOfSight = false;
+    await ref.read(restNoticesProvider).cancel();
+  }
+
+  Future<void> _scheduleIfOutOfSight() async {
+    final endsAt = state.endsAt;
+    if (!_outOfSight || endsAt == null || state.finishedHandled) return;
+    if (!endsAt.isAfter(DateTime.now())) return;
+    await ref
+        .read(restNoticesProvider)
+        .schedule(
+          endsAt: endsAt,
+          exerciseName: state.exerciseName ?? 'je volgende set',
+          withSound: _withSound,
+        );
   }
 
   /// Puts a rest that is over away, and leaves the notification that said

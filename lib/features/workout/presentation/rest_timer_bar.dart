@@ -10,6 +10,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/util/feedback_service.dart';
 import '../../../routing/routes.dart';
+import '../domain/rest_timer.dart';
 import 'workout_providers.dart';
 
 /// How long "Rust voorbij" stays once the rest is over. Long enough to see
@@ -50,18 +51,11 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
     if (!state.isActive || !state.hasElapsed()) return;
     final notifier = ref.read(restTimerProvider.notifier);
 
-    // Over for a while: the bar has said so, and goes. Coming back to the app
-    // long after, the notification has already said it, so no sound either.
+    // Over for a while: the bar has said so, and goes. The sound is not the
+    // bar's: [RestSignal] makes it, wherever you are (DECISIONS 285).
     if (DateTime.now().isAfter(state.endsAt!.add(kRestOverShown))) {
       notifier.dismiss();
-      return;
     }
-
-    if (state.finishedHandled) return;
-    notifier.markFinishedHandled();
-    final settings = ref.read(settingsProvider).value;
-    FeedbackService(setCheckSoundEnabled: settings?.restSoundEnabled ?? true)
-        .restFinished();
   }
 
   @override
@@ -141,5 +135,64 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar> {
         ),
       ),
     );
+  }
+}
+
+/// The end of a rest, said once while FitLog is in sight - whatever screen
+/// is up, the keypad too. It was the rest bar's, and the bar gives way to
+/// the keypad: typing your weights, you heard nothing (DECISIONS 285). Out
+/// of sight, the notification says it.
+class RestSignal extends ConsumerStatefulWidget {
+  const RestSignal({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  ConsumerState<RestSignal> createState() => _RestSignalState();
+}
+
+class _RestSignalState extends ConsumerState<RestSignal> {
+  Timer? _over;
+
+  @override
+  void initState() {
+    super.initState();
+    _follow(ref.read(restTimerProvider));
+  }
+
+  @override
+  void dispose() {
+    _over?.cancel();
+    super.dispose();
+  }
+
+  void _follow(RestTimerState state) {
+    _over?.cancel();
+    _over = null;
+    final endsAt = state.endsAt;
+    if (endsAt == null || state.finishedHandled) return;
+    final left = endsAt.difference(DateTime.now());
+    _over = Timer(left.isNegative ? Duration.zero : left, _sound);
+  }
+
+  void _sound() {
+    if (!mounted) return;
+    // Out of sight the notification says it; both at once was the trouble.
+    final life = WidgetsBinding.instance.lifecycleState;
+    if (life != null && life != AppLifecycleState.resumed) return;
+    final state = ref.read(restTimerProvider);
+    if (!state.isActive || state.finishedHandled || !state.hasElapsed()) return;
+    // Long over - coming back to the app: the notification said it.
+    if (DateTime.now().isAfter(state.endsAt!.add(kRestOverShown))) return;
+    ref.read(restTimerProvider.notifier).markFinishedHandled();
+    final settings = ref.read(settingsProvider).value;
+    FeedbackService(setCheckSoundEnabled: settings?.restSoundEnabled ?? true)
+        .restFinished();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(restTimerProvider, (_, next) => _follow(next));
+    return widget.child;
   }
 }

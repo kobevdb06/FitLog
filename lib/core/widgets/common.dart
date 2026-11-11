@@ -312,6 +312,29 @@ class StatTile extends StatelessWidget {
   }
 }
 
+/// The name of a column over a table of sets: on one line, and smaller
+/// when the column is too narrow for it. At text 2.0 "SET" broke into "SE"
+/// over "T" (DECISIONS 307).
+class ColumnLabel extends StatelessWidget {
+  const ColumnLabel(
+    this.label, {
+    super.key,
+    this.style,
+    this.alignment = Alignment.center,
+  });
+
+  final String label;
+  final TextStyle? style;
+  final AlignmentGeometry alignment;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    alignment: alignment,
+    child: Text(label, style: style, maxLines: 1, softWrap: false),
+  );
+}
+
 /// A padded card with the app's border treatment.
 class AppCard extends StatelessWidget {
   const AppCard({

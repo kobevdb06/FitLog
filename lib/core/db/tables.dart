@@ -336,6 +336,12 @@ class AppSettingsTable extends Table {
       .named('lock_during_workout')
       .withDefault(const Constant(false))();
 
+  /// Whether text follows Android's size above 1.4, up to 2.0. Off: the
+  /// layouts are made for 1.4, and a fuller screen is a choice
+  /// (DECISIONS 307).
+  BoolColumn get largeText =>
+      boolean().named('large_text').withDefault(const Constant(false))();
+
   IntColumn get updatedAt => integer().named('updated_at')();
 
   @override

@@ -589,15 +589,21 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (workout.workout.isDeload) ...[
-                          DeloadTag(light: workout.workout.isLight),
-                          const SizedBox(width: AppSpacing.xs),
+                    // Smaller when the buttons beside it leave too little
+                    // room: at text 2.0 that was 68 dp (DECISIONS 307).
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (workout.workout.isDeload) ...[
+                            DeloadTag(light: workout.workout.isLight),
+                            const SizedBox(width: AppSpacing.xs),
+                          ],
+                          _ElapsedLabel(startedAt: workout.workout.startedAt),
                         ],
-                        _ElapsedLabel(startedAt: workout.workout.startedAt),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -1863,29 +1869,28 @@ class _ColumnHeaders extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         children: [
-          SizedBox(width: 36, child: Text('SET', style: style)),
+          SizedBox(
+            width: 36,
+            child: ColumnLabel(
+              'SET',
+              style: style,
+              alignment: AlignmentDirectional.centerStart,
+            ),
+          ),
           Expanded(
             flex: previousFlex(columns),
-            child: Text('VORIGE', style: style, textAlign: TextAlign.center),
+            child: ColumnLabel('VORIGE', style: style),
           ),
           for (final kind in columns)
             if (isWideColumn(kind))
               Expanded(
                 flex: 2,
-                child: Text(
-                  columnLabel(kind, formatters),
-                  style: style,
-                  textAlign: TextAlign.center,
-                ),
+                child: ColumnLabel(columnLabel(kind, formatters), style: style),
               )
             else
               SizedBox(
                 width: kRpeColumnWidth,
-                child: Text(
-                  columnLabel(kind, formatters),
-                  style: style,
-                  textAlign: TextAlign.center,
-                ),
+                child: ColumnLabel(columnLabel(kind, formatters), style: style),
               ),
           SizedBox(
             width: AppSpacing.setCheckbox,

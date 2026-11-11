@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **65**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **66**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -93,6 +93,7 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 63 | `coach_requests`: de eigen telling van de daglimiet, voor elke vraag (DECISIONS 249). |
 | 64 | `app_settings.lock_during_workout`: ook vergrendelen tijdens een workout, standaard niet (DECISIONS 279). |
 | 65 | Geen nieuwe kolom: `workouts.total_sets` opnieuw geteld uit de sets, zonder de opwarmsets (DECISIONS 284). De sets zelf blijven zoals ze zijn. |
+| 66 | `app_settings.large_text`: tekst groter dan 1,4 toestaan, standaard niet (DECISIONS 307). |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -142,6 +143,7 @@ Geboortedatum, geslacht en lengte gaan alleen naar de coach met
 | `seed_version` | INT | 0: tot welke versie de catalogus is bijgewerkt |
 | `auto_lock_seconds` | INT | 60 (`0` = meteen, `-1` = nooit) |
 | `lock_during_workout` | BOOL | `false`: zolang er een workout loopt, vergrendelt de app niet |
+| `large_text` | BOOL | `false`: tekst tot 1,4; aan volgt hij Android tot 2,0 |
 | `last_backup_at` | INT? | wanneer de laatste back-up gemaakt is |
 | `auto_backup_folder` | TEXT? | de content-URI van de map voor de wekelijkse back-up; null is uit |
 | `pending_pick_kind`, `pending_pick_ref` | TEXT? | een fotokeuze die Android onderbrak |

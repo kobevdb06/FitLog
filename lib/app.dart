@@ -312,6 +312,9 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
   /// The theme the settings last asked for, so it outlasts a lock.
   ThemeMode _themeMode = ThemeMode.dark;
 
+  /// Whether text may grow past 1.4, kept the same way.
+  bool _largeText = false;
+
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
@@ -349,6 +352,8 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         _ => ThemeMode.dark,
       };
     }
+    final large = open ? ref.watch(settingsProvider).value?.largeText : null;
+    if (large != null) _largeText = large;
 
     return MaterialApp.router(
       title: 'FitLog',
@@ -365,16 +370,30 @@ class _FitLogAppState extends ConsumerState<FitLogApp>
         GlobalCupertinoLocalizations.delegate,
       ],
       builder: (context, child) =>
-          RestSignal(child: appBuilder(context, child)),
+          RestSignal(child: appBuilder(context, child, largeText: _largeText)),
     );
   }
 }
 
+/// How large text gets: what the layouts are made for, and with
+/// *Grotere tekst toestaan* what Android asks, up to twice the size
+/// (DECISIONS 307).
+const double kTextScaleLimit = 1.4;
+const double kLargeTextScaleLimit = 2.0;
+
 /// What every screen of the app sits in, between the app and its pages.
-Widget appBuilder(BuildContext context, Widget? child) {
-  // Keep the app readable when the system font is scaled up a lot.
-  final scale = MediaQuery.textScalerOf(context)
-      .clamp(minScaleFactor: 0.9, maxScaleFactor: 1.4);
+///
+/// The text follows Android's size, but no further than the layouts were
+/// made for - unless [largeText] allows more.
+Widget appBuilder(
+  BuildContext context,
+  Widget? child, {
+  bool largeText = false,
+}) {
+  final scale = MediaQuery.textScalerOf(context).clamp(
+    minScaleFactor: 0.9,
+    maxScaleFactor: largeText ? kLargeTextScaleLimit : kTextScaleLimit,
+  );
   return ReleaseFieldFocus(
     child: MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: scale),

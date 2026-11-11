@@ -414,6 +414,18 @@ void main() {
   });
 
   group('weergave en eenheden', () {
+    testWidgets('grotere tekst staat uit, en gaat aan (DECISIONS 307)', (
+      tester,
+    ) async {
+      await pump(tester, screen: const DisplaySettingsScreen());
+      expect((await settings(tester)).largeText, isFalse);
+
+      await tester.tap(find.text('Grotere tekst toestaan'));
+      await tester.pumpAndSettle();
+
+      expect((await settings(tester)).largeText, isTrue);
+    });
+
     testWidgets('thema en eenheden kies je met een tik', (tester) async {
       await pump(tester, screen: const DisplaySettingsScreen());
 
@@ -432,6 +444,19 @@ void main() {
   });
 
   for (final MapEntry(key: name, value: screen) in screens.entries) {
+    testWidgets('$name: niets loopt over bij tekst 2,0 (DECISIONS 307)', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        screen: screen,
+        textScale: 2.0,
+        size: const Size(360, 3600),
+      );
+
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('$name: niets loopt over, op een smal toestel met grote '
         'letters', (tester) async {
       await pump(

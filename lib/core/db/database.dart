@@ -91,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The version of the schema this build writes; a restore refuses a
   /// backup from a later one.
-  static const int currentSchemaVersion = 65;
+  static const int currentSchemaVersion = 66;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -643,6 +643,11 @@ class AppDatabase extends _$AppDatabase {
       // count is the app's own sum of them, not something you entered
       // (DECISIONS 284).
       await workoutsDao.recountWorkingSets();
+    }
+
+    if (from < 66) {
+      // Text above 1.4: off, as before (DECISIONS 307).
+      await m.addColumn(appSettingsTable, appSettingsTable.largeText);
     }
 
     final added = addedBrokenReferences(

@@ -750,14 +750,17 @@ class _ExerciseEditorCard extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 36,
-                      child: Text('SET', style: theme.textTheme.labelSmall),
+                      child: ColumnLabel(
+                        'SET',
+                        style: theme.textTheme.labelSmall,
+                        alignment: AlignmentDirectional.centerStart,
+                      ),
                     ),
                     for (final kind in columns)
                       Expanded(
-                        child: Text(
+                        child: ColumnLabel(
                           columnLabel(kind, formatters),
                           style: theme.textTheme.labelSmall,
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     const SizedBox(width: 40),

@@ -25,10 +25,12 @@ AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
 /// With the app's own builder, so a screen behaves here as it does on the
 /// phone - letting go of a text field included.
 ///
-/// Dark, as the app starts, unless [theme] says otherwise.
-Widget appFrame(Widget child, {ThemeData? theme}) {
+/// Dark, as the app starts, unless [theme] says otherwise; text up to 1.4,
+/// or up to 2.0 with [largeText] (DECISIONS 307).
+Widget appFrame(Widget child, {ThemeData? theme, bool largeText = false}) {
   return MaterialApp(
-    builder: appBuilder,
+    builder: (context, child) =>
+        appBuilder(context, child, largeText: largeText),
     theme: theme ?? AppTheme.dark,
     locale: const Locale('nl'),
     supportedLocales: const [Locale('nl')],
@@ -49,13 +51,14 @@ Widget wrapForTest(
   Widget child, {
   AppDatabase? database,
   List<Override> overrides = const [],
+  bool largeText = false,
 }) {
   return ProviderScope(
     overrides: [
       if (database != null) databaseProvider.overrideWithValue(database),
       ...overrides,
     ],
-    child: appFrame(child),
+    child: appFrame(child, largeText: largeText),
   );
 }
 
@@ -65,9 +68,10 @@ Widget wrapWithContainer(
   ProviderContainer container,
   Widget child, {
   ThemeData? theme,
+  bool largeText = false,
 }) {
   return UncontrolledProviderScope(
     container: container,
-    child: appFrame(child, theme: theme),
+    child: appFrame(child, theme: theme, largeText: largeText),
   );
 }

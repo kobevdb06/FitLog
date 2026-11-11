@@ -51,6 +51,7 @@ void main() {
     Size size = const Size(width, 2400),
     List<RoutineRow> favourites = const [],
     List<RoutineRow> scheduled = const [],
+    bool largeText = false,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -71,7 +72,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      wrapWithContainer(container!, const DashboardScreen()),
+      wrapWithContainer(
+        container!,
+        const DashboardScreen(),
+        largeText: largeText,
+      ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
@@ -439,59 +444,63 @@ void main() {
     expect(find.byKey(const ValueKey('rand-deze-week-right')), findsNothing);
   });
 
-  testWidgets('elk blok past op elke maat die het mag hebben, op een smalle '
-      'gsm met grote letters', (tester) async {
-    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
-    await db.settingsDao.updateSettings(
-      const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
-    );
-    RoutineRow routine(String name, int days) => RoutineRow(
-      planState: 'approved',
-      id: name,
-      name: name,
-      sortOrder: 0,
-      createdAt: 0,
-      updatedAt: 0,
-      isFavourite: true,
-      scheduledDays: days,
-    );
-    final everyDay = WeekdaySet.of([for (var d = 1; d <= 7; d++) d]).mask;
+  // 1.4, the limit; 2.0 with Grotere tekst toestaan (DECISIONS 307).
+  for (final scale in [1.4, 2.0]) {
+    testWidgets('elk blok past op elke maat die het mag hebben, op een smalle '
+        'gsm met letters van $scale', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(healthConnectEnabled: Value(true)),
+      );
+      RoutineRow routine(String name, int days) => RoutineRow(
+        planState: 'approved',
+        id: name,
+        name: name,
+        sortOrder: 0,
+        createdAt: 0,
+        updatedAt: 0,
+        isFavourite: true,
+        scheduledDays: days,
+      );
+      final everyDay = WeekdaySet.of([for (var d = 1; d <= 7; d++) d]).mask;
 
-    for (final block in HomeBlock.values) {
-      final sizes = block.sizes;
-      for (var w = sizes.minW; w <= sizes.maxW; w++) {
-        for (var h = sizes.minH; h <= sizes.maxH; h++) {
-          await store(HomeLayout({block: HomeSpot(0, 0, w, h)}));
-          await pump(
-            tester,
-            size: const Size(360, 900),
-            favourites: [
-              routine('Push A met een lange naam', 0),
-              routine('Pull B', 0),
-              routine('Benen', 0),
-            ],
-            scheduled: [
-              routine('Push A met een lange naam', everyDay),
-              routine('Pull B', everyDay),
-            ],
-          );
-          expect(
-            tester.takeException(),
-            isNull,
-            reason: '${block.wire} op $w × $h',
-          );
-          // Put away after the test, as tearDown does with the last one:
-          // closing a container mid-test leaves the database's timers behind.
-          final done = container!;
-          addTearDown(done.dispose);
-          container = null;
+      for (final block in HomeBlock.values) {
+        final sizes = block.sizes;
+        for (var w = sizes.minW; w <= sizes.maxW; w++) {
+          for (var h = sizes.minH; h <= sizes.maxH; h++) {
+            await store(HomeLayout({block: HomeSpot(0, 0, w, h)}));
+            await pump(
+              tester,
+              size: const Size(360, 900),
+              favourites: [
+                routine('Push A met een lange naam', 0),
+                routine('Pull B', 0),
+                routine('Benen', 0),
+              ],
+              scheduled: [
+                routine('Push A met een lange naam', everyDay),
+                routine('Pull B', everyDay),
+              ],
+              largeText: scale > 1.4,
+            );
+            expect(
+              tester.takeException(),
+              isNull,
+              reason: '${block.wire} op $w × $h',
+            );
+            // Put away after the test, as tearDown does with the last one:
+            // closing a container mid-test leaves the database's timers behind.
+            final done = container!;
+            addTearDown(done.dispose);
+            container = null;
+          }
         }
       }
-    }
-    // The last screen goes too, and what it left to tidy up runs.
-    await tester.pumpWidget(const SizedBox());
-    await tester.pump(const Duration(milliseconds: 100));
-  });
+      // The last screen goes too, and what it left to tidy up runs.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 100));
+    });
+  }
 }

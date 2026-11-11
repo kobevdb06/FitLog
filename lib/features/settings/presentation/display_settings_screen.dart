@@ -53,6 +53,19 @@ class DisplaySettingsScreen extends ConsumerWidget {
                 update(AppSettingsTableCompanion(themeMode: Value(mode))),
           ),
           const _AppIconChoice(),
+          const SectionHeader('Tekst'),
+          // Off, text stops at 1.4, what the layouts are made for; on, it
+          // follows Android up to 2.0 (DECISIONS 307).
+          SwitchListTile(
+            title: const Text('Grotere tekst toestaan'),
+            subtitle: const Text(
+              'Volgt de tekstgrootte van Android, ook boven 1,4. Sommige '
+              'schermen worden dan voller.',
+            ),
+            value: settings.largeText,
+            onChanged: (on) =>
+                update(AppSettingsTableCompanion(largeText: Value(on))),
+          ),
           const SectionHeader('Eenheden'),
           ChoiceRow<WeightUnit>(
             title: 'Gewicht',

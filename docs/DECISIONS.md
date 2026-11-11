@@ -6927,3 +6927,42 @@ projectmap terecht. De vlag is weg; `signing_test` let erop.
 
 Nog open uit S5: de sleutel en `key.properties` buiten de projectmap
 zetten, met twee kopieën elders. Waar die komen, beslist de eigenaar.
+
+## 307. Grotere tekst, als je erom vraagt
+
+Uit het Fable-rapport: U6, als laatste gedaan, zoals de eigenaar vroeg.
+De instelling is die van de mockup die hij op 11 november goedkeurde.
+
+De app volgde de tekstgrootte van Android tot 1,4 en niet verder. Wie
+Android groter zette, kreeg een kleinere app dan gevraagd. De grens
+beschermde wel de layouts.
+
+Nu staat bij *Weergave en eenheden* een schakelaar *Grotere tekst
+toestaan*, standaard uit. Uit blijft alles zoals het was. Aan volgt de
+tekst Android tot 2,0 (`kLargeTextScaleLimit`). Het lockscherm houdt de
+keuze, zoals het thema. Schema 66 voegt `app_settings.large_text` toe.
+
+De grens ging in stappen omhoog, met tests per stap:
+- De hoofdschermen (Start, Trainen, Voortgang, Profiel, Geschiedenis,
+  Records, Oefeningen, een oefening, de workout, het overzicht na een
+  workout, Instellingen) worden op 360 dp breed gebouwd bij tekst 1,7 en
+  2,0. Niets mag overlopen (`large_text_layout_test.dart`).
+- Elk instellingenscherm bij 2,0. Elk blok van het startscherm in elke
+  toegelaten maat bij 2,0. De namen onder de tabs en de titel van het
+  numpad bij 2,0.
+
+Twee plekken liepen over bij 2,0, en die zijn aangepast:
+- In het herstelblok duwde de resttijd de naam van de spier weg, tot
+  0 dp. De tijd mag nu op een tweede regel.
+- Op het workoutscherm laten de knoppen in de titelbalk 68 dp over. De
+  regel met de verstreken tijd, en het deload-label, wordt daar nu
+  kleiner geschaald als het niet past.
+
+Op de emulator, bij 2,0, brak de kolomkop "SET" boven de sets in "SE" en
+"T". Dat is geen overloop, dus de test zag het niet. `ColumnLabel` zet
+een kolomnaam nu op één regel, en kleiner als de kolom te smal is, in de
+workout en in de routine-editor. Een test kijkt dat geen kop over twee
+regels gaat.
+
+Op 2,0 is een scherm voller. Titels staan vaker op twee regels, en wat
+in een vaste cel moet passen (een gewicht, een tijd) schaalt kleiner.

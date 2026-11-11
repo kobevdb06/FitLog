@@ -151,6 +151,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 37');
     raw.close();
 
@@ -213,6 +214,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 39');
     raw.close();
 
@@ -273,6 +275,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 41');
     raw.close();
 
@@ -330,6 +333,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 46');
     raw.close();
 
@@ -385,6 +389,7 @@ void main() {
         ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
         ..execute('DROP TABLE coach_requests')
         ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+        ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
         ..execute('PRAGMA user_version = 47');
       raw.close();
 
@@ -453,6 +458,7 @@ void main() {
         ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
         ..execute('DROP TABLE coach_requests')
         ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+        ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
         ..execute('PRAGMA user_version = 48');
       raw.close();
 
@@ -521,6 +527,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 49');
     raw.close();
 
@@ -570,6 +577,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 50');
     raw.close();
 
@@ -605,6 +613,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 52');
     raw.close();
 
@@ -643,6 +652,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 54');
     raw.close();
 
@@ -671,6 +681,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 55');
     raw.close();
 
@@ -699,6 +710,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 56');
     raw.close();
 
@@ -736,6 +748,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 57');
     raw.close();
 
@@ -767,6 +780,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 58');
     raw.close();
 
@@ -796,6 +810,7 @@ void main() {
         ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
         ..execute('DROP TABLE coach_requests')
         ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+        ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
         ..execute('PRAGMA user_version = 59');
       raw.close();
 
@@ -846,6 +861,7 @@ void main() {
       ..execute(workout('w-loose', null, 'Losse workout', 7000))
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 60');
     raw.close();
 
@@ -914,6 +930,7 @@ void main() {
       )
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 61')
       ..close();
 
@@ -937,6 +954,7 @@ void main() {
     sqlite3.open(path)
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 62')
       ..close();
 
@@ -992,6 +1010,7 @@ void main() {
       )
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 60')
       ..close();
 
@@ -1055,6 +1074,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 53');
     raw.close();
 
@@ -1092,6 +1112,7 @@ void main() {
         ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
         ..execute('DROP TABLE coach_requests')
         ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+        ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
         ..execute('PRAGMA user_version = 51');
       raw.close();
 
@@ -1152,6 +1173,7 @@ void main() {
       ..execute('ALTER TABLE workouts DROP COLUMN plan_session_id')
       ..execute('DROP TABLE coach_requests')
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 43');
     raw.close();
 
@@ -1222,7 +1244,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 65);
+    expect(raw.select('PRAGMA user_version').first.values.first, 66);
     raw.close();
   });
 
@@ -1438,7 +1460,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 65);
+    expect(db.schemaVersion, 66);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')
@@ -1462,6 +1484,7 @@ void main() {
     await fresh.close();
     sqlite3.open(path)
       ..execute('ALTER TABLE app_settings DROP COLUMN lock_during_workout')
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 63')
       ..close();
 
@@ -1500,6 +1523,7 @@ void main() {
         "('ws-2', 'we-1', 2, 'normal', 100.0, 5, 1), "
         "('ws-3', 'we-1', 3, 'normal', 100.0, 5, 0)",
       )
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
       ..execute('PRAGMA user_version = 64')
       ..close();
 
@@ -1512,6 +1536,27 @@ void main() {
       (await db.workoutsDao.getWorkoutDetail('w-1'))!.exercises.single.sets,
       hasLength(4),
     );
+    await db.close();
+  });
+
+  test('a database from v65 keeps text at 1.4 until you allow more '
+      '(DECISIONS 307)', () async {
+    final path = '${dir.path}/v65.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.settingsDao.updateSettings(
+      const AppSettingsTableCompanion(themeMode: Value('light')),
+    );
+    await fresh.close();
+    sqlite3.open(path)
+      ..execute('ALTER TABLE app_settings DROP COLUMN large_text')
+      ..execute('PRAGMA user_version = 65')
+      ..close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    final settings = await db.settingsDao.ensureInitialized();
+    expect(settings.largeText, isFalse);
+    expect(settings.themeMode, 'light', reason: 'the rest as it was');
     await db.close();
   });
 }

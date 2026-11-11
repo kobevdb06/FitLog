@@ -105,6 +105,45 @@ void main() {
     expect(themeMode(tester), ThemeMode.light);
     await tearDownApp(tester);
   });
+
+  group('text above 1.4 (DECISIONS 307)', () {
+    /// How large text is on screen, with Android asking for 2.0.
+    double scale(WidgetTester tester) =>
+        MediaQuery.textScalerOf(tester.element(find.byType(Scaffold).first))
+            .scale(10) /
+        10;
+
+    testWidgets('stops at 1.4 without the setting', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pumpApp(tester, _locked);
+      controller.open(db);
+      await settle(tester);
+
+      expect(scale(tester), 1.4);
+      await tearDownApp(tester);
+    });
+
+    testWidgets('follows Android with it, on the lock screen too', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await db.settingsDao.updateSettings(
+        const AppSettingsTableCompanion(largeText: Value(true)),
+      );
+      await pumpApp(tester, _locked);
+      controller.open(db);
+      await settle(tester);
+      expect(scale(tester), 2.0);
+
+      await controller.lock();
+      await settle(tester);
+
+      expect(scale(tester), 2.0);
+      await tearDownApp(tester);
+    });
+  });
 }
 
 ThemeMode? themeMode(WidgetTester tester) =>

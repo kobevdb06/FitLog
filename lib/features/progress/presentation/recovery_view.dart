@@ -34,14 +34,19 @@ class RecoveryRow extends StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
               ),
-              Text(
-                ready
-                    ? 'klaar'
-                    : Formatters.remainingWords(estimate.remainingAt(moment)),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: ready
-                      ? theme.colorScheme.onSurfaceVariant
-                      : theme.colorScheme.onSurface,
+              // May take a second line: at text 2.0 it took the whole width,
+              // and the muscle's name none (DECISIONS 307).
+              Flexible(
+                child: Text(
+                  ready
+                      ? 'klaar'
+                      : Formatters.remainingWords(estimate.remainingAt(moment)),
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: ready
+                        ? theme.colorScheme.onSurfaceVariant
+                        : theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
               if (estimate.provisional) ...[

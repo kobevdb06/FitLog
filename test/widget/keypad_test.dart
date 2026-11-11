@@ -202,42 +202,46 @@ void main() {
     expect(find.byType(EditableText), findsNothing);
   });
 
-  testWidgets('een lange titel past op een smal toestel met grote letters', (
-    tester,
-  ) async {
-    // The width of a phone with its display size turned up, and the largest
-    // text the app allows.
-    tester.view.physicalSize = const Size(360, 800);
-    tester.view.devicePixelRatio = 1;
-    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
-    addTearDown(tester.view.reset);
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  // The width of a phone with its display size turned up, and the largest
+  // text the app allows: 1.4, or 2.0 with Grotere tekst toestaan
+  // (DECISIONS 307).
+  for (final scale in [1.4, 2.0]) {
+    testWidgets('een lange titel past op een smal toestel bij tekst $scale', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
-    await tester.pumpWidget(
-      wrapForTest(
-        Scaffold(
-          body: Align(
-            alignment: Alignment.bottomCenter,
-            child: NumericKeypad(
-              value: const KeypadValue.empty()
-                  .appendDigit('1')
-                  .appendDigit('0')
-                  .appendDigit('2'),
-              kind: KeypadFieldKind.weight,
-              unitLabel: 'kg',
-              title: 'Gewicht van de stang',
-              feedback: _silent,
-              onChanged: (_) {},
-              onDone: () {},
-              onPlates: () {},
+      await tester.pumpWidget(
+        wrapForTest(
+          Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: NumericKeypad(
+                value: const KeypadValue.empty()
+                    .appendDigit('1')
+                    .appendDigit('0')
+                    .appendDigit('2'),
+                kind: KeypadFieldKind.weight,
+                unitLabel: 'kg',
+                title: 'Gewicht van de stang',
+                feedback: _silent,
+                onChanged: (_) {},
+                onDone: () {},
+                onPlates: () {},
+              ),
             ),
           ),
+          largeText: scale > 1.4,
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    expect(tester.takeException(), isNull);
-    expect(find.text('102'), findsOneWidget);
-  });
+      expect(tester.takeException(), isNull);
+      expect(find.text('102'), findsOneWidget);
+    });
+  }
 }

@@ -260,8 +260,10 @@ void main() {
           for (var i = 0; i < 10; i++)
             set(now.subtract(Duration(days: w * 7 - 1))),
         // This period: three ordinary weeks of ten, and a deload week of
-        // three.
-        for (var w = 1; w <= 3; w++)
+        // three. The ordinary ones begin a week back: on the Monday of this
+        // week, a session lay in the deload's week, and nothing in that week
+        // counts (DECISIONS 269).
+        for (var w = 2; w <= 4; w++)
           for (var i = 0; i < 10; i++)
             set(now.subtract(Duration(days: w * 7 - 1))),
         for (var i = 0; i < 3; i++)

@@ -58,26 +58,41 @@ List<MuscleSets> muscleSetsPerWeek(
   final weeks = period.weeksUpTo(now);
   if (weeks <= 0) return const [];
 
+  // A deload week is lighter on purpose: nothing in it counts, on either
+  // side, so it neither makes a muscle lag nor lowers what is usual. Not
+  // its deload sessions, and not an ordinary one in the same week either -
+  // that one counted while the week came off. One session made lighter on
+  // its own is no rest: it counts (DECISIONS 269).
+  final rested = <DateTime>{
+    for (final set in sets)
+      if (set.isDeload && !set.isLight) weekOf(set.startedAt),
+  };
+
   final during = <String, int>{};
   final earlier = <String, int>{};
-  // A deload week is lighter on purpose: its sets do not count, and nor does
-  // the week itself, on either side - so it neither makes a muscle lag nor
-  // lowers what is usual.
-  final restedDuring = <DateTime>{};
-  final restedEarlier = <DateTime>{};
   for (final set in sets) {
     if (set.startedAt.isAfter(now) || set.startedAt.isBefore(before)) continue;
-    final early = set.startedAt.isBefore(start);
-    // One session made lighter on its own is no rest: it counts.
-    if (set.isDeload && !set.isLight) {
-      (early ? restedEarlier : restedDuring).add(weekOf(set.startedAt));
-      continue;
-    }
-    final into = early ? earlier : during;
+    if (rested.contains(weekOf(set.startedAt))) continue;
+    final into = set.startedAt.isBefore(start) ? earlier : during;
     into[set.primaryMuscle] = (into[set.primaryMuscle] ?? 0) + 1;
   }
-  final weeksDuring = math.max(1.0, weeks - restedDuring.length);
-  final weeksEarlier = math.max(1.0, weeks - restedEarlier.length);
+
+  // Only the part of a rested week inside the stretch comes off: a deload
+  // that began yesterday took a whole week off the four, and the sets of
+  // the three before were divided by too little (DECISIONS 269).
+  double restedWeeks(DateTime from, DateTime until) {
+    var minutes = 0;
+    for (final week in rested) {
+      final end = DateTime(week.year, week.month, week.day + 7);
+      final a = week.isAfter(from) ? week : from;
+      final b = end.isBefore(until) ? end : until;
+      if (b.isAfter(a)) minutes += b.difference(a).inMinutes;
+    }
+    return minutes / Duration.minutesPerDay / 7;
+  }
+
+  final weeksDuring = math.max(1.0, weeks - restedWeeks(start, now));
+  final weeksEarlier = math.max(1.0, weeks - restedWeeks(before, start));
 
   return [
     for (final muscle in {...during.keys, ...earlier.keys})

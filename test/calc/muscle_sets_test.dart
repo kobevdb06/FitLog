@@ -65,4 +65,53 @@ void main() {
     expect(laggingBehind(2.9, 4), isFalse);
     expect(laggingBehind(2.7, 3.9), isFalse);
   });
+
+  group('rond een deloadweek', () {
+    // Tuesday 13 October 2026, 10:00: the period began on Monday 21
+    // September, three weeks and a day and a bit ago.
+    final tuesday = DateTime(2026, 10, 13, 10);
+
+    List<ProgressSet> deload(DateTime at) => [
+      ProgressSet(
+        workoutId: 'deload',
+        startedAt: at,
+        exerciseId: 'ex-borst',
+        primaryMuscle: 'borst',
+        category: ExerciseCategory.barbell,
+        weightKg: 40,
+        reps: 8,
+        isDeload: true,
+      ),
+    ];
+
+    final usual = [
+      ...sets('borst', DateTime(2026, 9, 22, 18), 4),
+      ...sets('borst', DateTime(2026, 9, 29, 18), 4),
+      ...sets('borst', DateTime(2026, 10, 6, 18), 4),
+    ];
+
+    test('een deloadweek die net begon, gaat niet als hele week weg', () {
+      // Only the day and a bit of it that has gone comes off: twelve sets
+      // in three weeks is four a week, not 5,45 (DECISIONS 269).
+      final result = muscleSetsPerWeek(
+        [...usual, ...deload(DateTime(2026, 10, 12, 18))],
+        period: ProgressPeriod.fourWeeks,
+        now: tuesday,
+      );
+      expect(result.single.perWeek, closeTo(4.0, 0.001));
+    });
+
+    test('en een gewone sessie in die week telt ook niet', () {
+      final result = muscleSetsPerWeek(
+        [
+          ...usual,
+          ...deload(DateTime(2026, 10, 12, 18)),
+          ...sets('borst', DateTime(2026, 10, 13, 8), 3),
+        ],
+        period: ProgressPeriod.fourWeeks,
+        now: tuesday,
+      );
+      expect(result.single.perWeek, closeTo(4.0, 0.001));
+    });
+  });
 }

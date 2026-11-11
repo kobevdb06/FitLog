@@ -6227,3 +6227,26 @@ De tests kruisen 29 maart en 25 oktober 2026. Ze vallen alleen om in een
 tijdzone met zomertijd, zoals op de machine waarop ze geschreven zijn. In
 UTC heeft elke dag 24 uur en slagen ze hoe dan ook. CI moet ze daarom in
 `Europe/Brussels` draaien (B2).
+
+## 269. Sets per week rond een deloadweek
+
+Uit het Fable-rapport: F4.
+
+Een deloadweek is bewust lichter. Ze telt niet mee, zodat ze een spier
+niet achterop laat lijken en ook je gewone niet verlaagt. Dat ging op
+twee punten mis.
+
+- **Een deloadweek die net begonnen was,** ging als hele week van de
+  noemer af. Op dinsdag om 10 uur, met de deload op maandag en twaalf
+  sets borst in de drie weken ervoor, kwam dat op 5,45 per week in plaats
+  van 4. Nu gaat alleen het deel van die week af dat binnen de periode
+  valt en al voorbij is.
+- **Een gewone sessie in de deloadweek** telde wel in de teller, terwijl
+  de week uit de noemer ging. Nu telt niets uit die week, aan geen van
+  beide kanten. Eén sessie die je zelf lichter maakte, is geen rust: die
+  telt gewoon.
+
+Een bestaande test leunde op die fout. Hij legde een gewone sessie op de
+maandag van de deloadweek en verwachtte dat die meetelde. Zijn gewone
+weken beginnen nu een week vroeger, zoals hij bedoeld was.
+

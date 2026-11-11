@@ -6,8 +6,8 @@ import 'package:fitlog/core/security/key_material.dart';
 import 'package:fitlog/core/security/recovery_phrase.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/features/backup/data/backup_service.dart';
-import 'package:fitlog/features/photos/data/photo_library.dart';
-import 'package:fitlog/features/photos/data/photo_store.dart';
+import 'package:fitlog/core/photos/photo_library.dart';
+import 'package:fitlog/core/photos/photo_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'photo_store_test.dart' show writeSourceImage;

@@ -16,9 +16,9 @@ import '../../../core/db/models.dart';
 import '../../../core/util/paths.dart';
 import '../../chat/data/ai_client.dart';
 import '../../chat/presentation/chat_providers.dart';
-import '../../photos/data/photo_store.dart';
-import '../../photos/data/picked_copy.dart';
-import '../../photos/data/pick_recovery.dart';
+import '../../../core/photos/photo_store.dart';
+import '../../../core/photos/picked_copy.dart';
+import '../../../core/photos/pick_recovery.dart';
 
 part 'exercise_providers.g.dart';
 

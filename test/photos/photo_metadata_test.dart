@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:fitlog/features/photos/data/photo_store.dart';
-import 'package:fitlog/features/photos/data/picked_copy.dart';
+import 'package:fitlog/core/photos/photo_store.dart';
+import 'package:fitlog/core/photos/picked_copy.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 

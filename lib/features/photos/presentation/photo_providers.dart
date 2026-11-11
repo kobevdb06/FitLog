@@ -6,10 +6,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/app/app_controller.dart';
 import '../../../core/db/database.dart';
 import '../../../core/util/paths.dart';
-import '../data/photo_library.dart';
-import '../data/photo_store.dart';
-import '../data/picked_copy.dart';
-import '../data/pick_recovery.dart';
+import '../../../core/photos/photo_library.dart';
+import '../../../core/photos/photo_store.dart';
+import '../../../core/photos/picked_copy.dart';
+import '../../../core/photos/pick_recovery.dart';
 import '../domain/photo_window.dart';
 
 part 'photo_providers.g.dart';

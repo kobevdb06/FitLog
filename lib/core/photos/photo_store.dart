@@ -5,8 +5,8 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:uuid/uuid.dart';
 
-import '../../../core/util/paths.dart';
-import '../../../core/security/photo_crypto.dart';
+import '../util/paths.dart';
+import '../security/photo_crypto.dart';
 
 /// Thrown when a picked file cannot be decoded as an image.
 ///

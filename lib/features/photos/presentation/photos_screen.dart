@@ -11,7 +11,7 @@ import '../../../core/util/paths.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
-import '../data/photo_store.dart';
+import '../../../core/photos/photo_store.dart';
 import '../../../core/theme/app_colors.dart';
 import '../domain/photo_grouping.dart';
 import 'photo_detail_sheet.dart';

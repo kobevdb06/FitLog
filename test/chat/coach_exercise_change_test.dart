@@ -9,7 +9,7 @@ import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/data/coach_tools.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
-import 'package:fitlog/features/photos/data/photo_store.dart';
+import 'package:fitlog/core/photos/photo_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;

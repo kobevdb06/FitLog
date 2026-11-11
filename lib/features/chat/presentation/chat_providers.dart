@@ -18,7 +18,7 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../../core/util/paths.dart';
 import '../../exercises/presentation/exercise_providers.dart';
-import '../../photos/data/photo_store.dart';
+import '../../../core/photos/photo_store.dart';
 import '../../plans/data/plan_prompt.dart';
 import '../../prompts/data/moment_asker.dart';
 import '../../prompts/domain/coach_moments.dart';

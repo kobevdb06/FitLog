@@ -4,8 +4,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
-import 'package:fitlog/features/photos/data/photo_library.dart';
-import 'package:fitlog/features/photos/data/photo_store.dart';
+import 'package:fitlog/core/photos/photo_library.dart';
+import 'package:fitlog/core/photos/photo_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 

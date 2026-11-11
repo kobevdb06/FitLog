@@ -4,7 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/util/paths.dart';
-import 'package:fitlog/features/photos/data/pick_recovery.dart';
+import 'package:fitlog/core/photos/pick_recovery.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'photo_store_test.dart' show writeSourceImage;

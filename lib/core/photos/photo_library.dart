@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../../../core/db/database.dart';
+import '../db/database.dart';
 import 'photo_store.dart';
 
 /// Ties the image files to the rows that point at them.

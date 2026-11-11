@@ -16,9 +16,9 @@ import '../security/key_material.dart';
 import '../security/photo_crypto.dart';
 import '../security/screen_guard.dart';
 import '../security/secret_store.dart';
-import '../../features/photos/data/photo_library.dart';
-import '../../features/photos/data/photo_store.dart';
-import '../../features/photos/data/pick_recovery.dart';
+import '../photos/photo_library.dart';
+import '../photos/photo_store.dart';
+import '../photos/pick_recovery.dart';
 import '../util/paths.dart';
 import 'app_state.dart';
 

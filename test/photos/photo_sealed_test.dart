@@ -6,7 +6,7 @@ import 'package:fitlog/core/security/key_material.dart';
 import 'package:fitlog/core/security/photo_crypto.dart';
 import 'package:fitlog/core/util/paths.dart';
 import 'package:fitlog/core/widgets/photo_image.dart';
-import 'package:fitlog/features/photos/data/photo_store.dart';
+import 'package:fitlog/core/photos/photo_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;

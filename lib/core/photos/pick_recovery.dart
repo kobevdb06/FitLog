@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/db/database.dart';
-import '../../../core/util/paths.dart';
+import '../db/database.dart';
+import '../util/paths.dart';
 import 'photo_library.dart';
 import 'photo_store.dart';
 import 'picked_copy.dart';

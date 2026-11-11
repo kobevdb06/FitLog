@@ -6753,3 +6753,17 @@ enkel bestand gebruikte ze. Ze zijn weg. De verouderde pakketten (`sqlite3`
 3.5.2 tegenover 3.9.1, dat de SQLCipher-build meebrengt, en
 `flutter_secure_storage` 11.0.0 tegenover 11.2.0) worden elk apart
 bijgewerkt, met de tests en de emulator ertussen.
+
+## 300. De foto-opslag hoort bij de basis
+
+Uit het Fable-rapport: B5, eerste deel.
+
+`app_controller.dart` in `lib/core` haalde de foto-opslag uit
+`features/photos`. De basis van de app hing zo af van een van de delen die
+erop gebouwd zijn. De opslag wordt ook door de coach, de oefeningen en de
+back-up gebruikt, niet alleen door het fotoscherm.
+
+`photo_store`, `photo_library`, `pick_recovery` en `picked_copy` staan nu
+in `lib/core/photos/`. Er veranderde alleen hun plaats, niet wat ze doen.
+`test/architecture_test.dart` controleert dat geen bestand in `lib/core`
+nog iets uit `lib/features` importeert.

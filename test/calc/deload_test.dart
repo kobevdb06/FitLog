@@ -126,6 +126,31 @@ void main() {
       );
     });
 
+    test('een deload die je meteen stopte, is geen pauze', () {
+      // Started and stopped five minutes later: the whole week was taken
+      // for rest, and the count went back to nothing (DECISIONS 272).
+      final sessions = [DateTime(2026, 9, 29), day(6), day(13)];
+      final stopped = (
+        from: DateTime(2026, 10, 12, 10),
+        until: DateTime(2026, 10, 12, 10, 5),
+      );
+
+      expect(
+        weeksWithoutBreak(now: day(15), sessions: sessions, deloads: [stopped]),
+        3,
+      );
+      // With a deload session done in it, it was one.
+      expect(
+        weeksWithoutBreak(
+          now: day(15),
+          sessions: sessions,
+          deloads: [stopped],
+          deloadSessions: [DateTime(2026, 10, 12, 11)],
+        ),
+        0,
+      );
+    });
+
     test('na zoveel weken, of met zoveel oefeningen die stilstaan', () {
       expect(
         deloadDue(weeks: 6, stalled: const [], weeksLimit: 6, stalledLimit: 2),

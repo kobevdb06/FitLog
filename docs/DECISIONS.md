@@ -6299,3 +6299,15 @@ moet de app leren. Bestaande tests gaan daar ook van uit. De grens is nu
 een week (`kLatestAnswerFor`). Na een week is de volgende sessie van die
 spier meestal al aan de beurt, en dan komt de stijfheid van iets anders.
 
+## 272. Een deload die je meteen stopte, is geen rustweek
+
+Uit het Fable-rapport: F7.
+
+Elke deload maakte van zijn hele week een rustweek, ook als je hem na
+enkele minuten stopte. De teller *weken zonder pauze* sprong dan naar nul,
+en het voorstel om te deloaden verdween zonder dat je gerust had. Nu is
+een week alleen een rustweek als je er een deloadsessie in deed, of als
+de deload minstens drie dagen van die week besloeg (`kDeloadRestsAWeek`).
+Een lopende deload van een week telt dus meteen, zoals voordien. De
+suggesties van de coach en het voorstel op Start lezen het nu op één
+plek (`weeksWithoutBreakIn`).

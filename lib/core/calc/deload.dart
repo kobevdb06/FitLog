@@ -172,16 +172,27 @@ class DeloadReason {
 DateTime weekOf(DateTime day) =>
     DateTime(day.year, day.month, day.day - (day.weekday - 1));
 
+/// How much of a week a deload has to cover to make it a week of rest,
+/// without a deload session in it.
+const Duration kDeloadRestsAWeek = Duration(days: 3);
+
 /// Weeks of training in a row up to [now]: each Monday-to-Sunday week with a
 /// session that was not a deload, counted back from this week - or last
-/// week, when this one has none yet - until a week without one, or a week a
-/// deload was in. A week off is a break too.
+/// week, when this one has none yet - until a week without one, or a week of
+/// rest. A week off is a break too.
+///
+/// A deload makes a week one of rest when a deload session was done in it
+/// ([deloadSessions]), or when it covered [kDeloadRestsAWeek] of it. One
+/// stopped a few minutes after it began took its whole week, and the count
+/// went back to nothing (DECISIONS 272).
 int weeksWithoutBreak({
   required DateTime now,
   required Iterable<DateTime> sessions,
   required Iterable<({DateTime from, DateTime until})> deloads,
+  Iterable<DateTime> deloadSessions = const [],
 }) {
   final trained = {for (final s in sessions) weekOf(s)};
+  final deloaded = {for (final s in deloadSessions) weekOf(s)};
   final rested = <DateTime>{};
   for (final deload in deloads) {
     for (
@@ -189,7 +200,13 @@ int weeksWithoutBreak({
       week.isBefore(deload.until);
       week = DateTime(week.year, week.month, week.day + 7)
     ) {
-      rested.add(week);
+      final end = DateTime(week.year, week.month, week.day + 7);
+      final from = deload.from.isAfter(week) ? deload.from : week;
+      final until = deload.until.isBefore(end) ? deload.until : end;
+      if (deloaded.contains(week) ||
+          until.difference(from) >= kDeloadRestsAWeek) {
+        rested.add(week);
+      }
     }
   }
 

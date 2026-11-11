@@ -1708,6 +1708,21 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     ];
   }
 
+  /// When each finished deload session began - not one made lighter on its
+  /// own: what makes a week one of rest (DECISIONS 272).
+  Future<List<DateTime>> deloadSessionStarts() async {
+    final rows = await customSelect(
+      'SELECT started_at FROM workouts '
+      'WHERE ended_at IS NOT NULL AND is_deload = 1 AND is_light = 0 '
+      'ORDER BY started_at',
+      readsFrom: {workoutsTable},
+    ).get();
+    return [
+      for (final row in rows)
+        DateTime.fromMillisecondsSinceEpoch(row.read<int>('started_at')),
+    ];
+  }
+
   /// An exercise of the last ordinary session that had weight on it, for the
   /// deload sheet to show what a deload does to it: its name, how many
   /// working sets, and the first one's weight and reps. Null with none.

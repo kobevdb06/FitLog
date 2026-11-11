@@ -4,6 +4,7 @@ import '../../../core/calc/recovery.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
 import '../../dashboard/domain/today_plan.dart';
+import '../../deload/data/deload_standing.dart';
 import '../../progress/data/plateau_loader.dart';
 import '../../progress/data/recovery_loader.dart';
 import '../domain/coach_suggestions.dart';
@@ -67,14 +68,7 @@ class LocalCoachSuggester implements CoachSuggester {
 
     // The longest standing still comes first.
     final plateaus = await loadPlateaus(db, now: now, healthConnect: health);
-    final weeks = weeksWithoutBreak(
-      now: now,
-      sessions: await db.workoutsDao.ordinarySessionStarts(),
-      deloads: [
-        for (final row in await db.deloadDao.all())
-          (from: row.from, until: row.until),
-      ],
-    );
+    final weeks = await weeksWithoutBreakIn(db, now: now);
     final snoozed = settings.deloadSnoozedUntil;
     final due =
         settings.deloadSuggest &&

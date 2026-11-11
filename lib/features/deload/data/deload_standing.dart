@@ -12,19 +12,27 @@ DeloadPlan deloadPlanOf(AppSettingsRow settings) => DeloadPlan(
   prAttempts: settings.deloadPrAttempts,
 );
 
+/// How many weeks in a row you trained without a break, up to [now], from
+/// the logbook.
+Future<int> weeksWithoutBreakIn(
+  AppDatabase db, {
+  required DateTime now,
+}) async => weeksWithoutBreak(
+  now: now,
+  sessions: await db.workoutsDao.ordinarySessionStarts(),
+  deloads: [
+    for (final row in await db.deloadDao.all())
+      (from: row.from, until: row.until),
+  ],
+  deloadSessions: await db.workoutsDao.deloadSessionStarts(),
+);
+
 /// How many weeks in a row you trained without a break, and which exercises
 /// stand still: what the proposal on Start and the coach both go by. Whether
 /// that makes it time is for [deloadDue], with the settings.
 Future<DeloadReason> deloadStanding(AppDatabase db, {DateTime? now}) async {
   final at = now ?? DateTime.now();
-  final weeks = weeksWithoutBreak(
-    now: at,
-    sessions: await db.workoutsDao.ordinarySessionStarts(),
-    deloads: [
-      for (final row in await db.deloadDao.all())
-        (from: row.from, until: row.until),
-    ],
-  );
+  final weeks = await weeksWithoutBreakIn(db, now: at);
   return DeloadReason(
     weeks: weeks,
     stalled: [

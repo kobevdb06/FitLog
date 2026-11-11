@@ -78,6 +78,32 @@ void main() {
       expect(short.differenceKg, closeTo(-1, 0.001));
     });
 
+    test('finds the exact load the heaviest-first pass missed', () {
+      // 40 a side from 25 and 20: 25 first left 15 that 20 cannot make, and
+      // it came out at 70 (DECISIONS 275).
+      final s = calculatePlates(
+        targetKg: 100,
+        availablePlatesKg: const [25, 20],
+      );
+      expect(s.perSide, [const PlateStack(20, 2)]);
+      expect(s.isExact, isTrue);
+
+      // And where nothing makes it exactly, as close below as there is.
+      final close = calculatePlates(
+        targetKg: 125,
+        availablePlatesKg: const [25, 20, 15],
+      );
+      expect(close.achievedKg, 120);
+    });
+
+    test('a plate that is equal is equal in a set too', () {
+      // Either side of half a kilo, within a gram of each other.
+      final a = PlateStack(2.4996, 2);
+      final b = PlateStack(2.5004, 2);
+      expect(a, b);
+      expect({a, b}, hasLength(1));
+    });
+
     test('an empty inventory returns the bare bar', () {
       final s = calculatePlates(targetKg: 100, availablePlatesKg: const []);
       expect(s.perSide, isEmpty);

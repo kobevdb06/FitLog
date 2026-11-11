@@ -6346,3 +6346,18 @@ Uit het Fable-rapport: F8, de stap van een oefening.
   verschil één keer voor. Wie echt per kilo opbouwt (60, 61, 62, 63),
   houdt een stap van 1 kg.
 
+## 275. De schijvencalculator vindt een lading die je schijven precies maken
+
+Uit het Fable-rapport: F8, de schijvencalculator en `PlateStack`.
+
+- De calculator laadt eerst de zwaarste schijf, zoals je aan het rek doet.
+  Met de standaardset klopt dat altijd. Met eigen schijven miste hij wat ze
+  precies maken: met 25 en 20, en 100 kg als doel (40 per kant), nam hij
+  eerst 25 en kwam hij uit op 70 kg. Lukt het zo niet precies, dan zoekt
+  hij nu de zwaarste lading tot het doel, met zo weinig mogelijk schijven
+  (twee keer 20). De gewone gevallen blijven zoals ze waren.
+- `PlateStack` vergeleek binnen een gram, maar zijn hash ging op de hele
+  kilo. Twee gelijke schijven aan weerskanten van een halve kilo kregen
+  zo een andere hash. Nu gaan vergelijken en hash allebei op de gram. Met
+  de huidige waarden kwam dat niet voor.
+

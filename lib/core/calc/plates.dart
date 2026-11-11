@@ -6,7 +6,8 @@ import 'units.dart';
 //
 // Everything here is in kilograms; the display layer converts. The
 // distribution is a plain greedy pass from the heaviest plate down, which is
-// what a lifter does at the rack and what the brief asks for.
+// what a lifter does at the rack and what the brief asks for - and where that
+// misses a load the plates can make, a search finds it (DECISIONS 275).
 
 /// The default plate inventory, per side, heaviest first.
 const List<double> kDefaultPlatesKg = [25, 20, 15, 10, 5, 2.5, 1.25];
@@ -40,14 +41,17 @@ class PlateStack {
   @override
   String toString() => '${count}x$weightKg';
 
-  @override
-  bool operator ==(Object other) =>
-      other is PlateStack &&
-      (other.weightKg - weightKg).abs() < _epsilon &&
-      other.count == count;
+  /// In grams: equal, and the same hash, for the same plate. Compared within
+  /// a gram and hashed on the whole kilo, two equal plates either side of
+  /// half a kilo had different hashes (DECISIONS 275).
+  int get _grams => (weightKg * 1000).round();
 
   @override
-  int get hashCode => Object.hash(weightKg.round(), count);
+  bool operator ==(Object other) =>
+      other is PlateStack && other._grams == _grams && other.count == count;
+
+  @override
+  int get hashCode => Object.hash(_grams, count);
 }
 
 class PlateSolution {
@@ -118,12 +122,79 @@ PlateSolution calculatePlates({
     (sum, s) => sum + s.weightKg * s.count,
   );
 
-  return PlateSolution(
+  final greedy = PlateSolution(
     targetKg: targetKg,
     barKg: barKg,
     perSide: stacks,
     achievedKg: barKg + perSideWeight * 2,
   );
+  if (greedy.isExact) return greedy;
+
+  // Heaviest first is right for a standard set. With your own plates it can
+  // miss what they make: 25 and 20, and 40 a side, came out at 25 and 70 kg
+  // in all (DECISIONS 275).
+  final searched = _closestBelow((targetKg - barKg) / 2, plates);
+  if (searched == null) return greedy;
+  final searchedWeight = searched.fold(
+    0.0,
+    (sum, s) => sum + s.weightKg * s.count,
+  );
+  if (searchedWeight <= perSideWeight + _epsilon) return greedy;
+  return PlateSolution(
+    targetKg: targetKg,
+    barKg: barKg,
+    perSide: searched,
+    achievedKg: barKg + searchedWeight * 2,
+  );
+}
+
+/// The heaviest load of [plates] on one side that stays at or under
+/// [perSideKg], with the fewest plates, heaviest first. Null where the
+/// numbers are too large to search.
+List<PlateStack>? _closestBelow(double perSideKg, List<double> plates) {
+  // In grams, on the finest step the plates share.
+  final grams = [for (final p in plates) (p * 1000).round()];
+  var unit = grams.first;
+  int gcd(int a, int b) => b == 0 ? a : gcd(b, a % b);
+  for (final g in grams) {
+    unit = gcd(unit, g);
+  }
+  if (unit <= 0) return null;
+  final target = ((perSideKg * 1000).round() + 1) ~/ unit;
+  if (target <= 0 || target > 100000) return null;
+  final sizes = [for (final g in grams) g ~/ unit];
+
+  // fewest[w] = the fewest plates that make exactly w units; -1 = cannot.
+  final fewest = List<int>.filled(target + 1, -1);
+  final last = List<int>.filled(target + 1, -1);
+  fewest[0] = 0;
+  for (var w = 1; w <= target; w++) {
+    for (var i = 0; i < sizes.length; i++) {
+      final from = w - sizes[i];
+      if (from < 0 || fewest[from] < 0) continue;
+      final count = fewest[from] + 1;
+      if (fewest[w] < 0 || count < fewest[w]) {
+        fewest[w] = count;
+        last[w] = i;
+      }
+    }
+  }
+
+  var w = target;
+  while (w > 0 && fewest[w] < 0) {
+    w--;
+  }
+  if (w == 0) return const [];
+  final counts = List<int>.filled(sizes.length, 0);
+  while (w > 0) {
+    final i = last[w];
+    counts[i]++;
+    w -= sizes[i];
+  }
+  return [
+    for (var i = 0; i < plates.length; i++)
+      if (counts[i] > 0) PlateStack(plates[i], counts[i]),
+  ];
 }
 
 /// The loadable weight closest to [targetKg].

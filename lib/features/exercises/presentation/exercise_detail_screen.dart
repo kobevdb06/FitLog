@@ -150,12 +150,21 @@ class ExerciseDetailScreen extends ConsumerWidget {
               ),
             ],
           ],
-          bottom: const TabBar(
+          // All four in sight on a narrow phone with large letters: a name
+          // gets smaller rather than fading out at the edge, as in the
+          // schema's panel (DECISIONS 288).
+          bottom: TabBar(
+            labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             tabs: [
-              Tab(text: 'Info'),
-              Tab(text: 'Geschiedenis'),
-              Tab(text: 'Grafieken'),
-              Tab(text: 'Records'),
+              for (final name in const [
+                'Info',
+                'Geschiedenis',
+                'Grafieken',
+                'Records',
+              ])
+                Tab(
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(name)),
+                ),
             ],
           ),
         ),

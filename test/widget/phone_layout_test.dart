@@ -15,6 +15,7 @@ import 'package:fitlog/features/morning/presentation/morning_report_card.dart';
 import 'package:fitlog/features/progress/data/plateau_loader.dart';
 import 'package:fitlog/features/progress/presentation/plateau_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -254,6 +255,27 @@ void main() {
       for (final value in ['116 bpm', '150 bpm', '1']) find.text(value).first,
     ]);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('de tabs van een oefening passen op 360 dp met grote tekst', (
+    tester,
+  ) async {
+    // "Geschiedenis" needs about 125 dp at 1,4, and four tabs on 360 dp
+    // leave about 58: it faded out at the edge (DECISIONS 288).
+    await tester.runAsync(() => addExercise('ex-bench', 'Bench Press'));
+    await pumpPhone(
+      tester,
+      const ExerciseDetailScreen(exerciseId: 'ex-bench'),
+      size: const Size(360, 780),
+      textScale: 1.4,
+    );
+
+    for (final label in ['Info', 'Geschiedenis', 'Grafieken', 'Records']) {
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.descendant(of: find.byType(Tab), matching: find.text(label)),
+      );
+      expect(paragraph.debugHasOverflowShader, isFalse, reason: label);
+    }
   });
 
   group('de grafieken van een oefening', () {

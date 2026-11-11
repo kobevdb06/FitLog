@@ -6571,3 +6571,14 @@ app stopt), dan bleef een half resultaat achter:
 De tests dwingen een fout halverwege af met een trigger in SQLite. De
 database weigert dan zelf de tweede stap, zoals een volle schijf zou
 doen.
+
+## 288. De tabs van een oefening passen op een smalle telefoon
+
+Uit het Fable-rapport: U1.
+
+Vier tabs op 360 dp laten ongeveer 58 dp per naam. *Geschiedenis* heeft
+bij tekstschaal 1,4 ongeveer 125 dp nodig, en vervaagde aan de rand. Nu
+wordt een naam kleiner in plaats van af te lopen, zoals het paneel van
+een schema al deed (`FittedBox`). Een test kijkt op 360 dp bij 1,4 dat
+geen naam vervaagt.
+

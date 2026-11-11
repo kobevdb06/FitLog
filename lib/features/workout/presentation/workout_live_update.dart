@@ -247,6 +247,8 @@ class WorkoutLiveUpdate extends _$WorkoutLiveUpdate {
       _restOver = Timer(restEndsAt.difference(now), () => unawaited(sync()));
     }
 
+    final behindPin = running && !await wordsInNotifications(ref);
+    if (generation != _generation) return;
     final notice = workoutNoticeFor(
       detail,
       restEndsAt: restEndsAt,
@@ -254,6 +256,7 @@ class WorkoutLiveUpdate extends _$WorkoutLiveUpdate {
       platesKg: settings == null
           ? const []
           : decodePlates(settings.availablePlatesKg),
+      behindPin: behindPin,
     );
     if (notice == state) return;
     state = notice;

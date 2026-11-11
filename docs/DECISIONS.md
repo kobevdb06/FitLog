@@ -6096,3 +6096,22 @@ pincode. Het rapport wordt wel gemaakt, zodat het er meteen staat. Na het
 ontgrendelen blijft de wachtende melding zoals ze is. Zonder pincode
 verandert er niets. Kan de sleutelopslag niet gelezen worden, dan telt
 dat als een pincode.
+
+## 263. Met een pincode vragen de knoppen van de workoutmelding eerst de telefoon te ontgrendelen
+
+Uit het Fable-rapport: S9, de workoutmelding op het vergrendelscherm.
+
+*Klaar* in de workoutmelding werkt vanaf het vergrendelscherm van de
+telefoon. Dat is bedoeld: tussen twee sets vink je af zonder je telefoon
+te ontgrendelen. Maar zo kan ook iemand anders een set van je afvinken.
+*Wijzig* en *Coach* openen een venster dat niet boven het slot verschijnt,
+dus daar vroeg Android al om te ontgrendelen.
+
+Nu geldt: heb je een pincode op FitLog, dan vraagt elke knop eerst de
+telefoon te ontgrendelen (`setAuthenticationRequired`, Android 12 en
+later). Wie een pincode koos, koos ervoor dat anderen niets in het
+logboek doen. Daar hoort ook deze knop bij, ook al kost het een
+vingerafdruk per set. Zonder pincode blijft afvinken vanaf het slot zoals
+het was. Wat de melding toont, verandert niet: een lopende workout is
+geen geheim op de plek waar je traint.
+

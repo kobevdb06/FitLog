@@ -168,7 +168,9 @@ object WorkoutLiveNotice {
         }
 
         if (set != null) bar(context, builder, set, confirming)
-        if (set != null && !confirming) actions(context, builder, set)
+        if (set != null && !confirming) {
+            actions(context, builder, set, notice["behindPin"] == true)
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             // What setRequestPromotedOngoing sets; that method only came with
@@ -228,8 +230,21 @@ object WorkoutLiveNotice {
         }
     }
 
+    /**
+     * With a PIN on FitLog, a button asks for the phone to be unlocked
+     * first: from the lock screen anyone could tick a set off or change it
+     * otherwise (DECISIONS 263). Without one, a set is ticked off from the
+     * lock screen, between two of them.
+     */
+    private fun Notification.Action.Builder.guarded(behindPin: Boolean): Notification.Action =
+        apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                setAuthenticationRequired(behindPin)
+            }
+        }.build()
+
     /** Coach, for every set: a question needs no values to go with it. */
-    private fun coach(context: Context): Notification.Action =
+    private fun coach(context: Context, behindPin: Boolean): Notification.Action =
         Notification.Action.Builder(
             Icon.createWithResource(context, R.drawable.ic_stat_fitlog),
             "Coach",
@@ -239,11 +254,16 @@ object WorkoutLiveNotice {
                 WorkoutPanelActivity.intent(context, WorkoutPanelActivity.MODE_COACH),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             ),
-        ).build()
+        ).guarded(behindPin)
 
-    private fun actions(context: Context, builder: Notification.Builder, set: Map<*, *>) {
+    private fun actions(
+        context: Context,
+        builder: Notification.Builder,
+        set: Map<*, *>,
+        behindPin: Boolean,
+    ) {
         if (set["outside"] != true) {
-            builder.addAction(coach(context))
+            builder.addAction(coach(context, behindPin))
             return
         }
         builder.addAction(
@@ -258,7 +278,7 @@ object WorkoutLiveNotice {
                     WorkoutPanelActivity.intent(context, WorkoutPanelActivity.MODE_EDIT),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 ),
-            ).build(),
+            ).guarded(behindPin),
         )
         val tick = PendingIntent.getBroadcast(
             context,
@@ -273,9 +293,9 @@ object WorkoutLiveNotice {
                 Icon.createWithResource(context, R.drawable.ic_stat_fitlog),
                 "Klaar",
                 tick,
-            ).build(),
+            ).guarded(behindPin),
         )
-        builder.addAction(coach(context))
+        builder.addAction(coach(context, behindPin))
     }
 
     /**

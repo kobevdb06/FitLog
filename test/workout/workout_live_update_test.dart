@@ -1,7 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:fitlog/core/app/app_controller.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/formatting/formatters.dart';
+import 'package:fitlog/core/security/key_manager.dart';
+import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/workout/data/workout_notice_channel.dart';
 import 'package:fitlog/features/workout/domain/workout_notice.dart';
 import 'package:fitlog/features/workout/presentation/workout_live_update.dart';
@@ -22,6 +26,7 @@ void main() {
   late ProviderContainer container;
   late _Poster poster;
   late WorkoutController controller;
+  late InMemorySecretStore keys;
 
   setUp(() async {
     db = createTestDatabase();
@@ -38,10 +43,12 @@ void main() {
           ),
         );
     poster = _Poster();
+    keys = InMemorySecretStore();
     container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
         workoutNoticePosterProvider.overrideWithValue(poster),
+        secretStoreProvider.overrideWithValue(keys),
       ],
     );
     controller = container.read(workoutControllerProvider);
@@ -290,6 +297,26 @@ void main() {
     expect(set['marks'], ['open', 'open', 'open']);
     expect(set['position'], 0);
     expect(set['outside'], isTrue);
+  });
+
+  test('zonder pincode werken de knoppen vanaf het slot', () async {
+    follow();
+    await startBench();
+    await settle();
+
+    final payload = workoutNoticePayload(poster.shown.last, const Formatters());
+    expect(payload['behindPin'], isFalse);
+  });
+
+  test('met een pincode vragen ze eerst de telefoon te ontgrendelen', () async {
+    await KeyManager(keys).setPin(dek: Uint8List(32), pin: '246810');
+    follow();
+    await startBench();
+    await settle();
+
+    // From the lock screen anyone could tick a set off (DECISIONS 263).
+    final payload = workoutNoticePayload(poster.shown.last, const Formatters());
+    expect(payload['behindPin'], isTrue);
   });
 
   test('afronden haalt ze weg', () async {

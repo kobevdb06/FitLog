@@ -15,6 +15,7 @@ Map<String, Object?> workoutNoticePayload(
     'body': notice.body,
     'startedAt': notice.startedAt.millisecondsSinceEpoch,
     'restEndsAt': notice.restEndsAt?.millisecondsSinceEpoch,
+    'behindPin': notice.behindPin,
     'set': set == null
         ? null
         : {

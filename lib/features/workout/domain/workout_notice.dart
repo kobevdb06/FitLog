@@ -144,6 +144,7 @@ class WorkoutNotice {
     required this.startedAt,
     this.restEndsAt,
     this.current,
+    this.behindPin = false,
   });
 
   /// The workout's name.
@@ -164,6 +165,11 @@ class WorkoutNotice {
   /// The set to do next, or null when there is none left.
   final NoticeSet? current;
 
+  /// FitLog has a PIN: the buttons ask for the phone to be unlocked first.
+  /// From the lock screen anyone could tick a set or change it otherwise
+  /// (DECISIONS 263).
+  final bool behindPin;
+
   bool get isResting => restEndsAt != null;
 
   @override
@@ -173,10 +179,12 @@ class WorkoutNotice {
       other.body == body &&
       other.startedAt == startedAt &&
       other.restEndsAt == restEndsAt &&
-      other.current == current;
+      other.current == current &&
+      other.behindPin == behindPin;
 
   @override
-  int get hashCode => Object.hash(title, body, startedAt, restEndsAt, current);
+  int get hashCode =>
+      Object.hash(title, body, startedAt, restEndsAt, current, behindPin);
 }
 
 /// The notice for [detail], or null when there is nothing to show.
@@ -189,6 +197,7 @@ WorkoutNotice? workoutNoticeFor(
   DateTime? restEndsAt,
   PreviousSession previous = PreviousSession.empty,
   List<double> platesKg = const [],
+  bool behindPin = false,
 }) {
   if (detail == null) return null;
   if (detail.workout.endedAt != null) return null;
@@ -203,6 +212,7 @@ WorkoutNotice? workoutNoticeFor(
     startedAt: DateTime.fromMillisecondsSinceEpoch(detail.workout.startedAt),
     restEndsAt: restEndsAt,
     current: _nextSet(detail, previous, platesKg),
+    behindPin: behindPin,
   );
 }
 

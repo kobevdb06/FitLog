@@ -48,7 +48,7 @@ BiometricService biometricService(Ref ref) => BiometricService();
 /// A key store that does not answer counts as a PIN.
 Future<bool> wordsInNotifications(Ref ref) async {
   try {
-    return (await ref.read(keyManagerProvider).status()).mode != LockMode.pin;
+    return !await ref.read(keyManagerProvider).hasPin();
   } on Object {
     return false;
   }

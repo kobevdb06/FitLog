@@ -116,6 +116,9 @@ class KeyManager {
     );
   }
 
+  /// Whether a PIN is set: one read of the store, for what asks often.
+  Future<bool> hasPin() async => await _store.read(_kPinWrap) != null;
+
   /// A brand new data encryption key. Nothing is persisted yet: the caller
   /// decides how it gets protected.
   Uint8List createDek() => generateDek();

@@ -6743,3 +6743,13 @@ Nu stopt de build met een duidelijke melding (`requireReleaseKey`, vóór
 `-Pallow-debug-signing=true` mee, en krijgt dan de waarschuwing zoals
 vroeger. In een worktree zonder sleutel stopte een releasebuild zo, met de
 melding. In de gewone map, met de sleutel, gaat ze door zoals altijd.
+
+## 299. Twee pakketten die niets deden, zijn weg
+
+Uit het Fable-rapport: B7.
+
+`cupertino_icons` en `drift_flutter` stonden in `pubspec.yaml`, maar geen
+enkel bestand gebruikte ze. Ze zijn weg. De verouderde pakketten (`sqlite3`
+3.5.2 tegenover 3.9.1, dat de SQLCipher-build meebrengt, en
+`flutter_secure_storage` 11.0.0 tegenover 11.2.0) worden elk apart
+bijgewerkt, met de tests en de emulator ertussen.

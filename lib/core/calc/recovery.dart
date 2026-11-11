@@ -171,6 +171,13 @@ const Map<CardioKind, Set<String>> kCardioMuscles = {
 const double kMinRecoveryHours = 24;
 const double kMaxRecoveryHours = 96;
 
+/// The latest an answer about a muscle still says something about the
+/// session before it. Not the 96 hours of the table: still sore at 100
+/// hours is exactly the slow recovery the app should learn from. But a week
+/// on, the next session of that muscle is usually due, and soreness then
+/// comes from something else (DECISIONS 271).
+const Duration kLatestAnswerFor = Duration(days: 7);
+
 /// Stands in when the user has never logged a body weight, so that
 /// bodyweight work still counts for something.
 const double kAssumedBodyWeightKg = 75;
@@ -1038,6 +1045,10 @@ double _personalFactor(List<RecoveryEstimate> plain, List<SorenessCheck> said) {
     final predicted = session.recovery.inMinutes / 60;
     if (predicted <= 0) continue;
     final elapsed = check.at.difference(session.trainedAt).inMinutes / 60;
+    // A week on, it is no longer that session: "pijnlijk" twenty days after
+    // the last leg day was taken for a recovery seven times as slow as the
+    // table (DECISIONS 271).
+    if (elapsed > kLatestAnswerFor.inMinutes / 60) continue;
     final ready = elapsed >= predicted;
 
     final ratio = switch (check.level) {

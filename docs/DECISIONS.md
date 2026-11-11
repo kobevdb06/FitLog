@@ -6283,3 +6283,19 @@ vergelijken in plaats van per spier. Dat zou de hele schatting
 veranderen, en met deze delen is het verschil tussen bewegingen al klein
 genoeg.
 
+## 271. Een laat *pijnlijk* telt niet voor je eigen tempo
+
+Uit het Fable-rapport: F6.
+
+Een antwoord over een spier hoort bij de laatste sessie ervoor, hoe lang
+geleden ook. Zei je twintig dagen na je laatste beendag *pijnlijk*, dan
+rekende de app een herstel uit dat zeven keer trager was dan de tabel.
+De mediaan en de bovengrens dempten dat, maar elk laat antwoord was een
+stem voor *traag herstel*.
+
+Het rapport stelde 96 uur voor als grens, het langste van de tabel. Dat
+is te kort: wie na 100 uur nog pijn heeft, herstelt precies traag, en dat
+moet de app leren. Bestaande tests gaan daar ook van uit. De grens is nu
+een week (`kLatestAnswerFor`). Na een week is de volgende sessie van die
+spier meestal al aan de beurt, en dan komt de stijfheid van iets anders.
+

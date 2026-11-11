@@ -552,6 +552,33 @@ void main() {
         expect(quick.recovery, lessThan(plain.recovery));
       });
 
+      test('een pijnlijk van weken later komt niet van die sessie', () {
+        // Legs every three weeks, and each time "pijnlijk" twenty days on:
+        // that was taken for a recovery seven times as slow as the table
+        // (DECISIONS 271). A week on, it is something else.
+        final sessions = [
+          for (final weeksBack in [9, 6, 3])
+            set(
+              workoutId: 'b$weeksBack',
+              at: monday.subtract(Duration(days: 7 * weeksBack)),
+            ),
+          set(workoutId: 'today', at: monday),
+        ];
+        final late = estimateRecovery(
+          muscleSessions(sessions),
+          checks: [
+            for (final weeksBack in [9, 6, 3])
+              said(
+                const Duration(days: 20),
+                SorenessLevel.sore,
+                from: monday.subtract(Duration(days: 7 * weeksBack)),
+              ),
+          ],
+        ).single;
+
+        expect(late.personalFactor, 1);
+      });
+
       test('maar niet voordat er een patroon is', () {
         final twice = estimate(
           afterEachWeek(

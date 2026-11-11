@@ -1291,6 +1291,24 @@ class _ExerciseCard extends ConsumerWidget {
         await _toggleSuperset(ref);
 
       case 'pr_start':
+        // The ladder replaces every set of the exercise: ask first when some
+        // are ticked off already. They went without a word (DECISIONS 281).
+        final done = detail.sets.where((s) => s.isCompleted).length;
+        if (done > 0) {
+          if (!context.mounted) return;
+          final replace = await confirm(
+            context,
+            title: 'Afgevinkte sets vervangen?',
+            message:
+                'Je vinkte al $done ${done == 1 ? 'set' : 'sets'} van deze '
+                'oefening af. Een PR-poging vervangt alle sets door de '
+                'opwarmladder, en wat je afvinkte verdwijnt uit deze '
+                'workout.',
+            confirmLabel: 'Toch omzetten',
+            destructive: true,
+          );
+          if (!replace) return;
+        }
         if (!context.mounted) return;
         await PrAttemptScreen.open(
           context,

@@ -6435,3 +6435,18 @@ telt dan weer mee. Wie liever niet veegt: het venster van het settype
 vegen zelf blijft zonder vraag. Een vraag bij elke set zou het afvinken
 trager maken dan het verlies dat ze voorkomt, en *Ongedaan maken* dekt
 dat al.
+
+## 281. Een PR-poging vraagt eerst, als er al sets afgevinkt zijn
+
+Uit het Fable-rapport: T6.
+
+*Omzetten naar PR-poging* vervangt alle sets van de oefening door de
+opwarmladder, ook de sets die je al afvinkte, en dat gebeurde zonder een
+woord. Het rapport gaf twee wegen: de afgevinkte sets houden en de ladder
+erachter zetten, of eerst waarschuwen. Houden maakt de poging dubbelzinnig.
+Een gewone set in een oefening die een PR-poging is, telt dan als poging
+zodra je hem opnieuw afvinkt, en de melding toont hem zo. Daarom de tweede
+weg: zijn er al sets afgevinkt, dan vraagt FitLog eerst *Afgevinkte sets
+vervangen?*, met het aantal. Kies je *Toch omzetten*, dan gaat het zoals
+voordien.
+

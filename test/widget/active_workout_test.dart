@@ -1025,6 +1025,38 @@ void main() {
       expect(find.text('Warming-up berekenen'), findsNothing);
     });
 
+    testWidgets('een PR-poging vraagt eerst, als er al sets afgevinkt zijn', (
+      tester,
+    ) async {
+      // The ladder replaces every set, the ones ticked off too: three sets
+      // of work went from the log without a word (DECISIONS 281).
+      final set = (await db.workoutsDao.getWorkoutDetail(workoutId))!
+          .exercises
+          .single
+          .sets
+          .single;
+      await db.workoutsDao.updateSet(set.id, reps: const Value(8));
+      await (db.update(db.workoutSetsTable)..where((t) => t.id.equals(set.id)))
+          .write(const WorkoutSetsTableCompanion(isCompleted: Value(true)));
+      await openMenu(tester);
+
+      await tester.tap(find.text('Omzetten naar PR-poging'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Afgevinkte sets vervangen?'), findsOneWidget);
+      await tester.tap(find.text('Annuleren'));
+      await tester.pumpAndSettle();
+      expect(
+        (await db.workoutsDao.getWorkoutDetail(workoutId))!
+            .exercises
+            .single
+            .sets
+            .single
+            .isCompleted,
+        isTrue,
+      );
+    });
+
     testWidgets('sets first, then the exercise, then removing it', (
       tester,
     ) async {

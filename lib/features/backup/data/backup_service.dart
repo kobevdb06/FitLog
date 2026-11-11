@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:sqlite3/sqlite3.dart';
 
 import '../../../core/db/connection.dart';
@@ -14,38 +15,28 @@ import '../../../core/db/restore_files.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/security/key_material.dart';
 import '../../../core/util/paths.dart';
+import 'backup_stream.dart';
 
-/// Thrown when a `.fitlog` file cannot be read with the supplied phrase.
-class BackupUnreadableException implements Exception {
-  const BackupUnreadableException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => 'BackupUnreadableException: $message';
-}
+export 'backup_stream.dart' show BackupUnreadableException, isSafePhotoName;
 
 /// Creates and restores the encrypted `.fitlog` archive, and writes the
 /// human-readable CSV export.
 ///
 /// The archive holds the SQLCipher database file, the photos and the data
-/// encryption key, all inside one blob that is encrypted with AES-GCM under a
-/// key derived from the recovery phrase. That means a backup can be restored
-/// on a new device with nothing but the twelve words.
+/// encryption key, encrypted with AES-GCM under a key derived from the
+/// recovery phrase. That means a backup can be restored on a new device
+/// with nothing but the twelve words.
 class BackupService {
   const BackupService({required this.db, required this.paths});
 
   final AppDatabase db;
   final AppPaths paths;
 
-  /// Magic bytes so a wrong file is rejected before the user waits for
-  /// Argon2id to finish.
-  static const List<int> _magic = [0x46, 0x49, 0x54, 0x4C]; // "FITL"
-
-  /// 2 carries the Argon2 settings it was sealed with, so they can be raised
-  /// one day without leaving every older backup unreadable (DECISIONS 242).
-  /// 1 is read with the settings there have always been.
-  static const int _formatVersion = 2;
+  /// The newest format this version reads, and the one it writes: 3, in
+  /// pieces (backup_stream.dart, DECISIONS 304). 2 carries the Argon2
+  /// settings it was sealed with (DECISIONS 242); 1 is read with the
+  /// settings there have always been. Both are one zip, sealed in one go.
+  static const int _formatVersion = kStreamFormat;
 
   static const int _saltLength = 16;
   static const int _nonceLength = 12;
@@ -63,12 +54,19 @@ class BackupService {
   static const Duration exportsKept = Duration(hours: 1);
 
   /// Writes an encrypted backup and returns the file.
+  ///
+  /// [chunkSize] is the size of its pieces; only a test asks for others.
   Future<File> createBackup({
     required String recoveryPhrase,
     required Uint8List dek,
+    @visibleForTesting int chunkSize = kBackupChunkSize,
   }) {
     final made = _running.then(
-      (_) => _createBackup(recoveryPhrase: recoveryPhrase, dek: dek),
+      (_) => _createBackup(
+        recoveryPhrase: recoveryPhrase,
+        dek: dek,
+        chunkSize: chunkSize,
+      ),
     );
     _running = made.then<void>((_) {}, onError: (Object _) {});
     return made;
@@ -77,6 +75,7 @@ class BackupService {
   Future<File> _createBackup({
     required String recoveryPhrase,
     required Uint8List dek,
+    required int chunkSize,
   }) async {
     final exportDir = await paths.exportDirectory();
     await pruneExports(exportDir);
@@ -91,10 +90,11 @@ class BackupService {
         recoveryPhrase: recoveryPhrase,
         dek: dek,
         at: at,
+        chunkSize: chunkSize,
       );
       // Only now, with the file written: stamped before, an app Android
-      // killed halfway - with the whole archive in its memory - kept saying
-      // there was a backup, and the reminder stayed quiet for a week.
+      // killed halfway kept saying there was a backup, and the reminder
+      // stayed quiet for a week.
       await db.settingsDao.updateSettings(
         AppSettingsTableCompanion(
           lastBackupAt: Value(at.millisecondsSinceEpoch),
@@ -129,6 +129,7 @@ class BackupService {
     required String recoveryPhrase,
     required Uint8List dek,
     required DateTime at,
+    required int chunkSize,
   }) async {
     // VACUUM INTO writes a consistent copy that keeps the same encryption key,
     // which is safer than copying a file that may have a live WAL.
@@ -137,38 +138,57 @@ class BackupService {
     // reminder is right at once.
     _stamp(snapshot, dek, at);
 
-    final entries = <String, Uint8List>{
-      'manifest.json': utf8.encode(
-        jsonEncode({
-          'format': _formatVersion,
-          'app': 'FitLog',
-          'created_at': at.toIso8601String(),
-        }),
-      ),
-      'key.hex': utf8.encode(toHex(dek)),
-      'fitlog.db': await snapshot.readAsBytes(),
-    };
     final photosDir = paths.photosDirectory;
-    if (await photosDir.exists()) {
-      await for (final entity in photosDir.list()) {
-        if (entity is! File) continue;
-        entries['photos/${entity.uri.pathSegments.last}'] = await entity
-            .readAsBytes();
-      }
-    }
-
-    // Packing and sealing on their own isolate: with many photos that took
-    // long enough to freeze the screen.
-    final sealed = await Isolate.run(() => _seal(entries, recoveryPhrase));
-
+    final photos = [
+      if (await photosDir.exists())
+        await for (final entity in photosDir.list())
+          if (entity is File) entity.path,
+    ];
     final file = File(
       '${exportDir.path}/fitlog-'
       '${at.year}${_two(at.month)}${_two(at.day)}-'
       '${_two(at.hour)}${_two(at.minute)}.fitlog',
     );
-    await file.writeAsBytes(sealed, flush: true);
-    return file;
+    // Under its own name only once it is whole.
+    final part = File('${file.path}.part');
+    await _sealInPieces(
+      out: part.path,
+      recoveryPhrase: recoveryPhrase,
+      keyHex: toHex(dek),
+      manifest: jsonEncode({
+        'format': _formatVersion,
+        'app': 'FitLog',
+        'created_at': at.toIso8601String(),
+      }),
+      database: snapshot.path,
+      photos: photos,
+      chunkSize: chunkSize,
+    );
+    return part.rename(file.path);
   }
+
+  /// Sealing on its own isolate, a piece at a time: with many photos it
+  /// took long enough to freeze the screen, and the whole archive no longer
+  /// fits in memory at once. Only plain values cross to the isolate.
+  static Future<void> _sealInPieces({
+    required String out,
+    required String recoveryPhrase,
+    required String keyHex,
+    required String manifest,
+    required String database,
+    required List<String> photos,
+    required int chunkSize,
+  }) => Isolate.run(
+    () => writeStreamBackup(
+      out: File(out),
+      recoveryPhrase: recoveryPhrase,
+      keyHex: keyHex,
+      manifest: manifest,
+      database: File(database),
+      photos: [for (final path in photos) File(path)],
+      chunkSize: chunkSize,
+    ),
+  );
 
   /// The moment of the backup, written into its copy of the database.
   ///
@@ -189,75 +209,113 @@ class BackupService {
     }
   }
 
-  /// [entries] zipped and sealed under [recoveryPhrase], header first.
-  static Future<Uint8List> _seal(
-    Map<String, Uint8List> entries,
-    String recoveryPhrase,
-  ) async {
-    final archive = Archive();
-    for (final MapEntry(:key, :value) in entries.entries) {
-      archive.addFile(ArchiveFile.bytes(key, value));
-    }
-    final zipped = ZipEncoder().encodeBytes(archive);
-
-    final salt = randomBytes(_saltLength);
-    final nonce = randomBytes(_nonceLength);
-    final kek = await deriveKek(secret: recoveryPhrase, salt: salt);
-    final box = await AesGcm.with256bits().encrypt(
-      zipped,
-      secretKey: SecretKey(kek),
-      nonce: nonce,
-    );
-
-    // header: magic | version | memory (4 bytes) | iterations | parallelism |
-    // saltLen | nonceLen | salt | nonce | mac | ct
-    final memory = ByteData(4)..setUint32(0, kArgonMemoryKib);
-    return (BytesBuilder()
-          ..add(_magic)
-          ..addByte(_formatVersion)
-          ..add(memory.buffer.asUint8List())
-          ..addByte(kArgonIterations)
-          ..addByte(kArgonParallelism)
-          ..addByte(salt.length)
-          ..addByte(nonce.length)
-          ..add(salt)
-          ..add(nonce)
-          ..add(box.mac.bytes)
-          ..add(box.cipherText))
-        .takeBytes();
-  }
-
   static String _two(int value) => value.toString().padLeft(2, '0');
 
   // --- Restore --------------------------------------------------------------
 
-  /// Decrypts a backup and returns its contents without touching the app's
-  /// own files yet, so the caller can confirm before overwriting anything.
-  static Future<RestoredBackup> readBackup({
+  /// Opens the backup in [file] and writes it next to the app's own files,
+  /// checked - its key, whether it is whole, its version - without touching
+  /// those files yet, so the caller can confirm first (DECISIONS 242).
+  ///
+  /// Format 3 goes a piece at a time, on its own isolate, straight into the
+  /// staged files (DECISIONS 304). Formats 1 and 2 were made in one piece,
+  /// and are read in one piece.
+  static Future<StagedRestore> stageFromFile({
     required File file,
     required String recoveryPhrase,
+    required AppPaths paths,
   }) async {
-    final bytes = await file.readAsBytes();
-    const broken = BackupUnreadableException(
-      'Dit back-upbestand is beschadigd of onvolledig.',
+    if (await _formatOf(file) < kStreamFormat) {
+      final backup = await readBackup(
+        file: file,
+        recoveryPhrase: recoveryPhrase,
+      );
+      return stageRestore(backup: backup, paths: paths);
+    }
+    final files = RestoreFiles(paths);
+    await files.discardStaged();
+    try {
+      final keyHex = await _openInPieces(
+        file: file.path,
+        recoveryPhrase: recoveryPhrase,
+        database: files.stagedDatabase.path,
+        photos: files.stagedPhotos.path,
+      );
+      return StagedRestore(dek: fromHex(keyHex), files: files);
+    } on Object {
+      await files.discardStaged();
+      rethrow;
+    }
+  }
+
+  /// Opened, written and checked on its own isolate. Only plain values
+  /// cross to it.
+  static Future<String> _openInPieces({
+    required String file,
+    required String recoveryPhrase,
+    required String database,
+    required String photos,
+  }) => Isolate.run(() async {
+    await Directory(photos).create(recursive: true);
+    final keyHex = await readStreamBackup(
+      file: File(file),
+      recoveryPhrase: recoveryPhrase,
+      database: File(database),
+      photos: Directory(photos),
     );
-    if (bytes.length < 8 ||
-        bytes[0] != _magic[0] ||
-        bytes[1] != _magic[1] ||
-        bytes[2] != _magic[2] ||
-        bytes[3] != _magic[3]) {
+    checkRestoredDatabase(File(database), keyHex);
+    return keyHex;
+  });
+
+  /// The format of [file], from its first bytes; one that is not a FitLog
+  /// backup, or that a later version made, is turned away here.
+  static Future<int> _formatOf(File file) async {
+    final raf = await file.open();
+    final List<int> head;
+    try {
+      head = await raf.read(5);
+    } finally {
+      await raf.close();
+    }
+    if (head.length < 5 ||
+        head[0] != kBackupMagic[0] ||
+        head[1] != kBackupMagic[1] ||
+        head[2] != kBackupMagic[2] ||
+        head[3] != kBackupMagic[3]) {
       throw const BackupUnreadableException(
         'Dit is geen FitLog-back-upbestand.',
       );
     }
-    final version = bytes[4];
+    final version = head[4];
     if (version > _formatVersion) {
       throw BackupUnreadableException(
         'Deze back-up is gemaakt met een nieuwere versie van FitLog '
         '(formaat $version). Werk FitLog eerst bij.',
       );
     }
-    if (version < 1) throw broken;
+    if (version < 1) {
+      throw const BackupUnreadableException(
+        'Dit back-upbestand is beschadigd of onvolledig.',
+      );
+    }
+    return version;
+  }
+
+  /// Decrypts a backup of format 1 or 2 - one zip, sealed in one go - and
+  /// returns its contents. Format 3 is opened with [stageFromFile].
+  static Future<RestoredBackup> readBackup({
+    required File file,
+    required String recoveryPhrase,
+  }) async {
+    final version = await _formatOf(file);
+    if (version >= kStreamFormat) {
+      throw ArgumentError.value(file.path, 'file', 'format $version');
+    }
+    final bytes = await file.readAsBytes();
+    const broken = BackupUnreadableException(
+      'Dit back-upbestand is beschadigd of onvolledig.',
+    );
+    if (bytes.length < 8) throw broken;
 
     var offset = 5;
     var memoryKib = kArgonMemoryKib;
@@ -363,8 +421,8 @@ class BackupService {
     );
   }
 
-  /// Writes the backup next to the app's own files and checks it, before
-  /// anything of the app's is touched: that the key in it opens the
+  /// Writes a backup read in one piece next to the app's own files and
+  /// checks it, before anything of the app's is touched: that the key in it opens the
   /// database, that the database is whole, and that it is not from a later
   /// version (DECISIONS 242). Restoring used to delete the database and the
   /// photos first, and only then write the backup - a full disk, a crash or
@@ -510,11 +568,6 @@ class BackupService {
     return '"${value.replaceAll('"', '""')}"';
   }
 }
-
-/// Whether [name] is a file name that stays in the photo folder.
-bool isSafePhotoName(String name) =>
-    RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]*$').hasMatch(name) &&
-    !name.contains('..');
 
 /// A backup written next to the app's files and checked, waiting to be put
 /// in their place.

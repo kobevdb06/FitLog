@@ -146,7 +146,8 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final second = await confirmByTyping(
       context,
       title: 'Zeker weten?',
-      message: 'Typ WISSEN om te bevestigen. Dit kan niet ongedaan gemaakt worden.',
+      message:
+          'Typ WISSEN om te bevestigen. Dit kan niet ongedaan gemaakt worden.',
       word: 'WISSEN',
     );
     if (!second) return;
@@ -202,19 +203,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
     await _run(() async {
       final words = normalizeRecoveryPhrase(phrase);
-      _at('Back-up openen');
-      final backup = await BackupService.readBackup(
+      // Opened a piece at a time, written next to the app's own files and
+      // checked - its key, whether it is whole, its version - before
+      // anything of the app's is touched and before the user is asked
+      // (DECISIONS 242, 304).
+      _at('Back-up openen en controleren');
+      final paths = await ref.read(appPathsProvider.future);
+      final staged = await BackupService.stageFromFile(
         file: file,
         recoveryPhrase: words,
-      );
-
-      // Written next to the app's own files and checked - its key, whether
-      // it is whole, its version - before anything of the app's is touched
-      // and before the user is asked (DECISIONS 242).
-      _at('Back-up controleren');
-      final paths = await ref.read(appPathsProvider.future);
-      final staged = await BackupService.stageRestore(
-        backup: backup,
         paths: paths,
       );
 
@@ -258,13 +255,13 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         // after this is finished at the next start, one that stops before
         // it is undone - the key there is decides (RestoreFiles.settle).
         _at('Sleutels klaarzetten');
-        await manager.restoreKeys(dek: backup.dek, phrase: words);
+        await manager.restoreKeys(dek: staged.dek, phrase: words);
 
         _at('Gegevens terugzetten');
         await BackupService.applyRestore(staged);
 
         _at('Database openen');
-        await controller.completeSetupWith(backup.dek);
+        await controller.completeSetupWith(staged.dek);
       } on Object catch (error) {
         controller.restoreFailed(error);
         return;

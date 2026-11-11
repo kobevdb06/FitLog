@@ -346,10 +346,11 @@ lopende workout vergrendelt de app nooit.**
 Twee knoppen in Instellingen:
 
 - **Een versleuteld `.fitlog`-bestand.** De databasesnapshot (via `VACUUM INTO`,
-  dus consistent), alle foto's en de datasleutel gaan in één zip, en die zip
-  wordt met AES-GCM versleuteld onder een uit je herstelzin afgeleide sleutel.
+  dus consistent), alle foto's en de datasleutel worden met AES-GCM versleuteld
+  onder een uit je herstelzin afgeleide sleutel, in stukken van 1 MB. Zo zit
+  nooit het hele archief tegelijk in het geheugen, ook niet bij veel foto's.
   Het bestand gaat naar het deelmenu van het systeem. Zonder de twaalf woorden
-  is het niet te openen.
+  is het niet te openen. Back-ups van oudere versies blijven leesbaar.
 - **Een CSV-export** van alle workouts en sets, gewoon leesbaar, voor wie zijn
   data ergens anders wil bekijken.
 

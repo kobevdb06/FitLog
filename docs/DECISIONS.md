@@ -6838,3 +6838,44 @@ pincode gezet, de nieuwe versie erover geïnstalleerd, en ontgrendeld met
 die pincode, met alle gegevens erbij. Daarna met de nieuwe versie de
 pincode uitgezet, wat de sleutel opnieuw wegschrijft, en koud gestart.
 De app opende meteen, met dezelfde gegevens.
+
+## 304. De back-up in stukken
+
+Uit het Fable-rapport: D7, het deel dat in 258 nog openstond.
+
+Formaat 1 en 2 waren één zip, in één keer versleuteld. Het hele archief,
+de database en elke foto, zat dus tegelijk in het geheugen, en tijdens
+het versleutelen of openen zelfs twee keer. Met veel foto's is dat meer
+dan Android een app gunt. Dan stopte de back-up of het herstel zonder
+uitleg.
+
+Formaat 3 (`backup_stream.dart`) wordt stuk voor stuk geschreven en
+gelezen.
+
+- Na de kop komen stukken van 1 MB. Elk stuk is apart versleuteld met
+  AES-GCM, onder de sleutel uit de herstelzin. De nonce van een stuk is
+  een willekeurig begin, het nummer van het stuk en of het het laatste
+  is. De kop gaat bij elk stuk mee als extra gegeven. Een stuk dat
+  veranderd, verplaatst, weggelaten of afgeknipt is, gaat niet open. Een
+  veranderde kop ook niet.
+- Binnen de versleuteling staan records: de sleutel, het manifest, de
+  database, de foto's en een eindteken. Er is geen zip meer, en niets
+  komt onversleuteld op schijf, behalve de bestanden die een herstel
+  klaarzet.
+- Bij het maken leest de app elk bestand in stukken, op een eigen
+  isolate. Het bestand krijgt pas zijn naam als het helemaal geschreven
+  is; tot dan heet het `.part`.
+- Bij het terugzetten schrijft de app rechtstreeks in de klaargezette
+  bestanden, op een eigen isolate. Daarna wordt alles gecontroleerd zoals
+  in 242. Wat geweigerd wordt, laat niets achter. Openen en controleren
+  is één stap op het scherm.
+- Formaat 1 en 2 blijven leesbaar, langs de oude weg. Een oudere versie
+  van FitLog zegt bij formaat 3 dat de back-up van een nieuwere versie
+  komt, zoals bij elk nieuwer formaat.
+
+De tests maken stukken van 64 bytes, zodat de database en de foto's over
+veel stukken lopen. Ze knippen een bestand af, veranderen een byte,
+verwisselen en schrappen stukken, en veranderen de kop. Een tweede
+sealer, los van de app geschreven in de test, maakt bestanden met een
+foute inhoud: een foto met een pad, geen database, geen eindteken, iets
+na het eindteken.

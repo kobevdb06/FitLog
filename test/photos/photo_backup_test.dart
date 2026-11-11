@@ -62,22 +62,20 @@ void main() {
     await db.close();
 
     // --- A different device, nothing but the file and the twelve words ----
-    final restored = await BackupService.readBackup(
+    final targetPaths = AppPaths(target);
+    final staged = await BackupService.stageFromFile(
       file: archive,
       recoveryPhrase: phrase,
+      paths: targetPaths,
     );
-    expect(restored.photos, hasLength(3));
-    expect(restored.dek, equals(dek));
-
-    final targetPaths = AppPaths(target);
-    await BackupService.applyRestore(
-      await BackupService.stageRestore(backup: restored, paths: targetPaths),
-    );
+    expect(staged.files.stagedPhotos.listSync(), hasLength(3));
+    expect(staged.dek, equals(dek));
+    await BackupService.applyRestore(staged);
 
     final restoredDb = AppDatabase(
       openEncryptedExecutor(
         file: targetPaths.databaseFile,
-        keyHex: toHex(restored.dek),
+        keyHex: toHex(staged.dek),
       ),
     );
     final rows = await restoredDb.recordsDao.photos();
@@ -127,16 +125,15 @@ void main() {
     ).createBackup(recoveryPhrase: phrase, dek: dek);
     await db.close();
 
-    final restored = await BackupService.readBackup(
+    final targetPaths = AppPaths(target);
+    final staged = await BackupService.stageFromFile(
       file: archive,
       recoveryPhrase: phrase,
+      paths: targetPaths,
     );
-    final targetPaths = AppPaths(target);
-    await BackupService.applyRestore(
-      await BackupService.stageRestore(backup: restored, paths: targetPaths),
-    );
+    await BackupService.applyRestore(staged);
 
-    final store = PhotoStore(targetPaths, key: restored.dek);
+    final store = PhotoStore(targetPaths, key: staged.dek);
     final names = await store.storedFileNames();
     final opened = (await store.readBytes(names.single))!;
     expect(opened[0], 0xFF);
@@ -158,9 +155,10 @@ void main() {
     await db.close();
 
     await expectLater(
-      BackupService.readBackup(
+      BackupService.stageFromFile(
         file: archive,
         recoveryPhrase: generateRecoveryPhrase(),
+        paths: AppPaths(target),
       ),
       throwsA(isA<BackupUnreadableException>()),
     );

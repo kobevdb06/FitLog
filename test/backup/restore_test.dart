@@ -381,6 +381,34 @@ void main() {
       );
     }, timeout: _timeout);
 
+    test(
+      'one made before format 3 is staged as well (DECISIONS 304)',
+      () async {
+        final dek = generateDek();
+        final source = File('${home.path}/bron.db');
+        await database(source, dek, 'Twee');
+        final file = await sealed({
+          'fitlog.db': source.readAsBytesSync(),
+          'key.hex': utf8.encode(toHex(dek)),
+          'photos/a.jpg': [3],
+        });
+
+        final staged = await BackupService.stageFromFile(
+          file: file,
+          recoveryPhrase: phrase,
+          paths: paths,
+        );
+
+        expect(staged.dek, dek);
+        expect(nameIn(staged.files.stagedDatabase, dek), 'Twee');
+        expect(
+          File('${staged.files.stagedPhotos.path}/a.jpg').readAsBytesSync(),
+          [3],
+        );
+      },
+      timeout: _timeout,
+    );
+
     test('a cut-off file is refused, not a crash', () async {
       final file = await sealed({
         'fitlog.db': [1],
@@ -438,20 +466,18 @@ void main() {
 
         final stamped = (await db.settingsDao.getSettings()).lastBackupAt;
         expect(stamped, isNotNull);
-        final read = await BackupService.readBackup(
+        final staged = await BackupService.stageFromFile(
           file: file,
           recoveryPhrase: phrase,
+          paths: AppPaths(Directory('${home.path}/elders')..createSync()),
         );
+        final restored = staged.files.stagedDatabase;
         expect(
-          String.fromCharCodes(read.databaseBytes.take(15)),
+          String.fromCharCodes(restored.readAsBytesSync().take(15)),
           isNot('SQLite format 3'),
           reason: 'VACUUM INTO keeps the key',
         );
-        final copy = sqlite3.open(
-          (File(
-            '${home.path}/kopie.db',
-          )..writeAsBytesSync(read.databaseBytes)).path,
-        );
+        final copy = sqlite3.open(restored.path);
         applyKeyAndVerify(copy, toHex(dek));
         expect(
           copy
@@ -474,12 +500,13 @@ void main() {
         service.createBackup(recoveryPhrase: phrase, dek: dek),
       ]);
 
-      for (final file in files) {
-        final read = await BackupService.readBackup(
+      for (final (i, file) in files.indexed) {
+        final staged = await BackupService.stageFromFile(
           file: file,
           recoveryPhrase: phrase,
+          paths: AppPaths(Directory('${home.path}/elders-$i')..createSync()),
         );
-        expect(read.databaseBytes, isNotEmpty);
+        expect(staged.files.stagedDatabase.lengthSync(), greaterThan(0));
       }
       expect(
         (await paths.exportDirectory()).listSync().where(

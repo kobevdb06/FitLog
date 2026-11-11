@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- The only reason this app can reach the network at all is the AI coach,
          and that stays asleep until the user enters an API key of their own.
          An Android permission is decided at build time, so it has to be here
@@ -168,6 +169,18 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- ML Kit, under the QR scanner, logs every scan and sends the batch
+             to firebaselogging.googleapis.com - with no key in the app, where
+             FitLog says it connects to nothing. Without this backend the
+             events are dropped on the phone, and the scanner works as before
+             (DECISIONS 266). -->
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            android:exported="false">
+            <meta-data
+                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+                tools:node="remove" />
+        </service>
         <!-- FitLog has no links from outside; recent Flutter versions follow
              them unless told not to (DECISIONS 264). -->
         <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />

@@ -6166,3 +6166,24 @@ Uit het Fable-rapport: S4.
   niet meer selecteerbaar, want een selectie ging via het systeemmenu toch
   nog ongemarkeerd naar het klembord. *Kopiëren* blijft bestaan: wie de
   woorden in een wachtwoordbeheerder bewaart, heeft het nodig.
+
+## 266. De QR-scanner stuurt Google niets meer over zijn gebruik
+
+Uit het Fable-rapport: het eerste punt om op de emulator na te gaan.
+
+Onder de QR-scanner zit ML Kit van Google. Die brengt zijn eigen
+transportlaag mee, en die stond in het samengevoegde manifest. Op de
+emulator bleek wat dat betekent. Bij elke scan sloeg ML Kit gebeurtenissen
+op (`FIREBASE_ML_SDK`), en een halve minuut later stuurde hij ze naar
+`firebaselogging.googleapis.com`, met antwoord 200. Dat gebeurde zonder
+sleutel in de app. De privacypagina en de handleiding zeggen: *zonder
+sleutel maakt FitLog geen enkele verbinding*. Dat klopte dus niet.
+
+De transportlaag heeft een achterkant nodig om iets te versturen (`cct`).
+Het manifest haalt die eruit (`tools:node="remove"` op
+`CctBackendFactory`). Daarna meldt de transportlaag *backend 'cct' is not
+registered*, slaat ze niets meer op en verstuurt ze niets. De scanner
+werkt zoals voordien: zijn model zit in de app, en de transportlaag
+diende alleen voor die metingen. Wat een oudere versie al had opgeslagen,
+gaat bij de volgende poging weg zonder dat het vertrekt. Een test bewaakt
+de regel in het manifest. De zin op de privacypagina klopt weer.

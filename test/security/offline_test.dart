@@ -37,6 +37,23 @@ void main() {
     expect(manifest, contains('AI coach'));
   });
 
+  test('the QR scanner sends Google nothing about its use', () {
+    // ML Kit, under the scanner, logs every scan for Google - and on the
+    // emulator it sent the batch to firebaselogging.googleapis.com, with no
+    // key in the app (DECISIONS 266). Without the backend that carries it,
+    // the logged events are dropped on the phone.
+    final manifest = read(main);
+    expect(
+      manifest,
+      contains('xmlns:tools="http://schemas.android.com/tools"'),
+    );
+    final remove = RegExp(
+      r'<meta-data\s+android:name="backend:com\.google\.android\.'
+      r'datatransport\.cct\.CctBackendFactory"\s+tools:node="remove"\s*/>',
+    );
+    expect(remove.hasMatch(manifest), isTrue);
+  });
+
   test('the release build no longer strips it', () {
     // It used to, which is why the file is still there: it is where a
     // permission a dependency drags in would be removed again.

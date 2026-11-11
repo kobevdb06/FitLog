@@ -1,10 +1,16 @@
 import java.util.Properties
 
-// The release keystore is never committed. Point at it from android/key.properties,
-// which git ignores; see key.properties.example for the four lines it needs.
+// The release keystore is never committed. Point at it from a key.properties
+// (see key.properties.example for the four lines it needs), looked for in
+// ~/.fitlog first and then in android/. In the project, cleaning it
+// (git clean -xfd) or deleting it took the one key that can update the app
+// along (DECISIONS 308). Its storeFile is read from the folder it is in.
+val keyPropertiesFile = listOf(
+    File(System.getProperty("user.home"), ".fitlog/key.properties"),
+    rootProject.file("key.properties"),
+).firstOrNull { it.exists() }
 val keystoreProperties = Properties().apply {
-    val file = rootProject.file("key.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
+    keyPropertiesFile?.inputStream()?.use { load(it) }
 }
 val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
 
@@ -17,7 +23,7 @@ val requireReleaseKey = tasks.register("requireReleaseKey") {
     doLast {
         if (!hasReleaseKey && !allowDebugSigning) {
             throw GradleException(
-                "FitLog: no android/key.properties, so no release key. A release " +
+                "FitLog: no key.properties in ~/.fitlog or android/, so no release key. A release " +
                     "build signed with the debug key is never to hand out; to build " +
                     "one anyway, for yourself, pass -Pallow-debug-signing=true. " +
                     "See android/key.properties.example."
@@ -88,7 +94,8 @@ android {
     signingConfigs {
         if (hasReleaseKey) {
             create("release") {
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storeFile = keyPropertiesFile!!.parentFile
+                    .resolve(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")

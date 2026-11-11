@@ -65,10 +65,11 @@ arm64-versie van zo'n 63 MB, met de andere ernaast voor oude toestellen.
 
 ### De sleutel
 
-Zonder `android/key.properties` wordt een release-build met de **debugsleutel**
-ondertekend. De build zegt dat er ook bij. Zo'n APK mag je nooit weggeven: die
-sleutel is publiek bekend, dus iedereen kan er een app overheen installeren die
-zich voor FitLog uitgeeft - en daarmee bij de versleutelde database.
+Zonder releasesleutel stopt een release-build. Wie er voor zichzelf toch een
+wil, geeft `-Pallow-debug-signing=true` mee: dan wordt hij met de
+**debugsleutel** ondertekend. Zo'n APK mag je nooit weggeven: die sleutel is
+publiek bekend, dus iedereen kan er een app overheen installeren die zich voor
+FitLog uitgeeft - en daarmee bij de versleutelde database.
 
 Maak er één keer een echte:
 
@@ -88,8 +89,11 @@ hij alleen nog een wachtwoord, twee keer. Bij *key password* mag je Enter
 drukken: dan is die gelijk aan het keystore-wachtwoord, en dat is wat
 `key.properties` verwacht.
 
-Kopieer `android/key.properties.example` naar `android/key.properties` en vul de
-vier regels in. Beide bestanden worden door git genegeerd.
+Zet de keystore in `~/.fitlog/` (op Windows `C:\Users\<jij>\.fitlog\`), kopieer
+`android/key.properties.example` ernaast als `key.properties` en vul de vier
+regels in. Buiten de projectmap kan opruimen (`git clean -xfd`) of de map
+verwijderen de sleutel niet meenemen. De build zoekt eerst daar, en dan in
+`android/key.properties`; git negeert dat bestand ook.
 
 **Bewaar de keystore en het wachtwoord alsof het je herstelzin is.** Android
 weigert een APK waarvan de handtekening veranderd is, dus wie de sleutel

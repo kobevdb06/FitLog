@@ -41,6 +41,15 @@ void main() {
     );
   });
 
+  test('the key is looked for outside the project first (DECISIONS 308)', () {
+    // In the project, cleaning it (git clean -xfd) or deleting it took the
+    // one key that can update the app along.
+    final text = gradle.replaceAll('\r\n', '\n');
+    expect(text, contains('user.home'));
+    expect(text, contains('.fitlog/key.properties'));
+    expect(read('android/key.properties.example'), contains('.fitlog'));
+  });
+
   test('but the example that holds none is not', () {
     expect(ignore, contains('!**/android/key.properties.example'));
     expect(File('android/key.properties.example').existsSync(), isTrue);

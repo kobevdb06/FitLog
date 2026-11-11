@@ -6966,3 +6966,27 @@ regels gaat.
 
 Op 2,0 is een scherm voller. Titels staan vaker op twee regels, en wat
 in een vaste cel moet passen (een gewicht, een tijd) schaalt kleiner.
+
+## 308. De releasesleutel staat buiten het project
+
+Uit het Fable-rapport: S5, het laatste deel. De eigenaar koos voor een
+andere map op zijn pc.
+
+`fitlog-release.jks` en `android/key.properties` stonden in de
+projectmap. Git negeerde ze, maar daardoor nam een opruimactie als
+`git clean -xfd` ze juist mee, net als het verwijderen of opnieuw clonen
+van de map. Zonder die sleutel kan niemand FitLog ooit nog bijwerken.
+
+Ze staan nu in `~/.fitlog/` van de eigenaar. De build zoekt `key.properties`
+eerst in `~/.fitlog/` en dan, zoals vroeger, in `android/`. `storeFile`
+wordt gelezen vanuit de map waar `key.properties` staat. Eerst gekopieerd
+en vergeleken, dan een releasebuild gemaakt: ondertekend met de
+releasesleutel, zoals `apksigner` liet zien. Pas daarna zijn de originelen
+uit de projectmap verwijderd.
+
+Een build in een worktree vindt de sleutel nu ook. Die hoeft dus niet
+meer per se in de gewone map te gebeuren.
+
+Twee kopieën elders (een USB-stick, een wachtwoordmanager) maakt de
+eigenaar zelf. De wachtwoorden staan in `key.properties`; die zijn niet
+door de developer gelezen.

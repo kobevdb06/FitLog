@@ -1,5 +1,7 @@
-# Copy to android/key.properties and fill in. That file is ignored by git and
-# must stay that way: it holds the password to the signing key.
+# Copy to ~/.fitlog/key.properties (C:\Users\<you>\.fitlog on Windows), next
+# to the keystore, and fill in. Outside the project, cleaning or deleting the
+# project cannot take the key along (DECISIONS 308). android/key.properties
+# works too, and git ignores it: it holds the password to the signing key.
 #
 # Make the key once, and keep both the file and the password somewhere you will
 # still have them in five years:
@@ -11,7 +13,8 @@
 # signature changed, and reinstalling means losing every workout on the device,
 # because there is no server holding a copy.
 
-storeFile=../fitlog-release.jks
+# Read from the folder this file is in.
+storeFile=fitlog-release.jks
 storePassword= 
 keyAlias=fitlog
 keyPassword=

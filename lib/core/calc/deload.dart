@@ -40,24 +40,34 @@ class DeloadPlan {
     return math.max(1, (working * (100 - setsPercent) / 100).ceil());
   }
 
-  /// [kg] made lighter, on the nearest [stepKg] - what the bar can hold - and
-  /// never heavier than it was.
+  /// [kg] made lighter, on the nearest [stepKg] - what the bar can hold. On
+  /// the nearest step a small cut could land on the weight itself - 16 kg,
+  /// a step of 4, a tenth off - and the deload changed nothing there: then
+  /// it is a step below, as long as there is one (DECISIONS 273).
   double? weight(double? kg, double stepKg) {
     if (kg == null || kg <= 0 || weightPercent <= 0) return kg;
     final lighter = kg * (100 - weightPercent) / 100;
     if (stepKg <= 0) return lighter;
-    final stepped = (lighter / stepKg).round() * stepKg;
+    var stepped = (lighter / stepKg).round() * stepKg;
+    if (stepped >= kg - 1e-9 && kg - stepKg > 1e-9) stepped = kg - stepKg;
     return math.min(kg, math.max(0, stepped)).toDouble();
   }
 
+  /// Fewer, and at least one fewer: a tenth of 5 rounded back to 5
+  /// (DECISIONS 273).
   int? reps(int? reps) {
     if (reps == null || reps <= 0 || repsPercent <= 0) return reps;
-    return math.max(1, (reps * (100 - repsPercent) / 100).round());
+    final fewer = (reps * (100 - repsPercent) / 100).round();
+    return math.max(1, math.min(reps - 1, fewer));
   }
 
+  /// Shorter, on 5 seconds, and never longer than it was: a hold of 3 s
+  /// became 5 (DECISIONS 273).
   int? seconds(int? seconds) {
     if (seconds == null || seconds <= 0 || repsPercent <= 0) return seconds;
-    return math.max(5, (seconds * (100 - repsPercent) / 100 / 5).round() * 5);
+    final shorter = (seconds * (100 - repsPercent) / 100 / 5).round() * 5;
+    if (seconds <= 5) return seconds;
+    return math.max(5, math.min(seconds - 5, shorter));
   }
 
   /// Whether a set of [type] is left out altogether.

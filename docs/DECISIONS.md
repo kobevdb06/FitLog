@@ -6311,3 +6311,22 @@ de deload minstens drie dagen van die week besloeg (`kDeloadRestsAWeek`).
 Een lopende deload van een week telt dus meteen, zoals voordien. De
 suggesties van de coach en het voorstel op Start lezen het nu op één
 plek (`weeksWithoutBreakIn`).
+
+## 273. Een deload maakt altijd iets lichter, korter of minder
+
+Uit het Fable-rapport: F8, de afronding van een deload.
+
+- **Gewicht.** Lichter, op de dichtste stap. Bij een kleine korting viel
+  die stap terug op het gewicht zelf: een kettlebell van 16 kg met een
+  stap van 4 kg en een tiende eraf bleef 16, en de deload veranderde daar
+  niets. Nu gaat het dan één stap lager, zolang er een lagere stap is. Dat
+  geldt ook voor 5 kg met een stap van 2,5 kg. Een eerdere test hield die
+  op 5, omdat een tiende minder was dan een halve stap. Een deload die
+  niets verandert, is geen deload. Op de gewone stangen verandert er
+  niets: 80 kg wordt nog altijd 72,5 kg.
+- **Herhalingen.** Een tiende van 5 werd weer 5. Nu is het er minstens
+  één minder, tot één.
+- **Seconden.** Een houding van 3 s werd 5 s, want het minimum was 5. Nu
+  wordt een houding nooit langer, en van 5 s of minder blijft ze zoals ze
+  is.
+

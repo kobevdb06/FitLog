@@ -20,8 +20,12 @@ void main() {
       expect(plan.weight(80, 2.5), 72.5);
       expect(plan.weight(100, 2.5), 90);
       expect(plan.weight(20, 2), 18);
-      // A tenth of 5 kg is less than half a step: it stays.
-      expect(plan.weight(5, 2.5), 5);
+      // A tenth is less than half a step: on the nearest step it stayed as
+      // heavy as it was, and the deload changed nothing there. Now it goes
+      // a step down (DECISIONS 273).
+      expect(plan.weight(5, 2.5), 2.5);
+      expect(plan.weight(16, 4), 12, reason: 'a kettlebell of 16');
+      expect(plan.weight(2, 2), 2, reason: 'nothing lighter than one step');
       expect(plan.weight(null, 2.5), isNull);
       expect(const DeloadPlan(weightPercent: 0).weight(80, 2.5), 80);
     });
@@ -32,6 +36,18 @@ void main() {
       expect(fewer.reps(1), 1);
       expect(fewer.seconds(60), 45);
       expect(plan.reps(8), 8, reason: 'zero percent changes nothing');
+    });
+
+    test('ook een tiende minder is minder, en nooit langer', () {
+      const tenth = DeloadPlan(repsPercent: 10);
+      // 4,5 rounded back to 5, and a hold of 3 s became 5 s (DECISIONS 273).
+      expect(tenth.reps(5), 4);
+      expect(tenth.reps(10), 9);
+      expect(tenth.reps(1), 1);
+      expect(tenth.seconds(3), 3);
+      expect(tenth.seconds(10), 5);
+      expect(tenth.seconds(60), 55);
+      expect(tenth.seconds(5), 5);
     });
   });
 

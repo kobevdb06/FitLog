@@ -6914,3 +6914,16 @@ die de eigenaar op 11 november goedkeurde.
 
 `test/widget/contrast_test.dart` rekent de verhoudingen na met de
 formule van WCAG, in beide modi. De kalender heeft er een eigen test bij.
+
+## 306. Gradle schrijft geen geheugendump meer
+
+Uit het Fable-rapport: S5, het deel dat geen keuze van de eigenaar vraagt.
+
+`android/gradle.properties` liet Gradle een geheugendump (`.hprof`)
+schrijven als het geheugen opraakte. Zo'n dump kan de wachtwoorden van de
+releasesleutel bevatten, die Gradle uit `key.properties` las. Git negeert
+`*.hprof` sinds 264, maar het bestand kwam dan nog altijd in de
+projectmap terecht. De vlag is weg; `signing_test` let erop.
+
+Nog open uit S5: de sleutel en `key.properties` buiten de projectmap
+zetten, met twee kopieën elders. Waar die komen, beslist de eigenaar.

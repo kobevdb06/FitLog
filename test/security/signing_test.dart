@@ -33,6 +33,14 @@ void main() {
     expect(ignore, contains('/*.apk'));
   });
 
+  test('and Gradle writes no heap dump to begin with (DECISIONS 306)', () {
+    // Ignored, a dump still lands in the project, passwords and all.
+    expect(
+      read('android/gradle.properties'),
+      isNot(contains('HeapDumpOnOutOfMemoryError')),
+    );
+  });
+
   test('but the example that holds none is not', () {
     expect(ignore, contains('!**/android/key.properties.example'));
     expect(File('android/key.properties.example').existsSync(), isTrue);

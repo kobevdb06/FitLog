@@ -368,14 +368,6 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
-  Future<void> _reorder(WorkoutDetail workout, int from, int to) async {
-    final ids = workout.exercises
-        .map((e) => e.workoutExercise.id)
-        .toList(growable: true);
-    ids.insert(to, ids.removeAt(from));
-    await ref.read(workoutControllerProvider).reorderExercises(ids);
-  }
-
   // --- Finishing ------------------------------------------------------------
 
   /// Afronden is under way: a second tap does nothing (DECISIONS 245).
@@ -647,7 +639,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         AppSpacing.md,
                         AppSpacing.sm,
                       ),
-                      onReorder: (from, to) => _reorder(workout, from, to),
+                      onOrder: (keys) =>
+                          ref.read(workoutControllerProvider).reorderExercises([
+                            for (final key in keys)
+                              (key as ValueKey<String>).value,
+                          ]),
                       // Three lines until tapped open: the sets are what
                       // this screen is for.
                       header: MomentAnswerCard(
@@ -1279,6 +1275,9 @@ class _ExerciseCard extends ConsumerWidget {
           context,
           single: true,
           title: 'Vervangen door',
+          // Not one that is in the session already: it was there twice
+          // (DECISIONS 286).
+          excludeIds: workout.exercises.map((e) => e.exercise.id).toSet(),
         );
         if (picked != null && picked.isNotEmpty) {
           await controller.replaceExercise(

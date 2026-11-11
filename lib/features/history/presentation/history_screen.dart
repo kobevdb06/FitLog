@@ -17,6 +17,10 @@ import '../../workout/presentation/workout_providers.dart';
 import 'history_providers.dart';
 
 /// Everything you have logged: a month calendar on top, the sessions below.
+/// How many sessions the history reads at a time. It read every one ever,
+/// and again for every set ticked off (DECISIONS 286).
+const int kHistoryPage = 50;
+
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
@@ -25,6 +29,9 @@ class HistoryScreen extends ConsumerStatefulWidget {
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+  /// How many sessions the list holds now.
+  int _shown = kHistoryPage;
+
   late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
 
   /// The day the calendar is filtered to, or null for the whole history.
@@ -46,7 +53,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final history = ref.watch(workoutHistoryProvider());
+    // A page at a time, one more to know whether there are older ones; a
+    // day picked in the calendar reads all of it (DECISIONS 286).
+    final history = ref.watch(
+      workoutHistoryProvider(limit: _day == null ? _shown + 1 : null),
+    );
     final pending = ref.watch(pendingWorkoutDeletionsProvider);
     final monthWorkouts =
         ref.watch(workoutsInMonthProvider(_month.year, _month.month)).value ??
@@ -60,7 +71,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         error: (error, _) => Center(child: Text('$error')),
         data: (all) {
           // A workout inside its undo window is hidden, not gone.
+          final older = _day == null && all.length > _shown;
           final workouts = all
+              .take(_day == null ? _shown : all.length)
               .where((w) => !pending.contains(w.workout.id))
               .toList();
 
@@ -113,6 +126,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   key: ValueKey(summary.workout.id),
                   summary: summary,
                   formatters: formatters,
+                ),
+              if (older)
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Center(
+                    child: TextButton(
+                      onPressed: () => setState(() => _shown += kHistoryPage),
+                      child: const Text('Oudere sessies tonen'),
+                    ),
+                  ),
                 ),
             ],
           );

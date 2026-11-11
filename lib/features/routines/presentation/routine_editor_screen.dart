@@ -183,6 +183,9 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
       context,
       single: true,
       title: 'Vervangen door',
+      // Not one that is in the routine already: it was there twice
+      // (DECISIONS 286).
+      excludeIds: _exercises.map((e) => e.exercise.id).toSet(),
     );
     if (picked == null || picked.isEmpty) return;
     final rows = await ref.read(databaseProvider).exercisesDao.getByIds(picked);
@@ -199,6 +202,20 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     });
   }
 
+  /// A superset with one exercise left in it is none: taking one out left
+  /// the other marked, with nothing to alternate with (DECISIONS 286).
+  void _dropLoneSupersets() {
+    final counts = <int, int>{};
+    for (final e in _exercises) {
+      if (e.supersetGroup case final group?) {
+        counts[group] = (counts[group] ?? 0) + 1;
+      }
+    }
+    for (final e in _exercises) {
+      if (counts[e.supersetGroup] == 1) e.supersetGroup = null;
+    }
+  }
+
   /// Groups this exercise with the one below it. Reusing the lowest free group
   /// number keeps the letters stable as A, B, C.
   void _toggleSuperset(int index) {
@@ -206,6 +223,7 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
       final current = _exercises[index];
       if (current.supersetGroup != null) {
         current.supersetGroup = null;
+        _dropLoneSupersets();
         return;
       }
       if (index + 1 >= _exercises.length) return;
@@ -347,10 +365,19 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
     );
 
     final actions = ref.read(routineActionsProvider);
-    if (widget.routineId == null) {
-      await actions.create(draft);
-    } else {
-      await actions.update(widget.routineId!, draft);
+    try {
+      if (widget.routineId == null) {
+        await actions.create(draft);
+      } else {
+        await actions.update(widget.routineId!, draft);
+      }
+    } on Object catch (error) {
+      // Said, and the button back: it stayed "bezig" for good (DECISIONS
+      // 286).
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showSnack(context, 'Bewaren lukte niet: $error', isError: true);
+      return;
     }
     if (mounted) Navigator.of(context).pop();
   }
@@ -424,7 +451,10 @@ class _RoutineEditorScreenState extends ConsumerState<RoutineEditorScreen> {
             draft: draft,
             formatters: formatters,
             canSuperset: index + 1 < _exercises.length,
-            onRemove: () => setState(() => _exercises.removeAt(index)),
+            onRemove: () => setState(() {
+              _exercises.removeAt(index);
+              _dropLoneSupersets();
+            }),
             onReplace: () => _replaceExercise(index),
             onToggleSuperset: () => _toggleSuperset(index),
             onAddSet: () => setState(() {

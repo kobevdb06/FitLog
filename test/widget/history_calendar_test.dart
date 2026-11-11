@@ -70,6 +70,27 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('the oldest wait behind a button (DECISIONS 286)', (
+    tester,
+  ) async {
+    // Every session ever, read again for each set ticked off.
+    for (var i = 0; i < kHistoryPage + 1; i++) {
+      await session('S$i', DateTime(2025, 1, 1).add(Duration(days: i)));
+    }
+    await pump(tester);
+
+    final more = find.text('Oudere sessies tonen');
+    final list = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(more, 400, scrollable: list);
+    expect(find.text('S0'), findsNothing, reason: 'the oldest is not read');
+
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('S0'), 400, scrollable: list);
+    expect(find.text('S0'), findsOneWidget);
+    expect(find.text('Oudere sessies tonen'), findsNothing);
+  });
+
   testWidgets('everything shows until a day is picked', (tester) async {
     await session('Push A', first);
     await session('Benen', second);

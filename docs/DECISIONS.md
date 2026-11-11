@@ -6506,3 +6506,39 @@ emulator na te gaan.
   vanuit de melding terwijl de app uit beeld is, plant ze ook. De melding
   loopt via `RestNotices`, zodat een test kan zien wat er gepland wordt.
 
+## 286. Kleine punten bij het trainen
+
+Uit het Fable-rapport: de rest van T10.
+
+- **Een plank kreeg een gewichtskolom.** Bij het afvinken vulde de app
+  lege cellen met de set van de vorige keer, ook kolommen die de rij niet
+  heeft. Een gewicht op een plank van lang geleden gaf zo deze plank ook
+  een gewichtskolom. Nu neemt de app alleen over wat de rij toont.
+- **Blijvend bezig.** Lukte het bewaren van een routine niet, dan bleef de
+  knop voor altijd uitgeschakeld. Nu zegt de app wat er misging, en kun je
+  het opnieuw proberen. Lukte het verwijderen van een workout in de
+  geschiedenis niet, dan bleef die voor altijd verborgen. Nu komt ze terug.
+- **Een superset van één.** Haalde je een oefening uit een superset van
+  twee, of zette je in de routine-editor de superset bij één van de twee
+  af, dan bleef de andere als superset gemarkeerd, zonder partner. Nu
+  verdwijnt de markering mee, in de workout en in de editor.
+- **Twee keer dezelfde oefening.** Bij *Oefening vervangen* kon je een
+  oefening kiezen die al in de workout of de routine zat. Nu staat ze niet
+  meer in de lijst, zoals bij het toevoegen al zo was.
+- **De geschiedenis** las elke workout ooit, en opnieuw bij elke set die
+  je afvinkte, want dat raakt dezelfde tabellen. Nu leest ze er vijftig
+  tegelijk, met *Oudere sessies tonen* eronder. Een dag kiezen in de
+  kalender leest wel alles, anders zou een oude dag leeg lijken. Een
+  lijst die gelijk bleef, bouwt het scherm niet opnieuw op.
+- **Een sessie van het lopende schema** kon je op het routinescherm
+  verwijderen, met de algemene tekst over routines. Dan miste het schema
+  die sessie in de weken die nog komen. De bescherming uit `b7ded71` zat
+  alleen in de coach. Nu zegt het routinescherm dat zo'n sessie via het
+  schema of de coach gaat, en verwijdert het niets.
+- **Slepen.** De workout schreef een sleepbeweging weg als *van, naar* op
+  de lijst die ze toen had. Twee sleepbewegingen vlak na elkaar konden zo
+  op een verouderde lijst landen. In de praktijk duurt slepen langer dan
+  het wegschrijven. Toch geeft `ReorderableCards` nu ook de volledige
+  volgorde door (`onOrder`), en die schrijft de workout weg.
+
+De dubbele tik op Afronden en op een afgevinkte set stonden al in 245.

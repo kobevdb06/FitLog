@@ -379,11 +379,33 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     return created;
   }
 
-  Future<void> removeExercise(String workoutExerciseId) async {
-    await (delete(
-      workoutExercisesTable,
-    )..where((t) => t.id.equals(workoutExerciseId))).go();
-  }
+  /// Takes the exercise out; a superset it leaves with one in it is no
+  /// superset any more (DECISIONS 286).
+  Future<void> removeExercise(String workoutExerciseId) =>
+      transaction(() async {
+        final row = await (select(
+          workoutExercisesTable,
+        )..where((t) => t.id.equals(workoutExerciseId))).getSingleOrNull();
+        await (delete(
+          workoutExercisesTable,
+        )..where((t) => t.id.equals(workoutExerciseId))).go();
+        final group = row?.supersetGroup;
+        if (row == null || group == null) return;
+        final left =
+            await (select(workoutExercisesTable)..where(
+                  (t) =>
+                      t.workoutId.equals(row.workoutId) &
+                      t.supersetGroup.equals(group),
+                ))
+                .get();
+        if (left.length == 1) {
+          await (update(
+            workoutExercisesTable,
+          )..where((t) => t.id.equals(left.single.id))).write(
+            const WorkoutExercisesTableCompanion(supersetGroup: Value(null)),
+          );
+        }
+      });
 
   Future<void> replaceExercise(
     String workoutExerciseId,
@@ -1573,24 +1595,41 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     if (limit != null) sql.write(' LIMIT $limit');
 
     return customSelect(
-      sql.toString(),
-      readsFrom: {
-        workoutsTable,
-        workoutExercisesTable,
-        workoutSetsTable,
-        personalRecordsTable,
-      },
-    ).watch().map(
-      (rows) => rows
-          .map(
-            (r) => WorkoutSummary(
-              workout: workoutsTable.map(r.data),
-              exerciseCount: r.read<int>('exercise_count'),
-              prCount: r.read<int>('pr_count'),
-            ),
-          )
-          .toList(),
-    );
+          sql.toString(),
+          readsFrom: {
+            workoutsTable,
+            workoutExercisesTable,
+            workoutSetsTable,
+            personalRecordsTable,
+          },
+        )
+        .watch()
+        .map(
+          (rows) => rows
+              .map(
+                (r) => WorkoutSummary(
+                  workout: workoutsTable.map(r.data),
+                  exerciseCount: r.read<int>('exercise_count'),
+                  prCount: r.read<int>('pr_count'),
+                ),
+              )
+              .toList(),
+          // The same list again - a set ticked off in the running session touches
+          // these tables - is no new list for the screen (DECISIONS 286).
+        )
+        .distinct(_sameSummaries);
+  }
+
+  static bool _sameSummaries(List<WorkoutSummary> a, List<WorkoutSummary> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].workout != b[i].workout ||
+          a[i].exerciseCount != b[i].exerciseCount ||
+          a[i].prCount != b[i].prCount) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /// One workout's own row, watched.

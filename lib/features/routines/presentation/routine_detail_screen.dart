@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/app/app_controller.dart';
 import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
@@ -398,6 +399,23 @@ class RoutineDetailScreen extends ConsumerWidget {
           context.pushReplacement(Routes.routineDetail(id));
         }
       case 'delete':
+        // A session of the running schema goes through the schema: deleted
+        // here, with the words for any routine, the weeks still to come lost
+        // it (DECISIONS 286).
+        final db = ref.read(databaseProvider);
+        final routine = await db.routinesDao.getRoutine(routineId);
+        final running = await db.plansDao.running();
+        if (routine?.planId != null && routine!.planId == running?.id) {
+          if (!context.mounted) return;
+          showSnack(
+            context,
+            'Dit is een sessie van je schema "${running!.name}". Haal ze '
+            'eruit via het schema of de coach, zodat de weken kloppen.',
+            isError: true,
+          );
+          return;
+        }
+        if (!context.mounted) return;
         final ok = await confirm(
           context,
           title: 'Routine verwijderen?',

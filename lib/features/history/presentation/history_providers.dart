@@ -154,7 +154,12 @@ class PendingWorkoutDeletions extends _$PendingWorkoutDeletions {
 
   Future<void> _commit(String workoutId) async {
     _timers.remove(workoutId);
-    await ref.read(historyActionsProvider).deleteWorkout(workoutId);
-    state = {...state}..remove(workoutId);
+    try {
+      await ref.read(historyActionsProvider).deleteWorkout(workoutId);
+    } finally {
+      // Failed or not, it is not pending any more: a failure kept it hidden
+      // from the history for good (DECISIONS 286).
+      state = {...state}..remove(workoutId);
+    }
   }
 }

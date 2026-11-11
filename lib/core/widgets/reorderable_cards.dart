@@ -40,7 +40,8 @@ class ReorderableCards extends StatefulWidget {
     required this.keyOf,
     required this.cardBuilder,
     required this.summaryOf,
-    required this.onReorder,
+    this.onReorder,
+    this.onOrder,
     this.itemPadding = EdgeInsets.zero,
     this.header,
     this.footer,
@@ -60,7 +61,13 @@ class ReorderableCards extends StatefulWidget {
 
   /// [to] is where it ends up once it has left [from], as [List.insert]
   /// takes it.
-  final void Function(int from, int to) onReorder;
+  final void Function(int from, int to)? onReorder;
+
+  /// The whole order after a move, by [keyOf]: for an owner that writes it
+  /// away, and could still be a move behind when the next drag ends. A
+  /// (from, to) on a list that old put the wrong card in place (DECISIONS
+  /// 286).
+  final void Function(List<Key> order)? onOrder;
 
   final EdgeInsets itemPadding;
 
@@ -288,7 +295,8 @@ class _ReorderableCardsState extends State<ReorderableCards> {
     setState(() => _moved = keys);
     // The owner has caught up with the last move by the time a new drag
     // ends, so what is on screen is its own order.
-    widget.onReorder(order[from], to);
+    widget.onReorder?.call(order[from], to);
+    widget.onOrder?.call(keys);
   }
 
   @override

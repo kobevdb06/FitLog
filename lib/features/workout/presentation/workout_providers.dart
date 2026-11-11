@@ -639,10 +639,23 @@ class WorkoutController {
         finalDistance == null) {
       final last = await _previousSetFor(owner, row, workout.workout.id);
       if (last != null) {
-        finalWeight ??= last.weightKg;
-        finalReps ??= last.reps;
-        finalDuration ??= last.durationSeconds;
-        finalDistance ??= last.distanceM;
+        // Only what the row shows: a value of a column it does not have -
+        // a weight on a plank of long ago - gave it that column
+        // (DECISIONS 286).
+        final shown = setColumnsFor(
+          owner.category,
+          owner.sets.map(setValues),
+        ).toSet();
+        if (shown.contains(KeypadFieldKind.weight)) {
+          finalWeight ??= last.weightKg;
+        }
+        if (shown.contains(KeypadFieldKind.reps)) finalReps ??= last.reps;
+        if (shown.contains(KeypadFieldKind.duration)) {
+          finalDuration ??= last.durationSeconds;
+        }
+        if (shown.contains(KeypadFieldKind.distance)) {
+          finalDistance ??= last.distanceM;
+        }
       }
     }
 

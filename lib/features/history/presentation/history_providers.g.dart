@@ -380,7 +380,7 @@ final class PendingWorkoutDeletionsProvider
 }
 
 String _$pendingWorkoutDeletionsHash() =>
-    r'dac1d4f6f3103eb4e72292d03a735b77560e2457';
+    r'af41a7c7c3a750ec063e71aa1bfdc7e1c87efc4a';
 
 /// Workouts that are on their way out but can still be brought back.
 ///

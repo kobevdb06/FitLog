@@ -48,7 +48,10 @@ class PlansView extends ConsumerWidget {
     final plans = ref.watch(plansProvider);
     return plans.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('$error')),
+      error: (error, _) => ErrorState(
+        error: error,
+        onRetry: () => ref.invalidate(plansProvider),
+      ),
       data: (all) {
         if (all.isEmpty) {
           return EmptyState(

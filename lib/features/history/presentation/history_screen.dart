@@ -68,7 +68,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       appBar: AppBar(title: const Text('Geschiedenis')),
       body: history.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(workoutHistoryProvider),
+        ),
         data: (all) {
           // A workout inside its undo window is hidden, not gone.
           final older = _day == null && all.length > _shown;

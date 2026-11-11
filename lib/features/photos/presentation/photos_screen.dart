@@ -106,7 +106,10 @@ class _PhotosScreenState extends ConsumerState<PhotosScreen> {
             ),
       body: photos.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(progressPhotosProvider),
+        ),
         data: (list) {
           // The documents directory is still being resolved; showing the
           // empty state here would claim there are no photos when there are.

@@ -506,7 +506,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     return workoutAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) => Scaffold(body: Center(child: Text('$error'))),
+      error: (error, _) => Scaffold(
+        body: ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(activeWorkoutProvider),
+        ),
+      ),
       data: (live) {
         if (live != null) _lastSeen = live;
         // On the way out, keep showing what was there until the page is gone.

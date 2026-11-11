@@ -170,7 +170,10 @@ class ExerciseDetailScreen extends ConsumerWidget {
         ),
         body: exercise.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(child: Text('$error')),
+          error: (error, _) => ErrorState(
+            error: error,
+            onRetry: () => ref.invalidate(exerciseByIdProvider(exerciseId)),
+          ),
           data: (row) {
             if (row == null) {
               return const EmptyState(
@@ -366,7 +369,10 @@ class _HistoryTab extends ConsumerWidget {
 
     return sessions.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('$error')),
+      error: (error, _) => ErrorState(
+        error: error,
+        onRetry: () => ref.invalidate(exerciseSessionsProvider(exerciseId)),
+      ),
       data: (list) {
         if (list.isEmpty) {
           return const EmptyState(
@@ -603,7 +609,10 @@ class _RecordsTab extends ConsumerWidget {
 
     return records.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('$error')),
+      error: (error, _) => ErrorState(
+        error: error,
+        onRetry: () => ref.invalidate(exerciseRecordsProvider(exerciseId)),
+      ),
       data: (list) {
         if (list.isEmpty) {
           return const EmptyState(

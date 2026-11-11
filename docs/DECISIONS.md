@@ -6602,3 +6602,14 @@ gegevens. Nu vervaagt de onderkant als er iets wordt afgesneden
 (`ClipFade`), en alleen dan. Zo zie je dat er meer is. Het blok tikken
 opent het scherm met alles, zoals voordien.
 
+## 291. Wat niet laadt, zegt dat in een zin, met *Opnieuw proberen*
+
+Uit het Fable-rapport: U7.
+
+Op veertien schermen stond bij een fout alleen de ruwe fouttekst in het
+midden, en kon je niets doen, onder meer bij de geschiedenis, de records,
+de routines, de foto's, de schema's en het workoutscherm. Nu tonen ze
+allemaal `ErrorState`: *Dit lukte niet*, een zin in het Nederlands, de
+fout zelf klein eronder voor wie een probleem meldt, en *Opnieuw
+proberen*. Die laadt de gegevens van dat scherm opnieuw. Een test kijkt
+dat geen scherm nog alleen de ruwe fout toont.

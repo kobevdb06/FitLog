@@ -82,7 +82,10 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
       ),
       body: records.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(allRecordsProvider),
+        ),
         data: (list) {
           if (list.isEmpty) {
             return EmptyState(

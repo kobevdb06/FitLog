@@ -193,7 +193,10 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
       ),
       body: exercises.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(filteredExercisesProvider),
+        ),
         data: (list) {
           final visible = list
               .where((e) => !widget.excludeIds.contains(e.id))

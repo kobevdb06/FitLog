@@ -224,7 +224,10 @@ class _RoutinesScreenState extends ConsumerState<RoutinesScreen> {
     String query,
   ) => routines.when(
     loading: () => const Center(child: CircularProgressIndicator()),
-    error: (error, _) => Center(child: Text('$error')),
+    error: (error, _) => ErrorState(
+      error: error,
+      onRetry: () => ref.invalidate(routineSummariesProvider),
+    ),
     data: (list) {
       if (list.isEmpty && folders.isEmpty) {
         return EmptyState(

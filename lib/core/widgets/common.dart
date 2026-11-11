@@ -5,6 +5,67 @@ import '../theme/app_spacing.dart';
 import 'fitlog_mark.dart';
 
 /// The one empty state used everywhere: a title, one sentence, one button.
+/// What a screen shows when its data did not load: a sentence and a way to
+/// try again. It was the raw error, centred, and nothing else, on fourteen
+/// screens (DECISIONS 291). The error itself stays, small, for a report.
+class ErrorState extends StatelessWidget {
+  const ErrorState({super.key, required this.error, this.onRetry});
+
+  final Object error;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 40,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Dit lukte niet',
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Er ging iets mis bij het laden. Probeer het opnieuw.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '$error',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: AppSpacing.xl),
+              FilledButton(
+                onPressed: onRetry,
+                child: const Text('Opnieuw proberen'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,

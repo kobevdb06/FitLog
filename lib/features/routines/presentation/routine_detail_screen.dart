@@ -90,7 +90,10 @@ class RoutineDetailScreen extends ConsumerWidget {
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => ErrorState(
+          error: error,
+          onRetry: () => ref.invalidate(routineDetailProvider(routineId)),
+        ),
         data: (routine) {
           if (routine == null) {
             return const EmptyState(

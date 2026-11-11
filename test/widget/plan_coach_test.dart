@@ -13,6 +13,7 @@ import 'package:fitlog/features/chat/domain/coach_proposal.dart';
 import 'package:fitlog/features/chat/presentation/chat_providers.dart';
 import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_session.dart';
+import 'package:fitlog/features/plans/presentation/plan_coach_parts.dart';
 import 'package:fitlog/features/plans/presentation/plan_new_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,7 +164,9 @@ void main() {
     bigScreen(tester);
     await seedDraft();
     makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
-    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const CoachScreen(plans: PlanCoachParts())),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -200,7 +203,9 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await seedDraft();
     makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
-    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const CoachScreen(plans: PlanCoachParts())),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -215,7 +220,9 @@ void main() {
     await seedDraft();
     await db.chatDao.createThread('t-2', 'Hoeveel sets voor borst?');
     makeContainer();
-    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const CoachScreen(plans: PlanCoachParts())),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -298,7 +305,9 @@ void main() {
       proposals: encodeProposals([card]),
     );
     makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
-    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const CoachScreen(plans: PlanCoachParts())),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -379,7 +388,9 @@ void main() {
       proposals: encodeProposals([card]),
     );
     makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
-    await tester.pumpWidget(wrapWithContainer(container!, const CoachScreen()));
+    await tester.pumpWidget(
+      wrapWithContainer(container!, const CoachScreen(plans: PlanCoachParts())),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     // The strip's own numbers arrive after the conversation.
@@ -491,7 +502,10 @@ void main() {
     Future<void> pumpThread(WidgetTester tester) async {
       makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
       await tester.pumpWidget(
-        wrapWithContainer(container!, const CoachScreen()),
+        wrapWithContainer(
+          container!,
+          const CoachScreen(plans: PlanCoachParts()),
+        ),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -683,7 +697,10 @@ void main() {
       bigScreen(tester);
       makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
       await tester.pumpWidget(
-        wrapWithContainer(container!, const CoachScreen()),
+        wrapWithContainer(
+          container!,
+          const CoachScreen(plans: PlanCoachParts()),
+        ),
       );
       for (var i = 0; i < 3; i++) {
         await tester.pump(const Duration(milliseconds: 200));
@@ -733,7 +750,10 @@ void main() {
       addTearDown(tester.view.reset);
       makeContainer().read(coachSessionControllerProvider.notifier).show('t-1');
       await tester.pumpWidget(
-        wrapWithContainer(container!, const CoachScreen()),
+        wrapWithContainer(
+          container!,
+          const CoachScreen(plans: PlanCoachParts()),
+        ),
       );
       for (var i = 0; i < 3; i++) {
         await tester.pump(const Duration(milliseconds: 200));

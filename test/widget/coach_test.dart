@@ -19,6 +19,7 @@ import 'package:fitlog/features/chat/presentation/coach_screen.dart';
 import 'package:fitlog/features/chat/presentation/coach_session.dart';
 import 'package:fitlog/features/chat/presentation/coach_settings_screen.dart';
 import 'package:fitlog/features/prompts/domain/coach_moments.dart';
+import 'package:fitlog/features/plans/presentation/plan_coach_parts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -215,7 +216,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -240,7 +241,11 @@ void main() {
         content: 'Tien tot twintig per week.',
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Vraag je coach'), findsOneWidget);
@@ -266,7 +271,11 @@ void main() {
         content: 'Ja, set 3 op 80 kg kan.',
       );
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Ja, set 3 op 80 kg kan.'), findsOneWidget);
@@ -301,7 +310,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         size: const Size(400, 800),
@@ -322,7 +331,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         size: const Size(400, 800),
@@ -349,7 +358,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         size: const Size(400, 800),
@@ -370,7 +379,7 @@ void main() {
       final pieces = StreamController<List<int>>();
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         size: const Size(400, 800),
         api: (String apiKey, CoachProvider provider) => AiClient(
@@ -455,7 +464,11 @@ void main() {
     testWidgets("na een / staan de commando's met wat ze kosten, en wat je "
         'typt filtert', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), '/');
@@ -501,7 +514,7 @@ void main() {
       );
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -554,7 +567,11 @@ void main() {
         'Hoeveel sets nog voor mijn rug?',
       );
       await db.coachPromptsDao.setQuickCommand(id, 'rug');
-      await pump(tester, const CoachScreen(), api: apiSaying(says('Nog zes.')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('Nog zes.')),
+      );
       await tester.pumpAndSettle();
 
       await send(tester, '/help');
@@ -582,7 +599,7 @@ void main() {
       await tester.runAsync(pushA);
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('Sterke set op 80 kg.')),
       );
       await tester.pumpAndSettle();
@@ -601,7 +618,11 @@ void main() {
       tester,
     ) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       await send(tester, '/workout');
@@ -630,7 +651,7 @@ void main() {
       await db.chatDao.moveToFolder('t-1', folder);
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('Knie: squats tot parallel.')),
       );
@@ -689,7 +710,7 @@ void main() {
       );
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -834,7 +855,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         size: const Size(360, 2400),
@@ -1432,7 +1453,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -1499,7 +1520,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         opener: opener,
@@ -1570,7 +1591,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -1653,7 +1674,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         opener: _Opener(),
@@ -1686,7 +1707,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -1723,7 +1744,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         drawing: true,
@@ -1757,7 +1778,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -1805,7 +1826,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -1856,7 +1877,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -1913,7 +1934,11 @@ void main() {
       await thread('t-3', 'Routine voor thuis', daysAgo: 3);
       await thread('t-4', 'Hoe log ik een dropset?', daysAgo: 20);
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       await openPanel(tester);
 
@@ -1937,7 +1962,11 @@ void main() {
       tester,
     ) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await openPanel(tester);
 
       expect(
@@ -1955,7 +1984,11 @@ void main() {
       );
       await thread('t-2', 'En voor rug?');
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       await openPanel(tester);
       await tester.tap(
@@ -1976,7 +2009,11 @@ void main() {
       );
       await thread('t-2', 'En voor rug?');
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       await openPanel(tester);
       await tester.enterText(
@@ -1998,7 +2035,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -2039,7 +2076,11 @@ void main() {
       await thread('t-1', 'Wat train ik vandaag?');
       await thread('t-2', 'Mijn knie', daysAgo: 20);
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       await openPanel(tester);
       expect(find.text('Vastgepind'), findsNothing);
@@ -2077,7 +2118,11 @@ void main() {
       await thread('t-2', 'Squat diepte', daysAgo: 3);
       await thread('t-3', 'Deadlift rug', daysAgo: 20);
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       await openPanel(tester);
 
@@ -2157,7 +2202,11 @@ void main() {
       final id = (await db.chatDao.folderNamed('Techniek'))!;
       await db.chatDao.moveToFolder('t-1', id);
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       await openPanel(tester);
       await tester.longPress(find.widgetWithText(ListTile, 'Techniek'));
@@ -2185,7 +2234,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('ok')),
         size: const Size(360, 780),
       );
@@ -2208,7 +2257,11 @@ void main() {
       await thread('t-1', 'Wat train ik vandaag?');
       await thread('t-w', 'Push A · vandaag', workoutId: workout);
 
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       await openPanel(tester);
 
@@ -2227,7 +2280,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
       );
@@ -2251,7 +2304,7 @@ void main() {
 
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('ok')),
         size: const Size(360, 800),
       );
@@ -2292,7 +2345,11 @@ void main() {
       tester,
     ) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Vraag je coach'), findsOneWidget);
@@ -2309,7 +2366,11 @@ void main() {
       tester,
     ) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
-      await pump(tester, const CoachScreen(), api: apiSaying(says('ok')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('ok')),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Om te beginnen'), findsWidgets);
 
@@ -2333,7 +2394,7 @@ void main() {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('Rustig opbouwen.')),
         suggester: _Suggests([
           for (var i = 1; i <= 6; i++)
@@ -2370,7 +2431,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('ok')),
         size: const Size(360, 1400),
         suggester: const _Suggests([
@@ -2401,7 +2462,7 @@ void main() {
       final pieces = StreamController<List<int>>();
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: (String apiKey, CoachProvider provider) => AiClient(
           apiKey: apiKey,
           provider: provider,
@@ -2446,7 +2507,7 @@ void main() {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('Tussen 10 en 20 sets per week.')),
       );
 
@@ -2473,7 +2534,7 @@ void main() {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('Tussen 10 en 20 sets per week.')),
       );
       await tester.enterText(
@@ -2499,7 +2560,7 @@ void main() {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying(says('Tussen 10 en 20 sets per week.')),
       );
       // The question field; the messages are selectable text of their own.
@@ -2537,7 +2598,7 @@ void main() {
       var first = true;
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: (apiKey, provider) => AiClient(
           apiKey: apiKey,
           provider: provider,
@@ -2591,7 +2652,7 @@ void main() {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying({
           'error': {
             'code': 429,
@@ -2624,7 +2685,7 @@ void main() {
       await db.settingsDao.setApiKey('AQ.Ab8RNfout');
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         api: apiSaying({
           'error': {'message': 'invalid x-api-key'},
         }, status: 401),
@@ -2642,7 +2703,11 @@ void main() {
 
     testWidgets('en de vraag gaat één keer de deur uit', (tester) async {
       await db.settingsDao.setApiKey('AQ.Ab8RNtest');
-      await pump(tester, const CoachScreen(), api: apiSaying(says('Ja.')));
+      await pump(
+        tester,
+        const CoachScreen(plans: PlanCoachParts()),
+        api: apiSaying(says('Ja.')),
+      );
 
       await tester.enterText(find.byType(TextField), 'Is 3x8 genoeg?');
       await tester.tap(find.byIcon(Icons.arrow_upward));
@@ -2676,7 +2741,7 @@ void main() {
       // Phone width: the button sits next to the token count.
       await pump(
         tester,
-        const CoachScreen(),
+        const CoachScreen(plans: PlanCoachParts()),
         thread: 't-1',
         api: apiSaying(says('ok')),
         opener: opener,

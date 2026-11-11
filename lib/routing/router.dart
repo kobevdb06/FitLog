@@ -12,6 +12,7 @@ import '../features/chat/presentation/coach_screen.dart';
 import '../features/chat/presentation/coach_key_screen.dart';
 import '../features/chat/presentation/coach_memory_screen.dart';
 import '../features/chat/presentation/coach_settings_screen.dart';
+import '../features/plans/presentation/plan_coach_parts.dart';
 import '../features/plans/presentation/plan_new_screen.dart';
 import '../features/prompts/presentation/coach_prompts_screen.dart';
 import '../features/prompts/presentation/month_review_screen.dart';
@@ -438,7 +439,7 @@ GoRouter router(Ref ref) {
                   Consumer(
                     builder: (context, ref, child) =>
                         ref.watch(coachEnabledProvider)
-                        ? const CoachScreen()
+                        ? const CoachScreen(plans: PlanCoachParts())
                         : const CoachDisabledScreen(),
                   ),
                 ),

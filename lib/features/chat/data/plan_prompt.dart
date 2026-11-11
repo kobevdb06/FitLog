@@ -1,7 +1,7 @@
 import '../../../core/calc/schedule.dart';
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
-import '../../chat/domain/coach_prompt.dart';
+import '../domain/coach_prompt.dart';
 
 /// What the coach is told in the conversation of [plan], at [now]: what it
 /// is for, how far it is, and the one thing to do next.

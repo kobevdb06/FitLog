@@ -8,7 +8,7 @@ import 'package:fitlog/features/chat/data/coach.dart';
 import 'package:fitlog/features/chat/data/coach_tools.dart';
 import 'package:fitlog/features/chat/domain/coach_prompt.dart';
 import 'package:fitlog/features/chat/domain/coach_proposal.dart';
-import 'package:fitlog/features/plans/data/plan_prompt.dart';
+import 'package:fitlog/features/chat/data/plan_prompt.dart';
 import 'package:fitlog/features/plans/presentation/plan_new_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;

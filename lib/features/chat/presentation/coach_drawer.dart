@@ -26,21 +26,23 @@ import '../../../core/formatting/formatters.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/dialogs.dart';
 import '../../../routing/routes.dart';
-import '../../plans/data/plan_actions.dart';
-import '../../plans/presentation/plan_providers.dart';
-import '../../plans/presentation/plans_view.dart' show planProgress;
 import '../../workout/presentation/workout_providers.dart';
 import 'chat_providers.dart';
+import 'coach_plan_parts.dart';
 import 'coach_session.dart';
 
-Future<void> showCoachDrawer(BuildContext context) => showGeneralDialog<void>(
+/// [plans] are the schema's, for the Schema's list.
+Future<void> showCoachDrawer(
+  BuildContext context, {
+  required CoachPlanParts plans,
+}) => showGeneralDialog<void>(
   context: context,
   useRootNavigator: true,
   barrierDismissible: true,
   barrierLabel: 'Sluiten',
   barrierColor: Colors.black54,
   transitionDuration: const Duration(milliseconds: 250),
-  pageBuilder: (context, _, _) => const _CoachDrawer(),
+  pageBuilder: (context, _, _) => _CoachDrawer(plans: plans),
   transitionBuilder: (context, animation, _, child) => SlideTransition(
     position: Tween(begin: const Offset(-1, 0), end: Offset.zero).animate(
       CurvedAnimation(
@@ -88,7 +90,9 @@ enum _Shelf { chats, plans }
 const _newFolder = 'nieuw';
 
 class _CoachDrawer extends ConsumerStatefulWidget {
-  const _CoachDrawer();
+  const _CoachDrawer({required this.plans});
+
+  final CoachPlanParts plans;
 
   @override
   ConsumerState<_CoachDrawer> createState() => _CoachDrawerState();
@@ -106,8 +110,9 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
 
   bool get _onPlan {
     final shown = ref.read(coachSessionControllerProvider).threadId;
-    final threads = ref.read(planThreadsProvider).value ?? const [];
-    return shown != null && threads.any((t) => t.id == shown);
+    final threads = ref.read(chatThreadsProvider).value ?? const [];
+    return shown != null &&
+        threads.any((t) => t.id == shown && t.planId != null);
   }
 
   CoachSessionController get _session =>
@@ -144,69 +149,6 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
     final router = GoRouter.of(context);
     Navigator.of(context).pop();
     router.push(route);
-  }
-
-  /// Stoppen, for the one being followed, and Verwijderen - the schema with
-  /// its conversation. What was done in its sessions stays in the history.
-  Future<void> _planActions(TrainingPlanRow plan, ChatThreadRow? thread) async {
-    final theme = Theme.of(context);
-    final running = plan.state == PlanStatus.running;
-    final picked = await showAppSheet<String>(
-      context: context,
-      title: plan.name,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (running)
-            ListTile(
-              leading: const Icon(Icons.stop_circle_outlined),
-              title: const Text('Stoppen'),
-              onTap: () => Navigator.of(context).pop('stop'),
-            ),
-          ListTile(
-            leading: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-            title: Text(
-              'Verwijderen',
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-            onTap: () => Navigator.of(context).pop('delete'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || picked == null) return;
-    final db = ref.read(databaseProvider);
-
-    if (picked == 'stop') {
-      final ok = await confirm(
-        context,
-        title: 'Schema stoppen?',
-        message:
-            '"${plan.name}" komt bij je eerdere schema\'s, met wat je erin '
-            'deed. Opnieuw starten kan niet.',
-        confirmLabel: 'Stoppen',
-      );
-      if (ok) await PlanActions.stop(db, plan.id);
-      return;
-    }
-
-    final ok = await confirm(
-      context,
-      title: 'Schema verwijderen?',
-      message:
-          '"${plan.name}", zijn sessies en het gesprek erover verdwijnen. '
-          'Wat je al trainde, blijft in je geschiedenis.',
-      confirmLabel: 'Verwijderen',
-      destructive: true,
-    );
-    if (!ok) return;
-    await PlanActions.delete(db, plan.id);
-    if (thread != null) {
-      await db.chatDao.deleteThread(thread.id);
-      if (ref.read(coachSessionControllerProvider).threadId == thread.id) {
-        _session.startNew();
-      }
-    }
   }
 
   /// Vastpinnen, Naar map…, Hernoemen and Verwijderen, from ⋮ or a long
@@ -611,87 +553,6 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
             ),
           ];
 
-    final plans = ref.watch(plansProvider).value ?? const [];
-    final planThreads = ref.watch(planThreadsProvider).value ?? const [];
-
-    Widget planTile(TrainingPlanRow plan) {
-      final thread = planThreads.where((t) => t.planId == plan.id).firstOrNull;
-      final week = plan.weekAt(now);
-      final where = switch (plan.state) {
-        PlanStatus.draft => planProgress(
-          plan,
-          ref.watch(planSessionsProvider(plan.id)).value ?? const [],
-        ),
-        PlanStatus.running when plan.isOverAt(now) => 'Alle weken voorbij',
-        PlanStatus.running when week == 0 => 'Begint maandag',
-        PlanStatus.running =>
-          'Week $week${plan.weeks == null ? '' : ' van ${plan.weeks}'}',
-        PlanStatus.done => switch (plan.endedAt) {
-          final at? =>
-            'Afgerond ${Formatters.dayMonth(DateTime.fromMillisecondsSinceEpoch(at))}',
-          null => 'Afgerond',
-        },
-      };
-      return ListTile(
-        dense: true,
-        visualDensity: VisualDensity.compact,
-        contentPadding: const EdgeInsets.only(left: AppSpacing.sm),
-        selected: thread != null && thread.id == shown,
-        selectedTileColor: theme.colorScheme.surfaceContainerHighest,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        leading: Icon(
-          plan.state == PlanStatus.running
-              ? Icons.event_available
-              : Icons.calendar_month_outlined,
-          size: 18,
-        ),
-        minLeadingWidth: 20,
-        title: Text(
-          plan.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodyMedium,
-        ),
-        subtitle: Text(
-          switch (ref.watch(planOpenChangesProvider(plan.id)).value ?? 0) {
-            0 => where,
-            1 => '$where · 1 voorstel wacht',
-            final n => '$where · $n voorstellen wachten',
-          },
-          style: theme.textTheme.bodySmall,
-        ),
-        trailing: IconButton(
-          tooltip: 'Meer',
-          icon: const Icon(Icons.more_vert, size: 18),
-          onPressed: () => _planActions(plan, thread),
-        ),
-        onTap: thread == null ? null : () => _open(thread, running: running),
-        onLongPress: () => _planActions(plan, thread),
-      );
-    }
-
-    final planList = <Widget>[
-      for (final (label, state) in const [
-        ('Lopend', PlanStatus.running),
-        ('In voorbereiding', PlanStatus.draft),
-        ('Afgerond', PlanStatus.done),
-      ])
-        if (plans.where((p) => p.state == state).toList() case final some
-            when some.isNotEmpty) ...[
-          heading(label),
-          for (final plan in some) planTile(plan),
-        ],
-      if (plans.isEmpty)
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: Text(
-            'Nog geen schema\'s. Met Nieuw schema maakt de coach er een, op '
-            'jouw doel.',
-            style: theme.textTheme.bodySmall,
-          ),
-        ),
-    ];
-
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: GestureDetector(
@@ -750,11 +611,11 @@ class _CoachDrawerState extends ConsumerState<_CoachDrawer> {
                             label: const Text('Nieuw schema'),
                           ),
                           Expanded(
-                            child: ListView(
-                              padding: const EdgeInsets.only(
-                                top: AppSpacing.xs,
-                              ),
-                              children: planList,
+                            child: widget.plans.shelf(
+                              shown: shown,
+                              onOpen: (thread) =>
+                                  _open(thread, running: running),
+                              heading: heading,
                             ),
                           ),
                         ] else ...[

@@ -6767,3 +6767,33 @@ back-up gebruikt, niet alleen door het fotoscherm.
 in `lib/core/photos/`. Er veranderde alleen hun plaats, niet wat ze doen.
 `test/architecture_test.dart` controleert dat geen bestand in `lib/core`
 nog iets uit `lib/features` importeert.
+
+## 301. De schema's bouwen op de coach, niet omgekeerd
+
+Uit het Fable-rapport: B5, tweede deel.
+
+`plans` en `chat` importeerden elkaar. Een schema wordt in een gesprek met
+de coach gemaakt, dus `plans` gebruikt de coach: zijn voorstellen, zijn
+verbinding en zijn gesprekken. Maar de coach haalde op zijn beurt de
+schemakaarten, de schemastrook en de schemalijst van de lade uit `plans`,
+en twee stukjes data.
+
+Nu gaat het één kant op: `plans` mag `chat` gebruiken, `chat` niets uit
+`plans`.
+
+- De deload van een schema (`plan_deload.dart`) staat bij `deload`. Het is
+  een deload zoals een andere, alleen gestart door een schema.
+- Wat de coach over een schema te horen krijgt (`plan_prompt.dart`) staat
+  bij `chat`. Het is een stuk van de prompt van de coach.
+- Het coachscherm krijgt de schemadelen aangereikt via `CoachPlanParts`:
+  de kaarten bij een voorstel, de strook en het paneel van een
+  schemagesprek, en de lijst Schema's in de lade. `plans` vult dat in met
+  `PlanCoachParts`, en de router geeft het mee aan het scherm.
+
+Wat je ziet en doet, blijft hetzelfde.
+
+`test/architecture_test.dart` bewaakt twee dingen. `chat` importeert niets
+uit `plans`. En er komt geen nieuw paar features bij dat elkaar
+importeert. Er waren er 23, nu nog 22. Die staan in de test. Volgens het
+rapport zijn ze gegroeid en niet stuk. We halen ze pas uit elkaar als we
+toch in die bestanden werken. Een paar dat verdwijnt, gaat van de lijst af.

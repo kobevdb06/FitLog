@@ -1,5 +1,5 @@
 import '../../../core/db/database.dart';
-import 'plan_deload.dart';
+import '../../deload/data/plan_deload.dart';
 
 /// Starting, stopping and removing a schema, with what hangs on it: the
 /// deload of its deload week.

@@ -28,9 +28,6 @@ import '../../deload/presentation/deload_providers.dart';
 import '../../deload/presentation/deload_start_sheet.dart';
 import '../../../core/photos/photo_store.dart';
 import '../../../core/photos/picked_copy.dart';
-import '../../plans/presentation/plan_build_cards.dart';
-import '../../plans/presentation/plan_card.dart';
-import '../../plans/presentation/plan_panel.dart';
 import '../../routines/presentation/routine_start.dart';
 import '../../workout/presentation/workout_providers.dart';
 import '../../prompts/domain/coach_moments.dart';
@@ -45,6 +42,7 @@ import '../../../routing/routes.dart';
 import 'chat_providers.dart';
 import 'coach_drawer.dart';
 import 'coach_memory_screen.dart';
+import 'coach_plan_parts.dart';
 import 'coach_session.dart';
 import 'photo_prompts_sheet.dart';
 import 'report_answer_sheet.dart';
@@ -52,7 +50,11 @@ import '../../prompts/presentation/prompt_providers.dart';
 import '../../../core/widgets/photo_image.dart';
 
 class CoachScreen extends ConsumerStatefulWidget {
-  const CoachScreen({super.key});
+  const CoachScreen({super.key, required this.plans});
+
+  /// The schema's: their cards, the strip of a schema's conversation, and
+  /// the Schema's list in the drawer.
+  final CoachPlanParts plans;
 
   @override
   ConsumerState<CoachScreen> createState() => _CoachScreenState();
@@ -173,9 +175,9 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
   }
 
   /// The panel of the schema this conversation is about.
-  void _openPanel(String planId) => showPlanPanel(
+  void _openPanel(String planId) => widget.plans.showPanel(
     context,
-    planId: planId,
+    planId,
     onStart: (id) => startSession(context, ref, routineId: id),
     onOpen: (id) => context.push(Routes.routineEdit(id)),
     onDiscuss: (session) => setState(() => _about = session),
@@ -593,6 +595,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
       return _Bubble(
         message: messages[index],
         question: _questionBefore(messages, index),
+        plans: widget.plans,
       );
     }
 
@@ -601,7 +604,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
         leading: IconButton(
           tooltip: 'Gesprekken',
           icon: const Icon(Icons.menu),
-          onPressed: () => showCoachDrawer(context),
+          onPressed: () => showCoachDrawer(context, plans: widget.plans),
         ),
         title: const Text('Coach'),
         actions: [
@@ -623,7 +626,7 @@ class _CoachScreenState extends ConsumerState<CoachScreen> {
           children: [
             if (ofWorkout) _WorkoutStrip(workout: running),
             if (planId != null)
-              PlanStrip(planId: planId, onOpen: () => _openPanel(planId)),
+              widget.plans.strip(planId, onOpen: () => _openPanel(planId)),
             Expanded(
               child: messages.isEmpty && !writing
                   ? _Opening(onPick: _send)
@@ -1036,9 +1039,12 @@ class _OpeningState extends ConsumerState<_Opening> {
 
 /// One message. Yours on the right, the coach's on the left with its receipts.
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, this.question});
+  const _Bubble({required this.message, this.question, required this.plans});
 
   final ChatMessageRow message;
+
+  /// For the cards of the proposals about a schema.
+  final CoachPlanParts plans;
 
   /// For an answer: the question it answered, for a report about it.
   final String? question;
@@ -1099,26 +1105,8 @@ class _Bubble extends StatelessWidget {
             ).indexed)
               if (proposal.note case final note?)
                 _NoteCard(note: note)
-              else if (proposal.kind == ProposalKind.plan)
-                PlanProposalCard(proposal: proposal)
-              else if (proposal.outline case final outline?)
-                PlanOutlineCard(
-                  message: message,
-                  outline: outline,
-                  proposal: proposal,
-                )
-              else if (proposal.session case final session?)
-                PlanSessionCard(
-                  message: message,
-                  session: session,
-                  proposal: proposal,
-                )
-              else if (proposal.kind == ProposalKind.planChange)
-                PlanChangeCard(
-                  message: message,
-                  index: index,
-                  proposal: proposal,
-                )
+              else if (plans.card(message, index, proposal) case final card?)
+                card
               else
                 _ProposalCard(
                   message: message,

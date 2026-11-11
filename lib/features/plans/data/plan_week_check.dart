@@ -9,8 +9,8 @@ import '../../chat/domain/coach_budget.dart';
 import '../../chat/domain/coach_prompt.dart';
 import '../../chat/domain/coach_proposal.dart';
 import '../../morning/data/morning_reporter.dart' show ReportClientFactory;
-import 'plan_deload.dart';
-import 'plan_prompt.dart';
+import '../../deload/data/plan_deload.dart';
+import '../../chat/data/plan_prompt.dart';
 
 const _uuid = Uuid();
 

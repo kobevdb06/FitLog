@@ -13,7 +13,7 @@ import '../../../core/widgets/numeric_keypad.dart';
 import '../../../core/util/notification_service.dart';
 import '../../deload/data/deload_standing.dart';
 import '../../health/presentation/health_providers.dart';
-import '../../plans/data/plan_deload.dart';
+import '../../deload/data/plan_deload.dart';
 import '../domain/pr_ramp.dart';
 import '../domain/set_columns.dart';
 import '../domain/rest_timer.dart';

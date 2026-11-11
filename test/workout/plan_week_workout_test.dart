@@ -3,7 +3,7 @@ import 'package:fitlog/core/calc/deload.dart';
 import 'package:fitlog/core/calc/plan_weeks.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/features/plans/data/plan_actions.dart';
-import 'package:fitlog/features/plans/data/plan_deload.dart';
+import 'package:fitlog/features/deload/data/plan_deload.dart';
 import 'package:fitlog/features/workout/presentation/workout_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

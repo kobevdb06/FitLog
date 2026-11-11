@@ -1,6 +1,6 @@
 import '../../../core/calc/plan_weeks.dart';
 import '../../../core/db/database.dart';
-import '../../deload/data/deload_standing.dart';
+import 'deload_standing.dart';
 
 /// Who a deload of a schema's deload week was started by.
 const String kPlanDeloadSource = 'plan';

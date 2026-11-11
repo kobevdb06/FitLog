@@ -80,6 +80,7 @@ Future<DeloadExample?> deloadExample(Ref ref) async {
         defaultWeightStep(
           found.category,
           platesKg: decodePlates(settings.availablePlatesKg),
+          pounds: settings.unitWeight == WeightUnit.lb.wire,
         ),
   );
 }

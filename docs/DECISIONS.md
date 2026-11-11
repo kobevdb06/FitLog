@@ -6330,3 +6330,19 @@ Uit het Fable-rapport: F8, de afronding van een deload.
   wordt een houding nooit langer, en van 5 s of minder blijft ze zoals ze
   is.
 
+## 274. In pond stapt het gewicht in pond, en één uitschieter maakt de stap niet kleiner
+
+Uit het Fable-rapport: F8, de stap van een oefening.
+
+- **De standaardstap** voor halters (2 kg) en machines (2,5 kg) gold ook
+  in pond. 50 lb plus 2 kg gaf 54,5 lb. Nu is de stap in pond 5 lb, ook
+  voor een stang zonder schijven in de instellingen. De eenheid gaat mee
+  waar de schijven al meegingen.
+- **De geleerde stap** was het kleinste verschil tussen twee gewichten die
+  je ooit gebruikte. 60, 62,5 en 65 kg met één keer 61 gaf een stap van
+  1 kg. Nu wint het verschil waarvan de stappen de meeste van je gewichten
+  raken, en bij een gelijke stand het grootste. Het rapport stelde *het
+  vaakst voorkomende verschil* voor, maar in dat voorbeeld komt elk
+  verschil één keer voor. Wie echt per kilo opbouwt (60, 61, 62, 63),
+  houdt een stap van 1 kg.
+

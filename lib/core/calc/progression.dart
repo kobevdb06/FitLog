@@ -9,6 +9,7 @@
 library;
 
 import '../db/enums.dart';
+import 'units.dart';
 
 /// Above this RPE the sets took close to everything: the same again, until
 /// it feels lighter, rather than more.
@@ -20,21 +21,28 @@ const int kHintHoldStepSeconds = 5;
 /// The step for a weight when the exercise's own history does not show one.
 ///
 /// A barbell takes the smallest plate on each side; a pair of dumbbells
-/// usually goes up by two kilos, a stack by two and a half.
+/// usually goes up by two kilos, a stack by two and a half - and in a gym
+/// that counts in [pounds], both by five pounds: two kilos on 50 lb showed
+/// 54,5 lb (DECISIONS 274).
 double defaultWeightStep(
   ExerciseCategory category, {
   List<double> platesKg = const [],
+  bool pounds = false,
 }) {
   if (category == ExerciseCategory.barbell) {
     final plates = platesKg.where((p) => p > 0).toList()..sort();
-    return plates.isEmpty ? 2.5 : plates.first * 2;
+    if (plates.isNotEmpty) return plates.first * 2;
+    return pounds ? 5 * kKgPerLb : 2.5;
   }
+  if (pounds) return 5 * kKgPerLb;
   if (category == ExerciseCategory.dumbbell) return 2;
   return 2.5;
 }
 
 /// The step you take on an exercise, read off the weights you have used on
-/// it: the smallest gap between two of them.
+/// it: of the gaps between two of them, the one whose steps hold the most
+/// of those weights, and of those the largest. It was the smallest gap: 60,
+/// 62,5 and 65 with one 61 among them made a step of a kilo (DECISIONS 274).
 ///
 /// Null with fewer than three different weights: one gap says too little,
 /// and 60 to 70 once is not a habit of ten-kilo steps.
@@ -50,12 +58,26 @@ double? learnedWeightStep(Iterable<double> weightsKg) {
     if (kept.isEmpty || w - kept.last >= 0.5) kept.add(w);
   }
   if (kept.length < 3) return null;
-  double? step;
-  for (var i = 1; i < kept.length; i++) {
-    final gap = kept[i] - kept[i - 1];
-    if (step == null || gap < step) step = gap;
+
+  final gaps = <double>{
+    for (var i = 1; i < kept.length; i++)
+      (((kept[i] - kept[i - 1]) * 1000).round()) / 1000,
+  };
+  bool onGrid(double weight, double step) {
+    final steps = (weight - kept.first) / step;
+    return (steps - steps.round()).abs() < 1e-6;
   }
-  return step;
+
+  double? best;
+  var bestHeld = 0;
+  for (final gap in gaps) {
+    final held = kept.where((w) => onGrid(w, gap)).length;
+    if (held > bestHeld || (held == bestHeld && gap > best!)) {
+      best = gap;
+      bestHeld = held;
+    }
+  }
+  return best;
 }
 
 /// One working set of the last time, as far as the hint goes.

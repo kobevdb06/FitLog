@@ -1021,6 +1021,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     required int reps,
     required bool progress,
     List<double> platesKg = const [],
+    bool pounds = false,
   }) async {
     final workout = await getWorkoutDetail(workoutId);
     if (workout == null) return;
@@ -1055,7 +1056,11 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
           targetReps: working.first.reps,
           step:
               await learnedStepFor(exercise.exercise.id) ??
-              defaultWeightStep(exercise.category, platesKg: platesKg),
+              defaultWeightStep(
+                exercise.category,
+                platesKg: platesKg,
+                pounds: pounds,
+              ),
         );
       }
 
@@ -1131,6 +1136,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     String workoutId,
     DeloadPlan plan, {
     List<double> platesKg = const [],
+    bool pounds = false,
     bool light = false,
   }) async {
     await (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
@@ -1157,7 +1163,11 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
       }
       final step =
           await learnedStepFor(exercise.exercise.id) ??
-          defaultWeightStep(exercise.category, platesKg: platesKg);
+          defaultWeightStep(
+            exercise.category,
+            platesKg: platesKg,
+            pounds: pounds,
+          );
 
       final inputs = <DeloadInput>[];
       for (var i = 0; i < exercise.sets.length; i++) {

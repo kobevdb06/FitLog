@@ -197,6 +197,7 @@ WorkoutNotice? workoutNoticeFor(
   DateTime? restEndsAt,
   PreviousSession previous = PreviousSession.empty,
   List<double> platesKg = const [],
+  bool pounds = false,
   bool behindPin = false,
 }) {
   if (detail == null) return null;
@@ -211,7 +212,7 @@ WorkoutNotice? workoutNoticeFor(
     body: _whereYouAre(detail),
     startedAt: DateTime.fromMillisecondsSinceEpoch(detail.workout.startedAt),
     restEndsAt: restEndsAt,
-    current: _nextSet(detail, previous, platesKg),
+    current: _nextSet(detail, previous, platesKg, pounds: pounds),
     behindPin: behindPin,
   );
 }
@@ -220,8 +221,9 @@ WorkoutNotice? workoutNoticeFor(
 NoticeSet? _nextSet(
   WorkoutDetail detail,
   PreviousSession previous,
-  List<double> platesKg,
-) {
+  List<double> platesKg, {
+  bool pounds = false,
+}) {
   for (final exercise in detail.exercises) {
     final labels = labelSetsWithSides([
       for (final s in exercise.sets)
@@ -278,7 +280,7 @@ NoticeSet? _nextSet(
         category: category,
         weightStepKg:
             previous.weightSteps[exercise.exercise.id] ??
-            defaultWeightStep(category, platesKg: platesKg),
+            defaultWeightStep(category, platesKg: platesKg, pounds: pounds),
         weightKg: row.weightKg ?? last?.weightKg ?? before?.weightKg,
         reps: row.reps ?? last?.reps ?? before?.reps,
         durationSeconds:

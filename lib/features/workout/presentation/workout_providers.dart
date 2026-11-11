@@ -223,6 +223,7 @@ class WorkoutController {
       reps: asked.reps,
       progress: true,
       platesKg: decodePlates(settings.availablePlatesKg),
+      pounds: settings.unitWeight == WeightUnit.lb.wire,
     );
   }
 
@@ -237,6 +238,7 @@ class WorkoutController {
       workoutId,
       deload.plan,
       platesKg: decodePlates(settings.availablePlatesKg),
+      pounds: settings.unitWeight == WeightUnit.lb.wire,
     );
     return true;
   }
@@ -248,6 +250,7 @@ class WorkoutController {
       workoutId,
       deloadPlanOf(settings),
       platesKg: decodePlates(settings.availablePlatesKg),
+      pounds: settings.unitWeight == WeightUnit.lb.wire,
       light: true,
     );
   }

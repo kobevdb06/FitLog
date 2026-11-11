@@ -165,4 +165,30 @@ void main() {
       expect(defaultWeightStep(ExerciseCategory.cable), 2.5);
     });
   });
+
+  group('de stap (DECISIONS 274)', () {
+    test('in pond: vijf pond, niet twee kilo', () {
+      // 50 lb and a step of 2 kg showed 54,5 lb.
+      const lb = 0.45359237;
+      expect(
+        defaultWeightStep(ExerciseCategory.dumbbell, pounds: true),
+        closeTo(5 * lb, 1e-9),
+      );
+      expect(
+        defaultWeightStep(ExerciseCategory.machine, pounds: true),
+        closeTo(5 * lb, 1e-9),
+      );
+      expect(defaultWeightStep(ExerciseCategory.dumbbell), 2);
+      expect(defaultWeightStep(ExerciseCategory.machine), 2.5);
+    });
+
+    test('één afwijkend gewicht maakt de stap niet kleiner', () {
+      // 60, 62,5, 65 and once 61: the step was the smallest gap, 1 kg.
+      expect(learnedWeightStep([60, 62.5, 65, 61]), 2.5);
+      expect(learnedWeightStep([60, 62.5, 65, 67.5, 61]), 2.5);
+      expect(learnedWeightStep([60, 61, 62, 63]), 1);
+      expect(learnedWeightStep([10, 12, 14, 16]), 2);
+      expect(learnedWeightStep([20, 22.5, 25]), 2.5);
+    });
+  });
 }

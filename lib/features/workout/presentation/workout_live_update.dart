@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/db/enums.dart';
 import '../../../core/db/models.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -256,6 +257,7 @@ class WorkoutLiveUpdate extends _$WorkoutLiveUpdate {
       platesKg: settings == null
           ? const []
           : decodePlates(settings.availablePlatesKg),
+      pounds: settings?.unitWeight == WeightUnit.lb.wire,
       behindPin: behindPin,
     );
     if (notice == state) return;

@@ -1172,6 +1172,7 @@ class _ExerciseCard extends ConsumerWidget {
             platesKg: settings == null
                 ? const []
                 : decodePlates(settings!.availablePlatesKg),
+            pounds: settings?.unitWeight == WeightUnit.lb.wire,
           ),
     );
   }

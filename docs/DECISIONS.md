@@ -2213,6 +2213,10 @@ naar een naam die nergens anders in de app bestaat.
 Wat je aannam blijft op de kaart staan ("Toegevoegd", met een knop om het te
 bekijken). Tweemaal tikken maakt geen twee.
 
+*Later bijgesteld:* de coach maakt en past routines aan in zijn eigen map
+(176), en houdt zijn eigen notities bij (218). Voor oefeningen en je logboek
+blijft het voorstellen.
+
 ## 133. De lijst met modellen komt van de dienst, niet uit deze app
 
 De vraag was om Gemini 3 te kunnen kiezen. De eerste neiging is een naam
@@ -6678,3 +6682,26 @@ Uit het Fable-rapport: punten 4 en 5 om op de emulator na te gaan.
   volgende tabblad. De onderpagina bleef daar open staan, en het vegen
   vocht met een rij die je wegveegt. Nu veeg je alleen tussen tabbladen
   op hun eigen eerste pagina. Een test opent een onderpagina en veegt.
+
+## 295. De documentatie loopt weer gelijk met de code
+
+Uit het Fable-rapport: B4, en de APK-groottes uit B7.
+
+- **`docs/DATA_MODEL.md`** stond op schema 53. Nu op 65, met wat elke
+  versie van 57 tot 65 toevoegde. De tabellen die ontbraken staan erin:
+  `coach_prompts`, `workout_answers`, `moment_answers`, `quick_questions`,
+  `chat_folders` en `coach_requests`. De nieuwe kolommen ook:
+  `lock_during_workout`, `plan_session_id`, `folder_id` en `pinned`.
+- **De README** zei Android 6.0 (API 23). Het minimum is 8.0 (API 26),
+  voor Health Connect. iOS telt niet mee. De APK-groottes zijn die van nu:
+  63 en 59 MB.
+- **`NOT_VERIFIED.md`** beschrijft de eerste oplevering. Bovenaan staat nu
+  dat dat zo is. Het aantal tests en de naam van de activity
+  (`FitLogActivity`) zijn bijgewerkt.
+- **`docs/AI-COACH-PLAN.md`** beschreef een betaalde coach via een eigen
+  server die er niet is. Bovenaan staat nu dat het plan vervangen is.
+- **`docs/COACH-VENSTER-PLAN.md`** noemt nog schema 58 en versie 1.69.1.
+  Bovenaan staat nu dat het venster af is en dat die nummers van toen
+  zijn.
+- **DECISIONS 132** (*alles wat het logboek in gaat, is een handeling van
+  jou*) verwijst nu naar 176 en 218, die dat bijstelden.

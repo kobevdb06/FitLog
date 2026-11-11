@@ -1,5 +1,8 @@
 # Plan: het coachvenster
 
+> **Afgerond.** Het coachvenster is gebouwd. De versie- en schemanummers
+> hieronder zijn die van toen (1.69.1, schema 58); de app staat nu op schema 65.
+
 Goedgekeurd op 3 november 2026, na een mockup met vier schermen (een schemagesprek met een
 strook en "Over: Push A" boven het veld; het schemapaneel van rechts; Vastgepind en mappen in
 het paneel met gesprekken; de lijst na een `/`). De maker: "zoals in de mockup is goed", de lijst

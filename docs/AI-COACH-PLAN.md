@@ -1,5 +1,10 @@
 # Plan: een AI-coach voor iedereen in FitLog
 
+> **Vervangen.** Dit plan beschreef een betaalde coach via een eigen server
+> (proxy). Die bestaat niet en komt er niet: de coach werkt met een API-sleutel
+> die je zelf aanmaakt, rechtstreeks bij de dienst (zie `docs/DECISIONS.md` en
+> de privacypagina). Het plan blijft staan als achtergrond.
+
 *Opgesteld op 30 september 2026 en bijgewerkt met het onderzoek naar concurrentie,
 prijzen en Health Connect. Bedragen, regels en voorwaarden veranderen: kijk ze na voor
 je een stap zet. Waar dit plan over belastingen en recht gaat, is het een oriëntatie en

@@ -1,5 +1,10 @@
 # Wat er niet aangetoond is
 
+> **Let op (11 november 2026):** dit beschrijft de eerste oplevering. Sindsdien
+> draait de app op een echte telefoon en op de emulator, en is veel van wat
+> hieronder openstaat nagegaan; zie `docs/DECISIONS.md`. De cijfers zijn
+> bijgewerkt, het verhaal niet.
+
 De rest van de oplevering is groen. Dit staat er niet, en dit is waarom.
 
 ## De iOS-build is niet uitgevoerd
@@ -43,7 +48,7 @@ Er was geen Android-toestel of emulator beschikbaar in deze omgeving. Wat wel is
 aangetoond:
 
 - `flutter analyze`: 0 issues.
-- `flutter test`: 182 tests groen, waaronder widget tests die het
+- `flutter test`: toen 182 tests groen (nu meer dan 2300), waaronder widget tests die het
   actieve-workout-scherm echt opbouwen, een set afvinken en de rusttimer zien
   starten, en een integratietest die een routine maakt, een workout logt,
   afrondt en geschiedenis plus records controleert.
@@ -57,7 +62,8 @@ Wat daarmee **niet** aangetoond is:
   meting op hardware; er is wel bewust naartoe gewerkt (geen splash-animatie, de
   seeding draait in één transactie en maar één keer, Argon2id draait in een
   aparte isolate zodat het vergrendelscherm niet blokkeert).
-- Biometrie via `local_auth`. Het pad is er, `MainActivity` erft van
+- Biometrie via `local_auth`. Het pad is er, `FitLogActivity` (toen
+  `MainActivity`) erft van
   `FlutterFragmentActivity` zoals vereist, maar er is geen vingerafdruksensor om
   het op te proberen.
 - De lokale meldingen van de rusttimer, en het gedrag van

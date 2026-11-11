@@ -21,7 +21,7 @@ is `lib/core/db/tables.dart` (de tabellen) en de `onUpgrade` in
 
 ## Versies
 
-`schemaVersion` is **53**. Migratiestappen mogen alleen optellen; een kolom met
+`schemaVersion` is **65**. Migratiestappen mogen alleen optellen; een kolom met
 gebruikersdata verwijderen of herschrijven mag niet. Elke nieuwe kolom krijgt
 een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 "niets".
@@ -84,6 +84,15 @@ een standaard die zegt wat er al waar was voor ze bestond - meestal "uit" of
 | 54 | `training_plans`, `routines.plan_id` en `plan_weekday`, `chat_threads.plan_id`: schema's. Geen enkele bestaande routine of gesprek hoorde bij een schema. |
 | 55 | `training_plans.volume`, `outline_approved` en `outline_at`, `routines.plan_focus` en `plan_state`: een schema stap voor stap. Elk bestaand schema was heel: opzet en sessies goedgekeurd. |
 | 56 | `workouts.is_light`: één sessie lichter, buiten een deload. Geen enkele bestaande training was er een. |
+| 57 | `coach_prompts` en `workout_answers`: de geplande vragen aan de coach, en zijn antwoord na een workout. Nog geen enkele. |
+| 58 | `coach_prompts.option`, `moment_answers` en `quick_questions`: de andere momenten, en je eigen vragen. |
+| 59 | `chat_folders`, `chat_threads.folder_id` en `pinned`: gesprekken in mappen, en vastgezet. Geen enkel gesprek was het. |
+| 60 | `quick_questions.command`: een eigen vraag als `/opdracht`. |
+| 61 | `workouts.plan_session_id`: de sessie van een schema waarvoor een workout gedaan werd, ook als de coach die sessie later opnieuw maakte (DECISIONS 240). Ingevuld uit de routine, of uit de naam binnen de looptijd van het schema. |
+| 62 | Geen nieuwe kolom: een geschat maximum uit een set van meer dan twaalf herhalingen telt niet meer, en alleen die records worden vervangen (DECISIONS 244). |
+| 63 | `coach_requests`: de eigen telling van de daglimiet, voor elke vraag (DECISIONS 249). |
+| 64 | `app_settings.lock_during_workout`: ook vergrendelen tijdens een workout, standaard niet (DECISIONS 279). |
+| 65 | Geen nieuwe kolom: `workouts.total_sets` opnieuw geteld uit de sets, zonder de opwarmsets (DECISIONS 284). De sets zelf blijven zoals ze zijn. |
 
 **De valkuil bij een nieuwe kolom in een jongere tabel.** Een tabel die een
 migratiestap aanmaakt (`m.createTable`), krijgt de definitie van vandaag, met
@@ -132,6 +141,7 @@ Geboortedatum, geslacht en lengte gaan alleen naar de coach met
 | `exercises_seeded` | BOOL | false: de catalogus is precies één keer geïmporteerd |
 | `seed_version` | INT | 0: tot welke versie de catalogus is bijgewerkt |
 | `auto_lock_seconds` | INT | 60 (`0` = meteen, `-1` = nooit) |
+| `lock_during_workout` | BOOL | `false`: zolang er een workout loopt, vergrendelt de app niet |
 | `last_backup_at` | INT? | wanneer de laatste back-up gemaakt is |
 | `auto_backup_folder` | TEXT? | de content-URI van de map voor de wekelijkse back-up; null is uit |
 | `pending_pick_kind`, `pending_pick_ref` | TEXT? | een fotokeuze die Android onderbrak |
@@ -334,7 +344,7 @@ routine, de oudste gaan eerst.
 | `ended_at` | INT? | **`NULL` = de lopende sessie; er kan er maar één zijn** |
 | `notes` | TEXT? | |
 | `total_volume_kg` | REAL | gedenormaliseerd, herberekend bij elke wijziging |
-| `total_sets` | INT | aantal afgevinkte sets |
+| `total_sets` | INT | aantal afgevinkte sets, zonder de opwarmsets (sinds 65) |
 | `duration_seconds` | INT | |
 | `perceived_effort` | TEXT? | `very_easy` \| `easy` \| `normal` \| `hard` \| `all_out` |
 | `color_index` | INT? | kopie van de kleur van de routine |
@@ -342,6 +352,7 @@ routine, de oudste gaan eerst.
 | `avg_heart_rate`, `max_heart_rate` | INT? | van een horloge, via Health Connect |
 | `is_deload` | BOOL | gestart tijdens een deload; bij de start gezet en zo gebleven |
 | `is_light` | BOOL | op zich lichter gestart, buiten een deload; dan ook `is_deload`, zodat wat je kan erover heen kijkt, maar haar week is geen rustweek |
+| `plan_session_id` | TEXT? | de sessie van een schema waarvoor de workout gedaan werd; blijft ook als de coach de sessie opnieuw maakt |
 
 Een routine verwijderen laat de gelogde workouts staan; alleen de verwijzing
 verdwijnt.
@@ -516,7 +527,42 @@ telkens opnieuw berekend; alleen de tekst van de coach komt hier vandaan.
 
 #### `chat_threads`
 
-`id`, `title` (je eerste vraag, ingekort; bij het gesprek van een workout de naam en de dag van die workout; bij een schema de naam van het schema), `created_at`, `updated_at`, `workout_id` (TEXT?, de workout waar het gesprek bij hoort; geen verwijzing, zodat een weggegooide workout het gesprek laat staan), `plan_id` (TEXT?, het schema waar het gesprek bij hoort; geen verwijzing).
+`id`, `title` (je eerste vraag, ingekort; bij het gesprek van een workout de naam en de dag van die workout; bij een schema de naam van het schema), `created_at`, `updated_at`, `workout_id` (TEXT?, de workout waar het gesprek bij hoort; geen verwijzing, zodat een weggegooide workout het gesprek laat staan), `plan_id` (TEXT?, het schema waar het gesprek bij hoort; geen verwijzing), `folder_id` (TEXT?, de map in het paneel), `pinned` (BOOL, bovenaan vastgezet).
+
+#### `chat_folders`
+
+`id` (TEXT PK), `name`, `sort_order`, `is_collapsed` (dichtgeklapt in het paneel), `created_at`.
+
+#### `coach_requests`
+
+`id` (INT PK, oplopend), `at` (INT, millis). Eén rij per vraag die naar de dienst vertrok, ook een vraag die mislukte of die je stopte: de eigen telling van de daglimiet (DECISIONS 249).
+
+#### `coach_prompts`
+
+| Kolom | Type | Opmerking |
+|---|---|---|
+| `moment` | TEXT PK | één van `CoachMoment` |
+| `enabled` | BOOL | |
+| `prompt` | TEXT? | je eigen woorden; null is die van het moment zelf |
+| `length` | TEXT? | één van `AnswerLength`; null is die van het moment |
+| `option` | TEXT? | wat het moment nog nodig heeft: na hoeveel dagen zonder training, of welke dag en welk uur |
+| `updated_at` | INT | |
+
+#### `workout_answers` en `moment_answers`
+
+Het antwoord van de coach op een gepland moment: na een workout
+(`workout_answers`, sleutel `workout_id`, verwijzing **CASCADE**) of op een ander
+moment (`moment_answers`, sleutel `moment` + `subject`, bijvoorbeeld de week of
+de maand waarover het gaat). Beide bewaren `prompt` (de woorden van toen),
+`facts` (JSON: wat de coach kreeg), `coach_text` of `coach_error`, `requests`,
+`input_tokens` en `output_tokens`. `moment_answers.thread_id` wijst naar het
+gesprek waarin het antwoord kwam, als het moment in de chat antwoordt; de kosten
+staan dan bij dat bericht.
+
+#### `quick_questions`
+
+`id` (INT PK, oplopend), `question`, `sort_order`, `created_at`, `command` (TEXT?,
+de naam achter een `/` in de coach - `rug` voor `/rug`).
 
 #### `coach_notes`
 

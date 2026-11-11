@@ -64,11 +64,14 @@ Future<RoutineImportPlan> planRoutineImport(
 /// That order matters for the same reason it does with photos: a routine
 /// referring to an exercise that was never created is a hole you cannot see
 /// until you open it.
+///
+/// In one go: a routine that failed to save left its new exercises behind,
+/// loose in the library (DECISIONS 287).
 Future<String> applyRoutineImport(
   AppDatabase db,
   RoutineImportPlan plan, {
   String? folderId,
-}) async {
+}) => db.transaction(() async {
   final drafts = <RoutineExerciseDraft>[];
 
   for (final planned in plan.exercises) {
@@ -122,7 +125,7 @@ Future<String> applyRoutineImport(
       exercises: drafts,
     ),
   );
-}
+});
 
 /// Turns one of the user's own routines into the payload that goes in the QR.
 Future<SharedRoutine> sharedRoutineFor(AppDatabase db, String routineId) async {

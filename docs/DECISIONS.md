@@ -6542,3 +6542,32 @@ Uit het Fable-rapport: de rest van T10.
   volgorde door (`onOrder`), en die schrijft de workout weg.
 
 De dubbele tik op Afronden en op een afgevinkte set stonden al in 245.
+
+## 287. Wat in stappen schrijft, schrijft alles of niets
+
+Uit het Fable-rapport: D13.
+
+Een paar schrijfacties bestonden uit meerdere stappen zonder transactie.
+Ging er halverwege iets mis (een volle schijf, een fout, Android dat de
+app stopt), dan bleef een half resultaat achter:
+
+- **Een sessie opnieuw doen** (`startFromWorkout`) en **een routine
+  starten** (met de week van het schema, een deload of *lichter*) lieten
+  dan een lege of half aangepaste workout lopen. Nu is het starten één
+  transactie. De vraag om meldingen toe te staan staat erbuiten.
+- **De week van een schema** (`makePlanWeek`) en **een deload**
+  (`makeDeload`) konden een sessie half aanpassen.
+- **Een routine van een vriend** (`applyRoutineImport`) liet de nieuwe
+  oefeningen los in de bibliotheek achter als de routine zelf niet
+  bewaard raakte.
+- **Alle gesprekken wissen** kon gesprekken achterlaten zonder één woord
+  erin.
+- **De cijfers van volgende week van de coach** (`_setWeekNumbers`)
+  pasten de eerste sessie aan en weigerden dan bij de tweede. Nu gaat een
+  weigering terug met alles wat ervoor geschreven was (`_Refused`).
+- **Een routine van de coach bewaren of aanpassen**: de versie en de
+  wijziging gaan nu samen.
+
+De tests dwingen een fout halverwege af met een trigger in SQLite. De
+database weigert dan zelf de tweede stap, zoals een volle schijf zou
+doen.

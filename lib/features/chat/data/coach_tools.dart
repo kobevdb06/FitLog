@@ -1354,17 +1354,21 @@ class CoachTools {
         );
       }
       id = existing.id;
-      await db.routinesDao.keepVersion(id, 'Voor: $change');
-      await db.routinesDao.updateRoutine(
-        id,
-        RoutineDraft(
-          name: name,
-          notes: _text(input['notes']),
-          folderId: existing.folderId,
-          colorIndex: existing.colorIndex,
-          exercises: exercises,
-        ),
-      );
+      // The version and the change in one go: a version kept without the
+      // change, or the other way round (DECISIONS 287).
+      await db.transaction(() async {
+        await db.routinesDao.keepVersion(id, 'Voor: $change');
+        await db.routinesDao.updateRoutine(
+          id,
+          RoutineDraft(
+            name: name,
+            notes: _text(input['notes']),
+            folderId: existing.folderId,
+            colorIndex: existing.colorIndex,
+            exercises: exercises,
+          ),
+        );
+      });
     } else {
       if (named(name) != null) {
         return refused(
@@ -1373,12 +1377,14 @@ class CoachTools {
           'de routine "$name", die al bestond',
         );
       }
-      id = await db.routinesDao.createRoutine(
-        RoutineDraft(
-          name: name,
-          notes: _text(input['notes']),
-          folderId: await db.routinesDao.ensureCoachFolder(),
-          exercises: exercises,
+      id = await db.transaction(
+        () async => db.routinesDao.createRoutine(
+          RoutineDraft(
+            name: name,
+            notes: _text(input['notes']),
+            folderId: await db.routinesDao.ensureCoachFolder(),
+            exercises: exercises,
+          ),
         ),
       );
     }

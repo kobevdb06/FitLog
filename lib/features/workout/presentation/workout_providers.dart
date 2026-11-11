@@ -232,23 +232,34 @@ class WorkoutController {
     String routineId, {
     bool lighter = false,
   }) async {
-    final id = await _db.workoutsDao.startWorkout(
-      routineId: routineId,
-      defaultRestSeconds: await _defaultRest,
-    );
-    await _planWeek(id, routineId);
-    final deload = await _deloadIfOn(id);
-    if (lighter && !deload) await _lighter(id);
+    final rest = await _defaultRest;
+    // The session and what this week or a deload makes of it, in one go: a
+    // step that failed left a session running that was neither
+    // (DECISIONS 287).
+    final id = await _db.transaction(() async {
+      final id = await _db.workoutsDao.startWorkout(
+        routineId: routineId,
+        defaultRestSeconds: rest,
+      );
+      await _planWeek(id, routineId);
+      final deload = await _deloadIfOn(id);
+      if (lighter && !deload) await _lighter(id);
+      return id;
+    });
     await _askAboutNotifications();
     return id;
   }
 
   Future<String> startEmpty({String? name}) async {
-    final id = await _db.workoutsDao.startWorkout(
-      name: name ?? 'Losse workout',
-      defaultRestSeconds: await _defaultRest,
-    );
-    await _deloadIfOn(id);
+    final rest = await _defaultRest;
+    final id = await _db.transaction(() async {
+      final id = await _db.workoutsDao.startWorkout(
+        name: name ?? 'Losse workout',
+        defaultRestSeconds: rest,
+      );
+      await _deloadIfOn(id);
+      return id;
+    });
     await _askAboutNotifications();
     return id;
   }

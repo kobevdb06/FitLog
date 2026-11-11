@@ -922,65 +922,77 @@ extension _PlanTools on CoachTools {
     };
     final week = plan.weekAt(DateTime.now()) + 1;
     var changed = 0;
-    for (final entry in wanted) {
-      if (entry is! Map) continue;
-      final name = _text(entry['name']);
-      final session = name == null ? null : sessions[name.toLowerCase()];
-      if (session == null) {
-        return refused(
-          'het schema heeft geen sessie "$name"; lees de namen met plan',
-        );
-      }
-      final detail = (await db.routinesDao.getRoutineDetail(session.id))!;
-      final draft = draftOf(detail);
-      final exercises = [...draft.exercises];
-      for (final item in entry['exercises'] as List? ?? const []) {
-        if (item is! Map) continue;
-        final asked = _text(item['exercise'])?.toLowerCase();
-        final at = detail.exercises.indexWhere(
-          (e) => e.exercise.name.toLowerCase() == asked,
-        );
-        if (at < 0) {
-          return refused(
-            '"${item['exercise']}" staat niet in ${session.name}; alleen '
-            'de cijfers van oefeningen die er staan, een andere oefening '
-            'stel je voor met propose_plan_change',
+    // All the sessions or none: a refusal at the second left the first
+    // changed (DECISIONS 287). A refusal rolls back with [_Refused].
+    try {
+      await db.transaction(() async {
+        for (final entry in wanted) {
+          if (entry is! Map) continue;
+          final name = _text(entry['name']);
+          final session = name == null ? null : sessions[name.toLowerCase()];
+          if (session == null) {
+            throw _Refused(
+              refused(
+                'het schema heeft geen sessie "$name"; lees de namen met plan',
+              ),
+            );
+          }
+          final detail = (await db.routinesDao.getRoutineDetail(session.id))!;
+          final draft = draftOf(detail);
+          final exercises = [...draft.exercises];
+          for (final item in entry['exercises'] as List? ?? const []) {
+            if (item is! Map) continue;
+            final asked = _text(item['exercise'])?.toLowerCase();
+            final at = detail.exercises.indexWhere(
+              (e) => e.exercise.name.toLowerCase() == asked,
+            );
+            if (at < 0) {
+              throw _Refused(
+                refused(
+                  '"${item['exercise']}" staat niet in ${session.name}; alleen '
+                  'de cijfers van oefeningen die er staan, een andere oefening '
+                  'stel je voor met propose_plan_change',
+                ),
+              );
+            }
+            final checked = await _exercisesOf([
+              {...item, 'exercise': detail.exercises[at].exercise.name},
+            ]);
+            if (checked.refusal case final refusal?) throw _Refused(refusal);
+            final old = exercises[at];
+            final sets = checked.drafts.single.sets;
+            exercises[at] = RoutineExerciseDraft(
+              exerciseId: old.exerciseId,
+              restSeconds: old.restSeconds,
+              supersetGroup: old.supersetGroup,
+              notes: old.notes,
+              // Next week's numbers are the working sets; the warm-up stays as
+              // it was unless the coach wrote one.
+              sets: sets.any((s) => s.setType == SetType.warmup)
+                  ? sets
+                  : [
+                      for (final s in old.sets)
+                        if (s.setType == SetType.warmup) s,
+                      ...sets,
+                    ],
+            );
+            changed++;
+          }
+          await db.routinesDao.keepVersion(session.id, 'Voor: week $week');
+          await db.routinesDao.updateRoutine(
+            session.id,
+            RoutineDraft(
+              name: draft.name,
+              notes: draft.notes,
+              folderId: draft.folderId,
+              colorIndex: draft.colorIndex,
+              exercises: exercises,
+            ),
           );
         }
-        final checked = await _exercisesOf([
-          {...item, 'exercise': detail.exercises[at].exercise.name},
-        ]);
-        if (checked.refusal case final refusal?) return refusal;
-        final old = exercises[at];
-        final sets = checked.drafts.single.sets;
-        exercises[at] = RoutineExerciseDraft(
-          exerciseId: old.exerciseId,
-          restSeconds: old.restSeconds,
-          supersetGroup: old.supersetGroup,
-          notes: old.notes,
-          // Next week's numbers are the working sets; the warm-up stays as
-          // it was unless the coach wrote one.
-          sets: sets.any((s) => s.setType == SetType.warmup)
-              ? sets
-              : [
-                  for (final s in old.sets)
-                    if (s.setType == SetType.warmup) s,
-                  ...sets,
-                ],
-        );
-        changed++;
-      }
-      await db.routinesDao.keepVersion(session.id, 'Voor: week $week');
-      await db.routinesDao.updateRoutine(
-        session.id,
-        RoutineDraft(
-          name: draft.name,
-          notes: draft.notes,
-          folderId: draft.folderId,
-          colorIndex: draft.colorIndex,
-          exercises: exercises,
-        ),
-      );
+      });
+    } on _Refused catch (r) {
+      return r.lookup;
     }
     return CoachLookup(
       json: jsonEncode({
@@ -1054,4 +1066,12 @@ class _Matched {
 
   /// What is there and was not written: it goes.
   final List<RoutineRow> gone;
+}
+
+/// A refusal from inside a transaction: thrown so that what was written
+/// before it goes back, caught to answer with [lookup].
+class _Refused implements Exception {
+  const _Refused(this.lookup);
+
+  final CoachLookup lookup;
 }

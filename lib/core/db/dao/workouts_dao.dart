@@ -198,10 +198,12 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   /// weights and reps do not: they are what the previous column is for, and
   /// carrying them over would present last week's numbers as if they were
   /// already logged today.
+  /// In one go: a step that failed left an empty session running
+  /// (DECISIONS 287).
   Future<String> startFromWorkout(
     String sourceWorkoutId, {
     required int defaultRestSeconds,
-  }) async {
+  }) => transaction(() async {
     final source = await getWorkoutDetail(sourceWorkoutId);
     if (source == null) {
       throw StateError('Workout $sourceWorkoutId bestaat niet');
@@ -249,7 +251,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     });
 
     return id;
-  }
+  });
 
   // --- Reading --------------------------------------------------------------
 
@@ -1064,6 +1066,9 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   /// what the hint would say, from the last time the exercise was done - one
   /// step heavier once every set reached the routine's target, the same
   /// until then - and the week's repetitions go on top of that.
+  ///
+  /// In one go: halfway, a session had some exercises of this week and
+  /// some of last (DECISIONS 287).
   Future<void> makePlanWeek(
     String workoutId, {
     required int sets,
@@ -1071,7 +1076,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
     required bool progress,
     List<double> platesKg = const [],
     bool pounds = false,
-  }) async {
+  }) => transaction(() async {
     final workout = await getWorkoutDetail(workoutId);
     if (workout == null) return;
 
@@ -1171,7 +1176,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
         );
       }
     }
-  }
+  });
 
   /// Makes [workoutId] a deload session: marked as one, and every exercise
   /// lighter as [plan] says.
@@ -1181,13 +1186,16 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
   /// show - and store - the full weight greyed in from history. Weights land
   /// on the exercise's step, or on the smallest pair of [platesKg].
   /// [light] marks a single session made lighter outside a deload.
+  ///
+  /// In one go: halfway, a deload had some exercises lighter and some not
+  /// (DECISIONS 287).
   Future<void> makeDeload(
     String workoutId,
     DeloadPlan plan, {
     List<double> platesKg = const [],
     bool pounds = false,
     bool light = false,
-  }) async {
+  }) => transaction(() async {
     await (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
       WorkoutsTableCompanion(
         isDeload: const Value(true),
@@ -1260,7 +1268,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
         );
       }
     }
-  }
+  });
 
   /// Marks every set of an exercise that is still open as skipped, or clears
   /// those marks again.

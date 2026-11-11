@@ -260,11 +260,13 @@ class ChatDao extends DatabaseAccessor<AppDatabase> with _$ChatDaoMixin {
 
   /// Everything, for the button in the settings that means everything: the
   /// folders too, which were only there to keep conversations in.
-  Future<void> deleteAllThreads() async {
+  /// All or none: halfway, the conversations were there without a word in
+  /// them (DECISIONS 287).
+  Future<void> deleteAllThreads() => transaction(() async {
     await delete(chatMessagesTable).go();
     await delete(chatThreadsTable).go();
     await delete(chatFoldersTable).go();
-  }
+  });
 
   /// Pinned at the top of the panel, or not any more. The order of the rest
   /// does not change: that is the last time something was said.

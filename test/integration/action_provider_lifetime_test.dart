@@ -130,6 +130,32 @@ void main() {
     expect(await db.exercisesDao.getById(id), isNull);
   });
 
+  test('an exercise only in a routine is kept, out of sight', () async {
+    // Never logged, so it was deleted - and the routine that holds it
+    // pointed at nothing: a crash (DECISIONS 283).
+    final editor = container.read(exerciseEditorProvider);
+    final id = await editor.create(
+      name: 'Eigen oefening',
+      primaryMuscle: 'borst',
+      secondaryMuscles: const [],
+      category: const CategoryChoice(ExerciseCategory.barbell),
+    );
+    final routine = await db.routinesDao.createRoutine(
+      RoutineDraft(
+        name: 'Thuis',
+        exercises: [RoutineExerciseDraft(exerciseId: id, sets: const [])],
+      ),
+    );
+
+    await letTheUserThink();
+    final deleted = await editor.removeOrArchive(id);
+
+    expect(deleted, isFalse);
+    expect((await db.exercisesDao.getById(id))!.isArchived, isTrue);
+    final detail = await db.routinesDao.getRoutineDetail(routine);
+    expect(detail!.exercises.single.exercise.id, id);
+  });
+
   test('PR actions survive the configuration screen', () async {
     await db
         .into(db.exercisesTable)

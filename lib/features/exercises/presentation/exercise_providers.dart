@@ -544,14 +544,17 @@ class ExerciseEditor {
 
   Future<AppPaths> paths() => ref.read(appPathsProvider.future);
 
-  /// Removes a custom exercise, or archives it when it appears in history.
+  /// Removes a custom exercise, or archives it when it appears in history or
+  /// in a routine.
   ///
   /// Deleting a logged exercise would cascade into personal records and leave
-  /// holes in old workouts, so those are hidden instead.
+  /// holes in old workouts, so those are hidden instead. One that only a
+  /// routine held was deleted, and the routine's reference stopped it with a
+  /// crash (DECISIONS 283).
   Future<bool> removeOrArchive(String id) async {
     final dao = ref.read(databaseProvider).exercisesDao;
     final used = await dao.timesUsed(id);
-    if (used == 0) {
+    if (used == 0 && !await dao.inAnyRoutine(id)) {
       final row = await dao.getById(id);
       await dao.deleteExercise(id);
       for (final frame in [row?.startImageFile, row?.endImageFile]) {

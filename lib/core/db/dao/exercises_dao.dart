@@ -458,4 +458,17 @@ class ExercisesDao extends DatabaseAccessor<AppDatabase>
             .getSingle();
     return row.read(count) ?? 0;
   }
+
+  /// Whether a routine holds [exerciseId]: then it cannot go, or the
+  /// routine points at nothing (DECISIONS 283).
+  Future<bool> inAnyRoutine(String exerciseId) async {
+    final routineExercisesTable = attachedDatabase.routineExercisesTable;
+    final count = routineExercisesTable.id.count();
+    final row =
+        await (selectOnly(routineExercisesTable)
+              ..addColumns([count])
+              ..where(routineExercisesTable.exerciseId.equals(exerciseId)))
+            .getSingle();
+    return (row.read(count) ?? 0) > 0;
+  }
 }

@@ -6450,3 +6450,27 @@ weg: zijn er al sets afgevinkt, dan vraagt FitLog eerst *Afgevinkte sets
 vervangen?*, met het aantal. Kies je *Toch omzetten*, dan gaat het zoals
 voordien.
 
+## 282. *Vandaag* en *deze week* slaan om 04:00 om
+
+Uit het Fable-rapport: T7.
+
+Wat *vandaag* of *deze week* toont, las het moment één keer, toen het werd
+opgebouwd. Liet je de app op zondagavond open, dan toonde de kaart op
+maandagochtend nog *week klaar* en de cijfers van vorige week. Nu kijken
+die providers naar `currentDayProvider`, de trainingsdag van 04:00 tot
+04:00, zoals het schema al rekent. Die dag wordt opnieuw bekeken als je
+naar de app terugkeert, en om vier uur 's nachts als de app openstaat. Een
+nieuwe dag bouwt ze opnieuw op. Dezelfde dag doet niets. Dat geldt voor de
+kaart van vandaag, de week van een schema, de cijfers van deze week, de
+reeks, de balken en lijnen op Voortgang, de sets per spier en de plateaus.
+
+## 283. Een eigen oefening in een routine gaat naar het archief
+
+Uit het Fable-rapport: T8.
+
+Een eigen oefening die nooit gelogd was, werd bij *Verwijderen* echt
+verwijderd. Zat ze in een routine, dan verwees die routine naar niets, en
+de database weigerde dat: de app crashte. Nu telt ook een routine als
+gebruik (`inAnyRoutine`). Zo'n oefening gaat naar het archief, net als een
+gelogde. Ze verdwijnt uit de bibliotheek, en de routine werkt verder.
+

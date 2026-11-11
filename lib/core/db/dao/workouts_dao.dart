@@ -578,7 +578,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
       'SELECT w.id AS workout_id, w.started_at AS started_at, '
       'w.perceived_effort AS perceived_effort, '
       'we.exercise_id AS exercise_id, we.is_pr_attempt AS is_pr_attempt, '
-      'e.primary_muscle AS primary_muscle, '
+      'e.name AS exercise_name, e.primary_muscle AS primary_muscle, '
       'e.secondary_muscles AS secondary_muscles, e.category AS category, '
       'ws.weight_kg AS weight_kg, ws.reps AS reps, ws.rpe AS rpe, '
       'ws.set_type AS set_type '
@@ -611,6 +611,7 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
             row.read<int>('started_at'),
           ),
           exerciseId: row.read<String>('exercise_id'),
+          exerciseName: row.read<String>('exercise_name'),
           primaryMuscle: row.read<String>('primary_muscle'),
           secondaryMuscles: decodeMuscleList(
             row.read<String>('secondary_muscles'),

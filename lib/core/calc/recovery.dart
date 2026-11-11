@@ -424,11 +424,16 @@ class RecoverySet {
     this.weightKg,
     this.reps,
     this.rpe,
+    this.exerciseName = '',
   });
 
   final String workoutId;
   final DateTime startedAt;
   final String exerciseId;
+
+  /// What it is called: how much of the body a bodyweight movement lifts
+  /// goes by it ([bodyweightShare]).
+  final String exerciseName;
   final String primaryMuscle;
   final List<String> secondaryMuscles;
   final ExerciseCategory category;
@@ -604,17 +609,71 @@ class RecoveryEstimate {
   );
 }
 
+/// How much of the body a bodyweight movement lifts, by its name - in the
+/// catalogue's English or your own Dutch - and otherwise by the muscle.
+///
+/// A push-up counted the whole body each rep, as much as a squat with that
+/// on the bar. In a push-up you move about two thirds of it, and as the load
+/// is held against your own usual per muscle, a session of push-ups read as
+/// more than twice one of bench presses (DECISIONS 270). Rough shares, from
+/// what is measured under hands and feet; a movement not named here keeps
+/// the whole body, as before.
+double bodyweightShare(String name, String primaryMuscle) {
+  final n = name.toLowerCase();
+  bool has(List<String> words) => words.any(n.contains);
+
+  if (has(['push-up', 'push up', 'pushup', 'opdruk'])) return 0.65;
+  if (has(['bench dip'])) return 0.6;
+  if (has([
+    'squat',
+    'lunge',
+    'step-up',
+    'step up',
+    'pistol',
+    'hurk',
+    'uitval',
+  ])) {
+    return 0.8;
+  }
+  // A row as a word: "narrow" or "throw" is something else.
+  if (RegExp(r'\brows?\b').hasMatch(n) || n.contains('roei')) return 0.6;
+  if (has(['bridge', 'hip thrust', 'hip raise', 'brug'])) return 0.5;
+  if (has([
+    'pull-up',
+    'pull up',
+    'pullup',
+    'chin-up',
+    'chin up',
+    'chinup',
+    'muscle-up',
+    'optrek',
+    'dip',
+    'calf',
+    'kuit',
+  ])) {
+    return n.contains('dip') ? 0.95 : 1.0;
+  }
+  if (primaryMuscle == 'buik') return 0.35;
+  return 1.0;
+}
+
 /// The load one set puts on the muscles it works.
 ///
 /// Bodyweight movements carry no weight in the log but plainly train the
-/// muscle, so the user's own body weight stands in; on an assisted machine the
-/// logged weight is what is taken off instead of added.
+/// muscle, so the share of the user's own body weight the movement lifts
+/// stands in ([bodyweightShare]); on an assisted machine the logged weight
+/// is what is taken off instead of added.
 double setLoadKg(RecoverySet set, {double? bodyWeightKg}) {
   final reps = set.reps;
   if (!set.category.hasReps || reps == null || reps <= 0) return 0;
 
   final logged = set.weightKg ?? 0;
-  final body = bodyWeightKg ?? kAssumedBodyWeightKg;
+  final body =
+      (bodyWeightKg ?? kAssumedBodyWeightKg) *
+      (set.category == ExerciseCategory.bodyweight ||
+              set.category == ExerciseCategory.assistedBodyweight
+          ? bodyweightShare(set.exerciseName, set.primaryMuscle)
+          : 1);
 
   final perRep = switch (set.category) {
     ExerciseCategory.bodyweight => body + logged,

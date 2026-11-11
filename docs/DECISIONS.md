@@ -6250,3 +6250,36 @@ Een bestaande test leunde op die fout. Hij legde een gewone sessie op de
 maandag van de deloadweek en verwachtte dat die meetelde. Zijn gewone
 weken beginnen nu een week vroeger, zoals hij bedoeld was.
 
+## 270. Een push-up is geen squat met je hele gewicht
+
+Uit het Fable-rapport: F5.
+
+Voor de herstelschatting telde een oefening met je eigen gewicht je hele
+lichaamsgewicht per herhaling. Een push-up was zo 75 kg, evenveel als een
+squat met 75 kg op de stang. De belasting wordt vergeleken met je eigen
+gewone per spier. Een sessie push-ups (3 × 15) las daardoor als meer dan
+het dubbele van een sessie bankdrukken (3 × 8 × 60 kg), en de schatting
+liep tegen haar plafond.
+
+Nu telt het deel van je gewicht dat de beweging optilt. Dat gaat op de
+naam, in het Engels van de catalogus of in je eigen Nederlands:
+
+| Beweging | Deel |
+|---|---|
+| push-up, opdrukken | 0,65 |
+| bench dip | 0,6 |
+| squat, lunge, step-up, pistol, hurken, uitval | 0,8 |
+| row, roeien (als woord, niet in *narrow*) | 0,6 |
+| bridge, hip thrust, hip raise, brug | 0,5 |
+| dip | 0,95 |
+| pull-up, chin-up, muscle-up, optrekken, calf, kuit | 1,0 |
+| een andere oefening voor de buik | 0,35 |
+| al de rest | 1,0, zoals voordien |
+
+Dat zijn ruwe waarden, uit wat er onder handen en voeten gemeten wordt.
+Een gewichtsgordel komt erbij, en de hulp van een machine gaat eraf, net
+als voordien. Het rapport stelde ook voor om de belasting per oefening te
+vergelijken in plaats van per spier. Dat zou de hele schatting
+veranderen, en met deze delen is het verschil tussen bewegingen al klein
+genoeg.
+

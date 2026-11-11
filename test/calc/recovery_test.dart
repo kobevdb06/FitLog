@@ -18,10 +18,12 @@ void main() {
     PerceivedEffort? effort,
     double? weightKg = 100,
     int? reps = 5,
+    String name = '',
   }) => RecoverySet(
     workoutId: workoutId,
     startedAt: at ?? monday,
     exerciseId: exerciseId,
+    exerciseName: name,
     primaryMuscle: primary,
     secondaryMuscles: secondary,
     category: category,
@@ -82,6 +84,59 @@ void main() {
         set(category: ExerciseCategory.bodyweight, weightKg: null, reps: 1),
       );
       expect(load, kAssumedBodyWeightKg);
+    });
+
+    test('a push-up moves about two thirds of you, a pull-up all of you', () {
+      // A push-up counted as 75 kg a rep, as much as a 75 kg squat: a
+      // session of them read as twice one of bench presses (DECISIONS 270).
+      double load(String name, {String primary = 'borst'}) => setLoadKg(
+        set(
+          category: ExerciseCategory.bodyweight,
+          name: name,
+          primary: primary,
+          weightKg: null,
+          reps: 10,
+        ),
+        bodyWeightKg: 80,
+      );
+      expect(load('Push-Up'), closeTo(520, 0.001));
+      expect(load('Clock Push-Up'), closeTo(520, 0.001));
+      expect(load('Opdrukken'), closeTo(520, 0.001), reason: 'in Dutch too');
+      expect(load('Pull-Up', primary: 'lats'), 800);
+      expect(load('Chin-Up', primary: 'lats'), 800);
+      expect(load('Inverted Row', primary: 'bovenrug'), closeTo(480, 0.001));
+      expect(load('Bodyweight Squat', primary: 'quadriceps'), 640);
+      expect(load('Crunch - Hands Overhead', primary: 'buik'), 280);
+      expect(load('Something new', primary: 'quadriceps'), 800);
+    });
+
+    test('and the share is of you, with the belt or the help as it is', () {
+      expect(
+        setLoadKg(
+          set(
+            category: ExerciseCategory.bodyweight,
+            name: 'Push-Up',
+            primary: 'borst',
+            weightKg: 10,
+            reps: 10,
+          ),
+          bodyWeightKg: 80,
+        ),
+        closeTo(620, 0.001),
+      );
+      expect(
+        setLoadKg(
+          set(
+            category: ExerciseCategory.assistedBodyweight,
+            name: 'Dip',
+            primary: 'triceps',
+            weightKg: 20,
+            reps: 10,
+          ),
+          bodyWeightKg: 80,
+        ),
+        closeTo(560, 0.001),
+      );
     });
 
     test('is nothing for work without reps', () {

@@ -6591,3 +6591,14 @@ Met RPE aan blijft er na de vaste breedtes ongeveer 43 dp per cel over.
 de onderste helft viel weg onder de hoogte van 48. Nu wordt het getal in
 de cel kleiner, zoals in een tegel (`FittedBox`), en blijft het heel.
 
+## 290. Een blok op Start dat niet alles toont, vervaagt onderaan
+
+Uit het Fable-rapport: U8.
+
+Een blok op Start legt zijn inhoud op haar eigen hoogte en snijdt af waar
+het blok eindigt. Bij grote tekst vielen zo de laatste regels weg, zonder
+zelfs een beletselteken. Een half afgesneden getal leek op ontbrekende
+gegevens. Nu vervaagt de onderkant als er iets wordt afgesneden
+(`ClipFade`), en alleen dan. Zo zie je dat er meer is. Het blok tikken
+opent het scherm met alles, zoals voordien.
+

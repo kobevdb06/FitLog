@@ -14,6 +14,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/colour_picker.dart';
+import '../../../core/widgets/clip_fade.dart';
 import '../../../core/widgets/common.dart';
 import '../../../core/widgets/exercise_avatar.dart';
 import '../../backup/domain/backup_reminder.dart';
@@ -306,14 +307,10 @@ class _LineCard extends StatelessWidget {
 }
 
 /// Laid out at its own height and cut off where its block ends, rather than
-/// running over it: the safety under every block.
-Widget _clipped(Widget child) => ClipRect(
-  child: OverflowBox(
-    alignment: AlignmentDirectional.topStart,
-    maxHeight: double.infinity,
-    child: child,
-  ),
-);
+/// running over it: the safety under every block. Cut off, the bottom fades:
+/// it ended clean, and a number cut in half looked like missing data
+/// (DECISIONS 290).
+Widget _clipped(Widget child) => ClipFade(child: child);
 
 /// Today's steps, and this week's average beside them on a wide block.
 class _StepsBlock extends ConsumerWidget {

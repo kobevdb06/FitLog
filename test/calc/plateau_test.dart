@@ -296,6 +296,34 @@ void main() {
       history: history,
     );
 
+    test('een deloadsessie telt niet mee, zoals bij het stilstaan zelf', () {
+      // The detection leaves a deload out; the facts for the coach counted
+      // it as one more session without progress (DECISIONS 276).
+      final facts = plateauContext(
+        plateau: plateau,
+        exerciseId: 'bench',
+        primaryMuscle: 'borst',
+        sets: [
+          ...sets,
+          for (var i = 0; i < 3; i++)
+            ProgressSet(
+              workoutId: 'deload',
+              startedAt: week(1).add(const Duration(days: 2)),
+              exerciseId: 'bench',
+              primaryMuscle: 'borst',
+              category: ExerciseCategory.barbell,
+              weightKg: 80,
+              reps: 5,
+              isDeload: true,
+            ),
+        ],
+        now: now,
+      );
+
+      expect(facts.sessions, 4);
+      expect(facts.muscleSetsPerWeek, closeTo(12 / (28.125 / 7), 0.01));
+    });
+
     test('hoe vaak, hoeveel en hoe zwaar', () {
       final facts = context();
 

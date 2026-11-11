@@ -67,7 +67,8 @@ class PlanWeek {
   /// Whatever came in, inside the bounds: a week of ten extra sets is a
   /// mistake, not a plan.
   static PlanWeek fromJson(Map<String, Object?> json) {
-    int step(Object? value) => value is num
+    // Not a finite number, nothing: infinity rounded threw (DECISIONS 276).
+    int step(Object? value) => value is num && value.isFinite
         ? value.round().clamp(-kPlanWeekMaxStep, kPlanWeekMaxStep)
         : 0;
     final note = json['note'];

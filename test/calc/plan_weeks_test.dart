@@ -91,4 +91,15 @@ void main() {
       expect(week.complete, isTrue);
     });
   });
+
+  test('een getal dat geen getal is, breekt niets', () {
+    // Infinity rounded threw, and the plan did not open (DECISIONS 276).
+    final week = PlanWeek.fromJson({
+      'kind': 'build',
+      'sets': double.infinity,
+      'reps': double.nan,
+    });
+    expect(week.sets, 0);
+    expect(week.reps, 0);
+  });
 }

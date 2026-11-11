@@ -6361,3 +6361,16 @@ Uit het Fable-rapport: F8, de schijvencalculator en `PlateStack`.
   zo een andere hash. Nu gaan vergelijken en hash allebei op de gram. Met
   de huidige waarden kwam dat niet voor.
 
+## 276. De feiten voor de coach tellen een deload niet als stilstand, en een getal is eindig
+
+Uit het Fable-rapport: F8.
+
+- **De context bij een plateau** (sessies, sets per week voor de spier)
+  telde deloadsessies mee, terwijl het opsporen van het plateau ze weglaat.
+  Zo leek een deload voor de coach één sessie meer zonder vooruitgang. Nu
+  laat ook de context ze weg.
+- **Getallen.** `decodePlanWeeks` liep vast op een oneindige waarde,
+  omdat die afronden een fout gooit. Getallen van de coach als tekst
+  aanvaardden *NaN* en *Infinity*. Beide nemen nu alleen eindige getallen
+  aan, en anders niets.
+

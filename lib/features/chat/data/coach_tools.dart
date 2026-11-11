@@ -1408,11 +1408,16 @@ class CoachTools {
     );
   }
 
-  double? _number(Object? value) => switch (value) {
-    final num n => n.toDouble(),
-    final String s => double.tryParse(s),
-    _ => null,
-  };
+  /// A finite number, or nothing: "NaN" and "Infinity" read as numbers
+  /// (DECISIONS 276).
+  double? _number(Object? value) {
+    final number = switch (value) {
+      final num n => n.toDouble(),
+      final String s => double.tryParse(s),
+      _ => null,
+    };
+    return number != null && number.isFinite ? number : null;
+  }
 
   Future<CoachLookup> _searchExercises(Map<String, Object?> input) async {
     final query = _text(input['query']);

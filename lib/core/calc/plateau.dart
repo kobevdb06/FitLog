@@ -341,8 +341,14 @@ PlateauContext plateauContext({
   bool during(DateTime at) => at.isAfter(since) && !at.isAfter(now);
   bool earlier(DateTime at) => !at.isBefore(from) && !at.isAfter(since);
 
-  final mine = [
+  // Without a deload, as the stalling itself is found: it counted here as
+  // one more session without progress (DECISIONS 276).
+  final ordinary = [
     for (final s in sets)
+      if (!s.isDeload) s,
+  ];
+  final mine = [
+    for (final s in ordinary)
       if (s.exerciseId == exerciseId && during(s.startedAt)) s,
   ];
   final workouts = {for (final s in mine) s.workoutId};
@@ -353,7 +359,7 @@ PlateauContext plateauContext({
 
   var muscleSets = 0;
   var muscleSetsBefore = 0;
-  for (final s in sets) {
+  for (final s in ordinary) {
     if (s.primaryMuscle != primaryMuscle) continue;
     if (during(s.startedAt)) muscleSets++;
     if (earlier(s.startedAt)) muscleSetsBefore++;

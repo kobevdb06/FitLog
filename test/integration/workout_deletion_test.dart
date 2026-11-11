@@ -88,71 +88,75 @@ void main() {
     expect(broken, isEmpty);
   });
 
-  test('a record set in the deleted workout falls back to the previous best',
-      () async {
-    final controller = container.read(workoutControllerProvider);
+  test(
+    'a record set in the deleted workout falls back to the previous best',
+    () async {
+      final controller = container.read(workoutControllerProvider);
 
-    final light = await controller.startEmpty(name: 'Licht');
-    await controller.addExercises(light, ['ex0']);
-    var detail = await db.workoutsDao.getWorkoutDetail(light);
-    await controller.completeSet(
-      setId: detail!.exercises.single.sets.single.id,
-      weightKg: 100,
-      reps: 5,
-    );
-    await controller.finish(light, discardPending: false);
+      final light = await controller.startEmpty(name: 'Licht');
+      await controller.addExercises(light, ['ex0']);
+      var detail = await db.workoutsDao.getWorkoutDetail(light);
+      await controller.completeSet(
+        setId: detail!.exercises.single.sets.single.id,
+        weightKg: 100,
+        reps: 5,
+      );
+      await controller.finish(light, discardPending: false);
 
-    final heavy = await controller.startEmpty(name: 'Zwaar');
-    await controller.addExercises(heavy, ['ex0']);
-    detail = await db.workoutsDao.getWorkoutDetail(heavy);
-    await controller.completeSet(
-      setId: detail!.exercises.single.sets.single.id,
-      weightKg: 140,
-      reps: 3,
-    );
-    await controller.finish(heavy, discardPending: false);
+      final heavy = await controller.startEmpty(name: 'Zwaar');
+      await controller.addExercises(heavy, ['ex0']);
+      detail = await db.workoutsDao.getWorkoutDetail(heavy);
+      await controller.completeSet(
+        setId: detail!.exercises.single.sets.single.id,
+        weightKg: 140,
+        reps: 3,
+      );
+      await controller.finish(heavy, discardPending: false);
 
-    expect((await db.recordsDao.currentBests('ex0'))[PrType.maxWeight], 140);
+      expect((await db.recordsDao.currentBests('ex0'))[PrType.maxWeight], 140);
 
-    await container.read(historyActionsProvider).deleteWorkout(heavy);
+      await container.read(historyActionsProvider).deleteWorkout(heavy);
 
-    final bests = await db.recordsDao.currentBests('ex0');
-    expect(bests[PrType.maxWeight], 100);
-    expect(bests[PrType.maxReps], 5);
-    expect(bests[PrType.maxSetVolume], 500);
-  });
+      final bests = await db.recordsDao.currentBests('ex0');
+      expect(bests[PrType.maxWeight], 100);
+      expect(bests[PrType.maxReps], 5);
+      expect(bests[PrType.maxSetVolume], 500);
+    },
+  );
 
-  test('records of exercises that were not in the workout are untouched',
-      () async {
-    final controller = container.read(workoutControllerProvider);
+  test(
+    'records of exercises that were not in the workout are untouched',
+    () async {
+      final controller = container.read(workoutControllerProvider);
 
-    final other = await controller.startEmpty(name: 'Andere oefening');
-    await controller.addExercises(other, ['ex1']);
-    var detail = await db.workoutsDao.getWorkoutDetail(other);
-    await controller.completeSet(
-      setId: detail!.exercises.single.sets.single.id,
-      weightKg: 60,
-      reps: 8,
-    );
-    await controller.finish(other, discardPending: false);
+      final other = await controller.startEmpty(name: 'Andere oefening');
+      await controller.addExercises(other, ['ex1']);
+      var detail = await db.workoutsDao.getWorkoutDetail(other);
+      await controller.completeSet(
+        setId: detail!.exercises.single.sets.single.id,
+        weightKg: 60,
+        reps: 8,
+      );
+      await controller.finish(other, discardPending: false);
 
-    final target = await controller.startEmpty(name: 'Weg hiermee');
-    await controller.addExercises(target, ['ex0']);
-    detail = await db.workoutsDao.getWorkoutDetail(target);
-    await controller.completeSet(
-      setId: detail!.exercises.single.sets.single.id,
-      weightKg: 90,
-      reps: 5,
-    );
-    await controller.finish(target, discardPending: false);
+      final target = await controller.startEmpty(name: 'Weg hiermee');
+      await controller.addExercises(target, ['ex0']);
+      detail = await db.workoutsDao.getWorkoutDetail(target);
+      await controller.completeSet(
+        setId: detail!.exercises.single.sets.single.id,
+        weightKg: 90,
+        reps: 5,
+      );
+      await controller.finish(target, discardPending: false);
 
-    final before = await db.recordsDao.recordsForExercise('ex1');
-    await container.read(historyActionsProvider).deleteWorkout(target);
-    final after = await db.recordsDao.recordsForExercise('ex1');
+      final before = await db.recordsDao.recordsForExercise('ex1');
+      await container.read(historyActionsProvider).deleteWorkout(target);
+      final after = await db.recordsDao.recordsForExercise('ex1');
 
-    expect(after.map((r) => r.value), before.map((r) => r.value));
-    expect(await db.recordsDao.recordsForExercise('ex0'), isEmpty);
-  });
+      expect(after.map((r) => r.value), before.map((r) => r.value));
+      expect(await db.recordsDao.recordsForExercise('ex0'), isEmpty);
+    },
+  );
 
   test('the routine falls back to the session that is left', () async {
     final routineId = await db.routinesDao.createRoutine(
@@ -167,9 +171,8 @@ void main() {
 
     final first = await controller.startFromRoutine(routineId);
     await controller.finish(first, discardPending: false);
-    final firstStamp = (await db.routinesDao.getRoutine(
-      routineId,
-    ))!.lastPerformedAt;
+    final firstStamp = (await db.routinesDao.getRoutine(routineId))!
+        .lastPerformedAt;
 
     // Make sure the second session is unmistakably later.
     await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -218,7 +221,6 @@ void main() {
     await container
         .read(restTimerProvider.notifier)
         .start(seconds: 90, exerciseName: 'Oefening 0');
-    container.read(appControllerProvider.notifier).workoutInProgress = true;
 
     await container.read(historyActionsProvider).deleteWorkout(workoutId);
 
@@ -227,10 +229,6 @@ void main() {
       container.read(restTimerProvider).isActive,
       isFalse,
       reason: 'de rusttimer mag niet doortikken voor een verdwenen sessie',
-    );
-    expect(
-      container.read(appControllerProvider.notifier).workoutInProgress,
-      isFalse,
     );
 
     // A new session can start right away.
@@ -270,9 +268,7 @@ void main() {
       final workoutId = await controller.startEmpty(name: 'Twijfel');
       await controller.finish(workoutId, discardPending: false);
 
-      final pending = container.read(
-        pendingWorkoutDeletionsProvider.notifier,
-      );
+      final pending = container.read(pendingWorkoutDeletionsProvider.notifier);
       pending.schedule(workoutId);
 
       expect(container.read(pendingWorkoutDeletionsProvider), {workoutId});
@@ -289,9 +285,7 @@ void main() {
       final workoutId = await controller.startEmpty(name: 'Zeker');
       await controller.finish(workoutId, discardPending: false);
 
-      final pending = container.read(
-        pendingWorkoutDeletionsProvider.notifier,
-      );
+      final pending = container.read(pendingWorkoutDeletionsProvider.notifier);
       pending.schedule(workoutId);
       await pending.commitNow(workoutId);
 

@@ -329,6 +329,13 @@ class AppSettingsTable extends Table {
   IntColumn get autoLockSeconds =>
       integer().named('auto_lock_seconds').withDefault(const Constant(60))();
 
+  /// Whether the app locks while a workout runs, too. Off: in the gym you
+  /// switch to your music all the time, and the notification's buttons
+  /// stop working behind the lock (DECISIONS 279).
+  BoolColumn get lockDuringWorkout => boolean()
+      .named('lock_during_workout')
+      .withDefault(const Constant(false))();
+
   IntColumn get updatedAt => integer().named('updated_at')();
 
   @override

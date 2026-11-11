@@ -6396,3 +6396,25 @@ getoonde eenheden per opgeslagen eenheid. De stappen worden rond gekozen
 in wat je ziet, dus 210 · 220 · 230 lb. De grafiek van een oefening geeft
 dat mee voor gewicht, volume en afstand. De metingen rekenden hun punten
 al om voor ze getekend werden, en waren dus al rond.
+
+## 279. Tijdens een workout vergrendelt FitLog niet, en dat is een instelling
+
+Uit het Fable-rapport: T4. Kobe besliste op 10 november: *nooit
+vergrendelen zolang er een workout loopt (als dit geen instelling is moet
+het eentje worden).*
+
+FitLog wist dat er een workout liep via een vlag die het workoutscherm
+zette zolang het open was. De code beloofde: *The app never locks
+mid-session.* Verborg je de workout achter een ander tabblad en ging je
+langer dan de slottijd naar een andere app, dan vergrendelde FitLog toch.
+In de sportschool wissel je de hele tijd naar je muziek. De melding
+verdween dan, en de knoppen erin werkten niet meer tot je de pincode
+ingaf.
+
+Nu leest FitLog bij het terugkeren in het logboek of er een workout
+loopt, welk scherm er ook open stond. De beslissing zit in één pure
+functie, `locksOnReturn`. Onder *Beveiliging*, bij Auto-vergrendelen,
+staat de nieuwe schakelaar *Ook tijdens een workout*. Standaard staat
+die uit, zoals Kobe vroeg. Wie wil dat FitLog ook dan vergrendelt, zet
+hem aan. Daarvoor kwam er een kolom bij in de instellingen
+(`lock_during_workout`, schema 64). Die stap telt alleen op.

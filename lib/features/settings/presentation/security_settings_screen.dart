@@ -337,13 +337,38 @@ class _SecuritySettingsScreenState
                 ],
               ),
             ),
+            SwitchListTile(
+              title: const Text('Ook tijdens een workout'),
+              subtitle: const Text(
+                'Uit: zolang er een workout loopt, vergrendelt FitLog niet, '
+                'ook niet als je even naar je muziek gaat.',
+              ),
+              value: settings.lockDuringWorkout,
+              onChanged: hasPin
+                  ? (on) async {
+                      await ref
+                          .read(databaseProvider)
+                          .settingsDao
+                          .updateSettings(
+                            AppSettingsTableCompanion(
+                              lockDuringWorkout: Value(on),
+                            ),
+                          );
+                      ref
+                          .read(appControllerProvider.notifier)
+                          .setLockDuringWorkout(on);
+                    }
+                  : null,
+            ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: InfoBanner(
                 icon: Icons.timer_outlined,
-                message: hasPin
-                    ? 'Tijdens een lopende workout vergrendelt FitLog nooit.'
-                    : 'Auto-vergrendelen werkt alleen met een pincode.',
+                message: !hasPin
+                    ? 'Auto-vergrendelen werkt alleen met een pincode.'
+                    : settings.lockDuringWorkout
+                    ? 'FitLog vergrendelt ook tijdens een workout.'
+                    : 'Tijdens een lopende workout vergrendelt FitLog nooit.',
               ),
             ),
             const SectionHeader('Herstel'),

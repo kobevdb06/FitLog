@@ -68,23 +68,17 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   _KeypadTarget? _target;
   KeypadValue _keypadValue = const KeypadValue.empty();
 
-  /// Held onto because `ref` may no longer be read from in [dispose].
-  late final AppController _appController;
-
   @override
   void initState() {
     super.initState();
     // The screen stays on for the whole session. A device without the plugin
     // (or a test environment) must not take the screen down with it.
     unawaited(WakelockPlus.enable().catchError((Object _) {}));
-    _appController = ref.read(appControllerProvider.notifier)
-      ..workoutInProgress = true;
   }
 
   @override
   void dispose() {
     unawaited(WakelockPlus.disable().catchError((Object _) {}));
-    _appController.workoutInProgress = false;
     super.dispose();
   }
 

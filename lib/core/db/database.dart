@@ -91,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The version of the schema this build writes; a restore refuses a
   /// backup from a later one.
-  static const int currentSchemaVersion = 63;
+  static const int currentSchemaVersion = 64;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -629,6 +629,12 @@ class AppDatabase extends _$AppDatabase {
     if (from < 63) {
       // The day limit's own count: nothing counted yet (DECISIONS 249).
       await m.createTable(coachRequestsTable);
+    }
+
+    if (from < 64) {
+      // Whether to lock during a workout as well: no, as before
+      // (DECISIONS 279).
+      await m.addColumn(appSettingsTable, appSettingsTable.lockDuringWorkout);
     }
 
     final added = addedBrokenReferences(

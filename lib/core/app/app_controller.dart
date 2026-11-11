@@ -42,6 +42,20 @@ KeyManager keyManager(Ref ref) => KeyManager(
 @Riverpod(keepAlive: true)
 BiometricService biometricService(Ref ref) => BiometricService();
 
+/// Whether coming back after [away] locks the app: after the auto-lock time,
+/// and - unless [lockDuringWorkout] - not while a workout runs. A negative
+/// [autoLockSeconds] is "Nooit" (DECISIONS 279).
+bool locksOnReturn({
+  required Duration away,
+  required int autoLockSeconds,
+  required bool workoutRunning,
+  required bool lockDuringWorkout,
+}) {
+  if (autoLockSeconds < 0) return false;
+  if (workoutRunning && !lockDuringWorkout) return false;
+  return away.inSeconds >= autoLockSeconds;
+}
+
 /// Whether a notification may carry the coach's words. With a PIN on
 /// FitLog it says only that something waits behind it: a notification is
 /// read on the phone's lock screen and in the shade, past FitLog's PIN, and
@@ -76,10 +90,8 @@ class AppController extends _$AppController {
   /// Cached so the lifecycle handler does not need a database read while the
   /// app is going to the background.
   int _autoLockSeconds = 60;
+  bool _lockDuringWorkout = false;
   DateTime? _pausedAt;
-
-  /// Set by the active workout screen. The app never locks mid-session.
-  bool workoutInProgress = false;
 
   @override
   AppState build() {
@@ -277,6 +289,7 @@ class AppController extends _$AppController {
 
       final settings = await db.settingsDao.ensureInitialized();
       _autoLockSeconds = settings.autoLockSeconds;
+      _lockDuringWorkout = settings.lockDuringWorkout;
       // With a PIN, no picture of FitLog in the recent apps (DECISIONS 265).
       unawaited(ScreenGuard.followPin(pin: security.mode == LockMode.pin));
       // The photos' key from here on: a photo the start below puts back is
@@ -385,6 +398,8 @@ class AppController extends _$AppController {
 
   void setAutoLockSeconds(int seconds) => _autoLockSeconds = seconds;
 
+  void setLockDuringWorkout(bool on) => _lockDuringWorkout = on;
+
   /// Auto-lock bookkeeping, driven from the lifecycle observer in `app.dart`.
   void onPaused() => _pausedAt = DateTime.now();
 
@@ -392,12 +407,20 @@ class AppController extends _$AppController {
     final pausedAt = _pausedAt;
     _pausedAt = null;
     if (pausedAt == null) return;
-    if (workoutInProgress) return;
-    if (_autoLockSeconds < 0) return;
     if (state is! AppReady) return;
 
-    final away = DateTime.now().difference(pausedAt);
-    if (away.inSeconds >= _autoLockSeconds) {
+    // Whether a workout runs, from the logbook: it was a flag the workout
+    // screen set while it was open, and a workout behind another tab locked
+    // all the same (DECISIONS 279).
+    final running =
+        await _db?.workoutsDao.getActiveWorkoutRow().catchError((_) => null) !=
+        null;
+    if (locksOnReturn(
+      away: DateTime.now().difference(pausedAt),
+      autoLockSeconds: _autoLockSeconds,
+      workoutRunning: running,
+      lockDuringWorkout: _lockDuringWorkout,
+    )) {
       await lock();
     }
   }

@@ -59,7 +59,6 @@ class HistoryActions {
 
     if (deleted.wasRunning) {
       await ref.read(restTimerProvider.notifier).skip();
-      ref.read(appControllerProvider.notifier).workoutInProgress = false;
     }
     // Gone here, so gone from the other health apps too.
     if (deleted.healthConnectId case final id?) {

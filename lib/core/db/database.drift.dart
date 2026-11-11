@@ -1204,6 +1204,21 @@ class $AppSettingsTableTable extends AppSettingsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(60),
   );
+  static const VerificationMeta _lockDuringWorkoutMeta = const VerificationMeta(
+    'lockDuringWorkout',
+  );
+  @override
+  late final GeneratedColumn<bool> lockDuringWorkout = GeneratedColumn<bool>(
+    'lock_during_workout',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("lock_during_workout" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1275,6 +1290,7 @@ class $AppSettingsTableTable extends AppSettingsTable
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
+    lockDuringWorkout,
     updatedAt,
   ];
   @override
@@ -1780,6 +1796,15 @@ class $AppSettingsTableTable extends AppSettingsTable
         ),
       );
     }
+    if (data.containsKey('lock_during_workout')) {
+      context.handle(
+        _lockDuringWorkoutMeta,
+        lockDuringWorkout.isAcceptableOrUnknown(
+          data['lock_during_workout']!,
+          _lockDuringWorkoutMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -2029,6 +2054,10 @@ class $AppSettingsTableTable extends AppSettingsTable
         DriftSqlType.int,
         data['${effectivePrefix}auto_lock_seconds'],
       )!,
+      lockDuringWorkout: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}lock_during_workout'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
@@ -2277,6 +2306,11 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
   /// Seconds of background time before the app locks. 0 = immediately,
   /// -1 = never.
   final int autoLockSeconds;
+
+  /// Whether the app locks while a workout runs, too. Off: in the gym you
+  /// switch to your music all the time, and the notification's buttons
+  /// stop working behind the lock (DECISIONS 279).
+  final bool lockDuringWorkout;
   final int updatedAt;
   const AppSettingsRow({
     required this.id,
@@ -2337,6 +2371,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     this.coachDailyLimit,
     this.chatProvider,
     required this.autoLockSeconds,
+    required this.lockDuringWorkout,
     required this.updatedAt,
   });
   @override
@@ -2434,6 +2469,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       map['chat_provider'] = Variable<String>(chatProvider);
     }
     map['auto_lock_seconds'] = Variable<int>(autoLockSeconds);
+    map['lock_during_workout'] = Variable<bool>(lockDuringWorkout);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
   }
@@ -2530,6 +2566,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ? const Value.absent()
           : Value(chatProvider),
       autoLockSeconds: Value(autoLockSeconds),
+      lockDuringWorkout: Value(lockDuringWorkout),
       updatedAt: Value(updatedAt),
     );
   }
@@ -2618,6 +2655,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       coachDailyLimit: serializer.fromJson<int?>(json['coachDailyLimit']),
       chatProvider: serializer.fromJson<String?>(json['chatProvider']),
       autoLockSeconds: serializer.fromJson<int>(json['autoLockSeconds']),
+      lockDuringWorkout: serializer.fromJson<bool>(json['lockDuringWorkout']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
   }
@@ -2685,6 +2723,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       'coachDailyLimit': serializer.toJson<int?>(coachDailyLimit),
       'chatProvider': serializer.toJson<String?>(chatProvider),
       'autoLockSeconds': serializer.toJson<int>(autoLockSeconds),
+      'lockDuringWorkout': serializer.toJson<bool>(lockDuringWorkout),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
   }
@@ -2748,6 +2787,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     Value<int?> coachDailyLimit = const Value.absent(),
     Value<String?> chatProvider = const Value.absent(),
     int? autoLockSeconds,
+    bool? lockDuringWorkout,
     int? updatedAt,
   }) => AppSettingsRow(
     id: id ?? this.id,
@@ -2830,6 +2870,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
         : this.coachDailyLimit,
     chatProvider: chatProvider.present ? chatProvider.value : this.chatProvider,
     autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
+    lockDuringWorkout: lockDuringWorkout ?? this.lockDuringWorkout,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   AppSettingsRow copyWithCompanion(AppSettingsTableCompanion data) {
@@ -2996,6 +3037,9 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
       autoLockSeconds: data.autoLockSeconds.present
           ? data.autoLockSeconds.value
           : this.autoLockSeconds,
+      lockDuringWorkout: data.lockDuringWorkout.present
+          ? data.lockDuringWorkout.value
+          : this.lockDuringWorkout,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -3061,6 +3105,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
+          ..write('lockDuringWorkout: $lockDuringWorkout, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -3126,6 +3171,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
     coachDailyLimit,
     chatProvider,
     autoLockSeconds,
+    lockDuringWorkout,
     updatedAt,
   ]);
   @override
@@ -3190,6 +3236,7 @@ class AppSettingsRow extends DataClass implements Insertable<AppSettingsRow> {
           other.coachDailyLimit == this.coachDailyLimit &&
           other.chatProvider == this.chatProvider &&
           other.autoLockSeconds == this.autoLockSeconds &&
+          other.lockDuringWorkout == this.lockDuringWorkout &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -3252,6 +3299,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
   final Value<int?> coachDailyLimit;
   final Value<String?> chatProvider;
   final Value<int> autoLockSeconds;
+  final Value<bool> lockDuringWorkout;
   final Value<int> updatedAt;
   final Value<int> rowid;
   const AppSettingsTableCompanion({
@@ -3313,6 +3361,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
+    this.lockDuringWorkout = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -3375,6 +3424,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     this.coachDailyLimit = const Value.absent(),
     this.chatProvider = const Value.absent(),
     this.autoLockSeconds = const Value.absent(),
+    this.lockDuringWorkout = const Value.absent(),
     required int updatedAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -3438,6 +3488,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Expression<int>? coachDailyLimit,
     Expression<String>? chatProvider,
     Expression<int>? autoLockSeconds,
+    Expression<bool>? lockDuringWorkout,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -3514,6 +3565,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       if (coachDailyLimit != null) 'coach_daily_limit': coachDailyLimit,
       if (chatProvider != null) 'chat_provider': chatProvider,
       if (autoLockSeconds != null) 'auto_lock_seconds': autoLockSeconds,
+      if (lockDuringWorkout != null) 'lock_during_workout': lockDuringWorkout,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3578,6 +3630,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     Value<int?>? coachDailyLimit,
     Value<String?>? chatProvider,
     Value<int>? autoLockSeconds,
+    Value<bool>? lockDuringWorkout,
     Value<int>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -3643,6 +3696,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
       coachDailyLimit: coachDailyLimit ?? this.coachDailyLimit,
       chatProvider: chatProvider ?? this.chatProvider,
       autoLockSeconds: autoLockSeconds ?? this.autoLockSeconds,
+      lockDuringWorkout: lockDuringWorkout ?? this.lockDuringWorkout,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -3837,6 +3891,9 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
     if (autoLockSeconds.present) {
       map['auto_lock_seconds'] = Variable<int>(autoLockSeconds.value);
     }
+    if (lockDuringWorkout.present) {
+      map['lock_during_workout'] = Variable<bool>(lockDuringWorkout.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
     }
@@ -3907,6 +3964,7 @@ class AppSettingsTableCompanion extends UpdateCompanion<AppSettingsRow> {
           ..write('coachDailyLimit: $coachDailyLimit, ')
           ..write('chatProvider: $chatProvider, ')
           ..write('autoLockSeconds: $autoLockSeconds, ')
+          ..write('lockDuringWorkout: $lockDuringWorkout, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -21732,6 +21790,7 @@ typedef $$AppSettingsTableTableCreateCompanionBuilder =
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
+      Value<bool> lockDuringWorkout,
       required int updatedAt,
       Value<int> rowid,
     });
@@ -21795,6 +21854,7 @@ typedef $$AppSettingsTableTableUpdateCompanionBuilder =
       Value<int?> coachDailyLimit,
       Value<String?> chatProvider,
       Value<int> autoLockSeconds,
+      Value<bool> lockDuringWorkout,
       Value<int> updatedAt,
       Value<int> rowid,
     });
@@ -22095,6 +22155,11 @@ class $$AppSettingsTableTableFilterComposer
 
   ColumnFilters<int> get autoLockSeconds => $composableBuilder(
     column: $table.autoLockSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get lockDuringWorkout => $composableBuilder(
+    column: $table.lockDuringWorkout,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22403,6 +22468,11 @@ class $$AppSettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get lockDuringWorkout => $composableBuilder(
+    column: $table.lockDuringWorkout,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -22696,6 +22766,11 @@ class $$AppSettingsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get lockDuringWorkout => $composableBuilder(
+    column: $table.lockDuringWorkout,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
@@ -22795,6 +22870,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
+                Value<bool> lockDuringWorkout = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AppSettingsTableCompanion(
@@ -22856,6 +22932,7 @@ class $$AppSettingsTableTableTableManager
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
+                lockDuringWorkout: lockDuringWorkout,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -22919,6 +22996,7 @@ class $$AppSettingsTableTableTableManager
                 Value<int?> coachDailyLimit = const Value.absent(),
                 Value<String?> chatProvider = const Value.absent(),
                 Value<int> autoLockSeconds = const Value.absent(),
+                Value<bool> lockDuringWorkout = const Value.absent(),
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => AppSettingsTableCompanion.insert(
@@ -22980,6 +23058,7 @@ class $$AppSettingsTableTableTableManager
                 coachDailyLimit: coachDailyLimit,
                 chatProvider: chatProvider,
                 autoLockSeconds: autoLockSeconds,
+                lockDuringWorkout: lockDuringWorkout,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/calendar.dart';
 import '../../../core/db/database.dart';
 import '../../../core/formatting/formatters.dart';
 import '../../../core/providers/core_providers.dart';
@@ -295,10 +296,10 @@ class _Difference extends ConsumerWidget {
         dao.weightNearest(DateTime.fromMillisecondsSinceEpoch(right.takenAt)),
       ]),
       builder: (context, snapshot) {
-        final days = DateTime.fromMillisecondsSinceEpoch(right.takenAt)
-            .difference(DateTime.fromMillisecondsSinceEpoch(left.takenAt))
-            .inDays
-            .abs();
+        final days = calendarDays(
+          DateTime.fromMillisecondsSinceEpoch(left.takenAt),
+          DateTime.fromMillisecondsSinceEpoch(right.takenAt),
+        ).abs();
 
         final a = snapshot.data?[0];
         final b = snapshot.data?[1];

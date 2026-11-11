@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/app/app_controller.dart';
+import '../../../core/calc/calendar.dart';
 import '../../../core/calc/streak.dart';
 import '../../../core/db/database.dart';
 import '../../../core/db/models.dart';
@@ -1676,7 +1677,7 @@ class _BackupReminderBanner extends ConsumerWidget {
                     Text(
                       reminder == BackupReminder.never
                           ? 'Nog geen back-up'
-                          : 'Je back-up is ${Formatters.daysAgoWords(DateTime.now().difference(last!).inDays)}',
+                          : 'Je back-up is ${Formatters.daysAgoWords(calendarDays(last!, DateTime.now()))}',
                       style: theme.textTheme.titleSmall,
                     ),
                     Text(

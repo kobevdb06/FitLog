@@ -1,3 +1,4 @@
+import '../../../core/calc/calendar.dart';
 import '../../../core/calc/deload.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/db/database.dart';
@@ -139,9 +140,5 @@ class LocalCoachSuggester implements CoachSuggester {
   }
 
   /// Whole calendar days from [from] to [to], whatever the clocks did.
-  static int _days(DateTime from, DateTime to) => DateTime.utc(
-    to.year,
-    to.month,
-    to.day,
-  ).difference(DateTime.utc(from.year, from.month, from.day)).inDays;
+  static int _days(DateTime from, DateTime to) => calendarDays(from, to);
 }

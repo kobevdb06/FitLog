@@ -6201,3 +6201,29 @@ seinen uit één meting, en het oordeel werd *beter wachten*. Nu beslist
 de score zonder het hersteldeel over het nachtsein. Die nacht is 63, dus
 één sein. De score die je ziet, blijft de hele score, zoals op het
 herstelscherm.
+
+## 268. Dagen op de kalender, ook als de klok verspringt
+
+Uit het Fable-rapport: F3.
+
+Op veel plaatsen telde de app dagen als een verschil in uren, gedeeld
+door 24. In de nacht dat de klok vooruitgaat, heeft de zondag maar 23
+uur. Een workout op zondag 29 maart 2026 was op maandag dan nog
+*vandaag*, en de reeks zei 0 dagen. Half één 's nachts na die zondag viel
+voor het schema op zaterdag, omdat 24 uur terug een uur te ver ging.
+
+Nu is er één helper, `calendarDays`, die de dagen op de kalender telt, in
+UTC, waar elke dag 24 uur heeft. Elders in de app stond dat patroon al
+goed. De helper vervangt de rekensommen in de reeks, *Vandaag* en
+*Gisteren*, het schema van de dag, de weken van een plateau, het
+moment *een tijd niet getraind*, het herstelscherm, de feiten voor de
+coach, de vergelijking van foto's en de leeftijd van de back-up. Die
+laatste zei om acht uur 's ochtends *vandaag* voor een back-up van
+gisteravond. De maandag van een week wordt nu ook op de kalender
+gezocht. In België gaf dat geen fout, want de klok verspringt op
+zondag, maar zo hangt het nergens nog van af.
+
+De tests kruisen 29 maart en 25 oktober 2026. Ze vallen alleen om in een
+tijdzone met zomertijd, zoals op de machine waarop ze geschreven zijn. In
+UTC heeft elke dag 24 uur en slagen ze hoe dan ook. CI moet ze daarom in
+`Europe/Brussels` draaien (B2).

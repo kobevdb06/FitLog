@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import '../calc/calendar.dart';
 import '../calc/schedule.dart';
 import '../calc/units.dart';
 import '../db/enums.dart';
@@ -331,8 +332,7 @@ class Formatters {
 
   /// `Vandaag`, `Gisteren`, `3 dagen geleden`, then a plain date.
   static String relativeDay(DateTime at, {DateTime? now}) {
-    final today = _midnight(now ?? DateTime.now());
-    final days = today.difference(_midnight(at)).inDays;
+    final days = calendarDays(at, now ?? DateTime.now());
     if (days == 0) return 'Vandaag';
     if (days == 1) return 'Gisteren';
     if (days > 1 && days < 7) return '$days dagen geleden';
@@ -343,8 +343,6 @@ class Formatters {
   /// `Vandaag om 18:30` for history headers.
   static String relativeDayTime(DateTime at, {DateTime? now}) =>
       '${relativeDay(at, now: now)} om ${time(at)}';
-
-  static DateTime _midnight(DateTime d) => DateTime(d.year, d.month, d.day);
 
   /// `nog 2 d 6 u`, counting down to the end of a recovery window.
   static String remainingWords(Duration left) {

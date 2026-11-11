@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/calc/calendar.dart';
 import '../../../core/calc/milestones.dart';
 import '../../../core/calc/one_rm.dart';
 import '../../../core/calc/streak.dart';
@@ -170,10 +171,10 @@ Future<Map<String, Object?>?> _planDone(AppDatabase db, String planId) async {
   final weeks = <int, int>{};
   for (final row in done) {
     final at = DateTime.fromMillisecondsSinceEpoch(row.read<int>('started_at'));
-    final week = at.difference(start).inDays ~/ 7;
+    final week = calendarDays(start, at) ~/ 7;
     weeks[week] = (weeks[week] ?? 0) + 1;
   }
-  final weekCount = (end.difference(start).inDays ~/ 7) + 1;
+  final weekCount = (calendarDays(start, end) ~/ 7) + 1;
   final lastWeek = DateTime(
     start.year,
     start.month,
@@ -369,7 +370,7 @@ Future<Map<String, Object?>?> _weighing(
   final perWeek = List.filled(12, 0);
   for (final row in sets) {
     final at = DateTime.fromMillisecondsSinceEpoch(row.read<int>('at'));
-    final week = at.difference(from).inDays ~/ 7;
+    final week = calendarDays(from, at) ~/ 7;
     if (week >= 0 && week < 12) perWeek[week]++;
   }
   return {
@@ -535,11 +536,7 @@ Future<Map<String, Object?>?> _idle(
       )
       .get();
   return {
-    'days_since': DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).difference(DateTime(newest.year, newest.month, newest.day)).inDays,
+    'days_since': calendarDays(newest, now),
     'last_workouts': [
       for (final row in last)
         {

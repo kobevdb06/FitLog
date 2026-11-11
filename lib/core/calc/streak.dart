@@ -5,6 +5,8 @@
 /// so an empty current week does not immediately reset the counter.
 library;
 
+import 'calendar.dart';
+
 class StreakResult {
   const StreakResult({required this.weeks, required this.daysSinceLast});
 
@@ -18,11 +20,13 @@ class StreakResult {
   bool get isActive => weeks > 0;
 }
 
-/// Midnight of the Monday that starts the week containing [date].
-DateTime startOfWeek(DateTime date) {
-  final day = DateTime(date.year, date.month, date.day);
-  return day.subtract(Duration(days: day.weekday - DateTime.monday));
-}
+/// Midnight of the Monday that starts the week containing [date]: on the
+/// calendar, not 24 hours a day back (DECISIONS 268).
+DateTime startOfWeek(DateTime date) => DateTime(
+  date.year,
+  date.month,
+  date.day - (date.weekday - DateTime.monday),
+);
 
 DateTime _startOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day);
@@ -50,7 +54,7 @@ StreakResult computeStreak(Iterable<DateTime> workoutDates, {DateTime? now}) {
   }
 
   final last = dates.reduce((a, b) => a.isAfter(b) ? a : b);
-  final daysSinceLast = today.difference(_startOfDay(last)).inDays;
+  final daysSinceLast = calendarDays(last, today);
 
   return StreakResult(weeks: count, daysSinceLast: daysSinceLast);
 }

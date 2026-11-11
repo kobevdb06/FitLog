@@ -8,6 +8,7 @@
 library;
 
 import '../db/enums.dart';
+import 'calendar.dart';
 import 'one_rm.dart';
 import 'recovery.dart';
 
@@ -212,7 +213,7 @@ class Plateau {
   final int sessionsSince;
 
   /// Whole weeks since the last step forward.
-  int weeksAt(DateTime now) => now.difference(since).inDays ~/ 7;
+  int weeksAt(DateTime now) => calendarDays(since, now) ~/ 7;
 }
 
 /// Whether the exercise behind [points] has stalled, as of [now].

@@ -13,12 +13,10 @@ library;
 const int kDayStartHour = 4;
 
 /// Midnight of the training day [now] belongs to.
-DateTime trainingDay(DateTime now) {
-  final shifted = now.hour < kDayStartHour
-      ? now.subtract(const Duration(days: 1))
-      : now;
-  return DateTime(shifted.year, shifted.month, shifted.day);
-}
+DateTime trainingDay(DateTime now) =>
+    // The day before on the calendar: 24 hours back from half past midnight
+    // after the short Sunday landed on the Saturday (DECISIONS 268).
+    DateTime(now.year, now.month, now.day - (now.hour < kDayStartHour ? 1 : 0));
 
 /// The weekday the schedule should be read for, 1 (Monday) to 7 (Sunday).
 int trainingWeekday(DateTime now) => trainingDay(now).weekday;

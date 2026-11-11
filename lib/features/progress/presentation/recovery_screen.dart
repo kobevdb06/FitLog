@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/calc/calendar.dart';
 import '../../../core/calc/recovery.dart';
 import '../../../core/db/enums.dart';
 import '../../../core/formatting/formatters.dart';
@@ -519,11 +520,7 @@ List<String> recoveryReasons(RecoveryEstimate estimate, {DateTime? now}) {
 
   if (estimate.cardio case final run?) {
     final moment = now ?? DateTime.now();
-    final days = DateTime(
-      moment.year,
-      moment.month,
-      moment.day,
-    ).difference(DateTime(run.end.year, run.end.month, run.end.day)).inDays;
+    final days = calendarDays(run.end, moment);
     final when = days == 0
         ? 'vandaag'
         : days < 7

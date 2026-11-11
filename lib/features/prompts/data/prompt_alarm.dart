@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
+import '../../../core/calc/calendar.dart';
 import '../../../core/db/alarm_database.dart';
 import '../../../core/db/database.dart';
 import '../../../core/security/key_manager.dart';
@@ -165,11 +166,7 @@ Future<List<PromptRun>> runDuePrompts(
     final last = await db.workoutsDao.watchLastFinished().first;
     if (last != null) {
       final day = DateTime.fromMillisecondsSinceEpoch(last.startedAt);
-      final days = DateTime(
-        now.year,
-        now.month,
-        now.day,
-      ).difference(DateTime(day.year, day.month, day.day)).inDays;
+      final days = calendarDays(day, now);
       // Once per stretch without training: the stretch is named after the
       // workout it started from.
       if (days >= idle.idleDays) await run(CoachMoment.idle, last.id);

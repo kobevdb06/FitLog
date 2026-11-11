@@ -168,7 +168,12 @@ class MorningController extends _$MorningController {
       return;
     }
     final report = await makeNow();
-    if (report != null) await notices.showReport(report);
+    if (report == null) return;
+    if (await wordsInNotifications(ref)) {
+      await notices.showReport(report);
+    } else {
+      await notices.showLocked();
+    }
   }
 
   /// After an unlock: makes this morning's report if its hour has passed and
@@ -193,6 +198,9 @@ class MorningController extends _$MorningController {
     final notices = ref.read(morningNoticesProvider);
     final waiting = await notices.isShowing();
     final report = await makeNow(now: at);
-    if (report != null && waiting) await notices.showReport(report);
+    // Behind a PIN, the notice that it waits stays as it is.
+    if (report != null && waiting && await wordsInNotifications(ref)) {
+      await notices.showReport(report);
+    }
   }
 }

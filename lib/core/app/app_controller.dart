@@ -41,6 +41,19 @@ KeyManager keyManager(Ref ref) => KeyManager(
 @Riverpod(keepAlive: true)
 BiometricService biometricService(Ref ref) => BiometricService();
 
+/// Whether a notification may carry the coach's words. With a PIN on
+/// FitLog it says only that something waits behind it: a notification is
+/// read on the phone's lock screen and in the shade, past FitLog's PIN, and
+/// the words name weights, nights and how the week went (DECISIONS 262).
+/// A key store that does not answer counts as a PIN.
+Future<bool> wordsInNotifications(Ref ref) async {
+  try {
+    return (await ref.read(keyManagerProvider).status()).mode != LockMode.pin;
+  } on Object {
+    return false;
+  }
+}
+
 @Riverpod(keepAlive: true)
 Future<AppPaths> appPaths(Ref ref) => AppPaths.resolve();
 

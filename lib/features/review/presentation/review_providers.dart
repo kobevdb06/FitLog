@@ -130,7 +130,11 @@ class WeekNotify {
       now: at,
       clientFactory: ref.read(coachClientFactoryProvider),
     );
-    await notices.showReview(review);
+    if (await wordsInNotifications(ref)) {
+      await notices.showReview(review);
+    } else {
+      await notices.showLocked();
+    }
   }
 
   /// After an unlock: makes the review of the week whose Sunday evening last
@@ -155,6 +159,9 @@ class WeekNotify {
       now: at,
       clientFactory: ref.read(coachClientFactoryProvider),
     );
-    if (waiting) await notices.showReview(review);
+    // Behind a PIN, the notice that it waits stays as it is.
+    if (waiting && await wordsInNotifications(ref)) {
+      await notices.showReview(review);
+    }
   }
 }

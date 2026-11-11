@@ -183,6 +183,7 @@ void main() {
     late AppDatabase db;
     late _Alarm alarm;
     late _Notices notices;
+    late InMemorySecretStore store;
     ProviderContainer? container;
 
     setUp(() async {
@@ -190,6 +191,7 @@ void main() {
       await db.settingsDao.ensureInitialized();
       alarm = _Alarm();
       notices = _Notices();
+      store = InMemorySecretStore();
     });
 
     tearDown(() async {
@@ -204,6 +206,7 @@ void main() {
           databaseProvider.overrideWithValue(db),
           weekScheduleProvider.overrideWithValue(WeekSchedule(alarm)),
           weekNoticesProvider.overrideWithValue(notices),
+          secretStoreProvider.overrideWithValue(store),
           appControllerProvider.overrideWith(
             () => _Fixed(state ?? AppReady(db: db, security: _none)),
           ),
@@ -246,6 +249,20 @@ void main() {
       },
     );
 
+    test('met een pincode zegt de melding alleen dat het klaarstaat', () async {
+      await KeyManager(store).setPin(dek: Uint8List(32), pin: '246810');
+
+      await notify().onAlarm(now: DateTime(2026, 10, 4, 20));
+
+      // Made, and waiting behind the PIN (DECISIONS 262).
+      expect(
+        await db.reportsDao.weekReviewFor(DateTime(2026, 9, 28)),
+        isNotNull,
+      );
+      expect(notices.reviews, isEmpty);
+      expect(notices.locked, 1);
+    });
+
     test('en is ze vergrendeld, dan wacht het op het ontgrendelen', () async {
       await notify(state: const AppLocked(_none)).onAlarm();
 
@@ -261,6 +278,19 @@ void main() {
         await notify().catchUp(now: DateTime(2026, 10, 5, 9));
 
         expect(notices.reviews.single.facts.start, DateTime(2026, 9, 28));
+        expect(
+          await db.reportsDao.weekReviewFor(DateTime(2026, 9, 28)),
+          isNotNull,
+        );
+      });
+
+      test('met een pincode blijft de wachtende melding zoals ze is', () async {
+        await KeyManager(store).setPin(dek: Uint8List(32), pin: '246810');
+        notices.showing = true;
+
+        await notify().catchUp(now: DateTime(2026, 10, 5, 9));
+
+        expect(notices.reviews, isEmpty);
         expect(
           await db.reportsDao.weekReviewFor(DateTime(2026, 9, 28)),
           isNotNull,

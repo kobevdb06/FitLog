@@ -6074,3 +6074,25 @@ welk formaat die ook heeft. Een waarde korter dan acht tekens blijft
 staan: die zou gewone woorden uit de melding knippen, en zo kort is geen
 echte sleutel. Dat een ruwe uitzondering bij de momenten nooit meer op het
 scherm komt, was al zo sinds 248.
+
+## 262. Met een pincode zegt een melding alleen dat er iets klaarstaat
+
+Uit het Fable-rapport: S9, de meldingen op het vergrendelscherm.
+
+Het ochtendrapport, het weekoverzicht en de momenten van de coach zetten
+de tekst van de coach in hun melding. Die tekst noemt gewichten, nachten
+en hoe de week ging. Een melding lees je op het vergrendelscherm van de
+telefoon en in het meldingenpaneel, zonder de pincode van FitLog.
+`NotificationVisibility.private` verbergt de inhoud alleen als de
+gebruiker dat in Android zo heeft ingesteld. Een aparte openbare versie
+van de melding kan de plugin niet maken.
+
+Liep de wekker af terwijl de app gesloten was, dan werd met een pincode
+al niets gemaakt. De melding zei alleen dat er iets klaarstond. Maar
+draaide de app nog, of was ze net ontgrendeld, dan kwam de volle tekst er
+toch in. Nu geldt één regel: heb je een pincode op FitLog, dan zegt de
+melding alleen dat er iets klaarstaat, en lees je het in de app achter de
+pincode. Het rapport wordt wel gemaakt, zodat het er meteen staat. Na het
+ontgrendelen blijft de wachtende melding zoals ze is. Zonder pincode
+verandert er niets. Kan de sleutelopslag niet gelezen worden, dan telt
+dat als een pincode.

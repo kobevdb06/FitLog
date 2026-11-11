@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
+import 'package:fitlog/core/app/app_controller.dart';
+import 'package:fitlog/core/app/app_state.dart';
 import 'package:fitlog/core/calc/milestones.dart';
 import 'package:fitlog/core/db/database.dart';
 import 'package:fitlog/core/security/key_manager.dart';
@@ -9,10 +11,14 @@ import 'package:fitlog/core/security/secret_store.dart';
 import 'package:fitlog/features/chat/data/ai_client.dart';
 import 'package:fitlog/features/chat/domain/coach_prompt.dart'
     show kCoachLimits;
+import 'package:fitlog/features/chat/presentation/chat_providers.dart'
+    show coachClientFactoryProvider;
 import 'package:fitlog/features/prompts/data/moment_answerer.dart';
 import 'package:fitlog/features/prompts/data/moment_facts.dart';
 import 'package:fitlog/features/prompts/data/prompt_alarm.dart';
 import 'package:fitlog/features/prompts/domain/coach_moments.dart';
+import 'package:fitlog/features/prompts/presentation/prompt_notify.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -418,6 +424,75 @@ void main() {
       expect(notices.shown.single.moment, CoachMoment.idle);
     });
   });
+
+  group('gaat het af terwijl de app open is', () {
+    late _Notices notices;
+    late InMemorySecretStore keys;
+
+    PromptNotify notify() {
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          appControllerProvider.overrideWith(
+            () => _Fixed(AppReady(db: db, security: _open)),
+          ),
+          coachClientFactoryProvider.overrideWithValue(client),
+          promptNoticesProvider.overrideWithValue(notices),
+          secretStoreProvider.overrideWithValue(keys),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container.read(promptNotifyProvider);
+    }
+
+    setUp(() async {
+      notices = _Notices();
+      keys = InMemorySecretStore();
+      await db.settingsDao.setApiKey('AQ.Ab8RNiZhX2Mkg');
+      await on(CoachMoment.idle, option: '5');
+      await session(DateTime(2026, 10, 24, 18));
+    });
+
+    test('dan vraagt die het, en zegt de melding wat de coach zei', () async {
+      await notify().onAlarm(now: DateTime(2026, 10, 30, 18, 5));
+
+      expect(notices.shown.single.moment, CoachMoment.idle);
+      expect(notices.locked, 0);
+    });
+
+    test(
+      'met een pincode zegt de melding alleen dat er iets klaarstaat',
+      () async {
+        await KeyManager(keys).setPin(dek: Uint8List(32), pin: '246810');
+
+        await notify().onAlarm(now: DateTime(2026, 10, 30, 18, 5));
+
+        // Asked, and in the chat behind the PIN: the notification is read on
+        // the phone's lock screen, and names nothing of it (DECISIONS 262).
+        expect(sent, hasLength(1));
+        expect(notices.shown, isEmpty);
+        expect(notices.locked, 1);
+      },
+    );
+  });
+}
+
+const _open = SecurityStatus(
+  initialised: true,
+  mode: LockMode.none,
+  biometricEnabled: false,
+  hasRecoveryPhrase: false,
+  consecutiveFailures: 0,
+  lastFailureAt: null,
+);
+
+class _Fixed extends AppController {
+  _Fixed(this._state);
+
+  final AppState _state;
+
+  @override
+  AppState build() => _state;
 }
 
 class _Alarm implements PromptAlarm {

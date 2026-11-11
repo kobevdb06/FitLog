@@ -58,6 +58,11 @@ class PromptNotify {
       now: now ?? DateTime.now(),
       clientFactory: ref.read(coachClientFactoryProvider),
     );
+    if (runs.isEmpty) return;
+    if (!await wordsInNotifications(ref)) {
+      await notices.showLocked();
+      return;
+    }
     for (final run in runs) {
       await notices.show(run);
     }
@@ -75,7 +80,8 @@ class PromptNotify {
       now: now ?? DateTime.now(),
       clientFactory: ref.read(coachClientFactoryProvider),
     );
-    if (!waiting) return;
+    // Behind a PIN, the notice that it waits stays as it is.
+    if (!waiting || !await wordsInNotifications(ref)) return;
     for (final run in runs) {
       await notices.show(run);
     }

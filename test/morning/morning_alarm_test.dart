@@ -196,6 +196,7 @@ void main() {
     late _Alarm alarm;
     late _Notices notices;
     late _Watch watch;
+    late InMemorySecretStore keys;
 
     ProviderContainer container({AppState? state}) {
       final c = ProviderContainer(
@@ -207,6 +208,7 @@ void main() {
           healthSourceProvider.overrideWithValue(watch),
           morningScheduleProvider.overrideWithValue(MorningSchedule(alarm)),
           morningNoticesProvider.overrideWithValue(notices),
+          secretStoreProvider.overrideWithValue(keys),
         ],
       );
       addTearDown(c.dispose);
@@ -219,8 +221,12 @@ void main() {
       alarm = _Alarm();
       notices = _Notices();
       watch = _Watch();
+      keys = InMemorySecretStore();
     });
     tearDown(() => db.close());
+
+    Future<void> setPin() =>
+        KeyManager(keys).setPin(dek: Uint8List(32), pin: '246810');
 
     test('aanzetten zet het wekkertje, uitzetten haalt het weg', () async {
       final c = container();
@@ -272,6 +278,19 @@ void main() {
       expect(await db.select(db.morningReportsTable).get(), hasLength(1));
     });
 
+    test('met een pincode zegt de melding alleen dat het klaarstaat', () async {
+      await setPin();
+      final c = container();
+
+      await c.read(morningControllerProvider.notifier).onAlarm();
+
+      // Made, and waiting behind the PIN: the notification is read on the
+      // phone's lock screen, and named nothing of it (DECISIONS 262).
+      expect(await db.select(db.morningReportsTable).get(), hasLength(1));
+      expect(notices.reports, isEmpty);
+      expect(notices.locked, 1);
+    });
+
     test('en is ze vergrendeld, dan wacht het op het ontgrendelen', () async {
       final c = container(state: const AppLocked(_pin));
 
@@ -309,6 +328,20 @@ void main() {
         expect(await db.select(db.morningReportsTable).get(), hasLength(1));
         // De melding die op het ontgrendelen wachtte, wordt het rapport.
         expect(notices.reports, hasLength(1));
+      });
+
+      test('met een pincode blijft de wachtende melding zoals ze is', () async {
+        await switchOn();
+        await setPin();
+        notices.showing = true;
+        final c = container();
+
+        await c
+            .read(morningControllerProvider.notifier)
+            .catchUp(now: DateTime(2026, 3, 3, 9));
+
+        expect(await db.select(db.morningReportsTable).get(), hasLength(1));
+        expect(notices.reports, isEmpty);
       });
 
       test('zonder wachtende melding komt er geen nieuwe bij', () async {

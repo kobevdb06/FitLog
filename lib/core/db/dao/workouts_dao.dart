@@ -1391,15 +1391,37 @@ class WorkoutsDao extends DatabaseAccessor<AppDatabase>
         ),
       ),
     );
-    final completed = allSets.where((s) => s.isCompleted).length;
+    // Without the warm-ups, as the volume: they counted, and the coach got
+    // the number as its working sets (DECISIONS 284).
+    final counted = countedSets(
+      allSets.map(
+        (s) => SetVolumeInput(
+          weightKg: s.weightKg,
+          reps: s.reps,
+          isCompleted: s.isCompleted,
+          setType: SetType.fromWire(s.setType),
+        ),
+      ),
+    );
 
     await (update(workoutsTable)..where((t) => t.id.equals(workoutId))).write(
       WorkoutsTableCompanion(
         totalVolumeKg: Value(volume),
-        totalSets: Value(completed),
+        totalSets: Value(counted),
       ),
     );
   }
+
+  /// Every workout's set count again, without its warm-ups: what the
+  /// migration to 65 does. Only that count changes; the sets themselves,
+  /// and everything else on the workout, stay as they are.
+  Future<void> recountWorkingSets() => customStatement(
+    'UPDATE workouts SET total_sets = ('
+    'SELECT COUNT(*) FROM workout_sets ws '
+    'JOIN workout_exercises we ON we.id = ws.workout_exercise_id '
+    "WHERE we.workout_id = workouts.id AND ws.is_completed = 1 "
+    "AND ws.set_type != 'warmup')",
+  );
 
   /// Ends the running session.
   ///

@@ -6474,3 +6474,16 @@ de database weigerde dat: de app crashte. Nu telt ook een routine als
 gebruik (`inAnyRoutine`). Zo'n oefening gaat naar het archief, net als een
 gelogde. Ze verdwijnt uit de bibliotheek, en de routine werkt verder.
 
+## 284. Het aantal sets van een workout telt de opwarmsets niet
+
+Uit het Fable-rapport: T9.
+
+Het volume van een workout liet de opwarmsets weg, het aantal sets niet.
+`countedSets()`, dat het goed deed, bestond maar werd nergens gebruikt. De
+coach kreeg het getal onder de naam `working_sets`, dus een vergissing en
+geen keuze. Nu telt `recalculateTotals` met `countedSets()`. De migratie
+naar schema 65 telt de opgeslagen aantallen opnieuw, uit de sets zelf.
+Dat herschrijft een kolom, maar geen gebruikersdata: `total_sets` is de
+som die de app zelf van je sets maakt, niets wat je invulde. De sets, het
+volume en al de rest van een workout blijven zoals ze waren. Het is
+dezelfde soort gerichte correctie als die van de geschatte maxima in 62.

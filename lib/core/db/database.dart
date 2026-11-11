@@ -91,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// The version of the schema this build writes; a restore refuses a
   /// backup from a later one.
-  static const int currentSchemaVersion = 64;
+  static const int currentSchemaVersion = 65;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -635,6 +635,14 @@ class AppDatabase extends _$AppDatabase {
       // Whether to lock during a workout as well: no, as before
       // (DECISIONS 279).
       await m.addColumn(appSettingsTable, appSettingsTable.lockDuringWorkout);
+    }
+
+    if (from < 65) {
+      // A workout's set count counted its warm-ups, and the coach got it as
+      // its working sets. Recounted from the sets, which stay untouched: the
+      // count is the app's own sum of them, not something you entered
+      // (DECISIONS 284).
+      await workoutsDao.recountWorkingSets();
     }
 
     final added = addedBrokenReferences(

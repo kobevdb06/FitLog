@@ -80,8 +80,10 @@ void main() {
       warmed,
     ))!.workout;
     expect(warmedWorkout.totalVolumeKg, plainVolume);
-    // The warm-ups are stored and counted as completed sets, just not volume.
-    expect(warmedWorkout.totalSets, 3);
+    // The warm-ups are stored as completed sets, but count for neither the
+    // volume nor the number of sets: that number goes to the coach as the
+    // working sets (DECISIONS 284).
+    expect(warmedWorkout.totalSets, 1);
   });
 
   test('a heavy warm-up never triggers a personal record', () async {

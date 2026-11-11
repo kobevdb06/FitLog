@@ -1222,7 +1222,7 @@ void main() {
     await db.close();
 
     final raw = sqlite3.open(file.path);
-    expect(raw.select('PRAGMA user_version').first.values.first, 64);
+    expect(raw.select('PRAGMA user_version').first.values.first, 65);
     raw.close();
   });
 
@@ -1438,7 +1438,7 @@ void main() {
   test('a fresh database is created at the current version', () async {
     final db = AppDatabase(NativeDatabase.memory());
     await db.settingsDao.ensureInitialized();
-    expect(db.schemaVersion, 64);
+    expect(db.schemaVersion, 65);
 
     final keys = await db
         .customSelect('PRAGMA foreign_key_list(personal_records)')
@@ -1469,6 +1469,49 @@ void main() {
     final settings = await db.settingsDao.ensureInitialized();
     expect(settings.autoLockSeconds, 300);
     expect(settings.lockDuringWorkout, isFalse);
+    await db.close();
+  });
+
+  test('a database from v64 counts its sets without the warm-ups '
+      '(DECISIONS 284)', () async {
+    final path = '${dir.path}/v64.db';
+    final fresh = AppDatabase(NativeDatabase(File(path)));
+    await fresh.settingsDao.ensureInitialized();
+    await fresh.close();
+    sqlite3.open(path)
+      ..execute(
+        "INSERT INTO exercises (id, name, primary_muscle, category, "
+        "created_at) VALUES ('ex-1', 'Squat', 'quadriceps', 'barbell', 0)",
+      )
+      ..execute(
+        "INSERT INTO workouts (id, name, started_at, ended_at, "
+        "total_volume_kg, total_sets) VALUES ('w-1', 'Been', 5000, 9000, "
+        "1000.0, 3)",
+      )
+      ..execute(
+        "INSERT INTO workout_exercises (id, workout_id, exercise_id, "
+        "sort_order, rest_seconds) VALUES ('we-1', 'w-1', 'ex-1', 0, 90)",
+      )
+      ..execute(
+        "INSERT INTO workout_sets (id, workout_exercise_id, sort_order, "
+        "set_type, weight_kg, reps, is_completed) VALUES "
+        "('ws-0', 'we-1', 0, 'warmup', 60.0, 5, 1), "
+        "('ws-1', 'we-1', 1, 'normal', 100.0, 5, 1), "
+        "('ws-2', 'we-1', 2, 'normal', 100.0, 5, 1), "
+        "('ws-3', 'we-1', 3, 'normal', 100.0, 5, 0)",
+      )
+      ..execute('PRAGMA user_version = 64')
+      ..close();
+
+    final db = AppDatabase(NativeDatabase(File(path)));
+    await db.settingsDao.ensureInitialized();
+    final workout = (await db.workoutsDao.getWorkoutDetail('w-1'))!.workout;
+    expect(workout.totalSets, 2);
+    expect(workout.totalVolumeKg, 1000, reason: 'the rest as it was');
+    expect(
+      (await db.workoutsDao.getWorkoutDetail('w-1'))!.exercises.single.sets,
+      hasLength(4),
+    );
     await db.close();
   });
 }

@@ -150,7 +150,8 @@ void main() {
 
     // Volume counts 100x5 + 110x5 + 80x8, and skips the 40x8 warm-up.
     expect(finished.workout.totalVolumeKg, 500 + 550 + 640);
-    expect(finished.workout.totalSets, 4);
+    // And so does the number of sets (DECISIONS 284).
+    expect(finished.workout.totalSets, 3);
 
     // The routine remembers when it was last performed.
     final performed = await db.routinesDao.getRoutine(routineId);
@@ -182,7 +183,7 @@ void main() {
     container.listen(lifetimeStatsProvider, (_, _) {});
     final lifetime = await container.read(lifetimeStatsProvider.future);
     expect(lifetime.workouts, 1);
-    expect(lifetime.sets, 4);
+    expect(lifetime.sets, 3, reason: 'without the warm-up (DECISIONS 284)');
     expect(lifetime.volumeKg, 1690);
 
     container.listen(streakProvider, (_, _) {});

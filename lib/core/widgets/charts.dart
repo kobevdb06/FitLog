@@ -17,6 +17,7 @@ class TrendLineChart extends StatelessWidget {
     this.color = AppColors.accent,
     this.valueLabel,
     this.emptyMessage = 'Nog geen gegevens',
+    this.displayScale = 1,
   });
 
   final List<ChartPoint> points;
@@ -25,6 +26,12 @@ class TrendLineChart extends StatelessWidget {
 
   /// Formats the value shown in the tooltip and on the left axis.
   final String Function(double value)? valueLabel;
+
+  /// How many of the units [valueLabel] shows go in one of [points]: 2,2 for
+  /// kilos shown in pounds. The steps on the left are round in what you
+  /// see; they were round in kilos, and read "209,5 · 220,5 · 231,5" in
+  /// pounds (DECISIONS 278).
+  final double displayScale;
 
   /// What stands where the line would be, when there are no points.
   final String emptyMessage;
@@ -59,10 +66,16 @@ class TrendLineChart extends StatelessWidget {
     // bottom of the chart are on them. Left to the chart, the lowest and
     // highest value were labels too: "62.4" over "52.0", or "58" over a
     // "57.5" just below it.
-    final tick = _niceStep(maxValue + padding - (minValue - padding));
-    final lowest = ((minValue - padding) / tick).floorToDouble() * tick;
+    final scale = displayScale > 0 ? displayScale : 1.0;
+    final shown = _niceStep(
+      (maxValue + padding - (minValue - padding)) * scale,
+    );
+    final tick = shown / scale;
+    final lowest =
+        ((minValue - padding) * scale / shown).floorToDouble() * shown / scale;
     final minY = lowest < 0 ? 0.0 : lowest;
-    final maxY = ((maxValue + padding) / tick).ceilToDouble() * tick;
+    final maxY =
+        ((maxValue + padding) * scale / shown).ceilToDouble() * shown / scale;
 
     return SizedBox(
       height: height,

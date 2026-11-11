@@ -543,6 +543,15 @@ class _ChartsTabState extends ConsumerState<_ChartsTab> {
           height: 240,
           valueLabel: (value) =>
               formatExerciseMetric(metric, value, formatters),
+          displayScale: switch (metric) {
+            ExerciseMetric.oneRm ||
+            ExerciseMetric.bestSet ||
+            ExerciseMetric.rpeOneRm ||
+            ExerciseMetric.volume => formatters.toDisplayWeight(1),
+            ExerciseMetric.furthest ||
+            ExerciseMetric.totalDistance => formatters.toDisplayDistance(1),
+            _ => 1.0,
+          },
         ),
         if (points.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),

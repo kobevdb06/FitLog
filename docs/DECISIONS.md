@@ -6386,3 +6386,13 @@ mee. Zijn er alleen zulke sets, dan beslist je beoordeling. Het
 commentaar bij de RPE zei dat twee punten boven normaal *ongeveer drie
 uur* scheelt op een beendag. Dat is 7,2 uur, en dat staat er nu.
 
+## 278. De getallen naast een grafiek zijn rond in de eenheid die je ziet
+
+Uit het Fable-rapport: F8.
+
+De lijngrafiek koos ronde stappen in kilo en toonde ze in pond: 209,5 ·
+220,5 · 231,5. `TrendLineChart` krijgt nu `displayScale` mee, het aantal
+getoonde eenheden per opgeslagen eenheid. De stappen worden rond gekozen
+in wat je ziet, dus 210 · 220 · 230 lb. De grafiek van een oefening geeft
+dat mee voor gewicht, volume en afstand. De metingen rekenden hun punten
+al om voor ze getekend werden, en waren dus al rond.

@@ -6797,3 +6797,18 @@ uit `plans`. En er komt geen nieuw paar features bij dat elkaar
 importeert. Er waren er 23, nu nog 22. Die staan in de test. Volgens het
 rapport zijn ze gegroeid en niet stuk. We halen ze pas uit elkaar als we
 toch in die bestanden werken. Een paar dat verdwijnt, gaat van de lijst af.
+
+## 302. sqlite3 3.9.1, met SQLCipher 4.20
+
+Uit het Fable-rapport: B7.
+
+`sqlite3` ging van 3.5.2 naar 3.9.1. Dat pakket brengt de SQLCipher-build
+mee waarmee de database versleuteld is: nu SQLCipher 4.20.0 met SQLite
+3.54.1, in plaats van 4.18.0. Het blijft het bestandsformaat van SQLCipher
+4, dus een bestaande database opent zonder omzetting. Het changelog noemt
+geen brekende wijzigingen. Mee bijgewerkt: `hooks`, `meta` en `record_use`,
+die sqlite3 nodig heeft.
+
+Gecontroleerd: alle tests, en op de emulator een nieuwe build over de oude
+heen geïnstalleerd. De database van de vorige build opende, met wat erin
+stond.

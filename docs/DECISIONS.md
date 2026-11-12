@@ -6990,3 +6990,33 @@ meer per se in de gewone map te gebeuren.
 Twee kopieën elders (een USB-stick, een wachtwoordmanager) maakt de
 eigenaar zelf. De wachtwoorden staan in `key.properties`; die zijn niet
 door de developer gelezen.
+
+## 309. De vraag na een workout werkte niet meer
+
+Gemeld door de eigenaar op 1.70.2: *Na je workout* zei "De coach vragen
+lukte niet. Er ging iets mis met de coach", ook met *Opnieuw proberen* en
+met *Uitproberen* in de instellingen. De chat werkte wel.
+
+De oorzaak zat in 249. De fabriek die de verbinding met de coach maakt,
+leest de database pas als er een vraag gesteld wordt, via haar eigen ref.
+Maar de provider ruimde zichzelf op zodra niemand meer naar haar keek. De
+chat kijkt er voortdurend naar en merkte niets. Een gepland moment leest
+de fabriek één keer, wacht dan op de feiten en de teller, en gebruikt ze
+pas daarna. Tegen dan was haar ref opgeruimd
+(`UnmountedRefException`). Hetzelfde gold voor het ochtendrapport, het
+weekoverzicht, de weging en de meldingen van de geplande prompts.
+
+Gevonden op de emulator, in vliegtuigmodus, zodat geen vraag de coach
+bereikte. De fabriek blijft nu bestaan zolang de app draait
+(`keepAlive`), en leest de database nog altijd pas bij de vraag. Een test
+leest de fabriek, wacht, en gebruikt ze dan. Die faalde met dezelfde fout
+als op de gsm. De andere tests zagen het niet: die geven een eigen
+fabriek mee.
+
+## 310. Een onverwachte fout zegt welke soort het was
+
+"Er ging iets mis met de coach" verborg de fout van 309 helemaal: een
+schermafbeelding liet niets zien om op verder te gaan. De melding noemt
+nu de soort fout, bijvoorbeeld `(UnmountedRefException)`. De tekst van
+de fout zelf blijft weg, want die kan een sleutel of een stuk van het
+verzoek bevatten (248).

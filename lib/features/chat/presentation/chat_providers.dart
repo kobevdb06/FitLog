@@ -56,7 +56,12 @@ typedef CoachClientFactory = AiClient Function(
 
 /// Every request counted as it goes out (DECISIONS 249); the database read
 /// when a question is asked, when it is open.
-@riverpod
+///
+/// Kept alive: it reads through its own ref when it is used, not when it is
+/// read. Read once and used after an await - every planned prompt, the
+/// morning report, the week review - it had been put away by then, and they
+/// all failed while the chat, which watches it, worked (DECISIONS 309).
+@Riverpod(keepAlive: true)
 CoachClientFactory coachClientFactory(Ref ref) =>
     (apiKey, provider) =>
         countedClient(ref.read(databaseProvider), apiKey, provider);

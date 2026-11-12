@@ -890,8 +890,12 @@ class AiClient {
       'Het antwoord van de coach kon niet gelezen worden. Probeer het '
       'opnieuw.',
     ),
-    _ => const CoachException(
-      'Er ging iets mis met de coach. Probeer het opnieuw.',
+    // The kind of error, and not its words: those may hold a key or a piece
+    // of the request. "Er ging iets mis" alone left nothing to go on from a
+    // screenshot (DECISIONS 310).
+    _ => CoachException(
+      'Er ging iets mis met de coach (${error.runtimeType}). Probeer het '
+      'opnieuw.',
     ),
   };
 

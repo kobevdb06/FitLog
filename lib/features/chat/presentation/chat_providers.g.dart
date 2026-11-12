@@ -10,12 +10,22 @@ part of 'chat_providers.dart';
 // ignore_for_file: type=lint, type=warning
 /// Every request counted as it goes out (DECISIONS 249); the database read
 /// when a question is asked, when it is open.
+///
+/// Kept alive: it reads through its own ref when it is used, not when it is
+/// read. Read once and used after an await - every planned prompt, the
+/// morning report, the week review - it had been put away by then, and they
+/// all failed while the chat, which watches it, worked (DECISIONS 309).
 
 @ProviderFor(coachClientFactory)
 final coachClientFactoryProvider = CoachClientFactoryProvider._();
 
 /// Every request counted as it goes out (DECISIONS 249); the database read
 /// when a question is asked, when it is open.
+///
+/// Kept alive: it reads through its own ref when it is used, not when it is
+/// read. Read once and used after an await - every planned prompt, the
+/// morning report, the week review - it had been put away by then, and they
+/// all failed while the chat, which watches it, worked (DECISIONS 309).
 
 final class CoachClientFactoryProvider
     extends
@@ -27,13 +37,18 @@ final class CoachClientFactoryProvider
     with $Provider<CoachClientFactory> {
   /// Every request counted as it goes out (DECISIONS 249); the database read
   /// when a question is asked, when it is open.
+  ///
+  /// Kept alive: it reads through its own ref when it is used, not when it is
+  /// read. Read once and used after an await - every planned prompt, the
+  /// morning report, the week review - it had been put away by then, and they
+  /// all failed while the chat, which watches it, worked (DECISIONS 309).
   CoachClientFactoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'coachClientFactoryProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -62,7 +77,7 @@ final class CoachClientFactoryProvider
 }
 
 String _$coachClientFactoryHash() =>
-    r'f32f51b2ed70ab87fba062daf6f75b03fcebbfff';
+    r'f8fef8f3e4bfb957672ebbda3d03300b937efbeb';
 
 @ProviderFor(coachApiKey)
 final coachApiKeyProvider = CoachApiKeyProvider._();

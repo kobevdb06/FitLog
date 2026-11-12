@@ -1,3 +1,9 @@
+// Setting a PIN runs Argon2id over 64 MB in Dart: seconds on its own, but
+// in a full run beside an emulator it went past the default 30 s, and the
+// rest of this file never finished.
+@Timeout(Duration(minutes: 3))
+library;
+
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
